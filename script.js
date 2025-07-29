@@ -2143,7 +2143,7 @@ const ChatModule = (function() {
     
         if (tabId === 'favorites') {
             const clearBtn = document.createElement('button');
-            clearBtn.textContent = '🗑️ Очистить всё';
+            clearBtn.textContent = '🗑️';
             clearBtn.classList.add('btn-danger'); 
             clearBtn.onclick = () => clearAllFavorites();
             container.appendChild(clearBtn);
