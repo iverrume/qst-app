@@ -2548,7 +2548,7 @@ const mainApp = (function() {
 
     
     function setupEventListeners() {
-        getEl('favoriteQuizQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
+        getEl('favoriteQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
         fileInput.addEventListener('change', handleFileSelect);
         startQuizButton.addEventListener('click', () => applySettingsAndStartQuiz(false, null));
         gradusButton?.addEventListener('click', () => {
@@ -3727,6 +3727,7 @@ const mainApp = (function() {
         generateQuickNav();
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
+        getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
     }
 
@@ -3977,6 +3978,7 @@ const mainApp = (function() {
         triggeredQuizDownloadArea?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
+        getEl('favoriteQuestionBtn')?.classList.add('hidden');
         
         if (clearInput) fileInput.value = '';
         

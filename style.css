@@ -3103,36 +3103,9 @@ body.dark-mode .message.mine.pinned .message-content {
     opacity: 0.8;
 }
 
-/* style.css */
 
-/* Добавьте эти стили в конец файла */
 
-/* Позиционирование кнопки "В избранное" в тесте */
-.quiz-question-actions {
-    position: relative;
-    height: 30px; /* Резервируем место */
-}
 
-#favoriteQuizQuestionBtn {
-    position: absolute;
-    top: -10px;
-    right: 0;
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1.5em;
-    cursor: pointer;
-    color: var(--secondary-text-color);
-    transition: all 0.2s ease;
-}
-
-#favoriteQuizQuestionBtn:hover {
-    background-color: var(--input-hover-bg-color);
-    color: #f39c12; /* Цвет звезды при наведении */
-    transform: scale(1.1);
-}
 
 /* Кнопка "В избранное" в результатах поиска */
 .favorite-search-result-btn {
@@ -3485,4 +3458,30 @@ button[onclick*="copyToClipboard"].copied:after {
 
 .download-success {
     animation: success-bounce 1s ease;
+}
+
+/* ДОБАВЬТЕ ЭТО В КОНЕЦ ФАЙЛА */
+#favoriteQuestionBtn {
+    background: none;
+    border: 1px solid var(--theme-toggle-border);
+    color: var(--text-color);
+    font-size: 1.3em;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+#favoriteQuestionBtn:hover {
+    background-color: var(--theme-toggle-hover-bg);
+    color: #f39c12;
+    transform: scale(1.05);
+}
+
+#favoriteQuestionBtn.active {
+    background-color: #f39c12;
+    color: white;
+    border-color: #f39c12;
 }
