@@ -4094,3 +4094,19 @@ document.addEventListener('DOMContentLoaded', mainApp.init);
 // Expose mainApp to window for ChatModule access
 window.mainApp = mainApp;
 window.copyToClipboardMain = copyToClipboardMain;
+
+window.addEventListener('load', () => {
+  // Проверяем, поддерживает ли браузер Service Worker'ы.
+  if ('serviceWorker' in navigator) {
+    // Если да, то регистрируем наш файл.
+    navigator.serviceWorker.register('/service-worker.js')
+      .then((registration) => {
+        // Успешная регистрация.
+        console.log('Service Worker успешно зарегистрирован, область видимости:', registration.scope);
+      })
+      .catch((error) => {
+        // Ошибка при регистрации.
+        console.error('Ошибка регистрации Service Worker:', error);
+      });
+  }
+});
