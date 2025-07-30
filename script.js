@@ -29,6 +29,7 @@ const ChatModule = (function() {
     let isPinnedMode = false;
     let messagesListener = null; // Cлушатель для сообщений
     let favoritesListener = null;
+    let unlockedChannels = new Set();
     
     // DOM elements
     let chatOverlay = null;
@@ -1804,18 +1805,22 @@ const ChatModule = (function() {
     async function handleChannelClick(channel) {
         if (channel.id === currentChannel) return; // Не переключаться на тот же канал
 
-        if (channel.hasPassword) {
+        // Проверяем, защищен ли канал и НЕ разблокирован ли он уже
+        if (channel.hasPassword && !unlockedChannels.has(channel.id)) {
             const password = prompt(`Канал "${channel.name}" защищен. Введите пароль:`);
             if (password === null) return; // Пользователь нажал "Отмена"
 
             const enteredPasswordHash = await hashPassword(password);
             
             if (enteredPasswordHash === channel.passwordHash) {
+                // Если пароль верный, добавляем ID в сет разблокированных
+                unlockedChannels.add(channel.id);
                 switchToChannel(channel.id, channel.name, 'public');
             } else {
                 alert("Неверный пароль.");
             }
         } else {
+            // Если канал не защищен или уже был разблокирован, просто переключаемся
             switchToChannel(channel.id, channel.name, 'public');
         }
     }
@@ -1930,16 +1935,21 @@ const ChatModule = (function() {
             }
         });
     }
+
+    
     
     function clearChatData() {
         allMessages = [];
         channels = [];
         privateChats = [];
+        unlockedChannels.clear(); // <-- ДОБАВЛЕНО: Сбрасываем разблокированные каналы
         if (messageArea) messageArea.innerHTML = '<div class="empty-state">Войдите для просмотра</div>';
         Object.keys(TABS).forEach(tabId => {
             if(tabCounters[tabId]) updateTabCounter(tabId, 0);
         });
     }
+
+
     
     function scrollToBottom() { if (messageArea) messageArea.scrollTop = messageArea.scrollHeight; }
     
