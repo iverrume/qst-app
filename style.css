@@ -3758,7 +3758,7 @@ button[onclick*="copyToClipboard"].copied:after {
     margin-top: 10px;
 }
 
-/* --- НАЧАЛО НОВОГО КОДА: Компактный вид хедера чата на мобильных --- */
+
 @media (max-width: 768px) {
 
     /* 1. Уменьшаем высоту ОСНОВНОЙ шапки (синей/темной) */
@@ -3791,4 +3791,27 @@ button[onclick*="copyToClipboard"].copied:after {
         padding-bottom: 6px;
     }
 }
-/* --- КОНЕЦ НОВОГО КОДА --- */
+
+
+/* Контейнер для выравнивания заголовка и кнопки по краям */
+.parser-label-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Стиль для маленькой вторичной кнопки */
+.btn-secondary-small {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    padding: 4px 10px;
+    font-size: 0.85em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary-small:hover {
+    background-color: var(--button-secondary-hover-bg);
+}

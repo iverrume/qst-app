@@ -3168,6 +3168,7 @@ const mainApp = (function() {
     const parserOutputArea = getEl('parserOutputArea');
     const parserOutput = getEl('parserOutput');
     const downloadParsedBtn = getEl('downloadParsedBtn');
+    const clearParserInputBtn = getEl('clearParserInputBtn');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -3299,6 +3300,7 @@ const mainApp = (function() {
         parserFileInput?.addEventListener('change', handleParserFileInput);
         runParserBtn?.addEventListener('click', runParser);
         downloadParsedBtn?.addEventListener('click', downloadParsedQst);
+        clearParserInputBtn?.addEventListener('click', clearParserInput);
 
         nextButton.addEventListener('click', handleNextButtonClick);
         prevQuestionButton.addEventListener('click', loadPreviousQuestion);
@@ -5077,8 +5079,12 @@ const mainApp = (function() {
         await downloadOrShareFile('parsed_test.qst', content, 'text/plain;charset=utf-8', 'Сконвертированный тест');
     }
 
-    // --- КОНЕЦ НОВОГО КОДА ---
 
+    function clearParserInput() {
+        parserInput.value = '';
+        parserFileInput.value = ''; // Важно также сбросить выбранный файл!
+        parserInput.focus(); // Возвращаем курсор в поле для удобства
+    }
 
 
     // --- Public methods exposed from mainApp ---

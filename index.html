@@ -191,7 +191,12 @@
                 <p style="text-align: center; color: var(--secondary-text-color);">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
 
                 <div class="settings-group">
-                    <label for="parserFileInput">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+
+                    <div class="parser-label-container">
+                        <label for="parserFileInput">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+                        <button id="clearParserInputBtn" class="btn-secondary-small">Очистить поле</button>
+                    </div>
+
                     <input type="file" id="parserFileInput" accept=".txt">
                     <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..."></textarea>
                 </div>
