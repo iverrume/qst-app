@@ -76,6 +76,22 @@ const ChatModule = (function() {
         }
     }
     
+
+    function debounce(func, wait) {
+        let timeout;
+
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
+
+
     function createHybridChatHTML() {
 
         const oldChats = document.querySelectorAll('#chatOverlay, #advancedChatOverlay');
@@ -421,7 +437,9 @@ const ChatModule = (function() {
         document.getElementById('createChannelBtn')?.addEventListener('click', () => showModal('channelCreateModal'));
         document.getElementById('uploadFileBtn')?.addEventListener('click', handleChatFileUploadTrigger);
         document.getElementById('chatFileInput')?.addEventListener('change', handleChatFileSelected);
-        if (searchInput) searchInput.addEventListener('input', handleSearch);
+        if (searchInput) searchInput.addEventListener('input', debouncedSearch);
+
+        const debouncedSearch = debounce(handleSearch, 300);
 
         const currentUserBtn = document.getElementById('currentUser');
         const userDropdown = document.getElementById('userDropdown');
