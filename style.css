@@ -3764,15 +3764,15 @@ button[onclick*="copyToClipboard"].copied:after {
     /* 1. Уменьшаем высоту ОСНОВНОЙ шапки (синей/темной) */
     .advanced-chat-header {
         /* Уменьшаем вертикальные отступы (было 15px) */
-        padding-top: 10px;
-        padding-bottom: 10px;
+        padding-top: 7px;
+        padding-bottom: 7px;
     }
 
     /* 2. Уменьшаем высоту ВТОРОЙ шапки (с названием канала и поиском) */
     .chat-top-bar {
         /* Уменьшаем вертикальные отступы (было 15px) */
-        padding-top: 8px;
-        padding-bottom: 8px;
+        padding-top: 6px;
+        padding-bottom: 6px;
     }
 
     /* 3. (Опционально) Немного уменьшаем заголовок и кнопки для гармонии */
@@ -3782,13 +3782,13 @@ button[onclick*="copyToClipboard"].copied:after {
 
     .advanced-chat-header .header-controls button,
     .advanced-chat-header #currentUser {
-         padding: 6px 10px; /* Было 8px 12px */
-         font-size: 0.9em;
+         padding: 5px 8px; /* Было 8px 12px */
+         font-size: 0.7em;
     }
     
     #chatSearchInput {
-        padding-top: 8px;
-        padding-bottom: 8px;
+        padding-top: 6px;
+        padding-bottom: 6px;
     }
 }
 /* --- КОНЕЦ НОВОГО КОДА --- */
