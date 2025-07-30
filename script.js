@@ -2480,11 +2480,12 @@ const ChatModule = (function() {
         document.getElementById('chatFileInput')?.click();
     }
 
+
+
     function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Проверка расширения
         const allowedExtensions = ['.qst', '.txt'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
@@ -2496,21 +2497,22 @@ const ChatModule = (function() {
         reader.onload = async (e) => {
             const fileContent = e.target.result;
             
-            // Показываем индикатор загрузки
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
             sendBtn.classList.add('loading');
             sendBtn.innerHTML = ''; 
 
             try {
-                // 1. Парсим файл, чтобы посчитать вопросы
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
-                // 2. Отправляем файл на сервер для сохранения
+                // 1. Отправляем файл на сервер
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // Важно для обхода CORS
+                    // Мы больше не используем 'no-cors', чтобы иметь возможность прочитать ответ
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         action: 'chatFileUpload',
                         fileName: file.name,
@@ -2518,44 +2520,32 @@ const ChatModule = (function() {
                     })
                 });
 
-                // Так как mode='no-cors', мы не можем прочитать ответ напрямую.
-                // Вместо этого, делаем повторный запрос, чтобы получить ID файла.
-                // Это обходной путь для Google Apps Script.
-                 setTimeout(async () => {
-                    try {
-                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`);
-                        const fileData = await checkResponse.json();
-                        
-                        if(fileData.success && fileData.fileId){
-                            // 3. Отправляем сообщение в чат с информацией о файле
-                            await sendFileMessage(file.name, fileData.fileId, questionCount);
-                        } else {
-                            throw new Error(fileData.error || 'Не удалось получить ID файла после загрузки.');
-                        }
-                    } catch(error) {
-                        console.error("Ошибка получения ID файла: ", error);
-                        showError("Не удалось отправить файл.");
-                    } finally {
-                        // Возвращаем кнопку в нормальное состояние
-                        sendBtn.disabled = false;
-                        sendBtn.classList.remove('loading');
-                        sendBtn.innerHTML = '➤';
-                    }
-                }, 2000); // Даем серверу время на обработку
+                // 2. Получаем и обрабатываем ответ от сервера НАПРЯМУЮ
+                const responseData = await response.json();
+
+                if (responseData.success && responseData.fileId) {
+                    // 3. Успех! Отправляем сообщение в чат с полученным ID
+                    await sendFileMessage(file.name, responseData.fileId, questionCount);
+                } else {
+                    // Если сервер вернул ошибку, показываем ее
+                    throw new Error(responseData.error || 'Сервер не вернул ID файла.');
+                }
 
             } catch (error) {
                 console.error('Ошибка при обработке файла чата:', error);
-                showError('Не удалось обработать файл.');
+                // Показываем более детальную ошибку пользователю
+                showError('Не удалось отправить файл: ' + error.message);
+            } finally {
+                // 4. Возвращаем кнопку в нормальное состояние в любом случае
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
             }
         };
         reader.readAsText(file, 'UTF-8');
-
-        // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл еще раз
         event.target.value = '';
     }
+
 
     async function sendFileMessage(fileName, fileId, questionCount) {
         if (!currentUser || !db) return;
