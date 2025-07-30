@@ -2480,7 +2480,10 @@ const ChatModule = (function() {
         document.getElementById('chatFileInput')?.click();
     }
 
-    function handleChatFileSelected(event) {
+    
+
+    // ЗАМЕНИТЕ ВСЮ ФУНКЦИЮ НА ЭТОТ КОД
+    async function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
@@ -2509,10 +2512,14 @@ const ChatModule = (function() {
                 // 2. Отправляем файл на сервер ОДНИМ запросом и получаем ответ
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    // УБИРАЕМ 'mode: no-cors', чтобы прочитать ответ
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                    // Отправляем как обычный текст, чтобы избежать preflight-запроса CORS.
+                    // Сервер Google Apps Script все равно получит тело запроса как строку
+                    // и сможет его распарсить через JSON.parse().
                     headers: {
-                      'Content-Type': 'application/json'
+                      'Content-Type': 'text/plain;charset=utf-8',
                     },
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     body: JSON.stringify({
                         action: 'chatFileUpload',
                         fileName: file.name,
@@ -2546,13 +2553,14 @@ const ChatModule = (function() {
                 sendBtn.innerHTML = '➤';
             }
         };
-
         
         reader.readAsText(file, 'UTF-8');
 
         // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл еще раз
         event.target.value = '';
     }
+
+
 
     async function sendFileMessage(fileName, fileId, questionCount) {
         if (!currentUser || !db) return;
