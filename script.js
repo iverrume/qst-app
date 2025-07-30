@@ -3014,7 +3014,7 @@ async function copyToClipboardMain(text) {
 
 
 
-
+const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZBTBIi1mi1tOnTpAIS5GQjKXptFJBEG3jcSNLklDKrPbMz38zlt6SDro/exec';
 
 
 // ============================================
@@ -3171,7 +3171,7 @@ const mainApp = (function() {
     let currentResultIndex = 0;
 
     // --- Constants ---
-    const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZBTBIi1mi1tOnTpAIS5GQjKXptFJBEG3jcSNLklDKrPbMz38zlt6SDro/exec';
+
     const GRADUS_ROOT_FOLDER_ID = '1RLrkW1CZUo8PvpJt-C7xZgK0xzHnXmZ7';
 
 
