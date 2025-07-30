@@ -3675,18 +3675,21 @@ const mainApp = (function() {
             showMobileDownloadStatus('Подготовка файла для скачивания...', 'loading');
             
             // Отправляем файл на сервер для создания временной ссылки
+                // Создаем полезную нагрузку
+            const payload = {
+                action: 'chatFileUpload',
+                fileName: file.name,
+                content: fileContent
+            };
+
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json'
+                    // ИЗМЕНЕНИЕ: Отправляем как обычный текст, чтобы избежать preflight-запроса
+                    'Content-Type': 'text/plain;charset=utf-8',
                 },
-                body: JSON.stringify({
-                    action: 'createTempFile',
-                    fileName: fileName,
-                    content: content,
-                    contentType: contentType
-                })
+                // ИЗМЕНЕНИЕ: Передаем данные как строку, а не как JSON-объект
+                body: JSON.stringify(payload)
             });
             
             // Из-за no-cors мы не можем получить ответ напрямую
