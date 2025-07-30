@@ -2978,6 +2978,15 @@ const mainApp = (function() {
     const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZBTBIi1mi1tOnTpAIS5GQjKXptFJBEG3jcSNLklDKrPbMz38zlt6SDro/exec';
     const GRADUS_ROOT_FOLDER_ID = '1RLrkW1CZUo8PvpJt-C7xZgK0xzHnXmZ7';
 
+
+    const handleBeforeUnload = (event) => {
+        // Стандартный способ для запуска предупреждения в современных браузерах
+        event.preventDefault();
+        // Chrome требует, чтобы returnValue был установлен.
+        event.returnValue = '';
+    };
+
+
     // --- Инициализация ---
 
     function initializeApp() {
@@ -4227,6 +4236,8 @@ const mainApp = (function() {
         quickModeToggle?.classList.remove('hidden');
         triggerWordToggle?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
     }
 
     function setupTimer() {
@@ -4378,6 +4389,7 @@ const mainApp = (function() {
     }
 
     function showResults() {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
         quizArea.classList.add('hidden');
         resultsArea.classList.remove('hidden');
@@ -4455,6 +4467,7 @@ const mainApp = (function() {
     }
 
     function resetQuizForNewFile(clearInput = true) {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
         allParsedQuestions = [];
         questionsForCurrentQuiz = [];
