@@ -2497,7 +2497,7 @@ const ChatModule = (function() {
                 // Это обходной путь для Google Apps Script.
                  setTimeout(async () => {
                     try {
-                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileContent&fileName=${encodeURIComponent(file.name)}`);
+                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`);
                         const fileData = await checkResponse.json();
                         
                         if(fileData.success && fileData.fileId){
