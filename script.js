@@ -3745,6 +3745,8 @@ const mainApp = (function() {
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+        quickModeToggle?.classList.remove('hidden');
+        triggerWordToggle?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
     }
 
@@ -3996,6 +3998,8 @@ const mainApp = (function() {
         finishTestButton?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        quickModeToggle?.classList.add('hidden');
+        triggerWordToggle?.classList.add('hidden');
         
         if (clearInput) fileInput.value = '';
         
