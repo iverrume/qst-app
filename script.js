@@ -77,7 +77,7 @@ const ChatModule = (function() {
     }
     
     function createHybridChatHTML() {
-        // ... (HTML код модальных окон остается без изменений) ...
+
         const oldChats = document.querySelectorAll('#chatOverlay, #advancedChatOverlay');
         oldChats.forEach(chat => chat.remove());
         
@@ -201,7 +201,10 @@ const ChatModule = (function() {
                             <div class="input-actions-top">
                                 <button id="emojiBtn" class="input-action-btn" title="Эмодзи">😊</button>
                                 <button id="questionBtn" class="input-action-btn" title="Создать вопрос">❓</button>
+                                <button id="uploadFileBtn" class="input-action-btn" title="Прикрепить файл">📎</button>
                             </div>
+
+                            <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt">
                             
                             <div class="input-wrapper">
                                 <textarea id="chatInput" placeholder="Введите сообщение..."></textarea>
@@ -291,6 +294,19 @@ const ChatModule = (function() {
                 <button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">🗑️ Удалить аккаунт</button>
             </div>
         </div>
+
+        <div id="fileActionsModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h3 id="fileActionsModalTitle">Действия с файлом</h3>
+                <p id="fileActionsModalText" style="margin-bottom: 25px;">Выберите, что вы хотите сделать.</p>
+                <div class="modal-buttons vertical">
+                    <button id="fileActionDownloadBtn">📥 Скачать</button>
+                    <button id="fileActionTestBtn">⚡️ Пройти тест</button>
+                    <button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">Отмена</button>
+                </div>
+            </div>
+        </div>
+
         `;
         document.body.insertAdjacentHTML('beforeend', chatHTML);
     }
@@ -403,6 +419,8 @@ const ChatModule = (function() {
         document.getElementById('emojiBtn')?.addEventListener('click', function() { showEmojiPicker(this) });
         document.getElementById('questionBtn')?.addEventListener('click', () => showModal('questionCreateModal'));
         document.getElementById('createChannelBtn')?.addEventListener('click', () => showModal('channelCreateModal'));
+        document.getElementById('uploadFileBtn')?.addEventListener('click', handleChatFileUploadTrigger);
+        document.getElementById('chatFileInput')?.addEventListener('change', handleChatFileSelected);
         if (searchInput) searchInput.addEventListener('input', handleSearch);
 
         const currentUserBtn = document.getElementById('currentUser');
@@ -833,8 +851,27 @@ const ChatModule = (function() {
         if (message.replyTo) {
             replyHTML = `<div class="reply-context" onclick="ChatModule.scrollToMessage('${message.replyTo.messageId}')"><div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div><div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div></div>`;
         }
+
+
+
         let contentHTML = '';
-        if (message.type === 'question_link') {
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+        if (message.type === 'file_share') {
+            messageEl.classList.add('file-share-bubble');
+            const qCount = message.fileInfo.questions;
+            const qText = qCount === 1 ? 'вопрос' : (qCount >= 2 && qCount <= 4 ? 'вопроса' : 'вопросов');
+            
+            contentHTML = `
+            <div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}')">
+                <div class="file-share-icon">📄</div>
+                <div class="file-share-details">
+                    <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
+                    <div class="file-share-info">${qCount} ${qText}</div>
+                </div>
+                <div class="file-share-arrow">→</div>
+            </div>`;
+        } else if (message.type === 'question_link') {
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             messageEl.classList.add('question-link-bubble');
             contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>Создан новый вопрос</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
         } else {
@@ -864,6 +901,11 @@ const ChatModule = (function() {
         messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || 'Аноним'}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
         return messageEl;
     }
+
+
+
+
+
 
     // --- Функции для управления профилем ---
     function showProfileModal() {
@@ -2406,6 +2448,159 @@ const ChatModule = (function() {
         }
     }
 
+
+
+    function handleChatFileUploadTrigger() {
+        document.getElementById('chatFileInput')?.click();
+    }
+
+    function handleChatFileSelected(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Проверка расширения
+        const allowedExtensions = ['.qst', '.txt'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+            alert('Можно загружать только файлы .qst и .txt');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const fileContent = e.target.result;
+            
+            // Показываем индикатор загрузки
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = true;
+            sendBtn.classList.add('loading');
+            sendBtn.innerHTML = ''; 
+
+            try {
+                // 1. Парсим файл, чтобы посчитать вопросы
+                const questions = window.mainApp.parseQstContent(fileContent);
+                const questionCount = questions.length;
+
+                // 2. Отправляем файл на сервер для сохранения
+                const response = await fetch(googleAppScriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors', // Важно для обхода CORS
+                    body: JSON.stringify({
+                        action: 'chatFileUpload',
+                        fileName: file.name,
+                        content: fileContent
+                    })
+                });
+
+                // Так как mode='no-cors', мы не можем прочитать ответ напрямую.
+                // Вместо этого, делаем повторный запрос, чтобы получить ID файла.
+                // Это обходной путь для Google Apps Script.
+                 setTimeout(async () => {
+                    try {
+                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileContent&fileName=${encodeURIComponent(file.name)}`);
+                        const fileData = await checkResponse.json();
+                        
+                        if(fileData.success && fileData.fileId){
+                            // 3. Отправляем сообщение в чат с информацией о файле
+                            await sendFileMessage(file.name, fileData.fileId, questionCount);
+                        } else {
+                            throw new Error(fileData.error || 'Не удалось получить ID файла после загрузки.');
+                        }
+                    } catch(error) {
+                        console.error("Ошибка получения ID файла: ", error);
+                        showError("Не удалось отправить файл.");
+                    } finally {
+                        // Возвращаем кнопку в нормальное состояние
+                        sendBtn.disabled = false;
+                        sendBtn.classList.remove('loading');
+                        sendBtn.innerHTML = '➤';
+                    }
+                }, 2000); // Даем серверу время на обработку
+
+            } catch (error) {
+                console.error('Ошибка при обработке файла чата:', error);
+                showError('Не удалось обработать файл.');
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('loading');
+                sendBtn.innerHTML = '➤';
+            }
+        };
+        reader.readAsText(file, 'UTF-8');
+
+        // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл еще раз
+        event.target.value = '';
+    }
+
+    async function sendFileMessage(fileName, fileId, questionCount) {
+        if (!currentUser || !db) return;
+
+        const message = {
+            authorId: currentUser.uid,
+            authorName: currentUser.displayName || currentUser.email || 'Аноним',
+            channelId: currentChannel,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            type: 'file_share', // Новый тип сообщения
+            fileInfo: {
+                id: fileId,
+                name: fileName,
+                questions: questionCount
+            }
+        };
+
+        await db.collection('messages').add(message);
+    }
+
+    function showFileActionsModal(fileId, fileName) {
+        document.getElementById('fileActionsModalTitle').textContent = `Файл: ${fileName}`;
+
+        const downloadBtn = document.getElementById('fileActionDownloadBtn');
+        const testBtn = document.getElementById('fileActionTestBtn');
+
+        downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
+        testBtn.onclick = () => startTestFromShare(fileId, fileName);
+        
+        showModal('fileActionsModal');
+    }
+
+    async function downloadSharedFile(fileId, fileName) {
+        try {
+            alert('Начинаем загрузку файла...');
+            const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error);
+
+            await window.mainApp.downloadOrShareFile(fileName, data.content, 'text/plain;charset=utf-8', `Файл`);
+            closeModal('fileActionsModal');
+        } catch (error) {
+            console.error('Ошибка скачивания файла из чата:', error);
+            alert(`Не удалось скачать файл: ${error.message}`);
+        }
+    }
+
+    async function startTestFromShare(fileId, fileName) {
+         try {
+            alert('Загрузка теста...');
+            closeModal('fileActionsModal');
+            closeChatModal(); // Закрываем чат
+
+            const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error);
+            
+            // Используем логику из основного приложения для старта теста
+            window.mainApp.processFile(fileName, data.content);
+
+        } catch (error) {
+            console.error('Ошибка запуска теста из чата:', error);
+            alert(`Не удалось запустить тест: ${error.message}`);
+        }
+    }
+
+
+
+
     async function uploadFileToServer(fileName, fileContent, url) { // <-- 1. Добавлен 'url'
         if (!fileName || !fileContent) {
             console.warn("Попытка загрузить пустой файл. Отменено.");
@@ -2761,7 +2956,8 @@ const ChatModule = (function() {
         uploadFileToServer,
         removeUserFromChannel,
         copyQuestionAsQst,
-        voteForFavoriteOption, 
+        voteForFavoriteOption,
+        showFileActionsModal, 
         
         // Getters
         isInitialized: () => isInitialized,
@@ -4672,6 +4868,8 @@ const mainApp = (function() {
     // --- Public methods exposed from mainApp ---
     return {
         init: initializeApp,
+        parseQstContent: parseQstContent, 
+        processFile: processFile,         
         downloadFile: downloadFileBrowserFallback,
         downloadOrShareFile: downloadOrShareFile,
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,

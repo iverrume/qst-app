@@ -3624,3 +3624,95 @@ button[onclick*="copyToClipboard"].copied:after {
         font-size: 1.1em;
     }
 }
+
+/* --- НАЧАЛО НОВЫХ СТИЛЕЙ: Файлы в чате --- */
+
+/* Стили для карточки файла */
+.file-share-bubble .message-content {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.file-share-content {
+    background: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-left: 5px solid var(--chat-success); /* Зеленая полоска */
+    padding: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s ease;
+}
+
+.file-share-content:hover {
+    background-color: var(--input-hover-bg-color);
+    border-color: var(--chat-success);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+}
+
+.file-share-icon {
+    font-size: 2.5em;
+    opacity: 0.7;
+}
+
+.file-share-details {
+    flex: 1;
+    overflow: hidden;
+}
+
+.file-share-name {
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-share-info {
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+}
+
+.file-share-arrow {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: var(--chat-success);
+    transition: transform 0.2s ease;
+}
+
+.file-share-content:hover .file-share-arrow {
+    transform: translateX(5px);
+}
+
+/* Стили для модального окна действий с файлом */
+.modal-buttons.vertical {
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-buttons.vertical button {
+    width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+#fileActionDownloadBtn {
+    background-color: var(--button-secondary-bg);
+}
+#fileActionDownloadBtn:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+
+#fileActionTestBtn {
+    background-color: var(--button-primary-bg);
+}
+#fileActionTestBtn:hover {
+    background-color: var(--button-primary-hover-bg);
+}
+
+/* --- КОНЕЦ НОВЫХ СТИЛЕЙ --- */
