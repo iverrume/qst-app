@@ -3532,3 +3532,8 @@ button[onclick*="copyToClipboard"].copied:after {
     transform: rotate(360deg);
   }
 }
+
+#languageToggle {
+    font-size: 0.8em; /* Немного увеличим размер эмодзи */
+    padding: 4px; /* Можно слегка подогнать отступы */
+}
