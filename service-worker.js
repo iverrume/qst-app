@@ -1,83 +1,79 @@
 // service-worker.js
 
-// Имя нашего кэша. Важно менять его (например, v2, v3), когда вы обновляете файлы.
-const CACHE_NAME = 'qst-app-cache-v1';
+// Имя и версия нашего кеша. 
+// ВАЖНО: Если вы обновите файлы (например, измените CSS), 
+// вам нужно будет изменить эту версию (например, на 'qst-app-cache-v2'),
+// чтобы Service Worker понял, что нужно кешировать файлы заново.
+const CACHE_NAME = 'qst-app-cache-v2';
 
-// Список файлов, которые нужно сразу сохранить в кэш (наш "каркас" приложения).
+// Список файлов, которые мы хотим сохранить в кеш для офлайн-работы.
+// Мы кешируем основные "оболочечные" файлы приложения.
 const URLS_TO_CACHE = [
-  '/', // Главная страница
-  'index.html',
-  'style.css',
-  'script.js',
-  'manifest.json',
-  'favicon.png'
-  // Добавьте сюда другие статичные файлы, если они есть (например, картинки, шрифты)
+  '/', // Кешируем главную страницу
+  '/index.html',
+  '/style.css',
+  '/script.js',
+  '/favicon.png',
+  '/manifest.json'
+  // Если у вас есть другие важные ресурсы (шрифты, изображения), добавьте их сюда.
 ];
 
-// Событие 'install' (установка): Срабатывает, когда браузер впервые видит этот Service Worker.
-// Это идеальное место, чтобы закэшировать наш каркас приложения.
+// Событие 'install' (установка). Срабатывает, когда браузер впервые видит этот service worker.
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Установка...');
   
-  // Мы просим браузер подождать, пока мы не закончим кэширование.
+  // Мы говорим браузеру подождать, пока не выполнится наш код внутри.
   event.waitUntil(
-    // Открываем (или создаем) наш кэш по имени.
+    // Открываем (или создаем) наш кеш по имени.
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Кэширование каркаса приложения...');
-        // Добавляем все файлы из нашего списка в кэш.
+        console.log('Service Worker: Кеширование основных файлов');
+        // Добавляем все файлы из нашего списка в кеш.
         return cache.addAll(URLS_TO_CACHE);
       })
-      .catch((err) => {
-        console.error('Service Worker: Ошибка при кэшировании', err);
+      .catch(err => {
+        console.error('Service Worker: Ошибка при кешировании', err);
       })
   );
 });
 
-// Событие 'fetch' (перехват запросов): Срабатывает КАЖДЫЙ РАЗ, когда страница делает запрос
-// (например, за файлом стилей, картинкой или даже запросом к API).
-self.addEventListener('fetch', (event) => {
-  // Мы не будем кэшировать запросы к Firebase, чтобы чат всегда работал с актуальными данными.
-  // Также игнорируем запросы к Google Apps Script.
-  if (event.request.url.includes('firebase') || event.request.url.includes('script.google.com')) {
-    // Просто продолжаем выполнять запрос как обычно, ничего не делая.
-    return;
-  }
+// Событие 'activate' (активация). Срабатывает после установки.
+// Здесь мы обычно удаляем старые кеши, чтобы не занимать лишнее место.
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker: Активация...');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          // Если имя кеша не совпадает с текущим, удаляем его.
+          // Это полезно, когда вы обновляете версию с 'v1' на 'v2'.
+          if (cacheName !== CACHE_NAME) {
+            console.log('Service Worker: Удаление старого кеша', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  return self.clients.claim();
+});
 
-  // Применяем стратегию "Cache First" (Сначала кэш, потом сеть).
+// Событие 'fetch' (перехват запросов).
+// Это сердце Service Worker. Он перехватывает ВСЕ запросы с вашего сайта.
+self.addEventListener('fetch', (event) => {
+  // Мы применяем стратегию "Cache first" (сначала кеш).
   event.respondWith(
-    // Ищем соответствующий запрос в нашем кэше.
+    // Пытаемся найти ответ на этот запрос в нашем кеше.
     caches.match(event.request)
       .then((cachedResponse) => {
-        // Если ответ найден в кэше - отдаем его.
+        // Если ответ нашелся в кеше - отдаем его.
+        // Это и обеспечивает офлайн-работу и быструю загрузку.
         if (cachedResponse) {
-          // console.log('Service Worker: Отдаем из кэша:', event.request.url);
           return cachedResponse;
         }
 
-        // Если в кэше ничего нет - выполняем реальный сетевой запрос.
-        // console.log('Service Worker: Запрос в сеть:', event.request.url);
+        // Если в кеше ничего нет - делаем обычный запрос в интернет.
         return fetch(event.request);
       })
   );
 });
-
-// Событие 'activate' (активация): Срабатывает после установки.
-// Здесь можно почистить старые кэши, если они есть.
-self.addEventListener('activate', (event) => {
-    console.log('Service Worker: Активация...');
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    // Если имя кэша не совпадает с текущим, удаляем его.
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('Service Worker: Удаление старого кэша:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
-});```
-

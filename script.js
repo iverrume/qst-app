@@ -4095,18 +4095,21 @@ document.addEventListener('DOMContentLoaded', mainApp.init);
 window.mainApp = mainApp;
 window.copyToClipboardMain = copyToClipboardMain;
 
-window.addEventListener('load', () => {
-  // Проверяем, поддерживает ли браузер Service Worker'ы.
-  if ('serviceWorker' in navigator) {
-    // Если да, то регистрируем наш файл.
+// script.js (добавить в конец файла)
+
+// Проверяем, поддерживает ли браузер Service Worker
+if ('serviceWorker' in navigator) {
+  // Регистрируем наш Service Worker. Лучше делать это после полной загрузки страницы,
+  // чтобы не замедлять первоначальное отображение.
+  window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
-      .then((registration) => {
-        // Успешная регистрация.
-        console.log('Service Worker успешно зарегистрирован, область видимости:', registration.scope);
+      .then(registration => {
+        // Регистрация прошла успешно
+        console.log('Service Worker зарегистрирован успешно! Область видимости:', registration.scope);
       })
-      .catch((error) => {
-        // Ошибка при регистрации.
+      .catch(error => {
+        // Регистрация не удалась
         console.error('Ошибка регистрации Service Worker:', error);
       });
-  }
-});
+  });
+}
