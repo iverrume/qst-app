@@ -1265,6 +1265,7 @@ const ChatModule = (function() {
 
                 await db.collection('messages').add(message);
                 chatInput.value = '';
+                chatInput.style.height = 'auto';
                 cancelReply();
             }
         } catch (error) {
