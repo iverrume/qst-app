@@ -30,6 +30,8 @@ const ChatModule = (function() {
     let messagesListener = null; // Cлушатель для сообщений
     let favoritesListener = null;
     let unlockedChannels = new Set();
+    const QUICK_REACTIONS_KEY = 'userQuickReactions';
+    const DEFAULT_QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
     
     // DOM elements
     let chatOverlay = null;
@@ -311,6 +313,55 @@ const ChatModule = (function() {
         tabCounters['users'] = document.getElementById('onlineCount');
         console.log('DOM элементы гибридного чата инициализированы');
     }
+
+
+    /**
+     * Безопасно получает список быстрых реакций пользователя из localStorage.
+     * Если список отсутствует или поврежден, возвращает стандартный набор.
+     * @returns {string[]} Массив эмодзи для быстрой реакции.
+     */
+    function getQuickReactions() {
+        try {
+            const storedReactions = localStorage.getItem(QUICK_REACTIONS_KEY);
+            if (storedReactions) {
+                const parsed = JSON.parse(storedReactions);
+                // Проверяем, что это массив строк
+                if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.error("Ошибка чтения быстрых реакций из localStorage:", e);
+        }
+        // Если что-то пошло не так, возвращаем набор по умолчанию
+        return [...DEFAULT_QUICK_REACTIONS];
+    }
+
+
+    /**
+     * Обновляет список быстрых реакций пользователя.
+     * Новый эмодзи добавляется в начало, старый (если был) удаляется, 
+     * а последний элемент из списка удаляется, чтобы сохранить длину.
+     * @param {string} newEmoji - Новый эмодзи, который нужно добавить.
+     */
+    function updateQuickReactions(newEmoji) {
+        let currentReactions = getQuickReactions();
+        
+        // 1. Убираем этот эмодзи из списка, если он там уже был, чтобы избежать дублей
+        let updatedReactions = currentReactions.filter(e => e !== newEmoji);
+
+        // 2. Добавляем новый эмодзи в самое начало
+        updatedReactions.unshift(newEmoji);
+
+        // 3. Обрезаем массив до 6 элементов, удаляя последний
+        const finalReactions = updatedReactions.slice(0, 6);
+
+        // 4. Сохраняем результат в localStorage
+        localStorage.setItem(QUICK_REACTIONS_KEY, JSON.stringify(finalReactions));
+    }
+
+
+
     
     function setupEventListeners() {
         // --- ИСПРАВЛЕНИЕ: Ошибочная строка удалена отсюда ---
@@ -746,7 +797,7 @@ const ChatModule = (function() {
             return `${fullDatePart}, ${timeString}`;
         }
     }
- 
+
 
     function createMessageElement(message) {
         const messageEl = document.createElement('div');
@@ -1226,70 +1277,141 @@ const ChatModule = (function() {
 
 
 
-    // === НАЧАЛО: НОВАЯ, УЛУЧШЕННАЯ ФУНКЦИЯ ДЛЯ РЕАКЦИЙ ===
-    function showReactionPicker(messageId, buttonElement) {
-        // Немедленно удаляем любые старые пикеры, чтобы не было дублей
-        document.querySelectorAll('.reaction-picker').forEach(p => p.remove());
+    // --- ЗАМЕНИТЕ ВСЮ ФУНКЦИЮ НА ЭТОТ КОД ---
 
-        // Расширенный и сгруппированный набор эмодзи
-        const popularEmojis = ['👍', '❤️', '😂', '😮', '😢', '🔥', '🤔'];
-        
+    function showReactionPicker(messageId, buttonElement) {
+        // Немедленно удаляем любые старые пикеры
+        document.querySelectorAll('.reaction-picker, .full-reaction-picker').forEach(p => p.remove());
+
         const picker = document.createElement('div');
         picker.className = 'reaction-picker';
         
-        popularEmojis.forEach(emoji => {
+        // 1. СНАЧАЛА ОБЪЯВЛЯЕМ ФУНКЦИЮ ЗАКРЫТИЯ
+        // Теперь обработчики, которые мы создадим ниже, будут о ней знать.
+        const closePickerOnClickOutside = function(event) {
+            if (document.body.contains(picker) && !picker.contains(event.target)) {
+                picker.remove();
+                window.removeEventListener('click', closePickerOnClickOutside);
+            }
+        };
+        
+        // Получаем актуальный список реакций пользователя
+        const quickEmojis = getQuickReactions();
+        
+        // 2. Создаем кнопки для сохраненных эмодзи
+        quickEmojis.forEach(emoji => {
             const span = document.createElement('span');
             span.textContent = emoji;
             span.onclick = (e) => {
-                e.stopPropagation(); // Важно, чтобы клик по эмодзи не закрыл меню досрочно
-                toggleReaction(messageId, emoji);
+                e.stopPropagation();
+                window.removeEventListener('click', closePickerOnClickOutside); // Убираем слушатель
                 picker.remove();
+                toggleReaction(messageId, emoji);
             };
             picker.appendChild(span);
         });
 
+        // 3. Создаем кнопку "+" и ее обработчик, который теперь видит 'closePickerOnClickOutside'
+        const addButton = document.createElement('button');
+        addButton.textContent = '＋';
+        addButton.className = 'reaction-picker-add-btn';
+        addButton.title = 'Выбрать другую реакцию';
+        addButton.onclick = (e) => {
+            e.stopPropagation();
+
+            // 1. СНАЧАЛА получаем координаты кнопки, ПОКА она еще на странице.
+            const buttonRect = addButton.getBoundingClientRect();
+
+            // 2. Теперь убираем старый обработчик и саму панель.
+            window.removeEventListener('click', closePickerOnClickOutside);
+            picker.remove();
+
+            // 3. Вызываем функцию для показа нового пикера, но передаем ей уже
+            // сохраненные координаты, а не саму кнопку, которой больше нет.
+            showFullReactionPicker(messageId, buttonRect);
+        };
+        picker.appendChild(addButton);
+
         document.body.appendChild(picker);
 
-        // Умное позиционирование v2.0 - с проверкой границ viewport
+        // --- Умное позиционирование (без изменений) ---
         const btnRect = buttonElement.getBoundingClientRect();
-        const pickerRect = picker.getBoundingClientRect(); // Получаем размеры пикера ПОСЛЕ добавления в DOM
+        const pickerRect = picker.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
-        const margin = 8; // Отступ от краев
-
+        const margin = 8;
         let topPos = btnRect.top - pickerRect.height - margin;
         let leftPos = btnRect.left;
-
-        // 1. Проверяем, не вылезает ли сверху. Если да, ставим снизу.
-        if (topPos < margin) {
-            topPos = btnRect.bottom + margin;
-        }
-
-        // 2. Проверяем, не вылезает ли справа. Если да, выравниваем по правому краю кнопки.
-        if (leftPos + pickerRect.width > viewportWidth - margin) {
-            leftPos = btnRect.right - pickerRect.width;
-        }
-
-        // 3. Проверяем, не вылезает ли слева (на всякий случай).
-        if (leftPos < margin) {
-            leftPos = margin;
-        }
-
+        if (topPos < margin) { topPos = btnRect.bottom + margin; }
+        if (leftPos + pickerRect.width > viewportWidth - margin) { leftPos = btnRect.right - pickerRect.width; }
+        if (leftPos < margin) { leftPos = margin; }
         picker.style.top = `${topPos}px`;
         picker.style.left = `${leftPos}px`;
 
+        // 4. И только теперь, когда все готово, устанавливаем слушатель на закрытие
+        setTimeout(() => window.addEventListener('click', closePickerOnClickOutside), 0);
+    }
 
-        // Добавляем обработчик для закрытия при клике вне меню
-        // Используем setTimeout, чтобы этот обработчик не сработал на тот же клик, который открыл меню
+
+
+
+    /**
+     * Показывает полный пикер эмодзи для выбора новой реакции.
+     * @param {string} messageId - ID сообщения, к которому применяется реакция.
+     * @param {DOMRect} positionRect - Объект с координатами, где ранее находилась кнопка "+".
+     */
+    function showFullReactionPicker(messageId, positionRect) {
+        if (!customElements.get('emoji-picker')) {
+            console.warn('Emoji picker не загружен');
+            return;
+        }
+
+        const fullPicker = document.createElement('emoji-picker');
+        fullPicker.className = 'full-reaction-picker'; // Дадим ему свой класс
+
+        // Настраиваем тему пикера
+        if (document.body.classList.contains('dark-mode')) {
+            fullPicker.classList.add('dark');
+        } else {
+            fullPicker.classList.add('light');
+        }
+
+        // Обработчик выбора эмодзи из полного пикера
+        fullPicker.addEventListener('emoji-click', event => {
+            const selectedEmoji = event.detail.unicode;
+
+            // 1. Сразу применяем реакцию к сообщению
+            toggleReaction(messageId, selectedEmoji);
+            // 2. Обновляем наш список быстрых реакций
+            updateQuickReactions(selectedEmoji);
+            // 3. Удаляем пикер
+            if (fullPicker.parentNode) {
+                fullPicker.remove();
+            }
+        });
+
+        document.body.appendChild(fullPicker);
+
+        // Позиционируем пикер, используя переданные координаты
+        fullPicker.style.position = 'fixed';
+        fullPicker.style.top = `${positionRect.bottom + 5}px`;
+        fullPicker.style.left = `${positionRect.left}px`;
+
+        // Добавляем обработчик для закрытия при клике вне пикера
         setTimeout(() => {
-            window.addEventListener('click', function closePicker(event) {
-                // Если клик был не по пикеру, удаляем его и этот обработчик
-                if (!picker.contains(event.target)) {
-                    picker.remove();
-                    window.removeEventListener('click', closePicker);
+            window.addEventListener('click', function closeFullPicker(e) {
+                if (fullPicker.parentNode && !fullPicker.contains(e.target)) {
+                    fullPicker.remove();
+                    window.removeEventListener('click', closeFullPicker);
                 }
-            });
+            }, { once: true }); // Добавляем { once: true } для автоматического удаления слушателя
         }, 0);
     }
+
+
+
+
+
+
 
     async function toggleReaction(messageId, emoji) {
         if (!currentUser) return;

@@ -2370,7 +2370,36 @@ body.dark-mode .reply-text {
 }
 /* === КОНЕЦ ИСПРАВЛЕНИЙ === */
 
+/* Стиль для кнопки "+" в быстрой панели */
+.reaction-picker-add-btn {
+    padding: 5px;
+    cursor: pointer;
+    border-radius: 50%;
+    font-size: 1.6em; /* Размер как у эмодзи */
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--input-bg-color);
+    border: 1px dashed var(--border-color);
+    color: var(--secondary-text-color);
+    transition: all 0.2s ease;
+    line-height: 1;
+}
 
+.reaction-picker-add-btn:hover {
+    background: var(--input-hover-bg-color);
+    color: var(--text-color);
+    border-style: solid;
+    transform: scale(1.1) rotate(90deg);
+}
+
+/* Стиль для полноэкранного пикера, когда он вызван для реакций */
+.full-reaction-picker {
+    z-index: 2600; /* Выше чем .reaction-picker */
+    animation: picker-appear 0.2s ease forwards;
+}
 
 /* Анимация подсветки для прокрутки к сообщению */
 @keyframes highlight-fade {
