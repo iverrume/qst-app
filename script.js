@@ -2238,28 +2238,7 @@ const ChatModule = (function() {
         }
     }
     
-    // Копирование в буфер обмена (версия для mainApp)
-    async function copyToClipboardMain(text) {
-        try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(text);
-                alert('Содержимое скопировано в буфер обмена!');
-            } else {
-                // Fallback для старых браузеров
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                textArea.setSelectionRange(0, 99999);
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                alert('Содержимое скопировано в буфер обмена!');
-            }
-        } catch (error) {
-            console.error('Ошибка копирования:', error);
-            alert('Не удалось скопировать. Скопируйте текст вручную.');
-        }
-    }
+
 
 
     async function clearAllFavorites() {
@@ -2374,12 +2353,35 @@ const ChatModule = (function() {
     };
 })();
 
+
+
 // Обновляем ссылки для совместимости
 window.ChatModule = ChatModule;
 
 
 
-
+// Копирование в буфер обмена (версия для mainApp)
+async function copyToClipboardMain(text) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            alert('Содержимое скопировано в буфер обмена!');
+        } else {
+            // Fallback для старых браузеров
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            textArea.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Содержимое скопировано в буфер обмена!');
+        }
+    } catch (error) {
+        console.error('Ошибка копирования:', error);
+        alert('Не удалось скопировать. Скопируйте текст вручную.');
+    }
+}
 
 
 
@@ -4103,7 +4105,6 @@ const mainApp = (function() {
 document.addEventListener('DOMContentLoaded', mainApp.init);
 // Expose mainApp to window for ChatModule access
 window.mainApp = mainApp;
-window.copyToClipboardMain = copyToClipboardMain;
 
 // script.js (добавить в конец файла)
 
