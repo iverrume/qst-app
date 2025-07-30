@@ -3486,3 +3486,13 @@ button[onclick*="copyToClipboard"].copied:after {
     color: white;
     border-color: #f39c12;
 }
+
+
+@media (max-width: 768px) {
+  .dropdown-content {
+    /* Вместо выравнивания по правому краю, выравниваем по левому */
+    left: 0; 
+    /* Сбрасываем выравнивание по правому краю, чтобы оно не мешало */
+    right: auto;
+  }
+}
