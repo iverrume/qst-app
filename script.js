@@ -1289,52 +1289,97 @@ const ChatModule = (function() {
         }
     }
 
-    async function createQuestionFromMessage(rawText) {
-        // Эта логика парсинга взята из модального окна createQuestion
-        const lines = rawText.split('\n').filter(line => line.trim() !== '');
-        const questionLines = [];
-        const options = [];
-        const optionRegex = /^([+-])\s*(.*)/;
 
-        lines.forEach(line => {
-            const match = line.trim().match(optionRegex);
-            if (match) {
-                options.push({ text: match[2].trim(), isCorrect: match[1] === '+', votedBy: [] });
-            } else {
-                // Убираем '?' из текста вопроса
-                questionLines.push(line.replace(/^\?/, '').trim());
+
+    // --- ВСТАВЬТЕ КОД ПАРСЕРА СЮДА ---
+    /**
+     * Продвинутый парсер, который может обрабатывать несколько блоков вопросов в одном тексте.
+     * @param {string} content - Текст, содержащий один или несколько вопросов в формате .qst.
+     * @returns {Array<Object>} - Массив распознанных объектов вопросов.
+     */
+    function parseMultipleQstBlocks(content) {
+        let questions = [];
+        let currentQuestionData = null;
+        const lines = content.split(/\r?\n/);
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('?')) {
+                // Если мы нашли новый вопрос, сначала сохраняем предыдущий, если он был
+                if (currentQuestionData && currentQuestionData.options.length > 0) {
+                    questions.push(currentQuestionData);
+                }
+                // Начинаем собирать новый вопрос
+                currentQuestionData = { 
+                    text: trimmedLine.substring(1).trim(), 
+                    options: [], 
+                    correctAnswerIndex: -1
+                };
+            } else if ((trimmedLine.startsWith('+') || trimmedLine.startsWith('-')) && currentQuestionData) {
+                // Добавляем вариант ответа к ТЕКУЩЕМУ вопросу
+                const isCorrect = trimmedLine.startsWith('+');
+                const optionText = trimmedLine.substring(1).trim();
+                currentQuestionData.options.push({ text: optionText, isCorrect: isCorrect });
+                if (isCorrect && currentQuestionData.correctAnswerIndex === -1) {
+                    currentQuestionData.correctAnswerIndex = currentQuestionData.options.length - 1;
+                }
+            } else if (trimmedLine !== '' && currentQuestionData) {
+                // Если строка не пустая и не вариант ответа - это продолжение текста вопроса
+                currentQuestionData.text += " " + trimmedLine;
             }
-        });
-        
-        const questionText = questionLines.join(' ');
-        if (!questionText || options.length === 0) {
+        }
+
+        // Не забываем сохранить самый последний вопрос после окончания цикла
+        if (currentQuestionData && currentQuestionData.options.length > 0) {
+            questions.push(currentQuestionData);
+        }
+
+        // Возвращаем массив всех найденных вопросов
+        return questions;
+    }
+    // --- КОНЕЦ ВСТАВЛЕННОГО КОДА ---
+
+
+
+    
+
+    // --- ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ НА ЭТУ ---
+    async function createQuestionFromMessage(rawText) {
+        // Используем наш новый парсер и здесь!
+        const questionsToCreate = parseMultipleQstBlocks(rawText);
+
+        if (questionsToCreate.length === 0) {
             showError('Формат вопроса не распознан. Проверьте синтаксис.');
             return;
         }
 
         try {
-            // 1. Создаем сам вопрос в коллекции 'questions'
-            const questionPayload = {
-                text: questionText,
-                options: options,
-                authorId: currentUser.uid,
-                authorName: currentUser.displayName || currentUser.email || 'Аноним',
-                channelId: currentChannel,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            const newQuestionRef = await db.collection('questions').add(questionPayload);
+            // Перебираем все распознанные вопросы
+            for (const question of questionsToCreate) {
+                // 1. Создаем сам вопрос в коллекции 'questions'
+                const questionPayload = {
+                    text: question.text,
+                    options: question.options,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || currentUser.email || 'Аноним',
+                    channelId: currentChannel,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                const newQuestionRef = await db.collection('questions').add(questionPayload);
 
-            // 2. Создаем сообщение-ссылку в коллекции 'messages'
-            const questionLinkMessage = {
-                authorId: currentUser.uid,
-                authorName: currentUser.displayName || currentUser.email || 'Аноним',
-                channelId: currentChannel,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                type: 'question_link', // Новый специальный тип
-                questionId: newQuestionRef.id, // ID созданного вопроса
-                text: questionText // Сниппет текста для отображения в ссылке
-            };
-            await db.collection('messages').add(questionLinkMessage);
+                // 2. Создаем для него сообщение-ссылку в чате
+                const questionLinkMessage = {
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || currentUser.email || 'Аноним',
+                    channelId: currentChannel,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    type: 'question_link',
+                    questionId: newQuestionRef.id,
+                    text: question.text
+                };
+                await db.collection('messages').add(questionLinkMessage);
+            }
+             alert(`Успешно добавлено вопросов из чата: ${questionsToCreate.length}`);
 
         } catch (error) {
             console.error('Ошибка создания вопроса из сообщения:', error);
@@ -1342,49 +1387,43 @@ const ChatModule = (function() {
         }
     }
 
+    // --- ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ НА ЭТУ ---
     async function createQuestion() {
         const rawText = document.getElementById('questionTextInput').value.trim();
         if (!rawText || !currentUser || !db) return;
 
-        const lines = rawText.split('\n').filter(line => line.trim() !== '');
-        const questionLines = [];
-        const options = [];
-        const optionRegex = /^([+-])\s*(.*)/;
+        // Используем наш новый мощный парсер
+        const questionsToCreate = parseMultipleQstBlocks(rawText);
 
-        lines.forEach(line => {
-            const match = line.trim().match(optionRegex);
-            if (match) {
-                options.push({
-                    text: match[2].trim(),
-                    isCorrect: match[1] === '+',
-                    votedBy: [] // <-- ИЗМЕНЕНИЕ ЗДЕСЬ: было votes: 0
-                });
-            } else {
-                questionLines.push(line.trim());
-            }
-        });
-        
-        const questionText = questionLines.join(' ');
-        if (!questionText || options.length === 0) {
-            showError('Не удалось распознать вопрос и варианты. Убедитесь, что варианты начинаются с "+" или "-".');
+        if (questionsToCreate.length === 0) {
+            showError('Не удалось распознать вопросы. Проверьте формат: каждый вопрос должен начинаться с "?", а варианты с "+" или "-".');
             return;
         }
 
         try {
-            const question = {
-                text: questionText,
-                options: options,
-                authorId: currentUser.uid,
-                authorName: currentUser.displayName || currentUser.email || 'Аноним',
-                channelId: currentChannel,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection('questions').add(question);
+            // Создаем массив промисов для всех вопросов
+            const creationPromises = questionsToCreate.map(q => {
+                const questionPayload = {
+                    text: q.text,
+                    options: q.options,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName || currentUser.email || 'Аноним',
+                    channelId: currentChannel,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                return db.collection('questions').add(questionPayload);
+            });
+            
+            // Ждем, пока все вопросы будут созданы
+            await Promise.all(creationPromises);
+            
+            alert(`Успешно добавлено вопросов: ${questionsToCreate.length}`);
             document.getElementById('questionTextInput').value = '';
             closeModal('questionCreateModal');
+
         } catch (error) {
-            console.error('Ошибка создания вопроса:', error);
-            showError('Не удалось создать вопрос');
+            console.error('Ошибка создания вопросов:', error);
+            showError('Не удалось создать вопросы');
         }
     }
 
@@ -3732,6 +3771,16 @@ const mainApp = (function() {
         }
         return parsedQs.filter(q => q.options.some(opt => opt.isCorrect) && q.options.length > 1);
     }
+
+
+
+
+
+
+
+
+
+
 
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
         let sourceArray;
