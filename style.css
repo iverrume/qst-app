@@ -3621,6 +3621,6 @@ button[onclick*="copyToClipboard"].copied:after {
         /* Уменьшаем внутренние отступы (делаем кнопку уже) */
         padding: 5px 6px;
         /* Немного уменьшаем размер самой иконки (был 1.3em) */
-        font-size: 1.1em;
+        font-size: 1.3em;
     }
 }
