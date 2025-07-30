@@ -1155,7 +1155,7 @@ const ChatModule = (function() {
                             if (copyBtn) {
                                 copyBtn.onclick = () => ChatModule.copyQuestionAsQst(contentData);
                             }
-                            
+
                         } else {
                             renderedElement = createMessageElement(contentData);
                         }
@@ -2943,6 +2943,7 @@ const mainApp = (function() {
     const searchDropdownContent = getEl('searchDropdownContent');
     const chatToggleBtn = getEl('chatToggle');
     const languageToggle = getEl('languageToggle');
+    const copyQuestionBtnQuiz = getEl('copyQuestionBtnQuiz');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -3053,6 +3054,7 @@ const mainApp = (function() {
         prevQuestionButton.addEventListener('click', loadPreviousQuestion);
         restartButton.addEventListener('click', resetQuizForNewFile);
         downloadErrorsButton.addEventListener('click', downloadErrorFile);
+        copyQuestionBtnQuiz?.addEventListener('click', handleCopyQuestionInQuiz);
         reviewErrorsButton?.addEventListener('click', startErrorReviewQuiz);
         generateCheatSheetButton?.addEventListener('click', handleGenerateCheatSheet);
         downloadCheatSheetButton?.addEventListener('click', handleDownloadOrShareCheatSheet);
@@ -4219,6 +4221,7 @@ const mainApp = (function() {
         generateQuickNav();
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
+        copyQuestionBtnQuiz?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         languageToggle?.classList.add('hidden');
         quickModeToggle?.classList.remove('hidden');
@@ -4380,6 +4383,7 @@ const mainApp = (function() {
         resultsArea.classList.remove('hidden');
         webSearchDropdown?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
+        copyQuestionBtnQuiz?.classList.add('hidden');
         finalCorrectEl.textContent = score;
         finalTotalEl.textContent = questionsForCurrentQuiz.length;
         const percentage = questionsForCurrentQuiz.length > 0 ? ((score / questionsForCurrentQuiz.length) * 100).toFixed(1) : 0;
@@ -4470,6 +4474,7 @@ const mainApp = (function() {
         quickNavPanel?.classList.add('hidden');
         feedbackDownloadArea?.classList.add('hidden');
         errorReviewArea?.classList.add('hidden');
+        copyQuestionBtnQuiz?.classList.add('hidden');
         triggeredQuizDownloadArea?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
@@ -4562,6 +4567,23 @@ const mainApp = (function() {
         setLanguage(newLang);
     }
 
+    function handleCopyQuestionInQuiz() {
+        if (currentQuestionIndex >= questionsForCurrentQuiz.length) {
+            alert("Не удалось определить текущий вопрос для копирования.");
+            return;
+        }
+
+        const questionData = questionsForCurrentQuiz[currentQuestionIndex];
+        
+        // Форматируем в .qst формат
+        let qstContent = `? ${questionData.text}\n`;
+        questionData.options.forEach(opt => {
+            qstContent += `${opt.isCorrect ? '+' : '-'} ${opt.text}\n`;
+        });
+
+        // Используем вашу глобальную функцию для копирования
+        copyToClipboardMain(qstContent.trim());
+    }
 
 
     function handleFavoriteClickInQuiz() {
