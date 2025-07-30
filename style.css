@@ -3757,3 +3757,38 @@ button[onclick*="copyToClipboard"].copied:after {
     width: 100%;
     margin-top: 10px;
 }
+
+/* --- НАЧАЛО НОВОГО КОДА: Компактный вид хедера чата на мобильных --- */
+@media (max-width: 768px) {
+
+    /* 1. Уменьшаем высоту ОСНОВНОЙ шапки (синей/темной) */
+    .advanced-chat-header {
+        /* Уменьшаем вертикальные отступы (было 15px) */
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    /* 2. Уменьшаем высоту ВТОРОЙ шапки (с названием канала и поиском) */
+    .chat-top-bar {
+        /* Уменьшаем вертикальные отступы (было 15px) */
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    /* 3. (Опционально) Немного уменьшаем заголовок и кнопки для гармонии */
+    .advanced-chat-header .chat-title h3 {
+        font-size: 1.2em; /* Был 1.4em */
+    }
+
+    .advanced-chat-header .header-controls button,
+    .advanced-chat-header #currentUser {
+         padding: 6px 10px; /* Было 8px 12px */
+         font-size: 0.9em;
+    }
+    
+    #chatSearchInput {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+}
+/* --- КОНЕЦ НОВОГО КОДА --- */
