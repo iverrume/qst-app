@@ -2582,7 +2582,7 @@ const ChatModule = (function() {
          try {
             alert('Загрузка теста...');
             closeModal('fileActionsModal');
-            closeChatModal(); // Закрываем чат
+            ChatModule.closeChatModal(); // Закрываем чат
 
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
             const response = await fetch(url);
