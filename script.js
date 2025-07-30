@@ -2480,12 +2480,11 @@ const ChatModule = (function() {
         document.getElementById('chatFileInput')?.click();
     }
 
-
-
     function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
+        // Проверка расширения
         const allowedExtensions = ['.qst', '.txt'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
@@ -2497,22 +2496,21 @@ const ChatModule = (function() {
         reader.onload = async (e) => {
             const fileContent = e.target.result;
             
+            // Показываем индикатор загрузки
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
             sendBtn.classList.add('loading');
             sendBtn.innerHTML = ''; 
 
             try {
+                // 1. Парсим файл, чтобы посчитать вопросы
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
-                // 1. Отправляем файл на сервер
+                // 2. Отправляем файл на сервер для сохранения
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    // Мы больше не используем 'no-cors', чтобы иметь возможность прочитать ответ
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    mode: 'no-cors', // Важно для обхода CORS
                     body: JSON.stringify({
                         action: 'chatFileUpload',
                         fileName: file.name,
@@ -2520,32 +2518,44 @@ const ChatModule = (function() {
                     })
                 });
 
-                // 2. Получаем и обрабатываем ответ от сервера НАПРЯМУЮ
-                const responseData = await response.json();
-
-                if (responseData.success && responseData.fileId) {
-                    // 3. Успех! Отправляем сообщение в чат с полученным ID
-                    await sendFileMessage(file.name, responseData.fileId, questionCount);
-                } else {
-                    // Если сервер вернул ошибку, показываем ее
-                    throw new Error(responseData.error || 'Сервер не вернул ID файла.');
-                }
+                // Так как mode='no-cors', мы не можем прочитать ответ напрямую.
+                // Вместо этого, делаем повторный запрос, чтобы получить ID файла.
+                // Это обходной путь для Google Apps Script.
+                 setTimeout(async () => {
+                    try {
+                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`);
+                        const fileData = await checkResponse.json();
+                        
+                        if(fileData.success && fileData.fileId){
+                            // 3. Отправляем сообщение в чат с информацией о файле
+                            await sendFileMessage(file.name, fileData.fileId, questionCount);
+                        } else {
+                            throw new Error(fileData.error || 'Не удалось получить ID файла после загрузки.');
+                        }
+                    } catch(error) {
+                        console.error("Ошибка получения ID файла: ", error);
+                        showError("Не удалось отправить файл.");
+                    } finally {
+                        // Возвращаем кнопку в нормальное состояние
+                        sendBtn.disabled = false;
+                        sendBtn.classList.remove('loading');
+                        sendBtn.innerHTML = '➤';
+                    }
+                }, 2000); // Даем серверу время на обработку
 
             } catch (error) {
                 console.error('Ошибка при обработке файла чата:', error);
-                // Показываем более детальную ошибку пользователю
-                showError('Не удалось отправить файл: ' + error.message);
-            } finally {
-                // 4. Возвращаем кнопку в нормальное состояние в любом случае
+                showError('Не удалось обработать файл.');
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
             }
         };
         reader.readAsText(file, 'UTF-8');
+
+        // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл еще раз
         event.target.value = '';
     }
-
 
     async function sendFileMessage(fileName, fileId, questionCount) {
         if (!currentUser || !db) return;
@@ -4907,137 +4917,64 @@ const mainApp = (function() {
     }
 
 
+    // --- НАЧАЛО НОВОГО КОДА: ДВИЖОК ПАРСЕРА ---
 
     const PARSER_PATTERNS = [
         {
-            id: 'multi_format',
-            name: 'Мультиформатный режим (для смешанных файлов)',
-            // Этот режим особенный, у него нет детектора, он работает со всеми блоками
-            processor: (text) => {
-                const allParsedQuestions = [];
-                // Делим весь текст на блоки по одной или нескольким пустым строкам
-                const blocks = text.split(/\n\s*\n/).filter(b => b.trim() !== '');
-                // Получаем все "простые" паттерны, кроме этого
-                const availablePatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
-
-                for (const block of blocks) {
-                    let parsedBlock = null;
-                    // Для каждого блока пытаемся найти подходящий "простой" паттерн
-                    for (const pattern of availablePatterns) {
-                        if (pattern.detector && pattern.detector(block)) {
-                            const result = pattern.processor(block);
-                            if (result && result.length > 0) {
-                                // Успех! Берем первый распознанный вопрос из блока
-                                parsedBlock = result[0];
-                                break; // Переходим к следующему блоку
-                            }
-                        }
-                    }
-
-                    if (parsedBlock) {
-                        allParsedQuestions.push(parsedBlock);
-                    } else {
-                        // Если ни один паттерн не подошел, выводим предупреждение в консоль
-                        console.warn("Парсер не смог распознать блок:", block);
-                    }
-                }
-                return allParsedQuestions;
-            }
-        },
-        {
-            id: 'plus_minus_start',
-            name: 'Формат: "+/-" в начале строк ответов',
-            detector: (text) => /^\s*[\+\-]/m.test(text),
+            id: 'plus_at_start',
+            name: 'Формат: Ответ с "+" в начале строки',
+            // Ищет блок, где есть хотя бы одна строка, начинающаяся с "+"
+            detector: (text) => text.split('\n').some(line => line.trim().startsWith('+')),
             processor: (text) => {
                 const questions = [];
-                const lines = text.trim().split('\n').filter(l => l.trim() !== '');
-                if (lines.length < 2) return [];
+                const blocks = text.split(/\n\s*\n/); // Делим по пустым строкам
+                for (const block of blocks) {
+                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
+                    if (lines.length < 2) continue;
 
-                const questionLines = [];
-                const optionLines = [];
-                let correctAnswer = null;
+                    const questionLines = [];
+                    const optionLines = [];
+                    let correctAnswer = null;
 
-                lines.forEach(line => {
-                    const trimmedLine = line.trim();
-                    if (trimmedLine.startsWith('+')) {
-                        const answer = trimmedLine.substring(1).trim();
-                        correctAnswer = answer;
-                        optionLines.push(answer);
-                    } else if (trimmedLine.startsWith('-')) {
-                        optionLines.push(trimmedLine.substring(1).trim());
-                    } else {
-                        // Всё, что не начинается с +/-, считаем частью вопроса
-                        questionLines.push(trimmedLine.replace(/^\?\s*/, ''));
-                    }
-                });
-
-                if (questionLines.length > 0 && correctAnswer) {
-                    questions.push({
-                        text: questionLines.join(' '),
-                        options: optionLines,
-                        correctAnswer: correctAnswer
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine.startsWith('+')) {
+                            correctAnswer = trimmedLine.substring(1).trim();
+                            optionLines.push(correctAnswer);
+                        } else if (/^[a-zA-Zа-яА-Я0-9]/.test(trimmedLine) && correctAnswer !== null) {
+                            optionLines.push(trimmedLine);
+                        } else {
+                            questionLines.push(trimmedLine);
+                        }
                     });
+
+                    if (questionLines.length > 0 && correctAnswer) {
+                        questions.push({
+                            text: questionLines.join(' '),
+                            options: optionLines,
+                            correctAnswer: correctAnswer
+                        });
+                    }
                 }
                 return questions;
             }
         },
         {
-            id: 'plus_at_end',
-            name: 'Формат: Ответ с "+" в конце строки',
-            detector: (text) => /\+\s*$/m.test(text),
-            processor: (text) => {
-                 const questions = [];
-                 const lines = text.trim().split('\n').filter(l => l.trim() !== '');
-                 if (lines.length < 2) return [];
-
-                 const questionLines = [];
-                 const optionLines = [];
-                 let correctAnswer = null;
-                 
-                 let optionsStarted = false;
-                 lines.forEach(line => {
-                    const trimmedLine = line.trim();
-                    // Считаем, что опции начинаются с первой строки с отступом или с + в конце
-                    if (trimmedLine.endsWith('+') || (!optionsStarted && /^\s/.test(line))) {
-                        optionsStarted = true;
-                    }
-
-                    if (optionsStarted) {
-                        const cleanLine = trimmedLine.replace(/\+\s*$/, '').trim();
-                        optionLines.push(cleanLine);
-                        if(trimmedLine.endsWith('+')) {
-                            correctAnswer = cleanLine;
-                        }
-                    } else {
-                        // Убираем нумерацию в начале строки вопроса, если она есть
-                        questionLines.push(trimmedLine.replace(/^\d+\s*[.)]?\s*/, ''));
-                    }
-                 });
-                 
-                 if (questionLines.length > 0 && correctAnswer) {
-                    questions.push({
-                        text: questionLines.join(' '),
-                        options: optionLines,
-                        correctAnswer: correctAnswer
-                    });
-                 }
-                 return questions;
-            }
-        },
-        {
             id: 'tags_vopros_variant',
             name: 'Формат: теги <Вопрос> и <вариант>',
-            detector: (text) => /<вопрос>|<вариант>/i.test(text),
+            detector: (text) => /<Вопрос>|<вариант>/i.test(text),
             processor: (text) => {
                 const questions = [];
-                const cleanedText = text.replace(/^\s*\d+\s*\.?\s*/gm, '');
-                const blocks = cleanedText.split(/<вопрос>/i).filter(b => b.trim() !== '');
+                // Убираем нумерацию типа "1. <Вопрос>" или "2 <Вопрос>"
+                const cleanedText = text.replace(/^\s*\d+\s*\.?\s*</gm, '<');
+                const blocks = cleanedText.split(/<Вопрос>/i).filter(b => b.trim() !== '');
 
                 for (const block of blocks) {
                     const parts = block.split(/<вариант>/i).map(p => p.trim());
                     if (parts.length < 2) continue;
 
                     const questionText = parts.shift();
+                    // Примечание: правильный ответ не указан, берем первый
                     questions.push({
                         text: questionText,
                         options: parts,
@@ -5053,11 +4990,11 @@ const mainApp = (function() {
             detector: (text) => /<question|<variant>/i.test(text),
             processor: (text) => {
                 const questions = [];
-                const cleanedText = text.replace(/^\s*\d+\s*\.?\s*/gm, '');
+                const cleanedText = text.replace(/^\s*\d+\s*\.?\s*</gm, '<');
                 const blocks = cleanedText.split(/<question.*?>/i).filter(b => b.trim() !== '');
 
                 for (const block of blocks) {
-                    const parts = block.split(/<variant>/i).map(p => p.trim().replace(/<\/?[^>]+(>|$)/g, ""));
+                    const parts = block.split(/<variant>/i).map(p => p.trim().replace(/<\/?[^>]+(>|$)/g, "")); // Удаляем другие теги
                     if (parts.length < 2) continue;
                     
                     const questionText = parts.shift();
@@ -5071,8 +5008,6 @@ const mainApp = (function() {
             }
         }
     ];
-
-
 
     function populateParserPatterns() {
         PARSER_PATTERNS.forEach(pattern => {
@@ -5094,7 +5029,6 @@ const mainApp = (function() {
         reader.readAsText(file, 'UTF-8');
     }
 
- 
     function runParser() {
         const text = parserInput.value.trim();
         if (!text) {
@@ -5103,33 +5037,41 @@ const mainApp = (function() {
         }
 
         const selectedPatternId = parserPatternSelect.value;
-        const pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
+        let pattern;
+
+        if (selectedPatternId === 'auto') {
+            // Логика автоопределения
+            pattern = PARSER_PATTERNS.find(p => p.detector(text));
+            if (pattern) {
+                alert(`Автоматически определен формат: "${pattern.name}"`);
+                parserPatternSelect.value = pattern.id;
+            } else {
+                alert("Не удалось автоматически определить формат. Пожалуйста, выберите вручную.");
+                return;
+            }
+        } else {
+            pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
+        }
 
         if (!pattern) {
-            alert("Произошла ошибка. Пожалуйста, выберите формат из списка.");
+            alert("Произошла ошибка. Выбранный паттерн не найден.");
             return;
         }
 
         const parsedQuestions = pattern.processor(text);
 
         if (parsedQuestions.length === 0) {
-            alert("Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой формат или проверьте текст.");
+            alert("Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой.");
             return;
         }
 
         // Конвертируем в .qst формат
         let qstResult = '';
         parsedQuestions.forEach(q => {
-            // Убираем переносы строк из текста вопроса и опций
-            const questionText = q.text.replace(/\s+/g, ' ').trim();
-            qstResult += `? ${questionText}\n`;
-            
+            qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
             q.options.forEach(opt => {
-                const optionText = opt.replace(/\s+/g, ' ').trim();
-                if (optionText) { // Добавляем опцию, только если она не пустая
-                    const prefix = (optionText === q.correctAnswer.replace(/\s+/g, ' ').trim()) ? '+' : '-';
-                    qstResult += `${prefix} ${optionText}\n`;
-                }
+                const prefix = (opt === q.correctAnswer) ? '+' : '-';
+                qstResult += `${prefix} ${opt.replace(/\n/g, ' ')}\n`;
             });
             qstResult += '\n';
         });
@@ -5138,7 +5080,6 @@ const mainApp = (function() {
         parserOutputArea.classList.remove('hidden');
         alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
     }
- 
 
     async function downloadParsedQst() {
         const content = parserOutput.value;
