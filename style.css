@@ -3716,3 +3716,44 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 /* --- КОНЕЦ НОВЫХ СТИЛЕЙ --- */
+
+/* --- СТИЛИ ДЛЯ ПАРСЕРА --- */
+#parserArea {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#parserArea textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    font-family: monospace;
+    border: 1px solid var(--input-border-color);
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    margin-top: 10px;
+    line-height: 1.4;
+    resize: vertical;
+}
+
+#parserArea .settings-group {
+    border-bottom: 1px dashed var(--dashed-border-color);
+}
+
+#runParserBtn {
+    background-color: var(--button-success-bg);
+    width: 50%;
+}
+#runParserBtn:hover {
+    background-color: var(--button-success-hover-bg);
+}
+
+#parserOutputArea h3 {
+    text-align: center;
+}
+
+#downloadParsedBtn {
+    width: 100%;
+    margin-top: 10px;
+}

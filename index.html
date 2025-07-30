@@ -69,6 +69,13 @@
                     <span data-lang-key="gradus_button">GRADUS</span>
                     <span class="gradus-subtitle">(General Repository for Academic Data, Utility & Structure)</span>
                 </button>
+
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                <button id="parserButton" style="width: 100%; background-color: #17a2b8; color: white;">
+                    <span>⚙️ Парсер</span>
+                    <span class="gradus-subtitle">(Конвертировать текст в формат .qst)</span>
+                </button>
+              
                 <div id="recentFilesArea" class="hidden">
                     <h4 data-lang-key="recent_files">Недавно использованные:</h4>
                     <ul id="recentFilesList"></ul>
@@ -177,6 +184,41 @@
                 </div>
                 <button id="restartButton">Пройти другой тест</button>
             </div>
+
+
+            <div id="parserArea" class="hidden">
+                <h2>Конвертер в .qst</h2>
+                <p style="text-align: center; color: var(--secondary-text-color);">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
+
+                <div class="settings-group">
+                    <label for="parserFileInput">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+                    <input type="file" id="parserFileInput" accept=".txt">
+                    <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..."></textarea>
+                </div>
+
+                <div class="settings-group">
+                    <label for="parserPatternSelect">2. Выберите формат (или оставьте для автоопределения):</label>
+                    <select id="parserPatternSelect" style="width: 100%; padding: 8px; border-radius: 4px;">
+                        <option value="auto" selected>-- Автоматическое определение --</option>
+                        <!-- Сюда будут добавляться паттерны из JS -->
+                    </select>
+                </div>
+                
+                <div class="settings-group" style="text-align: center;">
+                    <button id="runParserBtn">3. Конвертировать</button>
+                </div>
+
+                <div id="parserOutputArea" class="hidden">
+                    <hr>
+                    <h3>Результат:</h3>
+                    <textarea id="parserOutput" readonly rows="10"></textarea>
+                    <button id="downloadParsedBtn">Скачать .qst файл</button>
+                </div>
+
+                <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);">Назад</button>
+            </div>
+
+
         </div>
 
         

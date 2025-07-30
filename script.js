@@ -3140,6 +3140,16 @@ const mainApp = (function() {
     const chatToggleBtn = getEl('chatToggle');
     const languageToggle = getEl('languageToggle');
     const copyQuestionBtnQuiz = getEl('copyQuestionBtnQuiz');
+    const parserArea = getEl('parserArea');
+    const parserButton = getEl('parserButton');
+    const backToMainFromParserBtn = getEl('backToMainFromParserBtn');
+    const parserFileInput = getEl('parserFileInput');
+    const parserInput = getEl('parserInput');
+    const parserPatternSelect = getEl('parserPatternSelect');
+    const runParserBtn = getEl('runParserBtn');
+    const parserOutputArea = getEl('parserOutputArea');
+    const parserOutput = getEl('parserOutput');
+    const downloadParsedBtn = getEl('downloadParsedBtn');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -3222,6 +3232,7 @@ const mainApp = (function() {
         resetQuizForNewFile();
 
         const savedLang = localStorage.getItem('appLanguage') || 'ru';
+        populateParserPatterns();
         setLanguage(savedLang);
     }
 
@@ -3255,6 +3266,22 @@ const mainApp = (function() {
                 searchDropdownContent.classList.remove('show');
             }
         });
+
+        // Внутри функции setupEventListeners()
+        parserButton?.addEventListener('click', () => {
+            fileUploadArea.classList.add('hidden');
+            parserArea.classList.remove('hidden');
+        });
+
+        backToMainFromParserBtn?.addEventListener('click', () => {
+            parserArea.classList.add('hidden');
+            fileUploadArea.classList.remove('hidden');
+        });
+
+        parserFileInput?.addEventListener('change', handleParserFileInput);
+        runParserBtn?.addEventListener('click', runParser);
+        downloadParsedBtn?.addEventListener('click', downloadParsedQst);
+
         nextButton.addEventListener('click', handleNextButtonClick);
         prevQuestionButton.addEventListener('click', loadPreviousQuestion);
         restartButton.addEventListener('click', resetQuizForNewFile);
@@ -4862,6 +4889,177 @@ const mainApp = (function() {
     }
 
 
+    // --- НАЧАЛО НОВОГО КОДА: ДВИЖОК ПАРСЕРА ---
+
+    const PARSER_PATTERNS = [
+        {
+            id: 'plus_at_start',
+            name: 'Формат: Ответ с "+" в начале строки',
+            // Ищет блок, где есть хотя бы одна строка, начинающаяся с "+"
+            detector: (text) => text.split('\n').some(line => line.trim().startsWith('+')),
+            processor: (text) => {
+                const questions = [];
+                const blocks = text.split(/\n\s*\n/); // Делим по пустым строкам
+                for (const block of blocks) {
+                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
+                    if (lines.length < 2) continue;
+
+                    const questionLines = [];
+                    const optionLines = [];
+                    let correctAnswer = null;
+
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine.startsWith('+')) {
+                            correctAnswer = trimmedLine.substring(1).trim();
+                            optionLines.push(correctAnswer);
+                        } else if (/^[a-zA-Zа-яА-Я0-9]/.test(trimmedLine) && correctAnswer !== null) {
+                            optionLines.push(trimmedLine);
+                        } else {
+                            questionLines.push(trimmedLine);
+                        }
+                    });
+
+                    if (questionLines.length > 0 && correctAnswer) {
+                        questions.push({
+                            text: questionLines.join(' '),
+                            options: optionLines,
+                            correctAnswer: correctAnswer
+                        });
+                    }
+                }
+                return questions;
+            }
+        },
+        {
+            id: 'tags_vopros_variant',
+            name: 'Формат: теги <Вопрос> и <вариант>',
+            detector: (text) => /<Вопрос>|<вариант>/i.test(text),
+            processor: (text) => {
+                const questions = [];
+                // Убираем нумерацию типа "1. <Вопрос>" или "2 <Вопрос>"
+                const cleanedText = text.replace(/^\s*\d+\s*\.?\s*</gm, '<');
+                const blocks = cleanedText.split(/<Вопрос>/i).filter(b => b.trim() !== '');
+
+                for (const block of blocks) {
+                    const parts = block.split(/<вариант>/i).map(p => p.trim());
+                    if (parts.length < 2) continue;
+
+                    const questionText = parts.shift();
+                    // Примечание: правильный ответ не указан, берем первый
+                    questions.push({
+                        text: questionText,
+                        options: parts,
+                        correctAnswer: parts[0]
+                    });
+                }
+                return questions;
+            }
+        },
+        {
+            id: 'tags_question_variant',
+            name: 'Формат: теги <question> и <variant>',
+            detector: (text) => /<question|<variant>/i.test(text),
+            processor: (text) => {
+                const questions = [];
+                const cleanedText = text.replace(/^\s*\d+\s*\.?\s*</gm, '<');
+                const blocks = cleanedText.split(/<question.*?>/i).filter(b => b.trim() !== '');
+
+                for (const block of blocks) {
+                    const parts = block.split(/<variant>/i).map(p => p.trim().replace(/<\/?[^>]+(>|$)/g, "")); // Удаляем другие теги
+                    if (parts.length < 2) continue;
+                    
+                    const questionText = parts.shift();
+                    questions.push({
+                        text: questionText,
+                        options: parts,
+                        correctAnswer: parts[0]
+                    });
+                }
+                return questions;
+            }
+        }
+    ];
+
+    function populateParserPatterns() {
+        PARSER_PATTERNS.forEach(pattern => {
+            const option = document.createElement('option');
+            option.value = pattern.id;
+            option.textContent = pattern.name;
+            parserPatternSelect.appendChild(option);
+        });
+    }
+
+    function handleParserFileInput(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            parserInput.value = e.target.result;
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
+
+    function runParser() {
+        const text = parserInput.value.trim();
+        if (!text) {
+            alert("Поле для ввода текста пустое!");
+            return;
+        }
+
+        const selectedPatternId = parserPatternSelect.value;
+        let pattern;
+
+        if (selectedPatternId === 'auto') {
+            // Логика автоопределения
+            pattern = PARSER_PATTERNS.find(p => p.detector(text));
+            if (pattern) {
+                alert(`Автоматически определен формат: "${pattern.name}"`);
+                parserPatternSelect.value = pattern.id;
+            } else {
+                alert("Не удалось автоматически определить формат. Пожалуйста, выберите вручную.");
+                return;
+            }
+        } else {
+            pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
+        }
+
+        if (!pattern) {
+            alert("Произошла ошибка. Выбранный паттерн не найден.");
+            return;
+        }
+
+        const parsedQuestions = pattern.processor(text);
+
+        if (parsedQuestions.length === 0) {
+            alert("Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой.");
+            return;
+        }
+
+        // Конвертируем в .qst формат
+        let qstResult = '';
+        parsedQuestions.forEach(q => {
+            qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
+            q.options.forEach(opt => {
+                const prefix = (opt === q.correctAnswer) ? '+' : '-';
+                qstResult += `${prefix} ${opt.replace(/\n/g, ' ')}\n`;
+            });
+            qstResult += '\n';
+        });
+
+        parserOutput.value = qstResult.trim();
+        parserOutputArea.classList.remove('hidden');
+        alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
+    }
+
+    async function downloadParsedQst() {
+        const content = parserOutput.value;
+        if (!content) return;
+        await downloadOrShareFile('parsed_test.qst', content, 'text/plain;charset=utf-8', 'Сконвертированный тест');
+    }
+
+    // --- КОНЕЦ НОВОГО КОДА ---
 
 
 
