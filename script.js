@@ -458,6 +458,7 @@ const ChatModule = (function() {
         document.getElementById('emojiBtn')?.addEventListener('click', function() { showEmojiPicker(this) });
         document.getElementById('questionBtn')?.addEventListener('click', () => showModal('questionCreateModal'));
         document.getElementById('createChannelBtn')?.addEventListener('click', () => showModal('channelCreateModal'));
+        // Внутри функции setupEventListeners() в ChatModule
         document.getElementById('uploadFileBtn')?.addEventListener('click', handleChatFileUploadTrigger);
         document.getElementById('chatFileInput')?.addEventListener('change', handleChatFileSelected);
 
@@ -894,8 +895,6 @@ const ChatModule = (function() {
         if (message.replyTo) {
             replyHTML = `<div class="reply-context" onclick="ChatModule.scrollToMessage('${message.replyTo.messageId}')"><div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div><div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div></div>`;
         }
-
-
 
         let contentHTML = '';
         // --- НАЧАЛО ИЗМЕНЕНИЙ ---
@@ -2476,16 +2475,17 @@ const ChatModule = (function() {
 
 
 
+    // --- НАЧАЛО НОВОГО КОДА: Функционал файлов в чате ---
+
     function handleChatFileUploadTrigger() {
         document.getElementById('chatFileInput')?.click();
     }
 
-
- 
-    async function handleChatFileSelected(event) {
+    function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
+        // Проверка расширения
         const allowedExtensions = ['.qst', '.txt'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
@@ -2497,68 +2497,66 @@ const ChatModule = (function() {
         reader.onload = async (e) => {
             const fileContent = e.target.result;
             
+            // Показываем индикатор загрузки
             const sendBtn = document.getElementById('sendBtn');
             sendBtn.disabled = true;
             sendBtn.classList.add('loading');
             sendBtn.innerHTML = ''; 
 
             try {
+                // 1. Парсим файл, чтобы посчитать вопросы
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
-                // --- НАЧАЛО ИЗМЕНЕНИЙ: Двухэтапная загрузка ---
-
-                // Этап 1: Отправляем файл "вслепую" (fire-and-forget), чтобы обойти проблему с редиректом.
-                // Мы не ждем ответа, поэтому ошибки CORS не будет.
-                await fetch(googleAppScriptUrl, {
+                // 2. Отправляем файл на сервер для сохранения
+                const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // Важно! Говорим браузеру не ждать ответа.
-                    headers: {
-                      'Content-Type': 'text/plain;charset=utf-8',
-                    },
+                    mode: 'no-cors', // Важно для обхода CORS
                     body: JSON.stringify({
                         action: 'chatFileUpload',
                         fileName: file.name,
                         content: fileContent
                     })
                 });
-                
-                // Даем серверу небольшую паузу на создание файла
-                await new Promise(resolve => setTimeout(resolve, 2000));
 
-                // Этап 2: Делаем простой GET-запрос, чтобы получить ID созданного файла.
-                const getInfoUrl = `${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`;
-                const response = await fetch(getInfoUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Ошибка сети при получении ID файла: ${response.statusText}`);
-                }
-
-                const fileData = await response.json();
-
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
-                if (fileData.success && fileData.fileId) {
-                    await sendFileMessage(file.name, fileData.fileId, questionCount);
-                } else {
-                    throw new Error(fileData.error || 'Не удалось получить ID файла после загрузки.');
-                }
+                // Так как mode='no-cors', мы не можем прочитать ответ напрямую.
+                // Вместо этого, делаем повторный запрос, чтобы получить ID файла.
+                // Это обходной путь для Google Apps Script.
+                 setTimeout(async () => {
+                    try {
+                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`);
+                        const fileData = await checkResponse.json();
+                        
+                        if(fileData.success && fileData.fileId){
+                            // 3. Отправляем сообщение в чат с информацией о файле
+                            await sendFileMessage(file.name, fileData.fileId, questionCount);
+                        } else {
+                            throw new Error(fileData.error || 'Не удалось получить ID файла после загрузки.');
+                        }
+                    } catch(error) {
+                        console.error("Ошибка получения ID файла: ", error);
+                        showError("Не удалось отправить файл.");
+                    } finally {
+                        // Возвращаем кнопку в нормальное состояние
+                        sendBtn.disabled = false;
+                        sendBtn.classList.remove('loading');
+                        sendBtn.innerHTML = '➤';
+                    }
+                }, 2000); // Даем серверу время на обработку
 
             } catch (error) {
-                console.error('Ошибка при обработке или загрузке файла чата:', error);
-                showError(`Не удалось обработать файл: ${error.message}`);
-            } finally {
+                console.error('Ошибка при обработке файла чата:', error);
+                showError('Не удалось обработать файл.');
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
             }
         };
-        
         reader.readAsText(file, 'UTF-8');
+
+        // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл еще раз
         event.target.value = '';
     }
-
-
 
     async function sendFileMessage(fileName, fileId, questionCount) {
         if (!currentUser || !db) return;
@@ -2612,7 +2610,6 @@ const ChatModule = (function() {
             alert('Загрузка теста...');
             closeModal('fileActionsModal');
             ChatModule.closeChatModal(); // Закрываем чат
-
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
             const response = await fetch(url);
             const data = await response.json();
@@ -2627,6 +2624,7 @@ const ChatModule = (function() {
         }
     }
 
+    // --- КОНЕЦ НОВОГО КОДА ---
 
 
 
