@@ -3588,3 +3588,15 @@ button[onclick*="copyToClipboard"].copied:after {
     font-size: 1.0em; /* Немного увеличим размер эмодзи */
     padding: 4px; /* Можно слегка подогнать отступы */
 }
+
+
+
+.question-actions .copy-question-btn {
+    background: linear-gradient(135deg, #3498db, #2980b9); /* Синий градиент */
+    color: white;
+}
+
+.question-actions .copy-question-btn:hover {
+    background: linear-gradient(135deg, #2980b9, #3498db);
+}
+

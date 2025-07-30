@@ -1028,6 +1028,12 @@ const ChatModule = (function() {
                 // Назначаем безопасный обработчик клика, который использует объект выше
                 favButton.onclick = () => ChatModule.addToFavorites(itemToSave, 'question');
             }
+
+                        const copyBtn = questionEl.querySelector('.copy-question-btn');
+            if (copyBtn) {
+                // Назначаем обработчик, передавая весь объект вопроса
+                copyBtn.onclick = () => ChatModule.copyQuestionAsQst(question);
+            }
             // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
             messageArea.appendChild(questionEl);
@@ -1070,7 +1076,10 @@ const ChatModule = (function() {
 
             const totalVotes = question.options.reduce((sum, opt) => sum + (Array.isArray(opt.votedBy) ? opt.votedBy.length : 0), 0);
             
-            let actionsHTML = `<button class="add-to-favorites-btn">⭐ В избранное</button>`;
+            let actionsHTML = `
+                <button class="add-to-favorites-btn">⭐ В избранное</button>
+                <button class="copy-question-btn">📋 Копировать</button> 
+            `;
 
             if (currentUser && question.authorId === currentUser?.uid) {
                 actionsHTML += `<button class="delete-question-btn" onclick="ChatModule.deleteQuestion('${question.id}')">🗑️ Удалить вопрос</button>`;
@@ -1140,6 +1149,13 @@ const ChatModule = (function() {
                             const addToFavBtn = renderedElement.querySelector('.add-to-favorites-btn');
                             if (addToFavBtn) addToFavBtn.remove();
 
+
+
+                            const copyBtn = renderedElement.querySelector('.copy-question-btn');
+                            if (copyBtn) {
+                                copyBtn.onclick = () => ChatModule.copyQuestionAsQst(contentData);
+                            }
+                            
                         } else {
                             renderedElement = createMessageElement(contentData);
                         }
@@ -2650,8 +2666,33 @@ const ChatModule = (function() {
 
 
 
+    async function copyQuestionAsQst(questionObject) {
+        if (!questionObject || !questionObject.text || !Array.isArray(questionObject.options)) {
+            console.error("Некорректные данные для копирования вопроса.");
+            return;
+        }
 
-    // === КОНЕЦ НОВЫХ ФУНКЦИЙ ===
+        // 1. Форматируем данные в .qst формат
+        let qstContent = `? ${questionObject.text}\n`;
+        questionObject.options.forEach(opt => {
+            qstContent += `${opt.isCorrect ? '+' : '-'} ${opt.text}\n`;
+        });
+
+        // 2. Используем функцию копирования из mainApp
+        try {
+            // Используем вашу глобальную функцию для копирования
+            await copyToClipboardMain(qstContent);
+            // Уведомление для пользователя уже встроено в copyToClipboardMain
+        } catch (error) {
+            console.error('Ошибка копирования вопроса:', error);
+            alert('Не удалось скопировать вопрос.');
+        }
+    }
+
+
+
+
+
     
     // ========== PUBLIC METHODS ==========
     return {
@@ -2719,6 +2760,7 @@ const ChatModule = (function() {
         startPrivateChat,
         uploadFileToServer,
         removeUserFromChannel,
+        copyQuestionAsQst,
         voteForFavoriteOption, 
         
         // Getters
