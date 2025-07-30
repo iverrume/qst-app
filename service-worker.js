@@ -61,18 +61,25 @@ self.addEventListener('activate', (event) => {
 // Событие 'fetch' (перехват запросов).
 // Это сердце Service Worker. Он перехватывает ВСЕ запросы с вашего сайта.
 self.addEventListener('fetch', (event) => {
-  // Мы применяем стратегию "Cache first" (сначала кеш).
+  const requestUrl = new URL(event.request.url);
+
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+  // Проверяем, является ли запрос API-вызовом к Google Apps Script.
+  if (requestUrl.hostname === 'script.google.com') {
+    // Если да, то НЕ обрабатываем его через кеш.
+    // Просто позволяем запросу уйти в сеть напрямую, как будто Service Worker'а нет.
+    // Явный return; без event.respondWith() - это правильный способ "пропустить" запрос.
+    return; 
+  }
+  // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+  // Для всех остальных запросов (наш собственный сайт) используем старую логику "сначала кеш".
   event.respondWith(
-    // Пытаемся найти ответ на этот запрос в нашем кеше.
     caches.match(event.request)
       .then((cachedResponse) => {
-        // Если ответ нашелся в кеше - отдаем его.
-        // Это и обеспечивает офлайн-работу и быструю загрузку.
         if (cachedResponse) {
           return cachedResponse;
         }
-
-        // Если в кеше ничего нет - делаем обычный запрос в интернет.
         return fetch(event.request);
       })
   );
