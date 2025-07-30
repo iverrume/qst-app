@@ -136,7 +136,7 @@ body {
 
 .header-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 15px;
 }
@@ -147,7 +147,6 @@ body {
     font-size: 1.5em;
     line-height: 1.2;
     margin-right: 10px;
-    flex-grow: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
