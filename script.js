@@ -2480,14 +2480,12 @@ const ChatModule = (function() {
         document.getElementById('chatFileInput')?.click();
     }
 
-    
 
-    // ЗАМЕНИТЕ ВСЮ ФУНКЦИЮ НА ЭТОТ КОД
+ 
     async function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Проверка расширения
         const allowedExtensions = ['.qst', '.txt'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
@@ -2505,21 +2503,19 @@ const ChatModule = (function() {
             sendBtn.innerHTML = ''; 
 
             try {
-                // 1. Сначала парсим локально, чтобы получить количество вопросов
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
-                // 2. Отправляем файл на сервер ОДНИМ запросом и получаем ответ
-                const response = await fetch(googleAppScriptUrl, {
+                // --- НАЧАЛО ИЗМЕНЕНИЙ: Двухэтапная загрузка ---
+
+                // Этап 1: Отправляем файл "вслепую" (fire-and-forget), чтобы обойти проблему с редиректом.
+                // Мы не ждем ответа, поэтому ошибки CORS не будет.
+                await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-                    // Отправляем как обычный текст, чтобы избежать preflight-запроса CORS.
-                    // Сервер Google Apps Script все равно получит тело запроса как строку
-                    // и сможет его распарсить через JSON.parse().
+                    mode: 'no-cors', // Важно! Говорим браузеру не ждать ответа.
                     headers: {
                       'Content-Type': 'text/plain;charset=utf-8',
                     },
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     body: JSON.stringify({
                         action: 'chatFileUpload',
                         fileName: file.name,
@@ -2527,19 +2523,24 @@ const ChatModule = (function() {
                     })
                 });
                 
-                // Проверяем, что запрос прошел успешно на уровне сети
+                // Даем серверу небольшую паузу на создание файла
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                // Этап 2: Делаем простой GET-запрос, чтобы получить ID созданного файла.
+                const getInfoUrl = `${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`;
+                const response = await fetch(getInfoUrl);
+                
                 if (!response.ok) {
-                    throw new Error(`Ошибка сети: ${response.statusText}`);
+                    throw new Error(`Ошибка сети при получении ID файла: ${response.statusText}`);
                 }
 
-                // Получаем и обрабатываем JSON-ответ от сервера
                 const fileData = await response.json();
 
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
                 if (fileData.success && fileData.fileId) {
-                    // 3. Отправляем сообщение в чат с полученным ID
                     await sendFileMessage(file.name, fileData.fileId, questionCount);
                 } else {
-                    // Если сервер вернул ошибку, показываем ее
                     throw new Error(fileData.error || 'Не удалось получить ID файла после загрузки.');
                 }
 
@@ -2547,7 +2548,6 @@ const ChatModule = (function() {
                 console.error('Ошибка при обработке или загрузке файла чата:', error);
                 showError(`Не удалось обработать файл: ${error.message}`);
             } finally {
-                // В любом случае возвращаем кнопку в нормальное состояние
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
@@ -2555,8 +2555,6 @@ const ChatModule = (function() {
         };
         
         reader.readAsText(file, 'UTF-8');
-
-        // Сбрасываем значение инпута, чтобы можно было загрузить тот же файл еще раз
         event.target.value = '';
     }
 
