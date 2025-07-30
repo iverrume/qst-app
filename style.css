@@ -1707,7 +1707,6 @@ body.dark-mode .question-bubble {
     border-top: 1px solid var(--border-color);
     padding: 10px 15px;
     flex-shrink: 0;
-    position: relative;
     display: flex;
     flex-direction: column;
     gap: 8px; /* Расстояние между верхними кнопками и полем ввода */
@@ -1881,10 +1880,7 @@ body.dark-mode .question-bubble {
 
 /* ===== УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ПИКЕРА ЭМОДЗИ (v3) ===== */
 emoji-picker {
-    position: absolute;
     /* Позиционируем пикер НАД областью ввода */
-    bottom: calc(100% + 5px); /* 100% высоты родителя + 5px отступ */
-    left: 15px; /* Небольшой отступ слева */
     z-index: 2100;
 
     /* Скрываем пикер по умолчанию */

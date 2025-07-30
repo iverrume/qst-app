@@ -2134,46 +2134,96 @@ const ChatModule = (function() {
         document.getElementById(modalId)?.classList.add('hidden');
     }
     
+
+
+    
     function showEmojiPicker() {
-        const chatInputArea = document.querySelector('.chat-input-area');
-        if (!chatInputArea) return;
+        const emojiBtn = document.getElementById('emojiBtn');
+        if (!emojiBtn) return;
 
         if (!customElements.get('emoji-picker')) {
             console.warn('Emoji picker не загружен');
             return;
         }
 
+        // 1. Создаем пикер ОДИН РАЗ и добавляем его в <body>
         if (!emojiPicker) {
             emojiPicker = document.createElement('emoji-picker');
-            chatInputArea.appendChild(emojiPicker);
-            emojiPicker.classList.add('light'); 
-
+            document.body.appendChild(emojiPicker);
             emojiPicker.addEventListener('emoji-click', event => {
                 insertEmoji(event.detail.unicode);
             });
         }
 
-        if (document.body.classList.contains('dark-mode')) {
-            emojiPicker.classList.remove('light');
-            emojiPicker.classList.add('dark');
-        } else {
-            emojiPicker.classList.remove('dark');
-            emojiPicker.classList.add('light');
+        // 2. Логика переключения (toggle)
+        const isVisible = emojiPicker.classList.contains('visible');
+        if (isVisible) {
+            emojiPicker.classList.remove('visible');
+            return;
         }
         
-        emojiPicker.classList.toggle('visible');
+        // --- НАДЕЖНАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
 
-        if (!window.emojiPickerClickListener) {
-            window.emojiPickerClickListener = function(e) {
-                const emojiBtn = document.getElementById('emojiBtn');
-                if (emojiPicker && emojiPicker.classList.contains('visible') && !emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
-                    emojiPicker.classList.remove('visible');
-                }
-            };
-            window.addEventListener('click', window.emojiPickerClickListener);
+        // 3. Прячем пикер и выносим его за экран для измерения
+        emojiPicker.style.visibility = 'hidden';
+        emojiPicker.style.position = 'fixed';
+        emojiPicker.style.left = '-9999px';
+        emojiPicker.style.top = '-9999px';
+
+        // 4. Теперь, когда он отрисован (хоть и не виден), ИЗМЕРЯЕМ его
+        const pickerRect = emojiPicker.getBoundingClientRect();
+        const btnRect = emojiBtn.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const margin = 10;
+
+        // 5. Выполняем расчеты с ТОЧНЫМИ размерами
+        // Центрируем пикер относительно кнопки
+        let leftPos = btnRect.left + (btnRect.width / 2) - (pickerRect.width / 2);
+
+        // Корректируем, если выходит за границы
+        if (leftPos < margin) {
+            leftPos = margin; // Прижимаем к левому краю
         }
+        if (leftPos + pickerRect.width > viewportWidth - margin) {
+            leftPos = viewportWidth - pickerRect.width - margin; // Прижимаем к правому краю
+        }
+
+        let topPos = btnRect.top - pickerRect.height - margin;
+        if (topPos < margin) {
+            topPos = btnRect.bottom + margin; // Если не помещается сверху, ставим снизу
+        }
+
+        // 6. Применяем финальные, правильные координаты
+        emojiPicker.style.top = `${topPos}px`;
+        emojiPicker.style.left = `${leftPos}px`;
+        
+        // Настраиваем тему
+        if (document.body.classList.contains('dark-mode')) {
+            emojiPicker.classList.add('dark');
+            emojiPicker.classList.remove('light');
+        } else {
+            emojiPicker.classList.add('light');
+            emojiPicker.classList.remove('dark');
+        }
+
+        // 7. И только теперь делаем пикер видимым для пользователя
+        emojiPicker.style.visibility = 'visible';
+        emojiPicker.classList.add('visible');
+
+        // 8. Добавляем слушатель для закрытия (самый надежный способ)
+        setTimeout(() => {
+            window.addEventListener('click', function closeOnClickOutside(e) {
+                if (emojiPicker.classList.contains('visible') && !emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
+                    emojiPicker.classList.remove('visible');
+                    window.removeEventListener('click', closeOnClickOutside);
+                }
+            });
+        }, 0);
     }
     
+
+
+
     function insertEmoji(emoji) {
         if (!chatInput) return;
         
