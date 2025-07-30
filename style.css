@@ -3496,3 +3496,38 @@ button[onclick*="copyToClipboard"].copied:after {
     right: auto;
   }
 }
+
+
+
+/* Контейнер для загрузчика */
+.loading-placeholder {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 15px; /* Расстояние между спиннером и текстом */
+  color: var(--secondary-text-color);
+  font-size: 1.1em;
+  min-height: 150px; /* Чтобы контейнер не был слишком маленьким */
+}
+
+/* Сам спиннер (вращающийся кружок) */
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  /* Цвет основного круга (полупрозрачный) */
+  border: 4px solid var(--input-hover-bg-color); 
+  /* Цвет вращающегося сегмента */
+  border-top-color: var(--button-primary-bg); 
+  /* Запускаем анимацию вращения */
+  animation: spin 1s linear infinite;
+}
+
+/* Описание самой анимации */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -2642,7 +2642,12 @@ const mainApp = (function() {
 
         fileUploadArea.classList.add('hidden');
         searchResultsContainer.classList.remove('hidden');
-        searchResultCardsContainer.innerHTML = '<div class="loading-placeholder">Идет поиск по базе...</div>';
+        searchResultCardsContainer.innerHTML = `
+            <div class="loading-placeholder">
+            <div class="loading-spinner"></div>
+            <span>Идет поиск по базе...</span>
+            </div>
+        `;
         searchNavigation.classList.add('hidden');
 
         try {
