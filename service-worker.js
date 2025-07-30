@@ -1,34 +1,25 @@
-// service-worker.js
+// service-worker.js (версия с исправлением CORS)
 
-// Имя и версия нашего кеша. 
-// ВАЖНО: Если вы обновите файлы (например, измените CSS), 
-// вам нужно будет изменить эту версию (например, на 'qst-app-cache-v2'),
-// чтобы Service Worker понял, что нужно кешировать файлы заново.
+// ВАЖНО: При обновлении основных файлов (css, js) меняйте версию кеша, например, на 'v3'
 const CACHE_NAME = 'qst-app-cache-v2';
 
-// Список файлов, которые мы хотим сохранить в кеш для офлайн-работы.
-// Мы кешируем основные "оболочечные" файлы приложения.
+// Файлы, которые составляют "оболочку" приложения и могут быть закешированы
 const URLS_TO_CACHE = [
-  '/', // Кешируем главную страницу
+  '/',
   '/index.html',
   '/style.css',
   '/script.js',
   '/favicon.png',
   '/manifest.json'
-  // Если у вас есть другие важные ресурсы (шрифты, изображения), добавьте их сюда.
 ];
 
-// Событие 'install' (установка). Срабатывает, когда браузер впервые видит этот service worker.
+// Событие 'install': кешируем оболочку приложения
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Установка...');
-  
-  // Мы говорим браузеру подождать, пока не выполнится наш код внутри.
   event.waitUntil(
-    // Открываем (или создаем) наш кеш по имени.
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Кеширование основных файлов');
-        // Добавляем все файлы из нашего списка в кеш.
         return cache.addAll(URLS_TO_CACHE);
       })
       .catch(err => {
@@ -37,16 +28,13 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Событие 'activate' (активация). Срабатывает после установки.
-// Здесь мы обычно удаляем старые кеши, чтобы не занимать лишнее место.
+// Событие 'activate': удаляем старые кеши
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Активация...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Если имя кеша не совпадает с текущим, удаляем его.
-          // Это полезно, когда вы обновляете версию с 'v1' на 'v2'.
           if (cacheName !== CACHE_NAME) {
             console.log('Service Worker: Удаление старого кеша', cacheName);
             return caches.delete(cacheName);
@@ -58,22 +46,41 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Событие 'fetch' (перехват запросов).
-// Это сердце Service Worker. Он перехватывает ВСЕ запросы с вашего сайта.
+// Событие 'fetch': перехватываем запросы
 self.addEventListener('fetch', (event) => {
-  // Мы применяем стратегию "Cache first" (сначала кеш).
+  const { request } = event;
+
+  // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+  
+  // 1. Не перехватываем запросы, которые не являются GET (например, POST для загрузки файлов)
+  if (request.method !== 'GET') {
+    // Просто пропускаем запрос напрямую в сеть, не пытаясь его кешировать
+    event.respondWith(fetch(request));
+    return;
+  }
+  
+  // 2. Не перехватываем запросы к сторонним API (включая Google Scripts)
+  if (!request.url.startsWith(self.location.origin)) {
+     // Просто пропускаем запрос напрямую в сеть
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+  // Для всех остальных (GET-запросы к нашему сайту) используем стратегию "Сначала кеш"
   event.respondWith(
-    // Пытаемся найти ответ на этот запрос в нашем кеше.
-    caches.match(event.request)
+    caches.match(request)
       .then((cachedResponse) => {
-        // Если ответ нашелся в кеше - отдаем его.
-        // Это и обеспечивает офлайн-работу и быструю загрузку.
+        // Если ответ есть в кеше, отдаем его
         if (cachedResponse) {
           return cachedResponse;
         }
-
-        // Если в кеше ничего нет - делаем обычный запрос в интернет.
-        return fetch(event.request);
+        // Если нет - идем в сеть
+        return fetch(request).then(response => {
+           // (Опционально) Можно добавить логику для кеширования новых ресурсов на лету
+           return response;
+        });
       })
   );
 });
