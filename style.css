@@ -3108,9 +3108,28 @@ body.dark-mode .message.mine.pinned .message-content {
 
 
 
+/* --- НАЧАЛО БЛОКА НА ЗАМЕНУ --- */
 
-/* Кнопка "В избранное" в результатах поиска */
-.favorite-search-result-btn {
+/* Сама шапка карточки: два блока по краям */
+.result-card-header {
+    display: flex;
+    justify-content: space-between; /* Главное правило: расталкивает левый и правый блоки */
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    gap: 10px; /* Добавляем небольшой отступ между элементами */
+}
+
+/* Правый блок с действиями */
+.result-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Отступы между тегом релевантности и кнопками */
+}
+
+/* Кнопки "В избранное" и "Копировать" */
+.favorite-search-result-btn, .copy-search-result-btn {
     background: none;
     border: none;
     font-size: 1.6em;
@@ -3118,20 +3137,20 @@ body.dark-mode .message.mine.pinned .message-content {
     color: var(--secondary-text-color);
     padding: 0 5px;
     transition: all 0.2s ease;
+    line-height: 1; /* Для лучшего вертикального выравнивания */
 }
 
 .favorite-search-result-btn:hover {
-    color: #f39c12;
+    color: #f39c12; /* Желтый для избранного */
     transform: scale(1.2);
 }
 
-/* Переносим тег релевантности, чтобы он не мешал кнопке */
-.result-card-header {
-    gap: 10px;
+.copy-search-result-btn:hover {
+    color: #007bff; /* Синий для копирования */
+    transform: scale(1.2);
 }
-.result-card-header .provider-tag {
-    flex-grow: 1;
-}
+
+/* --- КОНЕЦ БЛОКА НА ЗАМЕНУ --- */
 
 /* Стили для индивидуального счетчика непрочитанных в канале */
 .unread-channel-badge {

@@ -2737,9 +2737,12 @@ const mainApp = (function() {
         searchResultCardsContainer.innerHTML = `
             <div class="result-card">
                 <div class="result-card-header">
-                     <span class="provider-tag">🗄️ База данных</span>
-                     <span class="relevance-tag">Релевантность: ${100 - index}%</span>
-                     <button class="favorite-search-result-btn" title="Добавить в избранное" onclick="window.mainApp.handleFavoriteClickInSearch(event, \`${escape(resultText)}\`)">⭐</button>
+                    <span class="provider-tag">🗄️ База данных</span>
+                    <div class="result-card-actions">
+                        <span class="relevance-tag">Релевантность: ${100 - index}%</span>
+                        <button class="copy-search-result-btn" title="Копировать вопрос" onclick="window.mainApp.handleCopyClickInSearch(event, \`${escape(resultText)}\`)">📋</button>
+                        <button class="favorite-search-result-btn" title="Добавить в избранное" onclick="window.mainApp.handleFavoriteClickInSearch(event, \`${escape(resultText)}\`)">⭐</button>
+                    </div>
                 </div>
                 <div class="result-card-content">
                     ${cardContentHTML}
@@ -4176,6 +4179,18 @@ const mainApp = (function() {
     }
 
 
+    function handleCopyClickInSearch(event, rawQuestionText) {
+    event.stopPropagation(); // Предотвращаем срабатывание других кликов
+
+    // Текст из базы приходит с экранированными переносами строк (\\n). 
+    // Преобразуем их в настоящие переносы (\n).
+    const cleanText = rawQuestionText.replace(/\\n/g, '\n');
+    
+    // Используем вашу же функцию для копирования в буфер обмена
+    copyToClipboardMain(cleanText); 
+}
+
+
     
     function escape(str) {
         if (!str) return '';
@@ -4198,6 +4213,7 @@ const mainApp = (function() {
         downloadFile: downloadFileBrowserFallback,
         downloadOrShareFile: downloadOrShareFile,
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,
+        handleCopyClickInSearch: handleCopyClickInSearch,
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания...');
             console.log('detectMobileDevice():', detectMobileDevice());
