@@ -3952,7 +3952,7 @@ const mainApp = (function() {
     }
 
     function روسيفايQuestionText(text) {
-        const cleanedText = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").replace(/~+/g, '').replace(/\s+/g, '');
+        const cleanedText = text.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g,"").replace(/~+/g, '');
         let result = '';
         const wordsAndNumbers = cleanedText.match(/[а-яА-Яa-zA-Z]+|\d+/g) || [];
         wordsAndNumbers.forEach(part => {
