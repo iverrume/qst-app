@@ -4116,11 +4116,13 @@ const mainApp = (function() {
         getEl('quickModeToggle').title = translations.quick_mode_title;
         getEl('themeToggle').title = translations.theme_button_title;
 
-        // Обновляем текст на самой кнопке переключения
+        // Обновляем текст (теперь флаг) на самой кнопке переключения
         if (lang === 'ru') {
-            languageToggle.textContent = 'Eng';
+            // Если язык интерфейса РУССКИЙ, показываем флаг для переключения на АНГЛИЙСКИЙ
+            languageToggle.textContent = 'En'; 
         } else {
-            languageToggle.textContent = 'Рус';
+            // Если язык интерфейса АНГЛИЙСКИЙ, показываем флаг для переключения на РУССКИЙ
+            languageToggle.textContent = 'Ру';
         }
     }
 
