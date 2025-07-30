@@ -28,6 +28,7 @@ const ChatModule = (function() {
     let unreadMessageCount = 0; 
     let isPinnedMode = false;
     let messagesListener = null; // Cлушатель для сообщений
+    let questionToHighlight = null;
     let favoritesListener = null;
     let unlockedChannels = new Set();
     const QUICK_REACTIONS_KEY = 'userQuickReactions';
@@ -741,6 +742,17 @@ const ChatModule = (function() {
                     
                     displayQuestions(questions);
                     updateTabCounter('questions', questions.length);
+
+                    // ПРОВЕРЯЕМ, НУЖНО ЛИ ПОДСВЕТИТЬ ВОПРОС
+                    if (questionToHighlight) {
+                        // Используем небольшую задержку, чтобы DOM успел обновиться
+                        setTimeout(() => {
+                            highlightAndScrollToQuestion(questionToHighlight);
+                            // Сбрасываем переменную, чтобы не подсвечивать снова при обновлении чата
+                            questionToHighlight = null; 
+                        }, 100);
+                    }
+
                 }, error => {
                     console.error('Ошибка загрузки вопросов:', error);
                 });
@@ -905,6 +917,29 @@ const ChatModule = (function() {
         }
     }
 
+
+
+    /**
+     * Плавно прокручивает к указанному вопросу и подсвечивает его.
+     * @param {string} questionId ID вопроса для подсветки.
+     */
+    function highlightAndScrollToQuestion(questionId) {
+        const element = document.getElementById(`question-${questionId}`);
+        if (element) {
+            // Плавно прокручиваем к элементу, чтобы он оказался по центру экрана
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Добавляем класс для анимации подсветки
+            element.classList.add('highlighted');
+
+            // Убираем подсветку через 2.5 секунды
+            setTimeout(() => {
+                element.classList.remove('highlighted');
+            }, 2500);
+        }
+    }
+
+
     function scrollToMessage(messageId) {
         const element = document.getElementById(`message-${messageId}`);
         if (element) {
@@ -929,6 +964,10 @@ const ChatModule = (function() {
         return str.replace(/`/g, '\\`').replace(/\$/g, '\\$');
     }
 
+
+
+
+
     async function navigateToQuestion(questionId, linkMessageId = null) {
         if (!db) return;
 
@@ -937,15 +976,18 @@ const ChatModule = (function() {
             const doc = await questionRef.get();
 
             if (doc.exists) {
-                // Если вопрос существует - переключаемся на вкладку
-                switchTab('questions');
-                // В будущем здесь можно добавить подсветку
-                console.log(`Переход к вопросу: ${questionId}`);
-            } else {
-                // Если вопрос НЕ существует
-                alert('Этот вопрос был удален.');
+                // 1. ЗАПОМИНАЕМ, КАКОЙ ВОПРОС НУЖНО ВЫДЕЛИТЬ
+                questionToHighlight = questionId;
 
-                // Если нам передали ID сообщения-ссылки, удаляем и его
+                // 2. Переключаемся на вкладку "Вопросы"
+                switchTab('questions');
+
+                // Сама логика подсветки сработает после загрузки вопросов
+                console.log(`Переход к вопросу: ${questionId}`);
+
+            } else {
+                // Этот блок остается без изменений
+                alert('Этот вопрос был удален.');
                 if (linkMessageId) {
                     await db.collection('messages').doc(linkMessageId).delete();
                 }
@@ -956,6 +998,10 @@ const ChatModule = (function() {
         }
     }
     
+
+
+
+
     function displayQuestions(questions) {
         if (!messageArea) return;
         
@@ -993,6 +1039,7 @@ const ChatModule = (function() {
     function createQuestionElement(question) {
         const questionEl = document.createElement('div');
         questionEl.className = 'question-bubble';
+        questionEl.id = `question-${question.id}`; 
 
         const timestamp = question.createdAt?.toDate?.() || new Date();
         const timeStr = timestamp.toLocaleString('ru-RU');
@@ -1385,28 +1432,27 @@ const ChatModule = (function() {
             updateQuickReactions(selectedEmoji);
             // 3. Удаляем пикер
             if (fullPicker.parentNode) {
-                fullPicker.remove();
+                 fullPicker.remove();
             }
         });
 
         document.body.appendChild(fullPicker);
 
         // Позиционируем пикер, используя переданные координаты
-        fullPicker.style.position = 'fixed';
+        // ИСПРАВЛЕНО: Используем 'positionRect' и добавляем отступ
         fullPicker.style.top = `${positionRect.bottom + 5}px`;
         fullPicker.style.left = `${positionRect.left}px`;
 
         // Добавляем обработчик для закрытия при клике вне пикера
         setTimeout(() => {
+            // Используем { once: true }, чтобы слушатель автоматически удалился после первого же клика
             window.addEventListener('click', function closeFullPicker(e) {
                 if (fullPicker.parentNode && !fullPicker.contains(e.target)) {
                     fullPicker.remove();
-                    window.removeEventListener('click', closeFullPicker);
                 }
-            }, { once: true }); // Добавляем { once: true } для автоматического удаления слушателя
+            }, { once: true });
         }, 0);
     }
-
 
 
 

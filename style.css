@@ -2309,6 +2309,7 @@ body.dark-mode .reply-text {
     font-size: 0.8em;
     cursor: pointer;
     transition: all 0.2s ease;
+    color: var(--text-color);
 }
 
 .reaction-badge:hover {
@@ -2399,6 +2400,12 @@ body.dark-mode .reply-text {
 .full-reaction-picker {
     z-index: 2600; /* Выше чем .reaction-picker */
     animation: picker-appear 0.2s ease forwards;
+
+    /* ДОБАВЛЕНО: Эти стили переопределяют базовые стили 'emoji-picker' */
+    visibility: visible;
+    opacity: 0; /* Анимация начнется с этого значения */
+    position: fixed; /* Обязательно для позиционирования в окне */
+    bottom: auto; /* Сбрасываем 'bottom' от базового стиля, чтобы он не мешал */
 }
 
 /* Анимация подсветки для прокрутки к сообщению */
@@ -2407,9 +2414,9 @@ body.dark-mode .reply-text {
     to { background-color: transparent; }
 }
 
-.message.highlighted {
-    animation: highlight-fade 2s ease-out;
-    border-radius: 12px;
+.message.highlighted,
+.question-bubble.highlighted {
+    animation: highlight-fade 2.5s ease-out;
 }
 
 /* Стили для кнопки удаления вопроса */
