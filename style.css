@@ -2824,6 +2824,7 @@ body.dark-mode .message.mine.pinned .message-content {
     max-height: 200px; 
     /* Включаем вертикальный скроллбар, когда это необходимо */
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 
