@@ -3534,6 +3534,6 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 #languageToggle {
-    font-size: 0.8em; /* Немного увеличим размер эмодзи */
+    font-size: 1.0em; /* Немного увеличим размер эмодзи */
     padding: 4px; /* Можно слегка подогнать отступы */
 }
