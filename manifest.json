@@ -1,6 +1,6 @@
 {
-  "name": "QST Test",
-  "short_name": "QST Test",
+  "name": "QSTiUM",
+  "short_name": "QSTiUM",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
