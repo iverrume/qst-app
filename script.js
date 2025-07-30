@@ -260,7 +260,7 @@ const ChatModule = (function() {
         <div id="questionCreateModal" class="modal-overlay hidden">
             <div class="modal-content">
                 <h3>Создать вопрос</h3>
-                <textarea id="questionTextInput" placeholder="Введите ваш вопрос..." rows="4"></textarea>
+                <textarea id="questionTextInput" placeholder="Введите ваш вопрос в формате .qst \n \n ?Столица Казахстана \n +Астана \n -Нур-Султан \n -Утера \n \n *Можно ввести сразу несколько" rows="4"></textarea>
                 <div class="modal-buttons">
                     <button onclick="ChatModule.createQuestion()">Создать вопрос</button>
                     <button onclick="ChatModule.closeModal('questionCreateModal')">Отмена</button>
@@ -1324,79 +1324,98 @@ const ChatModule = (function() {
 
 
 
-    // --- ЗАМЕНИТЕ ВСЮ ФУНКЦИЮ НА ЭТОТ КОД ---
 
     function showReactionPicker(messageId, buttonElement) {
-        // Немедленно удаляем любые старые пикеры
-        document.querySelectorAll('.reaction-picker, .full-reaction-picker').forEach(p => p.remove());
+            // Немедленно удаляем любые старые пикеры
+            document.querySelectorAll('.reaction-picker, .full-reaction-picker').forEach(p => p.remove());
 
-        const picker = document.createElement('div');
-        picker.className = 'reaction-picker';
-        
-        // 1. СНАЧАЛА ОБЪЯВЛЯЕМ ФУНКЦИЮ ЗАКРЫТИЯ
-        // Теперь обработчики, которые мы создадим ниже, будут о ней знать.
-        const closePickerOnClickOutside = function(event) {
-            if (document.body.contains(picker) && !picker.contains(event.target)) {
-                picker.remove();
-                window.removeEventListener('click', closePickerOnClickOutside);
-            }
-        };
-        
-        // Получаем актуальный список реакций пользователя
-        const quickEmojis = getQuickReactions();
-        
-        // 2. Создаем кнопки для сохраненных эмодзи
-        quickEmojis.forEach(emoji => {
-            const span = document.createElement('span');
-            span.textContent = emoji;
-            span.onclick = (e) => {
-                e.stopPropagation();
-                window.removeEventListener('click', closePickerOnClickOutside); // Убираем слушатель
-                picker.remove();
-                toggleReaction(messageId, emoji);
+            const picker = document.createElement('div');
+            picker.className = 'reaction-picker';
+            
+            // 1. СНАЧАЛА ОБЪЯВЛЯЕМ ФУНКЦИЮ ЗАКРЫТИЯ
+            // Теперь обработчики, которые мы создадим ниже, будут о ней знать.
+            const closePickerOnClickOutside = function(event) {
+                if (document.body.contains(picker) && !picker.contains(event.target)) {
+                    picker.remove();
+                    window.removeEventListener('click', closePickerOnClickOutside);
+                }
             };
-            picker.appendChild(span);
-        });
+            
+            // Получаем актуальный список реакций пользователя
+            const quickEmojis = getQuickReactions();
+            
+            // 2. Создаем кнопки для сохраненных эмодзи
+            quickEmojis.forEach(emoji => {
+                const span = document.createElement('span');
+                span.textContent = emoji;
+                span.onclick = (e) => {
+                    e.stopPropagation();
+                    window.removeEventListener('click', closePickerOnClickOutside); // Убираем слушатель
+                    picker.remove();
+                    toggleReaction(messageId, emoji);
+                };
+                picker.appendChild(span);
+            });
 
-        // 3. Создаем кнопку "+" и ее обработчик, который теперь видит 'closePickerOnClickOutside'
-        const addButton = document.createElement('button');
-        addButton.textContent = '＋';
-        addButton.className = 'reaction-picker-add-btn';
-        addButton.title = 'Выбрать другую реакцию';
-        addButton.onclick = (e) => {
-            e.stopPropagation();
+            // 3. Создаем кнопку "+" и ее обработчик, который теперь видит 'closePickerOnClickOutside'
+            const addButton = document.createElement('button');
+            addButton.textContent = '＋';
+            addButton.className = 'reaction-picker-add-btn';
+            addButton.title = 'Выбрать другую реакцию';
+            addButton.onclick = (e) => {
+                e.stopPropagation();
 
-            // 1. СНАЧАЛА получаем координаты кнопки, ПОКА она еще на странице.
-            const buttonRect = addButton.getBoundingClientRect();
+                // 1. СНАЧАЛА получаем координаты кнопки, ПОКА она еще на странице.
+                const buttonRect = addButton.getBoundingClientRect();
 
-            // 2. Теперь убираем старый обработчик и саму панель.
-            window.removeEventListener('click', closePickerOnClickOutside);
-            picker.remove();
+                // 2. Теперь убираем старый обработчик и саму панель.
+                window.removeEventListener('click', closePickerOnClickOutside);
+                picker.remove();
 
-            // 3. Вызываем функцию для показа нового пикера, но передаем ей уже
-            // сохраненные координаты, а не саму кнопку, которой больше нет.
-            showFullReactionPicker(messageId, buttonRect);
-        };
-        picker.appendChild(addButton);
+                // 3. Вызываем функцию для показа нового пикера, но передаем ей уже
+                // сохраненные координаты, а не саму кнопку, которой больше нет.
+                showFullReactionPicker(messageId, buttonRect);
+            };
+            picker.appendChild(addButton);
 
-        document.body.appendChild(picker);
+            document.body.appendChild(picker);
 
-        // --- Умное позиционирование (без изменений) ---
-        const btnRect = buttonElement.getBoundingClientRect();
-        const pickerRect = picker.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const margin = 8;
-        let topPos = btnRect.top - pickerRect.height - margin;
-        let leftPos = btnRect.left;
-        if (topPos < margin) { topPos = btnRect.bottom + margin; }
-        if (leftPos + pickerRect.width > viewportWidth - margin) { leftPos = btnRect.right - pickerRect.width; }
-        if (leftPos < margin) { leftPos = margin; }
-        picker.style.top = `${topPos}px`;
-        picker.style.left = `${leftPos}px`;
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Умное позиционирование ---
+            const btnRect = buttonElement.getBoundingClientRect();
+            const pickerRect = picker.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const margin = 8; // Небольшой отступ от краев экрана
 
-        // 4. И только теперь, когда все готово, устанавливаем слушатель на закрытие
-        setTimeout(() => window.addEventListener('click', closePickerOnClickOutside), 0);
-    }
+            // Рассчитываем позицию по вертикали (вверх или вниз от кнопки)
+            let topPos = btnRect.top - pickerRect.height - margin;
+            if (topPos < margin) { 
+                topPos = btnRect.bottom + margin; 
+            }
+
+            // Рассчитываем позицию по горизонтали
+            let leftPos = btnRect.left;
+
+            // ПРОВЕРКА ПРАВОГО КРАЯ: если пикер вылезает справа...
+            if (leftPos + pickerRect.width > viewportWidth - margin) {
+                // ...то выравниваем его правый край по правому краю кнопки.
+                leftPos = btnRect.right - pickerRect.width;
+            }
+
+            // ПРОВЕРКА ЛЕВОГО КРАЯ: если пикер вылезает слева...
+            if (leftPos < margin) {
+                // ...то прижимаем его к левому краю экрана с отступом.
+                leftPos = margin;
+            }
+
+            // Применяем рассчитанные и скорректированные координаты
+            picker.style.top = `${topPos}px`;
+            picker.style.left = `${leftPos}px`;
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+
+            // 4. И только теперь, когда все готово, устанавливаем слушатель на закрытие
+            setTimeout(() => window.addEventListener('click', closePickerOnClickOutside), 0);
+        }
 
 
 
@@ -1413,7 +1432,7 @@ const ChatModule = (function() {
         }
 
         const fullPicker = document.createElement('emoji-picker');
-        fullPicker.className = 'full-reaction-picker'; // Дадим ему свой класс
+        fullPicker.className = 'full-reaction-picker'; 
 
         // Настраиваем тему пикера
         if (document.body.classList.contains('dark-mode')) {
@@ -1422,35 +1441,72 @@ const ChatModule = (function() {
             fullPicker.classList.add('light');
         }
 
-        // Обработчик выбора эмодзи из полного пикера
         fullPicker.addEventListener('emoji-click', event => {
             const selectedEmoji = event.detail.unicode;
-
-            // 1. Сразу применяем реакцию к сообщению
             toggleReaction(messageId, selectedEmoji);
-            // 2. Обновляем наш список быстрых реакций
             updateQuickReactions(selectedEmoji);
-            // 3. Удаляем пикер
             if (fullPicker.parentNode) {
                  fullPicker.remove();
             }
         });
 
+        // --- НАЧАЛО НОВОЙ ЛОГИКИ ПОЗИЦИОНИРОВАНИЯ ---
+        
+        // 1. Добавляем пикер в DOM, но делаем его невидимым и выносим за пределы экрана.
+        // Это нужно, чтобы браузер рассчитал его реальные размеры.
         document.body.appendChild(fullPicker);
+        fullPicker.style.position = 'fixed';
+        fullPicker.style.visibility = 'hidden';
+        fullPicker.style.left = '-9999px';
+        fullPicker.style.top = '-9999px';
+        
+        // 2. Теперь, когда размеры известны, получаем их.
+        const pickerRect = fullPicker.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const margin = 10; // Отступ от краев
 
-        // Позиционируем пикер, используя переданные координаты
-        // ИСПРАВЛЕНО: Используем 'positionRect' и добавляем отступ
-        fullPicker.style.top = `${positionRect.bottom + 5}px`;
-        fullPicker.style.left = `${positionRect.left}px`;
+        // 3. Рассчитываем позицию, как мы это делали для маленькой панели.
+        // По горизонтали:
+        let leftPos = positionRect.left; // Начинаем с позиции кнопки "+"
+        if (leftPos + pickerRect.width > viewportWidth - margin) {
+            // Если вылезает справа, выравниваем по правому краю экрана
+            leftPos = viewportWidth - pickerRect.width - margin;
+        }
+        if (leftPos < margin) {
+            // Если вылезает слева, прижимаем к левому краю
+            leftPos = margin;
+        }
 
-        // Добавляем обработчик для закрытия при клике вне пикера
+        // По вертикали:
+        let topPos = positionRect.bottom + margin; // По умолчанию под кнопкой "+"
+        if (topPos + pickerRect.height > viewportHeight - margin) {
+            // Если не помещается снизу, ставим над кнопкой
+            topPos = positionRect.top - pickerRect.height - margin;
+        }
+         if (topPos < margin) {
+            // Если не помещается и сверху, прижимаем к верху экрана
+            topPos = margin;
+        }
+
+        // 4. Применяем финальные, правильные координаты.
+        fullPicker.style.left = `${leftPos}px`;
+        fullPicker.style.top = `${topPos}px`;
+        
+        // 5. И только теперь делаем пикер видимым для пользователя.
+        fullPicker.style.visibility = 'visible';
+
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ПОЗИЦИОНИРОВАНИЯ ---
+
+        // 6. Добавляем обработчик для закрытия при клике вне пикера
         setTimeout(() => {
-            // Используем { once: true }, чтобы слушатель автоматически удалился после первого же клика
             window.addEventListener('click', function closeFullPicker(e) {
                 if (fullPicker.parentNode && !fullPicker.contains(e.target)) {
                     fullPicker.remove();
+                    // Важно удалить сам обработчик, чтобы он не висел в памяти
+                    window.removeEventListener('click', closeFullPicker);
                 }
-            }, { once: true });
+            });
         }, 0);
     }
 
@@ -2136,7 +2192,7 @@ const ChatModule = (function() {
     
 
 
-    
+
     function showEmojiPicker() {
         const emojiBtn = document.getElementById('emojiBtn');
         if (!emojiBtn) return;
