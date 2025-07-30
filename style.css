@@ -3603,24 +3603,3 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 
-@media (max-width: 768px) {
-    .header-buttons {
-        /* Уменьшаем расстояние между кнопками с 10px до 4px */
-        gap: 4px;
-    }
-
-    /* Применяем стили ко всем кнопкам в панели */
-    #searchWebButton,
-    #themeToggle,
-    #quickModeToggle,
-    #copyQuestionBtnQuiz,
-    #triggerWordToggle,
-    #languageToggle,
-    #chatToggle,
-    #favoriteQuestionBtn {
-        /* Уменьшаем внутренние отступы (делаем кнопку уже) */
-        padding: 5px 6px;
-        /* Немного уменьшаем размер самой иконки (был 1.3em) */
-        font-size: 1.3em;
-    }
-}
