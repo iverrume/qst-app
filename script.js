@@ -698,10 +698,71 @@ const ChatModule = (function() {
         }
     }
 
+
+    // --- ВСТАВЬТЕ НОВУЮ ФУНКЦИЮ ЗДЕСЬ ---
+    /**
+     * Форматирует временную метку в зависимости от ее давности.
+     * @param {firebase.firestore.Timestamp} fbTimestamp - Временная метка из Firebase.
+     * @returns {string} - Отформатированная строка (напр., "14:30", "Вчера, 14:30").
+     */
+    function formatSmartTimestamp(fbTimestamp) {
+        if (!fbTimestamp || typeof fbTimestamp.toDate !== 'function') {
+            return ''; // Возвращаем пустоту, если метка некорректна
+        }
+        
+        const now = new Date();
+        const msgDate = fbTimestamp.toDate();
+
+        const timeString = msgDate.toLocaleTimeString('ru-RU', {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        // Сравниваем только по дате, без времени
+        const isToday = now.toDateString() === msgDate.toDateString();
+        
+        const yesterday = new Date();
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = yesterday.toDateString() === msgDate.toDateString();
+
+        const isThisYear = now.getFullYear() === msgDate.getFullYear();
+
+        if (isToday) {
+            return timeString;
+        } else if (isYesterday) {
+            return `Вчера, ${timeString}`;
+        } else if (isThisYear) {
+            const datePart = msgDate.toLocaleDateString('ru-RU', {
+                month: 'long',
+                day: 'numeric'
+            });
+            return `${datePart}, ${timeString}`;
+        } else {
+            const fullDatePart = msgDate.toLocaleDateString('ru-RU', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            return `${fullDatePart}, ${timeString}`;
+        }
+    }
+ 
+
     function createMessageElement(message) {
         const messageEl = document.createElement('div');
-        const timestamp = message.createdAt?.toDate?.() || new Date();
-        const timeStr = timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const timestamp = message.createdAt; // Просто получаем объект Timestamp
+
+        // Генерируем строку для отображения с помощью нашей новой функции
+        const displayTime = formatSmartTimestamp(timestamp); 
+
+        // Генерируем полную, недвусмысленную строку для всплывающей подсказки (title)
+        const fullTimeTitle = timestamp?.toDate()?.toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }) || '';
         messageEl.id = `message-${message.id}`;
         messageEl.className = `message ${message.authorId === currentUser?.uid ? 'mine' : 'other'}`;
         if (message.isPinned) messageEl.classList.add('pinned');
@@ -737,7 +798,7 @@ const ChatModule = (function() {
             actionsHTML += `<button title="Редактировать" onclick="ChatModule.startEditMessage('${message.id}', '${escape(message.text)}')">✏️</button>`;
             actionsHTML += `<button title="Удалить" onclick="ChatModule.deleteMessage('${message.id}')">🗑️</button>`;
         }
-        messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || 'Аноним'}</span><span class="timestamp">${timeStr}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
+        messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || 'Аноним'}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
         return messageEl;
     }
 
@@ -1341,7 +1402,7 @@ const ChatModule = (function() {
 
 
 
-    
+
 
     // --- ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ НА ЭТУ ---
     async function createQuestionFromMessage(rawText) {
