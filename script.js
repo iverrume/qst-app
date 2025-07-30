@@ -56,6 +56,41 @@ const ChatModule = (function() {
         users: { name: 'Пользователи', icon: '👥' } // Новый таб
     };
 
+
+    // --- НАЧАЛО НОВОГО КОДА: Вставляем функции сюда ---
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    };
+
+    function handleSearch(event) {
+        const query = event.target.value.toLowerCase().trim();
+        if (!query) {
+            loadTabData(currentTab);
+            return;
+        }
+        const items = messageArea.querySelectorAll('.message, .question-bubble, .favorite-item, .user-list-item');
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    // --- КОНЕЦ НОВОГО КОДА ---
+
+
+
+
     function init(firebaseDb, firebaseAuth) {
         try {
             db = firebaseDb;
@@ -77,19 +112,7 @@ const ChatModule = (function() {
     }
     
 
-    function debounce(func, wait) {
-        let timeout;
 
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    };
 
 
     function createHybridChatHTML() {
@@ -437,9 +460,11 @@ const ChatModule = (function() {
         document.getElementById('createChannelBtn')?.addEventListener('click', () => showModal('channelCreateModal'));
         document.getElementById('uploadFileBtn')?.addEventListener('click', handleChatFileUploadTrigger);
         document.getElementById('chatFileInput')?.addEventListener('change', handleChatFileSelected);
-        if (searchInput) searchInput.addEventListener('input', debouncedSearch);
 
         const debouncedSearch = debounce(handleSearch, 300);
+        if (searchInput) searchInput.addEventListener('input', debouncedSearch);
+
+        
 
         const currentUserBtn = document.getElementById('currentUser');
         const userDropdown = document.getElementById('userDropdown');
@@ -2368,24 +2393,7 @@ const ChatModule = (function() {
         chatInput.focus();
     }
     
-    function handleSearch(event) {
-        const query = event.target.value.toLowerCase().trim();
-        
-        if (!query) {
-            loadTabData(currentTab);
-            return;
-        }
-        
-        const items = messageArea.querySelectorAll('.message, .question-bubble, .favorite-item, .user-list-item');
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            if (text.includes(query)) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    }
+
 
     
     
