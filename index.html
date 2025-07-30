@@ -45,6 +45,7 @@
                     </button>
                     
                     <button id="quickModeToggle" title="Быстрый режим (Автопереход)" class="hidden">⚡</button>
+                    <button id="languageToggle" title="Сменить язык">Рус</button>
                     <button id="triggerWordToggle" title="Триггер-слова" class="hidden">✍️</button>
                     <button id="themeToggle" title="Сменить тему">🌙</button>
                     <button id="favoriteQuestionBtn" title="Добавить в избранное" class="hidden">⭐</button>
@@ -53,28 +54,23 @@
 
             <div class="file-upload-area" id="fileUploadArea">
                 <div id="searchContainer">
-                    <label for="searchQueryInput">Поиск вопроса в базе:</label>
-                    <input type="text" id="searchQueryInput" placeholder="Введите часть текста вопроса...">
-                    <button id="searchButton">Найти</button>
+                    <label for="searchQueryInput" data-lang-key="search_in_db">Поиск вопроса в базе:</label>
+                    <input type="text" id="searchQueryInput" placeholder="Введите часть текста вопроса..." data-lang-key="search_placeholder">
+                    <button id="searchButton" data-lang-key="find_button">Найти</button>
                 </div>
-                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);">-- или --</p>
-                <label for="fileInput">Выберите .qst либо .txt файл с устройства:</label>
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                <label for="fileInput" data-lang-key="choose_file">Выберите .qst либо .txt файл с устройства:</label>
                 <input type="file" id="fileInput">
-                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);">-- или --</p>
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
                 <button id="gradusButton" style="width: 100%; background-color: #6c757d; color: white;">
-                    <span>GRADUS</span>
+                    <span data-lang-key="gradus_button">GRADUS</span>
                     <span class="gradus-subtitle">(General Repository for Academic Data, Utility & Structure)</span>
                 </button>
                 <div id="recentFilesArea" class="hidden">
-                    <h4>Недавно использованные:</h4>
+                    <h4 data-lang-key="recent_files">Недавно использованные:</h4>
                     <ul id="recentFilesList"></ul>
                 </div>
             </div>
-
-
-
-
-
 
             <div id="searchResultsContainer" class="view hidden">
                 <div class="search-results-header">
@@ -94,13 +90,6 @@
                     <!-- Сюда будет динамически загружаться одна карточка результата -->
                 </div>
             </div>
-
-
-
-
-
-
-
 
             <div id="gradusFoldersContainer" class="hidden">
                 <h2>Навигация по GRADUS</h2>

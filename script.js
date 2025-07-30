@@ -2406,10 +2406,50 @@ async function copyToClipboardMain(text) {
 
 // ============================================
 // ОСНОВНОЙ СКРИПТ ПРИЛОЖЕНИЯ
-// ============================================
+// ============================================    
+
 const mainApp = (function() {
     'use strict';
-    
+
+    // --- СЛОВАРЬ ПЕРЕВОДОВ ---
+    const LANG_PACK = {
+        ru: {
+            search_in_db: 'Поиск вопроса в базе:',
+            search_placeholder: 'Введите часть текста вопроса...',
+            find_button: 'Найти',
+            or_divider: '-- или --',
+            choose_file: 'Выберите .qst либо .txt файл с устройства:',
+            or_divider_2: '-- или --',
+            gradus_button: 'GRADUS',
+            recent_files: 'Недавно использованные:',
+            toggle_language_title: 'Сменить язык',
+            // Также добавим переводы для title других кнопок
+            chat_button_title: 'Открыть чат',
+            favorite_button_title: 'Добавить в избранное',
+            trigger_words_title: 'Триггер-слова',
+            quick_mode_title: 'Быстрый режим (Автопереход)',
+            theme_button_title: 'Сменить тему'
+        },
+        en: {
+            search_in_db: 'Search question in database:',
+            search_placeholder: 'Enter part of the question text...',
+            find_button: 'Search',
+            or_divider: '-- or --',
+            choose_file: 'Select a .qst or .txt file from your device:',
+            or_divider_2: '-- or --',
+            gradus_button: 'GRADUS',
+            recent_files: 'Recently used:',
+            toggle_language_title: 'Change language',
+            // Переводы для title
+            chat_button_title: 'Open chat',
+            favorite_button_title: 'Add to favorites',
+            trigger_words_title: 'Trigger words',
+            quick_mode_title: 'Quick mode (Auto-next)',
+            theme_button_title: 'Change theme'
+        }
+    };
+
+
     // --- Firebase & Auth ---
     let db, auth, currentUser = null;
     const FIREBASE_CONFIG = {
@@ -2485,6 +2525,7 @@ const mainApp = (function() {
     const searchWebButton = getEl('searchWebButton');
     const searchDropdownContent = getEl('searchDropdownContent');
     const chatToggleBtn = getEl('chatToggle');
+    const languageToggle = getEl('languageToggle');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -2556,6 +2597,9 @@ const mainApp = (function() {
         updateTriggerWordToggleVisual();
         loadRecentFiles();
         resetQuizForNewFile();
+
+        const savedLang = localStorage.getItem('appLanguage') || 'ru';
+        setLanguage(savedLang);
     }
 
     
@@ -2611,6 +2655,7 @@ const mainApp = (function() {
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
         timeLimitInput.addEventListener('input', () => timeLimitValueDisplay.textContent = timeLimitInput.value);
         themeToggleButton?.addEventListener('click', toggleTheme);
+        languageToggle?.addEventListener('click', toggleLanguage);
         chatToggleBtn?.addEventListener('click', () => {
             ChatModule.openChatModal();
         });
@@ -3745,6 +3790,7 @@ const mainApp = (function() {
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+        languageToggle?.classList.add('hidden');
         quickModeToggle?.classList.remove('hidden');
         triggerWordToggle?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
@@ -3998,6 +4044,7 @@ const mainApp = (function() {
         finishTestButton?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        languageToggle?.classList.remove('hidden');
         quickModeToggle?.classList.add('hidden');
         triggerWordToggle?.classList.add('hidden');
         
@@ -4038,6 +4085,52 @@ const mainApp = (function() {
         localStorage.setItem('theme', theme);
     }
     
+
+
+    // --- НОВЫЕ ФУНКЦИИ ДЛЯ ПЕРЕВОДА ЯЗЫКА ---
+
+    function setLanguage(lang) {
+        // Сохраняем выбор пользователя
+        localStorage.setItem('appLanguage', lang);
+
+        const translations = LANG_PACK[lang];
+
+        // Обновляем текст на всех элементах с атрибутом data-lang-key
+        document.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.dataset.langKey;
+            if (translations[key]) {
+                if (el.placeholder) {
+                    el.placeholder = translations[key];
+                } else {
+                    // Используем innerHTML, чтобы сохранить вложенные теги, как в кнопке GRADUS
+                    el.innerHTML = translations[key];
+                }
+            }
+        });
+        
+        // Обновляем title у кнопок
+        getEl('languageToggle').title = translations.toggle_language_title;
+        getEl('chatToggle').title = translations.chat_button_title;
+        getEl('favoriteQuestionBtn').title = translations.favorite_button_title;
+        getEl('triggerWordToggle').title = translations.trigger_words_title;
+        getEl('quickModeToggle').title = translations.quick_mode_title;
+        getEl('themeToggle').title = translations.theme_button_title;
+
+        // Обновляем текст на самой кнопке переключения
+        if (lang === 'ru') {
+            languageToggle.textContent = 'Eng';
+        } else {
+            languageToggle.textContent = 'Рус';
+        }
+    }
+
+    function toggleLanguage() {
+        const currentLang = localStorage.getItem('appLanguage') || 'ru';
+        const newLang = currentLang === 'ru' ? 'en' : 'ru';
+        setLanguage(newLang);
+    }
+
+
 
     function handleFavoriteClickInQuiz() {
         if (!ChatModule.isInitialized() || !ChatModule.getCurrentUser()) {

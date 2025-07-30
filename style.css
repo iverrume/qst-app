@@ -169,6 +169,7 @@ body {
 #themeToggle,
 #quickModeToggle,
 #triggerWordToggle,
+#languageToggle,
 #chatToggle {
     background: none;
     border: 1px solid var(--theme-toggle-border);
