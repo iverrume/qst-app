@@ -3908,3 +3908,37 @@ button[onclick*="copyToClipboard"].copied:after {
     /* Добавляем мягкую тень для эффекта "свечения" */
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); 
 }
+
+
+/* --- Стили для навигации по категориям в тесте --- */
+
+/* Делаем контейнер кнопок более гибким */
+#quickNavButtons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start; /* Выравниваем по левому краю */
+    gap: 5px; /* Устанавливаем единый отступ */
+}
+
+/* Стили для плашки-заголовка категории */
+.quick-nav-category {
+    /* Растягиваем на всю ширину, чтобы она была на отдельной строке */
+    flex-basis: 100%; 
+    width: 100%;
+    
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    padding: 8px 10px;
+    margin-top: 10px; /* Отступ сверху */
+    margin-bottom: 5px; /* Отступ снизу */
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 0.95em;
+    box-shadow: 0 2px 5px var(--shadow-light-color);
+}
+
+/* Для первой категории убираем верхний отступ */
+.quick-nav-category:first-child {
+    margin-top: 0;
+}

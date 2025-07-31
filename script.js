@@ -4437,6 +4437,22 @@ const mainApp = (function() {
         let currentQuestionData = null;
         for (const line of lines) {
             const trimmedLine = line.trim();
+
+            // --- НАЧАЛО НОВОГО КОДА ---
+            // ПРОВЕРКА НА КАТЕГОРИЮ
+            if (trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#')) {
+                // Если мы нашли категорию, сначала сохраняем предыдущий вопрос, если он был
+                if (currentQuestionData && currentQuestionData.options.length > 0) {
+                    parsedQs.push(currentQuestionData);
+                    currentQuestionData = null;
+                }
+                // Извлекаем название категории
+                const categoryName = trimmedLine.slice(3, -3).trim();
+                // Добавляем специальный объект с типом 'category'
+                parsedQs.push({ text: categoryName, type: 'category' });
+                // Переходим к следующей строке
+                continue;
+            }           
             if (trimmedLine === '') {
                 if (currentQuestionData && currentQuestionData.options.length > 0) {
                     parsedQs.push(currentQuestionData);
@@ -4602,22 +4618,43 @@ const mainApp = (function() {
         timeLeftEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
+    
+
     function generateQuickNav() {
         quickNavButtonsContainer.innerHTML = '';
+        // Показываем панель, только если в тесте больше одного элемента (вопроса или категории)
         if (questionsForCurrentQuiz.length > 1) {
             quickNavPanel.classList.remove('hidden');
-            questionsForCurrentQuiz.forEach((_, index) => {
-                const btn = document.createElement('button');
-                btn.classList.add('quick-nav-btn');
-                btn.textContent = index + 1;
-                btn.dataset.questionIndex = index;
-                btn.addEventListener('click', () => loadQuestion(index));
-                quickNavButtonsContainer.appendChild(btn);
+            
+            let questionNumber = 1; // Заводим отдельный счетчик для нумерации ТОЛЬКО вопросов
+
+            questionsForCurrentQuiz.forEach((item, index) => {
+                // ЕСЛИ ЭТО КАТЕГОРИЯ
+                if (item.type === 'category') {
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.className = 'quick-nav-category';
+                    categoryHeader.textContent = item.text;
+                    quickNavButtonsContainer.appendChild(categoryHeader);
+                } 
+                // ЕСЛИ ЭТО ОБЫЧНЫЙ ВОПРОС
+                else {
+                    const btn = document.createElement('button');
+                    btn.classList.add('quick-nav-btn');
+                    btn.textContent = questionNumber; // Используем наш счетчик
+                    btn.dataset.questionIndex = index; // Сохраняем реальный индекс в массиве
+                    btn.addEventListener('click', () => loadQuestion(index));
+                    quickNavButtonsContainer.appendChild(btn);
+
+                    questionNumber++; // Увеличиваем счетчик только для вопросов
+                }
             });
         } else {
             quickNavPanel.classList.add('hidden');
         }
     }
+
+
+
 
     function updateQuickNavButtons() {
         const buttons = quickNavButtonsContainer.querySelectorAll('.quick-nav-btn');
