@@ -3675,51 +3675,42 @@ const mainApp = (function() {
         return isMobile;
     }
 
-    // 3. Создание временной ссылки для скачивания (перенесено в mainApp)
+
+
     async function createTemporaryDownloadLink(fileName, content, contentType, shareDialogTitlePrefix) {
         try {
-            console.log('Создаем временную ссылку для мобильного устройства...');
-            
-            // Показываем индикатор загрузки
+            console.log('Создаем временную ссылку для мобильного устройства (v2)...');
             showMobileDownloadStatus('Подготовка файла для скачивания...', 'loading');
-            
-            // Отправляем файл на сервер для создания временной ссылки
-                // Создаем полезную нагрузку
-            const payload = {
-                action: 'chatFileUpload',
-                fileName: file.name,
-                content: fileContent
-            };
 
-            const response = await fetch(googleAppScriptUrl, {
+            // Создаем уникальное имя файла прямо на клиенте для надежности
+            const uniqueFileName = `temp_${new Date().getTime()}_${fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+
+            // Формируем URL с параметрами
+            const url = `${googleAppScriptUrl}?action=createTempFile&fileName=${encodeURIComponent(uniqueFileName)}`;
+
+            // Отправляем содержимое файла как простой текст, чтобы избежать CORS preflight
+            const response = await fetch(url, {
                 method: 'POST',
+                mode: 'cors', // Используем 'cors', так как Google Script вернет JSON с правильными заголовками
                 headers: {
-                    // ИЗМЕНЕНИЕ: Отправляем как обычный текст, чтобы избежать preflight-запроса
+                    // Отправляем как обычный текст
                     'Content-Type': 'text/plain;charset=utf-8',
                 },
-                // ИЗМЕНЕНИЕ: Передаем данные как строку, а не как JSON-объект
-                body: JSON.stringify(payload)
+                body: content // Отправляем содержимое файла напрямую
             });
-            
-            // Из-за no-cors мы не можем получить ответ напрямую
-            // Поэтому делаем запрос на получение информации о созданном файле
-            setTimeout(async () => {
-                try {
-                    const checkResponse = await fetch(`${googleAppScriptUrl}?action=getTempFileInfo&fileName=${encodeURIComponent(fileName)}`);
-                    const result = await checkResponse.json();
-                    
-                    if (result.success && result.downloadUrl) {
-                        showMobileDownloadLink(fileName, result.downloadUrl, shareDialogTitlePrefix);
-                    } else {
-                        throw new Error(result.error || 'Не удалось создать временную ссылку');
-                    }
-                } catch (error) {
-                    console.error('Ошибка получения информации о временном файле:', error);
-                    // Fallback: показываем содержимое для ручного копирования
-                    showMobileDownloadFallback(fileName, content);
-                }
-            }, 2000); // Даем серверу время на обработку
-            
+
+            if (!response.ok) {
+                throw new Error(`Ошибка сервера: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.downloadUrl) {
+                showMobileDownloadLink(fileName, result.downloadUrl, shareDialogTitlePrefix);
+            } else {
+                throw new Error(result.error || 'Не удалось создать временную ссылку');
+            }
+
         } catch (error) {
             console.error('Ошибка создания временной ссылки:', error);
             showMobileDownloadFallback(fileName, content);
