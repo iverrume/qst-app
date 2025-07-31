@@ -5008,8 +5008,61 @@ const mainApp = (function() {
     const PARSER_PATTERNS = [
 
         {
+            id: 'multi_format',
+            name: 'Мультиформатный режим (Авто)',
+            // Детектор: срабатывает, если в тексте есть признаки НЕСКОЛЬКИХ разных форматов.
+            // Например, есть и теги <question>, и ответы с "+" в конце.
+            detector: (text) => {
+                const hasTags = /<question>|<Вопрос>/i.test(text);
+                const hasPlusAtEnd = /\+\s*$/m.test(text);
+                const hasNumberedPlusAnswer = /^\s*\d+\./m.test(text) && /^\s*\+/m.test(text);
+                
+                // Считаем, сколько разных форматов мы нашли
+                const formatCount = [hasTags, hasPlusAtEnd, hasNumberedPlusAnswer].filter(Boolean).length;
+                
+                // Считаем это мультиформатным, если найдено больше одного признака
+                return formatCount > 1;
+            },
+            processor: (text) => {
+                let allParsedQuestions = [];
+                // Разделяем текст на блоки по одной или нескольким пустым строкам.
+                // Это стандартный способ разделения вопросов в текстовых файлах.
+                const blocks = text.split(/\n\s*\n/).filter(b => b.trim() !== '');
+
+                // Получаем все шаблоны, КРОМЕ текущего (мультиформатного), чтобы избежать бесконечной рекурсии.
+                const otherPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
+
+                for (const block of blocks) {
+                    let blockParsed = false;
+                    // Для каждого блока пытаемся найти подходящий шаблон
+                    for (const pattern of otherPatterns) {
+                        if (pattern.detector(block)) {
+                            try {
+                                const parsedBlock = pattern.processor(block);
+                                if (parsedBlock.length > 0) {
+                                    // Если успешно, добавляем найденные вопросы в общий список
+                                    allParsedQuestions.push(...parsedBlock);
+                                    blockParsed = true;
+                                    // Мы нашли подходящий шаблон для этого блока, переходим к следующему блоку.
+                                    break; 
+                                }
+                            } catch (e) {
+                                console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
+                            }
+                        }
+                    }
+                    if (!blockParsed) {
+                        console.warn("Не удалось определить формат для блока:\n---\n", block);
+                    }
+                }
+                
+                return allParsedQuestions;
+            }
+        },
+
+        {
             id: 'numbered_list_first_answer_correct',
-            name: 'Формат: Нумерованный список (первый ответ - верный)',
+            name: 'Нумерованный список (первый ответ - верный)',
             // Детектор: ищет строки с нумерацией (1.) и УБЕЖДАЕТСЯ, что в тексте НЕТ знаков +/- в начале строк.
             // Это отличает его от предыдущего шаблона.
             detector: (text) => {
@@ -5064,7 +5117,7 @@ const mainApp = (function() {
 
         {
             id: 'numbered_list_plus_answer',
-            name: 'Формат: Нумерованный список (1.) с ответом "+"',
+            name: 'Нумерованный список (1.) с ответом "+" в начале',
             // Детектор: ищет строки, начинающиеся с "цифра." и строки, начинающиеся с "+"
             detector: (text) => /^\s*\d+\./m.test(text) && /^\s*\+/m.test(text),
             processor: (text) => {
@@ -5110,11 +5163,67 @@ const mainApp = (function() {
                 return questions;
             }
         },
+        {
+            id: 'numbered_list_plus_at_end',
+            name: "Нумерация и '+' в конце ответа",
+            // Детектор: ищет строки с нумерацией (1.) И строки, заканчивающиеся на '+'
+            detector: (text) => /^\s*\d+\./m.test(text) && /\+\s*$/m.test(text),
+            processor: (text) => {
+                const questions = [];
+                // Разделяем весь текст на блоки, где каждый блок начинается с "цифра."
+                const blocks = text.split(/\n(?=\s*\d+\.\s*)/);
 
+                for (const block of blocks) {
+                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
+                    if (lines.length < 2) continue;
+
+                    let questionTextLines = [];
+                    let optionLines = [];
+                    let correctAnswer = null;
+
+                    // Сначала находим правильный ответ и другие опции
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine.endsWith('+')) {
+                            const answer = trimmedLine.slice(0, -1).trim();
+                            correctAnswer = answer;
+                            optionLines.push(answer);
+                        } else {
+                            // Предполагаем, что если строка не начинается с номера, это опция или часть вопроса
+                            if (!/^\d+\./.test(trimmedLine)) {
+                                optionLines.push(trimmedLine);
+                            }
+                        }
+                    });
+
+                    // Все, что не является опцией, является частью вопроса
+                    const questionLinesRaw = lines.filter(line => !optionLines.includes(line.trim()) && !optionLines.includes(line.trim().slice(0, -1).trim()));
+                    // Собираем текст вопроса, убирая номер в начале
+                    questionTextLines = questionLinesRaw.map((line, index) => {
+                        if (index === 0) {
+                            return line.replace(/^\s*\d+\.\s*/, '').trim();
+                        }
+                        return line.trim();
+                    });
+
+                    if (questionTextLines.length > 0 && correctAnswer) {
+                        // Из опций нужно убрать сам текст вопроса, если он туда случайно попал
+                        const finalOptions = optionLines.filter(opt => !questionTextLines.includes(opt));
+
+                        questions.push({
+                            text: questionTextLines.join(' '),
+                            options: finalOptions,
+                            correctAnswer: correctAnswer
+                        });
+                    }
+                }
+                return questions;
+            }
+        },
 
         {
             id: 'plus_at_start',
-            name: 'Формат: Ответ с "+" в начале строки',
+            name: 'Ответ с "+" в начале строки',
             // Ищет блок, где есть хотя бы одна строка, начинающаяся с "+"
             detector: (text) => text.split('\n').some(line => line.trim().startsWith('+')),
             processor: (text) => {
@@ -5155,9 +5264,10 @@ const mainApp = (function() {
 
 
 
+
         {
             id: 'tags_vopros_variant',
-            name: 'Формат: теги <Вопрос> и <вариант>',
+            name: 'Теги <Вопрос> и <вариант>',
             detector: (text) => /<Вопрос>|<вариант>/i.test(text),
             processor: (text) => {
                 const questions = [];
@@ -5182,7 +5292,7 @@ const mainApp = (function() {
         },
         {
             id: 'tags_question_variant',
-            name: 'Формат: теги <question> и <variant>',
+            name: 'Теги <question> и <variant>',
             detector: (text) => /<question|<variant>/i.test(text),
             processor: (text) => {
                 const questions = [];
@@ -5203,6 +5313,8 @@ const mainApp = (function() {
                 return questions;
             }
         }
+
+
     ];
 
     function populateParserPatterns() {
