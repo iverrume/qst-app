@@ -4511,7 +4511,8 @@ const mainApp = (function() {
         if (currentQuestionData && currentQuestionData.options.length > 0) {
             parsedQs.push(currentQuestionData);
         }
-        return parsedQs.filter(q => q.options.some(opt => opt.isCorrect) && q.options.length > 1);
+        // Фильтруем, пропуская категории и проверяя только настоящие вопросы
+        return parsedQs.filter(q => q.type === 'category' || (q.options && q.options.some(opt => opt.isCorrect) && q.options.length > 1));
     }
 
 
@@ -4618,7 +4619,7 @@ const mainApp = (function() {
         timeLeftEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    
+
 
     function generateQuickNav() {
         quickNavButtonsContainer.innerHTML = '';
@@ -5306,61 +5307,66 @@ const mainApp = (function() {
 
     function processTextWithMultiFormat(text) {
         let allParsedQuestions = [];
-        const blocks = [];
-        let currentBlockLines = [];
         
-        // Добавляем пустую строку в конце, чтобы гарантированно сохранить последний блок
-        const lines = text.trim().split('\n');
-        lines.push(''); 
+        // Вспомогательная функция, чтобы не дублировать код обработки блока
+        const processAndAddBlock = (blockLines) => {
+            if (blockLines.length === 0) return;
 
-        for (const line of lines) {
-            // Условие начала нового блока: строка начинается с "цифра.", за которой следует пробел/таб
-            // ИЛИ строка начинается с тега вопроса.
-            const isNewBlockStart = /^\s*\d+\.\s+/.test(line) || /^\s*<question>|^\s*<Вопрос>/i.test(line);
-
-            if (isNewBlockStart) {
-                // Если мы нашли начало нового вопроса, И У НАС УЖЕ ЕСТЬ ЧТО-ТО В "КОРЗИНЕ"
-                if (currentBlockLines.length > 0) {
-                    // то мы сохраняем старый блок...
-                    blocks.push(currentBlockLines.join('\n'));
-                }
-                // ...и начинаем собирать новый блок с этой строки.
-                currentBlockLines = [line];
-            } else {
-                // Если это не начало нового вопроса, мы просто добавляем строку к текущему собираемому блоку.
-                currentBlockLines.push(line);
-            }
-        }
-
-        // --- Остальная часть функции (обработка блоков) остается без изменений ---
-        const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
-
-        for (const block of blocks) {
+            const blockText = blockLines.join('\n');
+            const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
             let blockParsed = false;
-            if (block.trim() === '') continue; // Пропускаем пустые блоки
 
             for (const pattern of individualPatterns) {
-                if (pattern.detector(block)) {
+                if (pattern.detector(blockText)) {
                     try {
-                        const parsedBlock = pattern.processor(block);
-                        if (parsedBlock.length > 0) {
-                            allParsedQuestions.push(...parsedBlock);
+                        const parsed = pattern.processor(blockText);
+                        if (parsed.length > 0) {
+                            allParsedQuestions.push(...parsed);
                             blockParsed = true;
-                            break; 
+                            break;
                         }
                     } catch (e) {
-                         console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
+                        console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
                     }
                 }
             }
             if (!blockParsed) {
-                console.warn("Не удалось определить формат для блока:\n---\n", block.split('\n')[0]); // Логируем только первую строку для чистоты
+                console.warn("Не удалось определить формат для блока:\n---\n", blockLines[0]);
+            }
+        };
+
+        let currentBlockLines = [];
+        const lines = text.trim().split('\n');
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
+            const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
+
+            if (isNewBlockStart) {
+                // Нашли начало нового вопроса. Обрабатываем предыдущий блок...
+                processAndAddBlock(currentBlockLines);
+                // ...и начинаем собирать новый.
+                currentBlockLines = [line];
+            } else if (isCategoryTag) {
+                // Нашли тег категории. Обрабатываем блок, который был ПЕРЕД ним...
+                processAndAddBlock(currentBlockLines);
+                // ...добавляем саму категорию в результат...
+                const categoryName = trimmedLine.slice(3, -3).trim();
+                allParsedQuestions.push({ text: categoryName, type: 'category' });
+                // ...и сбрасываем "корзину", так как вопрос закончился.
+                currentBlockLines = [];
+            } else {
+                // Это обычная строка, добавляем её к текущему вопросу.
+                currentBlockLines.push(line);
             }
         }
-        
+
+        // Не забываем обработать самый последний блок в файле после окончания цикла
+        processAndAddBlock(currentBlockLines);
+
         return allParsedQuestions;
     }
-
 
 
     function populateParserPatterns() {
