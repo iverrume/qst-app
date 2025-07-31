@@ -5017,59 +5017,6 @@ const mainApp = (function() {
     const PARSER_PATTERNS = [
 
         {
-            id: 'multi_format',
-            name: 'Мультиформатный режим (Авто)',
-            // Детектор: срабатывает, если в тексте есть признаки НЕСКОЛЬКИХ разных форматов.
-            // Например, есть и теги <question>, и ответы с "+" в конце.
-            detector: (text) => {
-                // Ищем признаки РАЗНЫХ форматов в одном тексте
-                const hasTags = /<question>|<Вопрос>/i.test(text);
-                const hasPlusAtEnd = /\+\s*$/m.test(text);
-                const hasPlusAtStart = /^\s*\+/m.test(text); // Проверяем и такой вариант
-
-                const formatCount = [hasTags, hasPlusAtEnd, hasPlusAtStart].filter(Boolean).length;
-                
-                // Мультиформатный режим включается, если найдено более одного типа маркеров
-                return formatCount > 1;
-            },
-            processor: (text) => {
-                let allParsedQuestions = [];
-                // Разделяем текст на блоки по одной или нескольким пустым строкам.
-                // Это стандартный способ разделения вопросов в текстовых файлах.
-                const blocks = text.split(/\n\s*\n/).filter(b => b.trim() !== '');
-
-                // Получаем все шаблоны, КРОМЕ текущего (мультиформатного), чтобы избежать бесконечной рекурсии.
-                const otherPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
-
-                for (const block of blocks) {
-                    let blockParsed = false;
-                    // Для каждого блока пытаемся найти подходящий шаблон
-                    for (const pattern of otherPatterns) {
-                        if (pattern.detector(block)) {
-                            try {
-                                const parsedBlock = pattern.processor(block);
-                                if (parsedBlock.length > 0) {
-                                    // Если успешно, добавляем найденные вопросы в общий список
-                                    allParsedQuestions.push(...parsedBlock);
-                                    blockParsed = true;
-                                    // Мы нашли подходящий шаблон для этого блока, переходим к следующему блоку.
-                                    break; 
-                                }
-                            } catch (e) {
-                                console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
-                            }
-                        }
-                    }
-                    if (!blockParsed) {
-                        console.warn("Не удалось определить формат для блока:\n---\n", block);
-                    }
-                }
-                
-                return allParsedQuestions;
-            }
-        },
-
-        {
             id: 'plus_at_end_generic', // ИЗМЕНЕНИЕ: Новое, более общее имя
             name: "Ответ с '+' в конце строки",
             // Детектор: просто ищет плюс в конце строки. Очень надежно.
@@ -5317,6 +5264,65 @@ const mainApp = (function() {
 
     ];
 
+
+    function processTextWithMultiFormat(text) {
+        let allParsedQuestions = [];
+        let processedText = text;
+
+        // --- ШАГ 1: "Размечаем" текст, вставляя уникальный разделитель ---
+        // ПРИОРИТЕТ №1: Разделение по нумерации (самый надежный для вашего случая)
+        // Вставляем разделитель перед каждой строкой, которая начинается с цифры и точки.
+        processedText = processedText.replace(/\n(?=\s*\d+\s*\.)/g, '<<<BLOCK_DELIMITER>>>');
+        
+        // ПРИОРИТЕТ №2: Разделение по тегам
+        processedText = processedText.replace(/\n(?=<Вопрос>|<question>)/gi, '<<<BLOCK_DELIMITER>>>');
+
+        // ПРИОРИТЕТ №3: Разделение по пустым строкам (для форматов без нумерации)
+        // Заменяем двойные переносы, только если там еще нет нашего разделителя
+        const lines = processedText.split('\n');
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim() === '' && lines[i-1].trim() !== '' && !lines[i-1].endsWith('<<<BLOCK_DELIMITER>>>')) {
+                lines[i-1] += '<<<BLOCK_DELIMITER>>>';
+            }
+        }
+        processedText = lines.join('\n');
+
+
+        // --- ШАГ 2: Разделяем текст на блоки по нашему разделителю ---
+        const blocks = processedText.split('<<<BLOCK_DELIMITER>>>').filter(b => b.trim() !== '');
+
+        // --- ШАГ 3: Обрабатываем каждый блок ---
+        // Получаем все шаблоны, которые могут обрабатывать отдельные блоки
+        const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
+
+        for (const block of blocks) {
+            let blockParsed = false;
+            // Для каждого блока пытаемся найти подходящий шаблон из нашего списка
+            for (const pattern of individualPatterns) {
+                // Используем детектор шаблона, чтобы найти подходящий
+                if (pattern.detector(block)) {
+                    try {
+                        const parsedBlock = pattern.processor(block);
+                        if (parsedBlock.length > 0) {
+                            allParsedQuestions.push(...parsedBlock);
+                            blockParsed = true;
+                            // Шаблон найден, переходим к следующему блоку
+                            break; 
+                        }
+                    } catch (e) {
+                         console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
+                    }
+                }
+            }
+            if (!blockParsed) {
+                console.warn("Не удалось определить формат для блока:\n---\n", block);
+            }
+        }
+        
+        return allParsedQuestions;
+    }
+
+
     function populateParserPatterns() {
         PARSER_PATTERNS.forEach(pattern => {
             const option = document.createElement('option');
@@ -5337,6 +5343,7 @@ const mainApp = (function() {
         reader.readAsText(file, 'UTF-8');
     }
 
+
     function runParser() {
         const text = parserInput.value.trim();
         if (!text) {
@@ -5345,28 +5352,29 @@ const mainApp = (function() {
         }
 
         const selectedPatternId = parserPatternSelect.value;
-        let pattern;
+        let parsedQuestions = [];
 
         if (selectedPatternId === 'auto') {
-            // Логика автоопределения
-            pattern = PARSER_PATTERNS.find(p => p.detector(text));
-            if (pattern) {
-                alert(`Автоматически определен формат: "${pattern.name}"`);
-                parserPatternSelect.value = pattern.id;
+            // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
+            // В автоматическом режиме мы всегда используем нашу новую "супер-функцию"
+            parsedQuestions = processTextWithMultiFormat(text);
+            if (parsedQuestions.length > 0) {
+                 alert(`Автоматический режим: успешно распознано ${parsedQuestions.length} вопросов разного формата.`);
             } else {
-                alert("Не удалось автоматически определить формат. Пожалуйста, выберите вручную.");
+                 alert("Автоматический режим не смог распознать вопросы. Попробуйте выбрать формат вручную.");
+                 return;
+            }
+
+        } else {
+            // Логика для ручного выбора формата остается прежней
+            const pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
+            if (!pattern) {
+                alert("Произошла ошибка. Выбранный паттерн не найден.");
                 return;
             }
-        } else {
-            pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
+            parsedQuestions = pattern.processor(text);
         }
 
-        if (!pattern) {
-            alert("Произошла ошибка. Выбранный паттерн не найден.");
-            return;
-        }
-
-        const parsedQuestions = pattern.processor(text);
 
         if (parsedQuestions.length === 0) {
             alert("Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой.");
@@ -5376,6 +5384,9 @@ const mainApp = (function() {
         // Конвертируем в .qst формат
         let qstResult = '';
         parsedQuestions.forEach(q => {
+            // Добавим проверку на случай, если вопрос или опции пустые
+            if (!q.text || !q.options || q.options.length === 0) return;
+            
             qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
             q.options.forEach(opt => {
                 const prefix = (opt === q.correctAnswer) ? '+' : '-';
@@ -5386,8 +5397,12 @@ const mainApp = (function() {
 
         parserOutput.value = qstResult.trim();
         parserOutputArea.classList.remove('hidden');
-        alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
+        if (selectedPatternId !== 'auto') {
+             alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
+        }
     }
+
+
 
     async function downloadParsedQst() {
         const content = parserOutput.value;
