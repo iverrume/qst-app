@@ -5061,17 +5061,94 @@ const mainApp = (function() {
         },
 
         {
+            id: 'numbered_list_plus_at_end',
+            name: "Нумерация и '+' в конце ответа",
+            // Детектор: ищет строки с нумерацией (1.) И строки, заканчивающиеся на '+'
+            detector: (text) => /^\s*\d+\./m.test(text) && /\+\s*$/m.test(text),
+            processor: (text) => {
+                const questions = [];
+                // Разделяем на блоки, даже если в тексте только один вопрос.
+                // Это делает логику универсальной.
+                const blocks = text.split(/\n(?=\s*\d+\.\s*)/);
+
+                for (const block of blocks) {
+                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
+                    if (lines.length < 2) continue;
+                    
+                    let questionText = '';
+                    const options = [];
+                    let correctAnswer = null;
+                    
+                    // Находим строку с правильным ответом, чтобы отделить вопрос от опций
+                    let optionsStartIndex = -1;
+                    for(let i = 0; i < lines.length; i++) {
+                        if(lines[i].trim().endsWith('+')) {
+                            // Первая строка с "+" обычно является началом списка опций
+                            // Но для надежности ищем первую опцию.
+                            // Предположим, что опции начинаются сразу после вопроса.
+                            // Давайте найдем первую опцию.
+                            // Более простой подход: все строки после первой - опции
+                            optionsStartIndex = 1; 
+                            break;
+                        }
+                    }
+                    // Если плюс не найден в конце, ищем в начале (для другого формата)
+                    if (optionsStartIndex === -1) {
+                        for(let i=0; i < lines.length; i++){
+                             if(/^\s*[А-Яа-яA-Za-z]/.test(lines[i].trim()) && !/^\d+\./.test(lines[i].trim())){
+                                 optionsStartIndex = i;
+                                 break;
+                             }
+                        }
+                    }
+                    if (optionsStartIndex === -1) optionsStartIndex = 1;
+
+
+                    const questionLines = lines.slice(0, optionsStartIndex);
+                    const optionLines = lines.slice(optionsStartIndex);
+
+                    // Собираем текст вопроса, убирая номер в начале первой строки
+                    questionText = questionLines.map((line, index) => 
+                        (index === 0) ? line.replace(/^\s*\d+\.\s*/, '').trim() : line.trim()
+                    ).join(' ');
+
+                    // Обрабатываем опции
+                    optionLines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine.endsWith('+')) {
+                            const answer = trimmedLine.slice(0, -1).trim();
+                            correctAnswer = answer;
+                            options.push(answer);
+                        } else {
+                            options.push(trimmedLine);
+                        }
+                    });
+
+                    if (questionText && correctAnswer && options.length > 0) {
+                        questions.push({
+                            text: questionText,
+                            options: options,
+                            correctAnswer: correctAnswer
+                        });
+                    }
+                }
+                return questions;
+            }
+        },
+
+        {
             id: 'numbered_list_first_answer_correct',
             name: 'Нумерованный список (первый ответ - верный)',
             // Детектор: ищет строки с нумерацией (1.) и УБЕЖДАЕТСЯ, что в тексте НЕТ знаков +/- в начале строк.
             // Это отличает его от предыдущего шаблона.
             detector: (text) => {
                 const hasNumberedLines = /^\s*\d+\./m.test(text);
-                const hasNoMarkers = !/^\s*[\+\-]/m.test(text);
-                // ДОБАВЛЕНА ПРОВЕРКА: убеждаемся, что в тексте нет тегов.
-                const hasNoTags = !/<question>|<variant>/i.test(text);
-                // Шаблон сработает, только если ВСЕ ТРИ условия верны.
-                return hasNumberedLines && hasNoMarkers && hasNoTags;
+                // Убеждаемся, что в тексте НЕТ признаков ДРУГИХ форматов
+                const hasNoPlusAtStart = !/^\s*\+/m.test(text); // Нет "+" в начале строки
+                const hasNoPlusAtEnd = !/\+\s*$/m.test(text); // Нет "+" в конце строки
+                const hasNoTags = !/<question>|<variant>|<Вопрос>|<вариант>/i.test(text);
+
+                return hasNumberedLines && hasNoPlusAtStart && hasNoPlusAtEnd && hasNoTags;
             },
             processor: (text) => {
                 const questions = [];
@@ -5163,63 +5240,7 @@ const mainApp = (function() {
                 return questions;
             }
         },
-        {
-            id: 'numbered_list_plus_at_end',
-            name: "Нумерация и '+' в конце ответа",
-            // Детектор: ищет строки с нумерацией (1.) И строки, заканчивающиеся на '+'
-            detector: (text) => /^\s*\d+\./m.test(text) && /\+\s*$/m.test(text),
-            processor: (text) => {
-                const questions = [];
-                // Разделяем весь текст на блоки, где каждый блок начинается с "цифра."
-                const blocks = text.split(/\n(?=\s*\d+\.\s*)/);
 
-                for (const block of blocks) {
-                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
-                    if (lines.length < 2) continue;
-
-                    let questionTextLines = [];
-                    let optionLines = [];
-                    let correctAnswer = null;
-
-                    // Сначала находим правильный ответ и другие опции
-                    lines.forEach(line => {
-                        const trimmedLine = line.trim();
-                        if (trimmedLine.endsWith('+')) {
-                            const answer = trimmedLine.slice(0, -1).trim();
-                            correctAnswer = answer;
-                            optionLines.push(answer);
-                        } else {
-                            // Предполагаем, что если строка не начинается с номера, это опция или часть вопроса
-                            if (!/^\d+\./.test(trimmedLine)) {
-                                optionLines.push(trimmedLine);
-                            }
-                        }
-                    });
-
-                    // Все, что не является опцией, является частью вопроса
-                    const questionLinesRaw = lines.filter(line => !optionLines.includes(line.trim()) && !optionLines.includes(line.trim().slice(0, -1).trim()));
-                    // Собираем текст вопроса, убирая номер в начале
-                    questionTextLines = questionLinesRaw.map((line, index) => {
-                        if (index === 0) {
-                            return line.replace(/^\s*\d+\.\s*/, '').trim();
-                        }
-                        return line.trim();
-                    });
-
-                    if (questionTextLines.length > 0 && correctAnswer) {
-                        // Из опций нужно убрать сам текст вопроса, если он туда случайно попал
-                        const finalOptions = optionLines.filter(opt => !questionTextLines.includes(opt));
-
-                        questions.push({
-                            text: questionTextLines.join(' '),
-                            options: finalOptions,
-                            correctAnswer: correctAnswer
-                        });
-                    }
-                }
-                return questions;
-            }
-        },
 
         {
             id: 'plus_at_start',
