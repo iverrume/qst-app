@@ -5516,19 +5516,32 @@ const mainApp = (function() {
             return;
         }
 
+
+
         // Конвертируем в .qst формат
         let qstResult = '';
         parsedQuestions.forEach(q => {
-            // Добавим проверку на случай, если вопрос или опции пустые
-            if (!q.text || !q.options || q.options.length === 0) return;
-            
-            qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
-            q.options.forEach(opt => {
-                const prefix = (opt === q.correctAnswer) ? '+' : '-';
-                qstResult += `${prefix} ${opt.replace(/\n/g, ' ')}\n`;
-            });
-            qstResult += '\n';
+            // ЕСЛИ ЭТО КАТЕГОРИЯ
+            if (q.type === 'category') {
+                // Форматируем её в правильный синтаксис
+                qstResult += `#_#${q.text}#_#\n\n`; // Двойной перенос для красивого разделения
+            }
+            // ЕСЛИ ЭТО ВОПРОС
+            else {
+                // Используем старую проверку только для вопросов
+                if (q.text && q.options && q.options.length > 0) {
+                    qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
+                    q.options.forEach(opt => {
+                        const prefix = (opt === q.correctAnswer) ? '+' : '-';
+                        qstResult += `${prefix} ${opt.replace(/\n/g, ' ')}\n`;
+                    });
+                    qstResult += '\n'; // Пустая строка после каждого вопроса
+                }
+            }
         });
+
+
+
 
         parserOutput.value = qstResult.trim();
         parserOutputArea.classList.remove('hidden');
