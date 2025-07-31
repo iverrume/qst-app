@@ -5274,7 +5274,7 @@ const mainApp = (function() {
         // --- ШАГ 1: "Размечаем" текст, вставляя уникальный разделитель ---
         // ПРИОРИТЕТ №1: Разделение по нумерации (самый надежный для вашего случая)
         // Вставляем разделитель перед каждой строкой, которая начинается с цифры и точки.
-        processedText = processedText.replace(/\n(?=\s*\d+\s*\.)/g, '<<<BLOCK_DELIMITER>>>');
+        processedText = processedText.replace(/\n(?=\s*\d+.\s+)/g, '<<<BLOCK_DELIMITER>>>');
         
         // ПРИОРИТЕТ №2: Разделение по тегам
         processedText = processedText.replace(/\n(?=<Вопрос>|<question>)/gi, '<<<BLOCK_DELIMITER>>>');
