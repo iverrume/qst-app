@@ -4933,7 +4933,10 @@ const mainApp = (function() {
             detector: (text) => {
                 const hasNumberedLines = /^\s*\d+\./m.test(text);
                 const hasNoMarkers = !/^\s*[\+\-]/m.test(text);
-                return hasNumberedLines && hasNoMarkers;
+                // ДОБАВЛЕНА ПРОВЕРКА: убеждаемся, что в тексте нет тегов.
+                const hasNoTags = !/<question>|<variant>/i.test(text);
+                // Шаблон сработает, только если ВСЕ ТРИ условия верны.
+                return hasNumberedLines && hasNoMarkers && hasNoTags;
             },
             processor: (text) => {
                 const questions = [];
