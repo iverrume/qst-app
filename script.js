@@ -1390,12 +1390,18 @@ const ChatModule = (function() {
         const isQuestionFormat = text.startsWith('?') && (text.includes('\n+') || text.includes('\n-'));
 
         try {
-
+            // Проверяем, нужно ли добавлять пользователя в участники
             if (currentChannelType === 'public' && currentChannel !== 'general') {
-                const channelRef = db.collection('channels').doc(currentChannel);
-                await channelRef.update({
-                    members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                });
+                // Находим данные текущего канала в нашем локальном кэше (это быстро)
+                const channel = channels.find(c => c.id === currentChannel);
+                
+                // Обновляем список участников, ТОЛЬКО ЕСЛИ пользователь еще не в нем
+                if (channel && (!channel.members || !channel.members.includes(currentUser.uid))) {
+                    const channelRef = db.collection('channels').doc(currentChannel);
+                    await channelRef.update({
+                        members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                    });
+                }
             }
 
             if (isQuestionFormat) {
