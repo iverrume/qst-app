@@ -3868,3 +3868,30 @@ button[onclick*="copyToClipboard"].copied:after {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Контейнер для поля пароля и иконки */
+.password-wrapper {
+    position: relative;
+    /* Используем тот же отступ, что и у других полей ввода */
+    margin-bottom: 15px; 
+}
+
+/* Убираем нижний отступ у поля ввода внутри обертки */
+.password-wrapper .auth-input {
+    margin-bottom: 0;
+    /* Добавляем отступ справа, чтобы текст не заезжал под иконку */
+    padding-right: 45px;
+}
+
+/* Стили для самой иконки глаза */
+.toggle-password {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    font-size: 1.2em;
+    /* Отключаем выделение иконки как текста */
+    user-select: none;
+}

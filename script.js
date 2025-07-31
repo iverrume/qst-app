@@ -137,7 +137,17 @@ const ChatModule = (function() {
                 <form class="auth-form" id="registerForm">
                     <input type="text" class="auth-input" id="registerUsername" placeholder="Имя пользователя" required>
                     <input type="email" class="auth-input" id="registerEmail" placeholder="Email" required>
-                    <input type="password" class="auth-input" id="registerPassword" placeholder="Пароль (минимум 6 символов)" required>
+
+                    <div class="password-wrapper">
+                        <input type="password" class="auth-input" id="registerPassword" placeholder="Пароль (минимум 6 символов)" required>
+                        <span class="toggle-password">👁️</span>
+                    </div>
+
+                    <div class="password-wrapper">
+                        <input type="password" class="auth-input" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
+                        <span class="toggle-password">👁️</span>
+                    </div>
+
                     <button type="submit" class="auth-btn">Зарегистрироваться</button>
                 </form>
                 <button onclick="ChatModule.closeAuthModal()" style="margin-top: 15px; background: none; border: none; color: var(--secondary-text-color); cursor: pointer;">
@@ -467,6 +477,28 @@ const ChatModule = (function() {
         document.getElementById('uploadFileBtn')?.addEventListener('click', handleChatFileUploadTrigger);
         document.getElementById('chatFileInput')?.addEventListener('change', handleChatFileSelected);
 
+
+        // Делегирование клика для переключения видимости пароля
+        document.body.addEventListener('click', function(event) {
+            // Проверяем, был ли клик именно по нашей иконке
+            if (event.target.classList.contains('toggle-password')) {
+                const icon = event.target;
+                // Находим соседний элемент - наше поле ввода
+                const passwordInput = icon.previousElementSibling;
+
+                if (passwordInput && passwordInput.type === 'password') {
+                    // Если поле скрыто - показываем
+                    passwordInput.type = 'text';
+                    icon.textContent = '🙈'; // Меняем иконку на "открытый глаз"
+                } else if (passwordInput && passwordInput.type === 'text') {
+                    // Если поле видно - скрываем
+                    passwordInput.type = 'password';
+                    icon.textContent = '👁️'; // Возвращаем иконку "закрытого глаза"
+                }
+            }
+        });
+
+
         const debouncedSearch = debounce(handleSearch, 300);
         if (searchInput) searchInput.addEventListener('input', debouncedSearch);
 
@@ -567,14 +599,28 @@ const ChatModule = (function() {
         }
     }
     
+
+
     async function handleRegister(e) {
         e.preventDefault();
         if (!auth) { showError('Система аутентификации не доступна'); return; }
         const username = document.getElementById('registerUsername').value.trim();
         const email = document.getElementById('registerEmail').value.trim();
         const password = document.getElementById('registerPassword').value;
-        if (!username || !email || !password) { showError('Заполните все поля'); return; }
-        if (password.length < 6) { showError('Пароль должен содержать минимум 6 символов'); return; }
+        const passwordConfirm = document.getElementById('registerPasswordConfirm').value; // <-- Новая строка
+
+        if (!username || !email || !password || !passwordConfirm) { // <-- Изменено
+            showError('Заполните все поля'); 
+            return; 
+        }
+        if (password.length < 6) { 
+            showError('Пароль должен содержать минимум 6 символов'); 
+            return; 
+        }
+        if (password !== passwordConfirm) { // <-- Новая проверка
+            showError('Пароли не совпадают!');
+            return;
+        }
 
         try {
             const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -593,6 +639,8 @@ const ChatModule = (function() {
             showError(getErrorMessage(error.code));
         }
     }
+
+
 
     function getErrorMessage(errorCode) {
         const errorMessages = {
@@ -3323,6 +3371,7 @@ const mainApp = (function() {
         runParserBtn?.addEventListener('click', runParser);
         downloadParsedBtn?.addEventListener('click', downloadParsedQst);
         clearParserInputBtn?.addEventListener('click', clearParserInput);
+
 
         nextButton.addEventListener('click', handleNextButtonClick);
         prevQuestionButton.addEventListener('click', loadPreviousQuestion);
