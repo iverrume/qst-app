@@ -4924,45 +4924,7 @@ const mainApp = (function() {
     // --- НАЧАЛО НОВОГО КОДА: ДВИЖОК ПАРСЕРА ---
 
     const PARSER_PATTERNS = [
-        {
-            id: 'plus_at_start',
-            name: 'Формат: Ответ с "+" в начале строки',
-            // Ищет блок, где есть хотя бы одна строка, начинающаяся с "+"
-            detector: (text) => text.split('\n').some(line => line.trim().startsWith('+')),
-            processor: (text) => {
-                const questions = [];
-                const blocks = text.split(/\n\s*\n/); // Делим по пустым строкам
-                for (const block of blocks) {
-                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
-                    if (lines.length < 2) continue;
 
-                    const questionLines = [];
-                    const optionLines = [];
-                    let correctAnswer = null;
-
-                    lines.forEach(line => {
-                        const trimmedLine = line.trim();
-                        if (trimmedLine.startsWith('+')) {
-                            correctAnswer = trimmedLine.substring(1).trim();
-                            optionLines.push(correctAnswer);
-                        } else if (/^[a-zA-Zа-яА-Я0-9]/.test(trimmedLine) && correctAnswer !== null) {
-                            optionLines.push(trimmedLine);
-                        } else {
-                            questionLines.push(trimmedLine);
-                        }
-                    });
-
-                    if (questionLines.length > 0 && correctAnswer) {
-                        questions.push({
-                            text: questionLines.join(' '),
-                            options: optionLines,
-                            correctAnswer: correctAnswer
-                        });
-                    }
-                }
-                return questions;
-            }
-        },
 
         {
             id: 'numbered_list_plus_answer',
@@ -5012,6 +4974,49 @@ const mainApp = (function() {
                 return questions;
             }
         },
+
+        
+        {
+            id: 'plus_at_start',
+            name: 'Формат: Ответ с "+" в начале строки',
+            // Ищет блок, где есть хотя бы одна строка, начинающаяся с "+"
+            detector: (text) => text.split('\n').some(line => line.trim().startsWith('+')),
+            processor: (text) => {
+                const questions = [];
+                const blocks = text.split(/\n\s*\n/); // Делим по пустым строкам
+                for (const block of blocks) {
+                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
+                    if (lines.length < 2) continue;
+
+                    const questionLines = [];
+                    const optionLines = [];
+                    let correctAnswer = null;
+
+                    lines.forEach(line => {
+                        const trimmedLine = line.trim();
+                        if (trimmedLine.startsWith('+')) {
+                            correctAnswer = trimmedLine.substring(1).trim();
+                            optionLines.push(correctAnswer);
+                        } else if (/^[a-zA-Zа-яА-Я0-9]/.test(trimmedLine) && correctAnswer !== null) {
+                            optionLines.push(trimmedLine);
+                        } else {
+                            questionLines.push(trimmedLine);
+                        }
+                    });
+
+                    if (questionLines.length > 0 && correctAnswer) {
+                        questions.push({
+                            text: questionLines.join(' '),
+                            options: optionLines,
+                            correctAnswer: correctAnswer
+                        });
+                    }
+                }
+                return questions;
+            }
+        },
+
+
 
 
         {
