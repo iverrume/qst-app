@@ -3711,7 +3711,7 @@ const mainApp = (function() {
             showMobileDownloadStatus('Подготовка файла для скачивания...', 'loading');
 
             // Создаем уникальное имя файла прямо на клиенте для надежности
-            const uniqueFileName = `temp_${new Date().getTime()}_${fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+            const uniqueFileName = `qstium.com_${new Date().getTime()}_${fileName.replace(/[^a-zA-Zа-яА-Я0-9.\-_]/g, '_')}`;
 
             // Формируем URL с параметрами
             const url = `${googleAppScriptUrl}?action=createTempFile&fileName=${encodeURIComponent(uniqueFileName)}`;
