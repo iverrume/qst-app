@@ -5023,11 +5023,10 @@ const mainApp = (function() {
             detector: (text) => /\+\s*$/m.test(text),
             processor: (text) => {
                 const questions = [];
-                // ИСПОЛЬЗУЕМ НОВЫЙ РАЗДЕЛИТЕЛЬ
                 const blocks = smartSplitIntoBlocks(text);
 
                 for (const block of blocks) {
-                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
+                    const lines = block.trim().split('\n'); // Не удаляем пустые строки сразу
                     if (lines.length < 2) continue;
 
                     let questionLines = [];
@@ -5036,21 +5035,24 @@ const mainApp = (function() {
                     
                     let firstOptionIndex = -1;
 
-                    // Находим, с какой строки начинаются варианты ответов
-                    for (let i = 0; i < lines.length; i++) {
-                        const l = lines[i].trim();
-                        // Варианты начинаются там, где либо есть "+", либо это не первая строка
-                        if (i > 0 && (l.endsWith('+') || optionLines.length > 0)) {
-                             firstOptionIndex = i;
-                             break;
+                    // ИЩЕМ ПЕРВУЮ СТРОКУ С ОТСТУПОМ (ТАБУЛЯЦИЕЙ ИЛИ ПРОБЕЛАМИ)
+                    // Начинаем со второй строки (i=1), так как первая строка - всегда часть вопроса.
+                    for (let i = 1; i < lines.length; i++) {
+                        // Регулярное выражение /^\s/ ищет любой пробельный символ в начале строки
+                        if (lines[i] && /^\s/.test(lines[i])) { 
+                            firstOptionIndex = i;
+                            break; // Нашли! Выходим из цикла.
                         }
                     }
-                    
-                    // Если не нашли четкого начала опций, считаем что вопрос в первой строке
-                    if (firstOptionIndex === -1) firstOptionIndex = 1;
 
-                    questionLines = lines.slice(0, firstOptionIndex);
-                    const rawOptionLines = lines.slice(firstOptionIndex);
+                    // Если мы так и не нашли строку с отступом (на случай, если форматирование пропало),
+                    // используем старый "запасной" вариант: считаем, что вопрос только в первой строке.
+                    if (firstOptionIndex === -1) {
+                        firstOptionIndex = 1;
+                    }
+
+                    questionLines = lines.slice(0, firstOptionIndex).filter(l => l.trim() !== '');
+                    const rawOptionLines = lines.slice(firstOptionIndex).filter(l => l.trim() !== '');
                     
                     // Собираем текст вопроса, убирая возможную нумерацию в начале
                     const questionText = questionLines.join(' ').replace(/^\s*\d+\s*\.?\s*/, '').trim();
