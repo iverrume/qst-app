@@ -5269,46 +5269,46 @@ const mainApp = (function() {
 
     function processTextWithMultiFormat(text) {
         let allParsedQuestions = [];
-        let processedText = text;
-
-        // --- ШАГ 1: "Размечаем" текст, вставляя уникальный разделитель ---
-        // ПРИОРИТЕТ №1: Разделение по нумерации (самый надежный для вашего случая)
-        // Вставляем разделитель перед каждой строкой, которая начинается с цифры и точки.
-        processedText = processedText.replace(/\n(?=\s*\d+.\s+)/g, '<<<BLOCK_DELIMITER>>>');
+        const blocks = [];
+        let currentBlockLines = [];
         
-        // ПРИОРИТЕТ №2: Разделение по тегам
-        processedText = processedText.replace(/\n(?=<Вопрос>|<question>)/gi, '<<<BLOCK_DELIMITER>>>');
+        // Добавляем пустую строку в конце, чтобы гарантированно сохранить последний блок
+        const lines = text.trim().split('\n');
+        lines.push(''); 
 
-        // ПРИОРИТЕТ №3: Разделение по пустым строкам (для форматов без нумерации)
-        // Заменяем двойные переносы, только если там еще нет нашего разделителя
-        const lines = processedText.split('\n');
-        for (let i = 1; i < lines.length; i++) {
-            if (lines[i].trim() === '' && lines[i-1].trim() !== '' && !lines[i-1].endsWith('<<<BLOCK_DELIMITER>>>')) {
-                lines[i-1] += '<<<BLOCK_DELIMITER>>>';
+        for (const line of lines) {
+            // Условие начала нового блока: строка начинается с "цифра.", за которой следует пробел/таб
+            // ИЛИ строка начинается с тега вопроса.
+            const isNewBlockStart = /^\s*\d+\.\s+/.test(line) || /^\s*<question>|^\s*<Вопрос>/i.test(line);
+
+            if (isNewBlockStart) {
+                // Если мы нашли начало нового вопроса, И У НАС УЖЕ ЕСТЬ ЧТО-ТО В "КОРЗИНЕ"
+                if (currentBlockLines.length > 0) {
+                    // то мы сохраняем старый блок...
+                    blocks.push(currentBlockLines.join('\n'));
+                }
+                // ...и начинаем собирать новый блок с этой строки.
+                currentBlockLines = [line];
+            } else {
+                // Если это не начало нового вопроса, мы просто добавляем строку к текущему собираемому блоку.
+                currentBlockLines.push(line);
             }
         }
-        processedText = lines.join('\n');
 
-
-        // --- ШАГ 2: Разделяем текст на блоки по нашему разделителю ---
-        const blocks = processedText.split('<<<BLOCK_DELIMITER>>>').filter(b => b.trim() !== '');
-
-        // --- ШАГ 3: Обрабатываем каждый блок ---
-        // Получаем все шаблоны, которые могут обрабатывать отдельные блоки
+        // --- Остальная часть функции (обработка блоков) остается без изменений ---
         const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
 
         for (const block of blocks) {
             let blockParsed = false;
-            // Для каждого блока пытаемся найти подходящий шаблон из нашего списка
+            if (block.trim() === '') continue; // Пропускаем пустые блоки
+
             for (const pattern of individualPatterns) {
-                // Используем детектор шаблона, чтобы найти подходящий
                 if (pattern.detector(block)) {
                     try {
                         const parsedBlock = pattern.processor(block);
                         if (parsedBlock.length > 0) {
                             allParsedQuestions.push(...parsedBlock);
                             blockParsed = true;
-                            // Шаблон найден, переходим к следующему блоку
                             break; 
                         }
                     } catch (e) {
@@ -5317,12 +5317,13 @@ const mainApp = (function() {
                 }
             }
             if (!blockParsed) {
-                console.warn("Не удалось определить формат для блока:\n---\n", block);
+                console.warn("Не удалось определить формат для блока:\n---\n", block.split('\n')[0]); // Логируем только первую строку для чистоты
             }
         }
         
         return allParsedQuestions;
     }
+
 
 
     function populateParserPatterns() {
