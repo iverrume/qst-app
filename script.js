@@ -4520,11 +4520,6 @@ const mainApp = (function() {
 
 
 
-
-
-
-
-
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
         let sourceArray;
         if (!isErrorReview) {
@@ -4545,26 +4540,67 @@ const mainApp = (function() {
             quizSettings.shuffleQuestions = false;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
         }
-        questionsForCurrentQuiz = sourceArray.map(q => {
-            const newQ = JSON.parse(JSON.stringify(q));
-            newQ.triggeredWordIndices = Array.isArray(q.triggeredWordIndices) ? [...q.triggeredWordIndices] : [];
-            return newQ;
-        });
-        triggerWordsUsedInQuiz = questionsForCurrentQuiz.some(q => q.triggeredWordIndices && q.triggeredWordIndices.length > 0);
+        
+        // --- НАЧАЛО ГЛАВНОГО ИЗМЕНЕНИЯ: УМНОЕ ПЕРЕМЕШИВАНИЕ ---
         if (quizSettings.shuffleQuestions && !isErrorReview) {
-            shuffleArray(questionsForCurrentQuiz);
-        }
-        questionsForCurrentQuiz.forEach(q => {
-            if (quizSettings.shuffleAnswers) {
-                const correctAnswerObject = q.options[q.correctAnswerIndex];
-                shuffleArray(q.options);
-                q.correctAnswerIndex = q.options.findIndex(opt => opt === correctAnswerObject);
+            let shuffledQuiz = [];
+            let questionGroup = [];
+
+            // Перебираем все элементы
+            sourceArray.forEach((item, index) => {
+                if (item.type === 'category') {
+                    // Если мы встретили новую категорию:
+                    // 1. Перемешиваем собранную группу вопросов ПЕРЕД ней
+                    if (questionGroup.length > 0) {
+                        shuffleArray(questionGroup);
+                        shuffledQuiz.push(...questionGroup);
+                        questionGroup = []; // Очищаем группу
+                    }
+                    // 2. Добавляем саму категорию в результат
+                    shuffledQuiz.push(item);
+                } else {
+                    // Если это обычный вопрос, просто добавляем его в текущую группу
+                    questionGroup.push(item);
+                }
+            });
+
+            // Не забываем перемешать и добавить последнюю группу вопросов после цикла
+            if (questionGroup.length > 0) {
+                shuffleArray(questionGroup);
+                shuffledQuiz.push(...questionGroup);
             }
-        });
+            
+            // Заменяем наш исходный массив на новый, отсортированный по категориям
+            questionsForCurrentQuiz = shuffledQuiz;
+
+        } else {
+            // Если перемешивание вопросов отключено, просто копируем массив
+            questionsForCurrentQuiz = [...sourceArray];
+        }
+        // --- КОНЕЦ ГЛАВНОГО ИЗМЕНЕНИЯ ---
+
+        // Глубокое копирование, чтобы не изменять оригинальные данные
+        questionsForCurrentQuiz = questionsForCurrentQuiz.map(q => JSON.parse(JSON.stringify(q)));
+
+        triggerWordsUsedInQuiz = questionsForCurrentQuiz.some(q => q.type !== 'category' && q.triggeredWordIndices && q.triggeredWordIndices.length > 0);
+
+        // --- ИСПРАВЛЕНИЕ: Безопасное перемешивание ответов ---
+        if (quizSettings.shuffleAnswers) {
+            questionsForCurrentQuiz.forEach(q => {
+                // Перемешиваем ответы, только если это ВОПРОС, а не категория
+                if (q.type !== 'category' && q.options) {
+                    const correctAnswerObject = q.options[q.correctAnswerIndex];
+                    shuffleArray(q.options);
+                    q.correctAnswerIndex = q.options.findIndex(opt => opt === correctAnswerObject);
+                }
+            });
+        }
+        
         if (questionsForCurrentQuiz.length === 0) {
             alert("Нет вопросов для теста с текущими настройками.");
             return;
         }
+
         quizSetupArea.classList.add('hidden');
         cheatSheetResultArea.classList.add('hidden');
         gradusFoldersContainer.classList.add('hidden');
@@ -4572,6 +4608,9 @@ const mainApp = (function() {
         resultsArea.classList.add('hidden');
         startQuiz();
     }
+
+
+
 
     function startQuiz() {
         currentQuestionIndex = 0;
@@ -4670,36 +4709,86 @@ const mainApp = (function() {
         });
     }
 
-    function loadQuestion(index) {
-        if (index < 0 || index >= questionsForCurrentQuiz.length) return;
-        currentQuestionIndex = index;
-        const question = questionsForCurrentQuiz[index];
-        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
-        addTriggerClickListeners();
+
+
+    function displayCategoryPage(categoryName) {
+        // Показываем основной контейнер вопроса
+        questionContainer.classList.remove('hidden');
+        // Очищаем и форматируем текст
+        questionTextEl.innerHTML = `
+            <div class="quiz-category-screen">
+                <span>Раздел:</span>
+                <h2>${escapeHTML(categoryName)}</h2>
+            </div>
+        `;
+        // Прячем ненужные элементы
         answerOptionsEl.innerHTML = '';
         feedbackAreaEl.textContent = '';
         feedbackAreaEl.className = 'feedback-area';
-        question.options.forEach((option, i) => {
-            const li = document.createElement('li');
-            li.textContent = option.text;
-            li.dataset.index = i;
-            if (userAnswers[index].answered) {
-                li.classList.add('answered');
-                if (i === userAnswers[index].selectedOptionIndex) {
-                    li.classList.add(userAnswers[index].correct ? 'correct' : 'incorrect');
-                }
-                if (!userAnswers[index].correct && i === question.correctAnswerIndex) {
-                    li.classList.add('actual-correct');
-                }
+        copyQuestionBtnQuiz?.classList.add('hidden');
+        getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        webSearchDropdown?.classList.add('hidden');
+    }
+
+
+
+    function loadQuestion(index) {
+        if (index < 0 || index >= questionsForCurrentQuiz.length) return;
+        currentQuestionIndex = index;
+        const item = questionsForCurrentQuiz[index];
+
+        // --- ГЛАВНЫЙ РОУТЕР: ПРОВЕРЯЕМ ТИП ЭЛЕМЕНТА ---
+        if (item.type === 'category') {
+            displayCategoryPage(item.text); // Показываем экран категории
+        } else {
+            // Это обычный вопрос, показываем его как раньше
+            questionTextEl.innerHTML = renderQuestionTextWithTriggers(item);
+            addTriggerClickListeners();
+            answerOptionsEl.innerHTML = '';
+            feedbackAreaEl.textContent = '';
+            feedbackAreaEl.className = 'feedback-area';
+            
+            // Показываем кнопки, которые могли быть скрыты на экране категории
+            copyQuestionBtnQuiz?.classList.remove('hidden');
+            getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+            webSearchDropdown?.classList.remove('hidden');
+            
+            // Проверка на случай поврежденных данных
+            if (!item.options) {
+                console.error("У вопроса отсутствуют опции:", item);
+                answerOptionsEl.innerHTML = "<li>Ошибка: варианты ответов не найдены.</li>";
             } else {
-                li.addEventListener('click', handleAnswerSelect);
+                 item.options.forEach((option, i) => {
+                    const li = document.createElement('li');
+                    li.textContent = option.text;
+                    li.dataset.index = i;
+                    
+                    // Проверяем, был ли дан ответ на этот вопрос ранее
+                    if (userAnswers[index] && userAnswers[index].answered) {
+                        li.classList.add('answered');
+                        if (i === userAnswers[index].selectedOptionIndex) {
+                            li.classList.add(userAnswers[index].correct ? 'correct' : 'incorrect');
+                        }
+                        if (!userAnswers[index].correct && i === item.correctAnswerIndex) {
+                            li.classList.add('actual-correct');
+                        }
+                    } else {
+                        // Если ответа не было, добавляем обработчик клика
+                        li.addEventListener('click', handleAnswerSelect);
+                    }
+                    answerOptionsEl.appendChild(li);
+                });
             }
-            answerOptionsEl.appendChild(li);
-        });
+        }
+        
+        // Обновляем общую навигацию и счетчики для всех типов элементов
         currentQuestionNumEl.textContent = index + 1;
         updateNavigationButtons();
         updateQuickNavButtons();
     }
+
+
+
 
     function handleAnswerSelect(event) {
         if (userAnswers[currentQuestionIndex].answered) return;

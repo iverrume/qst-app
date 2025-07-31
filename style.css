@@ -3942,3 +3942,28 @@ button[onclick*="copyToClipboard"].copied:after {
 .quick-nav-category:first-child {
     margin-top: 0;
 }
+
+/* --- Стили для экрана-заставки категории в тесте --- */
+
+.quiz-category-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 200px; /* Чтобы экран не был слишком маленьким */
+    padding: 20px;
+    color: var(--secondary-text-color);
+}
+
+.quiz-category-screen span {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+.quiz-category-screen h2 {
+    font-size: 2em;
+    color: var(--heading-color);
+    margin: 0;
+    line-height: 1.2;
+}
