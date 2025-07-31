@@ -2615,18 +2615,24 @@ const ChatModule = (function() {
          try {
             closeModal('fileActionsModal');
             ChatModule.closeChatModal(); // Закрываем чат
-            showGlobalLoader(`Загрузка теста "${fileName}"...`);
+
+            // ИСПРАВЛЕНИЕ: Вызываем функцию через объект mainApp
+            window.mainApp.showGlobalLoader(`Загрузка теста "${fileName}"...`);
+
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
             const response = await fetch(url);
             const data = await response.json();
             if (!data.success) throw new Error(data.error);
             
-            // Используем логику из основного приложения для старта теста
+            // Эта функция сама скроет лоадер, когда будет готова
             window.mainApp.processFile(fileName, data.content);
 
         } catch (error) {
             console.error('Ошибка запуска теста из чата:', error);
-            hideGlobalLoader();
+
+            // ИСПРАВЛЕНИЕ: Вызываем функцию через объект mainApp
+            window.mainApp.hideGlobalLoader();
+            
             alert(`Не удалось запустить тест: ${error.message}`);
         }
     }
