@@ -4963,6 +4963,57 @@ const mainApp = (function() {
                 return questions;
             }
         },
+
+        {
+            id: 'numbered_list_plus_answer',
+            name: 'Формат: Нумерованный список (1.) с ответом "+"',
+            // Детектор: ищет строки, начинающиеся с "цифра." и строки, начинающиеся с "+"
+            detector: (text) => /^\s*\d+\./m.test(text) && /^\s*\+/m.test(text),
+            processor: (text) => {
+                const questions = [];
+                let currentQuestion = null;
+                const lines = text.split(/\r?\n/);
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine === '') continue;
+
+                    // Проверяем, начинается ли строка с номера (напр. "1.", "12. ")
+                    if (/^\d+\.\s*/.test(trimmedLine)) {
+                        // Если уже есть собранный вопрос, сохраняем его
+                        if (currentQuestion && currentQuestion.correctAnswer) {
+                            questions.push(currentQuestion);
+                        }
+                        // Начинаем новый вопрос, удаляя номер и точку в начале
+                        currentQuestion = {
+                            text: trimmedLine.replace(/^\d+\.\s*/, '').trim(),
+                            options: [],
+                            correctAnswer: null
+                        };
+                    } else if (trimmedLine.startsWith('+') && currentQuestion) {
+                        // Это правильный ответ для текущего вопроса
+                        const answerText = trimmedLine.substring(1).trim();
+                        currentQuestion.correctAnswer = answerText;
+                        currentQuestion.options.push(answerText);
+                    } else if (currentQuestion && !currentQuestion.correctAnswer) {
+                        // Это неверный вариант ответа (идет до правильного)
+                        currentQuestion.options.push(trimmedLine);
+                    } else if (currentQuestion && currentQuestion.correctAnswer) {
+                        // Это неверный вариант ответа (идет после правильного)
+                        currentQuestion.options.push(trimmedLine);
+                    }
+                }
+
+                // Не забываем сохранить самый последний вопрос после окончания цикла
+                if (currentQuestion && currentQuestion.correctAnswer) {
+                    questions.push(currentQuestion);
+                }
+
+                return questions;
+            }
+        },
+
+
         {
             id: 'tags_vopros_variant',
             name: 'Формат: теги <Вопрос> и <вариант>',
