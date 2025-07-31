@@ -2596,25 +2596,26 @@ const ChatModule = (function() {
 
     async function downloadSharedFile(fileId, fileName) {
         try {
-            alert('Начинаем загрузку файла...');
+            closeModal('fileActionsModal');
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
             const response = await fetch(url);
             const data = await response.json();
             if (!data.success) throw new Error(data.error);
 
             await window.mainApp.downloadOrShareFile(fileName, data.content, 'text/plain;charset=utf-8', `Файл`);
-            closeModal('fileActionsModal');
         } catch (error) {
             console.error('Ошибка скачивания файла из чата:', error);
             alert(`Не удалось скачать файл: ${error.message}`);
         }
     }
 
+
+
     async function startTestFromShare(fileId, fileName) {
          try {
-            alert('Загрузка теста...');
             closeModal('fileActionsModal');
             ChatModule.closeChatModal(); // Закрываем чат
+            showGlobalLoader(`Загрузка теста "${fileName}"...`);
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
             const response = await fetch(url);
             const data = await response.json();
@@ -2625,6 +2626,7 @@ const ChatModule = (function() {
 
         } catch (error) {
             console.error('Ошибка запуска теста из чата:', error);
+            hideGlobalLoader();
             alert(`Не удалось запустить тест: ${error.message}`);
         }
     }
@@ -3360,7 +3362,27 @@ const mainApp = (function() {
     }
 
 
+    function showGlobalLoader(message = 'Загрузка...') {
+        // Проверяем, есть ли уже лоадер, чтобы не создавать дубликаты
+        if (document.getElementById('globalLoader')) return;
 
+        const loaderHTML = `
+            <div id="globalLoader" class="global-loader-overlay">
+                <div class="loader-content">
+                    <div class="loader-spinner"></div>
+                    <p>${escapeHTML(message)}</p>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', loaderHTML);
+    }
+
+    function hideGlobalLoader() {
+        const loader = document.getElementById('globalLoader');
+        if (loader) {
+            loader.remove();
+        }
+    }
 
 
     async function performSearch() {
@@ -4324,9 +4346,14 @@ const mainApp = (function() {
         reader.readAsText(file, 'UTF-8');
     }
 
+
+
     function processFile(fileName, fileContent) {
         originalFileNameForReview = fileName;
         allParsedQuestions = parseQstContent(fileContent);
+
+        // Прячем лоадер, так как данные обработаны
+        hideGlobalLoader();
 
         if (allParsedQuestions.length > 0) {
             saveRecentFile(fileName, fileContent);
@@ -4344,6 +4371,10 @@ const mainApp = (function() {
             alert(`Не удалось обработать "${fileName}" как валидный тест.`);
         }
     }
+
+
+
+
 
     function parseQstContent(content) {
         let parsedQs = [];
@@ -5214,6 +5245,8 @@ const mainApp = (function() {
         downloadOrShareFile: downloadOrShareFile,
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,
         handleCopyClickInSearch: handleCopyClickInSearch,
+        showGlobalLoader: showGlobalLoader,
+        hideGlobalLoader: hideGlobalLoader,
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания...');
             console.log('detectMobileDevice():', detectMobileDevice());
