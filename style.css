@@ -3895,3 +3895,16 @@ button[onclick*="copyToClipboard"].copied:after {
     /* Отключаем выделение иконки как текста */
     user-select: none;
 }
+
+/* Улучшенные стили для текстовых полей парсера */
+#parserArea textarea {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Стиль при фокусе: красивая синяя рамка и тень */
+#parserArea textarea:focus {
+    border-color: var(--button-primary-bg); /* Синяя рамка */
+    outline: none; /* Убираем стандартный контур */
+    /* Добавляем мягкую тень для эффекта "свечения" */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); 
+}
