@@ -442,10 +442,15 @@ const ChatModule = (function() {
 
         if (chatInput) {
             chatInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
-                    e.preventDefault();
+                // Отправляем сообщение по Ctrl+Enter
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    // Предотвращаем создание новой строки, которое может произойти
+                    e.preventDefault(); 
+                    // Вызываем функцию отправки
                     sendMessage();
                 }
+                // Если нажат просто Enter (без Ctrl), то ничего не делаем,
+                // позволяя браузеру выполнить действие по умолчанию - создать новую строку.
             });
             chatInput.addEventListener('input', () => {
                 chatInput.style.height = 'auto'; 
