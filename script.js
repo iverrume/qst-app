@@ -22,7 +22,6 @@ const ChatModule = (function() {
     let replyContext = null;
     let presenceListener = null;
     let heartbeatInterval = null; // Для "пульса"
-    let emojiPicker = null;
     let notificationsEnabled = true;
     let originalTitle = document.title;
     let unreadMessageCount = 0; 
@@ -2353,6 +2352,7 @@ const ChatModule = (function() {
 
 
 
+    // ЗАМЕНИТЕ ВСЮ СТАРУЮ ФУНКЦИЮ НА ЭТОТ КОД
     function showEmojiPicker() {
         const emojiBtn = document.getElementById('emojiBtn');
         if (!emojiBtn) return;
@@ -2362,78 +2362,77 @@ const ChatModule = (function() {
             return;
         }
 
-        // 1. Создаем пикер ОДИН РАЗ и добавляем его в <body>
-        if (!emojiPicker) {
-            emojiPicker = document.createElement('emoji-picker');
-            document.body.appendChild(emojiPicker);
-            emojiPicker.addEventListener('emoji-click', event => {
-                insertEmoji(event.detail.unicode);
-            });
-        }
+        // --- НАЧАЛО НОВОЙ, НАДЕЖНОЙ ЛОГИКИ ---
 
-        // 2. Логика переключения (toggle)
-        const isVisible = emojiPicker.classList.contains('visible');
-        if (isVisible) {
-            emojiPicker.classList.remove('visible');
+        const existingPicker = document.querySelector('emoji-picker.main-input-picker');
+        // 1. Если пикер уже открыт, мы его просто удаляем и выходим.
+        // Это обеспечивает поведение "включить/выключить".
+        if (existingPicker) {
+            existingPicker.remove();
             return;
         }
-        
-        // --- НАДЕЖНАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
 
-        // 3. Прячем пикер и выносим его за экран для измерения
-        emojiPicker.style.visibility = 'hidden';
-        emojiPicker.style.position = 'fixed';
-        emojiPicker.style.left = '-9999px';
-        emojiPicker.style.top = '-9999px';
+        // 2. Создаем НОВЫЙ элемент пикера КАЖДЫЙ раз при открытии.
+        const picker = document.createElement('emoji-picker');
+        // Добавляем класс, чтобы легко его находить
+        picker.classList.add('main-input-picker'); 
 
-        // 4. Теперь, когда он отрисован (хоть и не виден), ИЗМЕРЯЕМ его
-        const pickerRect = emojiPicker.getBoundingClientRect();
+        picker.addEventListener('emoji-click', event => {
+            insertEmoji(event.detail.unicode);
+            // После выбора смайлика пикер можно сразу закрыть
+            if (picker.parentNode) {
+                picker.remove();
+            }
+        });
+
+        // 3. Используем вашу проверенную логику позиционирования
+        document.body.appendChild(picker);
+        picker.style.visibility = 'hidden';
+        picker.style.position = 'fixed';
+        picker.style.left = '-9999px';
+        picker.style.top = '-9999px';
+
+        const pickerRect = picker.getBoundingClientRect();
         const btnRect = emojiBtn.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const margin = 10;
 
-        // 5. Выполняем расчеты с ТОЧНЫМИ размерами
-        // Центрируем пикер относительно кнопки
         let leftPos = btnRect.left + (btnRect.width / 2) - (pickerRect.width / 2);
-
-        // Корректируем, если выходит за границы
-        if (leftPos < margin) {
-            leftPos = margin; // Прижимаем к левому краю
-        }
+        if (leftPos < margin) leftPos = margin;
         if (leftPos + pickerRect.width > viewportWidth - margin) {
-            leftPos = viewportWidth - pickerRect.width - margin; // Прижимаем к правому краю
+            leftPos = viewportWidth - pickerRect.width - margin;
         }
 
         let topPos = btnRect.top - pickerRect.height - margin;
         if (topPos < margin) {
-            topPos = btnRect.bottom + margin; // Если не помещается сверху, ставим снизу
+            topPos = btnRect.bottom + margin;
         }
 
-        // 6. Применяем финальные, правильные координаты
-        emojiPicker.style.top = `${topPos}px`;
-        emojiPicker.style.left = `${leftPos}px`;
+        picker.style.top = `${topPos}px`;
+        picker.style.left = `${leftPos}px`;
         
-        // Настраиваем тему
         if (document.body.classList.contains('dark-mode')) {
-            emojiPicker.classList.add('dark');
-            emojiPicker.classList.remove('light');
+            picker.classList.add('dark');
         } else {
-            emojiPicker.classList.add('light');
-            emojiPicker.classList.remove('dark');
+            picker.classList.add('light');
         }
 
-        // 7. И только теперь делаем пикер видимым для пользователя
-        emojiPicker.style.visibility = 'visible';
-        emojiPicker.classList.add('visible');
+        picker.style.visibility = 'visible';
+        picker.classList.add('visible');
 
-        // 8. Добавляем слушатель для закрытия (самый надежный способ)
+        // 4. Добавляем слушатель, который будет УДАЛЯТЬ пикер при клике снаружи.
+        const closeOnClickOutside = (e) => {
+            // Проверяем, что пикер все еще существует и клик был не по нему и не по кнопке
+            if (document.body.contains(picker) && !picker.contains(e.target) && !emojiBtn.contains(e.target)) {
+                picker.remove(); // <-- САМОЕ ГЛАВНОЕ: ПОЛНОЕ УДАЛЕНИЕ
+                // После удаления обязательно убираем сам слушатель, чтобы он не "висел" в памяти
+                window.removeEventListener('click', closeOnClickOutside);
+            }
+        };
+        
+        // Устанавливаем слушатель
         setTimeout(() => {
-            window.addEventListener('click', function closeOnClickOutside(e) {
-                if (emojiPicker.classList.contains('visible') && !emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
-                    emojiPicker.classList.remove('visible');
-                    window.removeEventListener('click', closeOnClickOutside);
-                }
-            });
+            window.addEventListener('click', closeOnClickOutside);
         }, 0);
     }
     
