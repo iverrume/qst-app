@@ -4925,6 +4925,57 @@ const mainApp = (function() {
 
     const PARSER_PATTERNS = [
 
+        {
+            id: 'numbered_list_first_answer_correct',
+            name: 'Формат: Нумерованный список (первый ответ - верный)',
+            // Детектор: ищет строки с нумерацией (1.) и УБЕЖДАЕТСЯ, что в тексте НЕТ знаков +/- в начале строк.
+            // Это отличает его от предыдущего шаблона.
+            detector: (text) => {
+                const hasNumberedLines = /^\s*\d+\./m.test(text);
+                const hasNoMarkers = !/^\s*[\+\-]/m.test(text);
+                return hasNumberedLines && hasNoMarkers;
+            },
+            processor: (text) => {
+                const questions = [];
+                let currentQuestion = null;
+                const lines = text.split(/\r?\n/);
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (trimmedLine === '') continue;
+
+                    // Если строка начинается с цифры и точки - это новый вопрос
+                    if (/^\d+\.\s*/.test(trimmedLine)) {
+                        // Сохраняем предыдущий вопрос, если он был полностью собран
+                        if (currentQuestion && currentQuestion.correctAnswer) {
+                            questions.push(currentQuestion);
+                        }
+                        // Начинаем сборку нового вопроса
+                        currentQuestion = {
+                            text: trimmedLine.replace(/^\d+\.\s*/, '').trim(),
+                            options: [],
+                            correctAnswer: null // Сбрасываем правильный ответ
+                        };
+                    } else if (currentQuestion) {
+                        // Любая другая непустая строка - это вариант ответа
+                        currentQuestion.options.push(trimmedLine);
+                        // ГЛАВНАЯ ЛОГИКА: если правильный ответ еще не назначен,
+                        // значит это ПЕРВЫЙ вариант, и мы его назначаем правильным.
+                        if (currentQuestion.correctAnswer === null) {
+                            currentQuestion.correctAnswer = trimmedLine;
+                        }
+                    }
+                }
+
+                // Сохраняем самый последний вопрос в файле
+                if (currentQuestion && currentQuestion.correctAnswer) {
+                    questions.push(currentQuestion);
+                }
+
+                return questions;
+            }
+        },
+
 
         {
             id: 'numbered_list_plus_answer',
@@ -4975,7 +5026,7 @@ const mainApp = (function() {
             }
         },
 
-        
+
         {
             id: 'plus_at_start',
             name: 'Формат: Ответ с "+" в начале строки',
