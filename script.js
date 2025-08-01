@@ -5417,14 +5417,22 @@ const mainApp = (function() {
 
 
     function processTextWithMultiFormat(text) {
+        // === НАЧАЛО ИСПРАВЛЕНИЯ: Нормализация и ручной подсчёт индекса ===
+
         let allParsedQuestions = [];
         let parsingErrors = [];
 
-        // Вспомогательная функция, чтобы не дублировать код обработки блока
-        const processAndAddBlock = (blockLines, blockStartIndex) => {
-            if (blockLines.length === 0) return;
+        // 1. Нормализуем все переносы строк к единому формату '\n'.
+        //    Это решает проблему с \r\n и делает подсчет надежным.
+        const normalizedText = text.replace(/\r\n/g, '\n');
+        const lines = normalizedText.split('\n');
 
+        const processAndAddBlock = (blockLines, startIndex) => {
+            if (blockLines.length === 0) return;
             const blockText = blockLines.join('\n');
+            // Рассчитываем конечный индекс
+            const endIndex = startIndex + blockText.length;
+
             const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
             let blockParsed = false;
 
@@ -5444,64 +5452,57 @@ const mainApp = (function() {
             }
             if (!blockParsed) {
                 console.warn("Не удалось определить формат для блока:\n---\n", blockText);
-                const blockEndIndex = blockStartIndex + blockText.length;
                 parsingErrors.push({
                     text: blockText.trim(),
-                    start: blockStartIndex,
-                    end: blockEndIndex
+                    start: startIndex,
+                    end: endIndex
                 });
             }
         };
 
+        // 2. Используем ручной подсчет индекса вместо ненадежного indexOf.
+        let currentIndex = 0;
         let currentBlockLines = [];
         let currentBlockStartIndex = 0;
-        let cumulativeIndex = 0;
-        const lines = text.split('\n');
 
-        lines.forEach((line, index) => {
+        lines.forEach(line => {
             const trimmedLine = line.trim();
             const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
             const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
             
-            // Если нашли тег категории
             if (isCategoryTag) {
-                // 1. Обрабатываем предыдущий накопленный блок (если он был)
                 processAndAddBlock(currentBlockLines, currentBlockStartIndex);
-                // 2. Добавляем саму категорию в результат
                 const categoryName = trimmedLine.slice(3, -3).trim();
                 allParsedQuestions.push({ text: categoryName, type: 'category' });
-                // 3. Сбрасываем сборщик для следующего блока
                 currentBlockLines = [];
-            } 
-            // Если нашли начало нового вопроса (и это не первый вопрос в файле)
-            else if (isNewBlockStart && currentBlockLines.length > 0) {
-                // 1. Обрабатываем предыдущий блок
+            } else if (isNewBlockStart && currentBlockLines.length > 0) {
                 processAndAddBlock(currentBlockLines, currentBlockStartIndex);
-                // 2. Начинаем новый блок с текущей строки
                 currentBlockLines = [line];
-            } 
-            // В противном случае просто добавляем строку к текущему блоку
-            else {
+                // Новый блок начинается с текущей позиции
+                currentBlockStartIndex = currentIndex;
+            } else {
                 if (currentBlockLines.length === 0) {
-                    // Запоминаем позицию начала нового блока
-                    currentBlockStartIndex = text.indexOf(line, cumulativeIndex);
+                    // Это первая строка нового блока
+                    currentBlockStartIndex = currentIndex;
                 }
                 currentBlockLines.push(line);
             }
-            // Обновляем общий индекс для поиска
-             if (index < lines.length -1) {
-                cumulativeIndex = text.indexOf(lines[index+1], cumulativeIndex);
-            }
+
+            // 3. В конце каждой итерации сдвигаем индекс на длину строки + 1 (за символ '\n')
+            currentIndex += line.length + 1;
         });
 
-        // Не забываем обработать самый последний блок после окончания цикла
+        // Не забываем обработать самый последний блок
         processAndAddBlock(currentBlockLines, currentBlockStartIndex);
 
         return {
             questions: allParsedQuestions,
             errors: parsingErrors
         };
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
     }
+
+
 
 
     function populateParserPatterns() {
