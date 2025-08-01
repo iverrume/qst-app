@@ -4022,9 +4022,9 @@ button[onclick*="copyToClipboard"].copied:after {
     background-color: var(--input-hover-bg-color);
     color: var(--text-color);
 }
-/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v4 - ABSOLUTE SYNC) --- */
+/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v5 - MIRROR SYNC) --- */
 .parser-editor-container {
-    display: flex; /* Остается для внутренней структуры */
+    display: grid; /* Используем Grid для идеального наложения слоев */
     margin-top: 10px;
     border: 1px solid var(--input-border-color);
     border-radius: 5px;
@@ -4033,10 +4033,8 @@ button[onclick*="copyToClipboard"].copied:after {
     max-height: 700px;
     min-height: 150px;
     resize: vertical;
-    
-    /* === ИЗМЕНЕНИЕ 1: Делаем контейнер точкой отсчета и даем ему скролл === */
-    position: relative; /* Обязательно для абсолютного позиционирования дочернего элемента */
-    overflow: auto;   /* Теперь этот контейнер будет иметь единственный скроллбар! */
+    position: relative; 
+    overflow: auto;   /* Единственный скроллбар на всем компоненте */
 }
 
 .parser-editor-container:focus-within {
@@ -4045,59 +4043,60 @@ button[onclick*="copyToClipboard"].copied:after {
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
 }
 
+/* Общие стили для всех слоев, чтобы они занимали одну и ту же ячейку грида */
+#parserLineNumbers,
+#parserInputMirror,
+#parserArea textarea#parserInput {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    
+    padding: 10px;
+    margin: 0;
+    box-sizing: border-box;
+    
+    font-family: monospace;
+    font-size: 1em;
+    line-height: 1.4;
+    
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 #parserLineNumbers {
-    background: var(--input-bg-color);
-    padding: 10px 8px;
+    padding-right: 8px;
+    width: 45px; /* Фиксированная ширина для номеров */
     text-align: right;
     user-select: none;
     color: var(--secondary-text-color);
-    font-family: monospace;
-    font-size: 1em;
-    line-height: 1.4;
-    
-    /* === ИЗМЕНЕНИЕ 2: Блок номеров больше не главный === */
-    position: sticky; /* Делаем его "липким" к левому краю */
-    top: 0;
-    left: 0;
-    z-index: 1; /* Размещаем под текстом */
-    border-right: 1px solid var(--input-border-color); /* Сохраняем разделитель */
+    background: var(--input-bg-color);
+    border-right: 1px solid var(--input-border-color);
+    z-index: 1; /* Слой 1 */
 }
 
-#parserLineNumbers span {
-    display: block;
-    height: calc(1em * 1.4);
+#parserInputMirror {
+    padding-left: 55px; /* Отступ слева, чтобы текст не залезал на номера */
+    color: transparent; /* Текст зеркала не должен быть виден */
+    z-index: 0; /* Слой 0 (самый нижний) */
 }
 
 #parserArea textarea#parserInput {
-    /* === ИЗМЕНЕНИЕ 3: Делаем textarea прозрачным слоем поверх номеров === */
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    padding-left: 55px; /* Точно такой же отступ, как у зеркала */
+    color: var(--text-color);
+    background: transparent; /* Прозрачный, чтобы видеть номера и зеркало */
+    z-index: 2; /* Слой 2 (самый верхний) */
     
-    box-sizing: border-box; /* Важно для правильного расчета padding */
-    padding: 10px;
-    /* Сдвигаем сам текст вправо, чтобы не налезал на номера. Ширина ~ 40px + отступ */
-    padding-left: 55px; 
-    
-    color: var(--text-color); /* Явно задаем цвет текста, т.к. фон прозрачный */
-    background: transparent; /* Делаем поле ввода полностью прозрачным! */
-    z-index: 2; /* Размещаем над номерами */
-
-    /* Убираем все, что может помешать */
     border: none !important;
-    margin: 0;
     border-radius: 0;
     resize: none;
-    overflow: hidden; /* У textarea не должно быть своего скролла */
-    
-    /* Сохраняем стили шрифта */
-    line-height: 1.4;
-    font-size: 1em;
-    font-family: monospace;
+    overflow: hidden; /* критически важно: у textarea не должно быть своего скролла */
 }
 
 #parserArea textarea#parserInput:focus {
     box-shadow: none !important;
+}
+
+/* Убираем старый стиль для span, он больше не нужен */
+#parserLineNumbers span {
+    display: initial;
+    height: auto;
 }

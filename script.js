@@ -3262,6 +3262,7 @@ const mainApp = (function() {
     const parserOutput = getEl('parserOutput');
     const downloadParsedBtn = getEl('downloadParsedBtn');
     const clearParserInputBtn = getEl('clearParserInputBtn');
+    const parserInputMirrorEl = getEl('parserInputMirror');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -3396,7 +3397,7 @@ const mainApp = (function() {
         clearParserInputBtn?.addEventListener('click', clearParserInput);
 
         // Обновленные обработчики для редактора
-        parserInput?.addEventListener('input', updateParserLineNumbers);
+        parserInput?.addEventListener('input', updateEditorContent);
 
 
 
@@ -5516,7 +5517,7 @@ const mainApp = (function() {
         const reader = new FileReader();
         reader.onload = (e) => {
             parserInput.value = e.target.result;
-            updateParserLineNumbers();
+            updateEditorContent();
         };
         reader.readAsText(file, 'UTF-8');
     }
@@ -5556,25 +5557,40 @@ const mainApp = (function() {
     }
 
 
+    function updateEditorContent() {
+        if (!parserInput || !parserLineNumbersEl || !parserInputMirrorEl) return;
+        
+        const text = parserInput.value;
+        const lines = text.split('\n');
+        
+        // 1. Обновляем номера строк
+        parserLineNumbersEl.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+        
+        // 2. Обновляем содержимое "зеркала"
+        // escapeHTML здесь критически важен для безопасности и правильного отображения!
+        // Добавляем неразрывный пробел в конце, чтобы последняя пустая строка имела высоту.
+        parserInputMirrorEl.innerHTML = escapeHTML(text) + ' ';
+    }
+
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
         
         parserInput.focus(); 
         parserInput.setSelectionRange(start, end);
 
-        // === ИЗМЕНЕНИЕ: Прокручиваем родительский контейнер ===
+        // Теперь прокрутка работает идеально, т.к. мы просто прокручиваем родителя
         const editorContainer = document.querySelector('.parser-editor-container');
         if (!editorContainer) return;
         
+        // setTimeout все еще полезен, чтобы гарантировать выполнение после отрисовки
         setTimeout(() => {
             const tempDiv = document.createElement('div');
-            tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
+            // Важно использовать стили ЗЕРКАЛА, а не textarea!
+            tempDiv.style.cssText = 'position:absolute;visibility:hidden;white-space:pre-wrap;word-break:break-word;font:inherit;padding-left:55px;width:' + parserInput.clientWidth + 'px;';
             tempDiv.textContent = parserInput.value.substring(0, start);
             document.body.appendChild(tempDiv);
             
-            // Прокручиваем КОНТЕЙНЕР, а не textarea
-            editorContainer.scrollTop = tempDiv.offsetHeight;
-            
+            editorContainer.scrollTop = tempDiv.offsetHeight - 30; // -30px чтобы дать небольшой отступ сверху
             document.body.removeChild(tempDiv);
         }, 0);
     }
@@ -5681,25 +5697,11 @@ const mainApp = (function() {
         parserInput.focus(); // Возвращаем курсор в поле для удобства
         hideAndResetErrorArea();
         updateParserLineNumbers();
+        updateEditorContent();
     }
 
 
-    function updateParserLineNumbers() {
-        if (!parserInput || !parserLineNumbersEl) return;
-        
-        // Небольшая задержка, чтобы браузер успел обработать ввод
-        setTimeout(() => {
-            const lines = parserInput.value.split('\n').length;
-            const lineCount = lines > 0 ? lines : 1; // Минимум 1 строка
-            
-            parserLineNumbersEl.innerHTML = '';
-            for (let i = 1; i <= lineCount; i++) {
-                const lineSpan = document.createElement('span');
-                lineSpan.textContent = i;
-                parserLineNumbersEl.appendChild(lineSpan);
-            }
-        }, 0);
-    }
+
     
 
     // --- Public methods exposed from mainApp ---
