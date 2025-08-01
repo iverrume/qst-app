@@ -5556,20 +5556,43 @@ const mainApp = (function() {
 
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
-        
-        parserInput.focus(); // Переводим фокус на поле ввода
-        
-        // Выделяем текст ошибки
+
+        // 1. Сначала выделяем текст, чтобы пользователь сразу видел результат
+        parserInput.focus();
         parserInput.setSelectionRange(start, end);
 
-        // Прокручиваем поле ввода, чтобы выделение было видно
-        // (Создаем временный элемент для расчета высоты строк)
-        const tempDiv = document.createElement('div');
-        tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
-        tempDiv.textContent = parserInput.value.substring(0, start);
-        document.body.appendChild(tempDiv);
-        parserInput.scrollTop = tempDiv.offsetHeight;
-        document.body.removeChild(tempDiv);
+        // 2. Создаем "зеркальный" div для точного расчета высоты
+        const mirrorDiv = document.createElement('div');
+        const computedStyle = getComputedStyle(parserInput);
+
+        // 3. Копируем ВСЕ важные стили, влияющие на геометрию текста
+        [
+            'font', 'lineHeight', 'letterSpacing', 'wordSpacing',
+            'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+            'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth',
+            'boxSizing', 'whiteSpace', 'wordWrap', 'wordBreak'
+        ].forEach(prop => {
+            mirrorDiv.style[prop] = computedStyle[prop];
+        });
+
+        // 4. Позиционируем зеркало за пределами экрана
+        mirrorDiv.style.position = 'absolute';
+        mirrorDiv.style.top = '-9999px';
+        mirrorDiv.style.left = '0px';
+        mirrorDiv.style.width = parserInput.clientWidth + 'px'; // Ширина контента, без вертикального скроллбара
+
+        // 5. Вставляем текст ДО начала ошибки, чтобы измерить его высоту
+        // Добавляем неразрывный пробел в конец, чтобы гарантировать правильный расчет высоты последней строки
+        mirrorDiv.textContent = parserInput.value.substring(0, start) + '\u00A0';
+        document.body.appendChild(mirrorDiv);
+
+        // 6. Рассчитываем и устанавливаем позицию скролла
+        // Отнимаем небольшой отступ (например, 30px), чтобы строка была не у самого края, а чуть ниже
+        const scrollPosition = mirrorDiv.scrollHeight - 30;
+        parserInput.scrollTop = scrollPosition > 0 ? scrollPosition : 0; // Проверяем, чтобы не уйти в минус
+
+        // 7. Удаляем временный элемент
+        document.body.removeChild(mirrorDiv);
     }
 
     function hideAndResetErrorArea() {
