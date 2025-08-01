@@ -4088,3 +4088,16 @@ button[onclick*="copyToClipboard"].copied:after {
 #applyVariantFilterBtn {
     background-color: var(--button-success-bg);
 }
+
+/* --- СТИЛИ ДЛЯ ОТМЕЧЕННЫХ ОШИБОК В СПИСКЕ --- */
+
+.error-list-item.reviewed {
+    background-color: #d4edda; /* Светло-зеленый фон */
+    color: #155724; /* Темно-зеленый текст для контраста */
+    font-weight: 500;
+}
+
+/* При наведении на уже отмеченный элемент, делаем его чуть темнее */
+.error-list-item.reviewed:hover {
+    background-color: #c3e6cb;
+}

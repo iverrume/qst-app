@@ -5651,8 +5651,13 @@ const mainApp = (function() {
             
             // Привязываем клик к УНИВЕРСАЛЬНОЙ функции подсветки, передавая НУЖНОЕ поле
             li.addEventListener('click', () => {
+                // ШАГ 1: Переключаем класс. Если он есть - убираем, если нет - добавляем.
+                li.classList.toggle('reviewed');
+                
+                // ШАГ 2: Выполняем уже знакомое действие - подсветку в текстовом поле.
                 highlightErrorInTextarea(targetTextarea, error.start, error.end);
             });
+      
             
             errorListEl.appendChild(li);
         });
