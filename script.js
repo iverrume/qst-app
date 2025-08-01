@@ -5722,33 +5722,48 @@ const mainApp = (function() {
      */
     function parseQstResultForFiltering(qstText) {
         const questions = [];
-        let currentIndex = 0;
-        const blocks = qstText.split(/\n\s*\n/); // Делим по пустым строкам
+        const delimiterRegex = /\n\s*\n/g; // Регулярное выражение для поиска пустых строк-разделителей
+        let lastIndex = 0; // Индекс, с которого начинаем искать следующий блок
 
-        for (const block of blocks) {
-            if (block.trim() === '') {
-                currentIndex += block.length + 2; // +2 за \n\n
-                continue;
+        // Используем цикл с регулярным выражением, чтобы надежно проходить по всему тексту
+        let match;
+        while ((match = delimiterRegex.exec(qstText)) !== null) {
+            // Текст блока - это всё, что находится между lastIndex и началом найденного разделителя
+            const blockText = qstText.substring(lastIndex, match.index);
+            const blockStart = lastIndex;
+
+            if (blockText.trim() !== '') {
+                const lines = blockText.split('\n');
+                // Проверяем, что это действительно вопрос (начинается с "?")
+                if (lines.some(l => l.trim().startsWith('?'))) {
+                    const variantCount = lines.filter(l => l.trim().startsWith('+') || l.trim().startsWith('-')).length;
+                    questions.push({
+                        text: blockText,
+                        variantCount: variantCount,
+                        start: blockStart, // Надежная стартовая позиция
+                        end: blockStart + blockText.length // Надежная конечная позиция
+                    });
+                }
             }
-            
-            const lines = block.split('\n');
-            const questionLine = lines.find(l => l.trim().startsWith('?'));
-            if (!questionLine) {
-                currentIndex += block.length + 2;
-                continue;
-            }
-            
-            const variantCount = lines.filter(l => l.trim().startsWith('+') || l.trim().startsWith('-')).length;
-            
-            questions.push({
-                text: block,
-                variantCount: variantCount,
-                start: qstText.indexOf(block, currentIndex),
-                end: qstText.indexOf(block, currentIndex) + block.length
-            });
-            
-            currentIndex += block.length + 2;
+            // Сдвигаем курсор на позицию ПОСЛЕ найденного разделителя
+            lastIndex = delimiterRegex.lastIndex;
         }
+
+        // Не забываем обработать самый последний блок текста, после последнего разделителя
+        const lastBlockText = qstText.substring(lastIndex);
+        if (lastBlockText.trim() !== '') {
+            const lines = lastBlockText.split('\n');
+            if (lines.some(l => l.trim().startsWith('?'))) {
+                const variantCount = lines.filter(l => l.trim().startsWith('+') || l.trim().startsWith('-')).length;
+                questions.push({
+                    text: lastBlockText,
+                    variantCount: variantCount,
+                    start: lastIndex,
+                    end: lastIndex + lastBlockText.length
+                });
+            }
+        }
+
         return questions;
     }
 
