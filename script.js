@@ -5279,47 +5279,7 @@ const mainApp = (function() {
             }
         },
         
-         /*
 
-        {
-            id: 'first_answer_correct_fallback', // ИЗМЕНЕНИЕ: Новое имя, отражающее суть
-            name: 'Без маркеров (первый ответ - верный)',
-            // Детектор: очень общий, сработает если другие, более точные, не сработали
-            detector: (text) => {
-                // Этот детектор должен быть менее специфичным.
-                // Он сработает, если НЕТ других явных признаков.
-                const hasNoPlusAtStart = !/^\s*\+/m.test(text);
-                const hasNoPlusAtEnd = !/\+\s*$/m.test(text);
-                const hasNoTags = !/<question>|<variant>|<Вопрос>|<вариант>/i.test(text);
-                // Возвращаем true, если это "чистый" текст без маркеров
-                return hasNoPlusAtStart && hasNoPlusAtEnd && hasNoTags;
-            },
-            processor: (text) => {
-                const questions = [];
-                // ИСПОЛЬЗУЕМ НОВЫЙ РАЗДЕЛИТЕЛЬ
-                const blocks = smartSplitIntoBlocks(text);
-
-                for (const block of blocks) {
-                    const lines = block.trim().split('\n').filter(l => l.trim() !== '');
-                    if (lines.length < 2) continue;
-
-                    // Вопрос - это первая строка, без номера. Остальное - опции.
-                    const questionText = lines.shift().replace(/^\s*\d+\s*\.?\s*/, '').trim();
-                    const options = lines.map(l => l.trim());
-                    
-                    if (questionText && options.length > 0) {
-                        questions.push({
-                            text: questionText,
-                            options: options,
-                            // Правильный ответ - всегда первый из вариантов
-                            correctAnswer: options[0]
-                        });
-                    }
-                }
-                return questions;
-            }
-        },
-       */ //
 
         {
             id: 'numbered_list_plus_answer',
