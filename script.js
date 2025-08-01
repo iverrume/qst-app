@@ -5165,65 +5165,6 @@ const mainApp = (function() {
 
     const PARSER_PATTERNS = [
 
-
-        {
-            id: 'paragraph_question_plus_at_end',
-            name: "Абзац-вопрос, ответ с '+' в конце",
-            // Детектор: ищет текст, где нет тегов, но есть строки, заканчивающиеся на таб и "+".
-            // Это очень характерный признак данного формата.
-            detector: (text) => !/<question>|<variant>/i.test(text) && /\t\+\s*$/m.test(text),
-            processor: (text) => {
-                const questions = [];
-                let currentQuestion = null;
-                const lines = text.split(/\r?\n/);
-
-                const saveCurrentQuestion = () => {
-                    if (currentQuestion && currentQuestion.correctAnswer) {
-                        questions.push(currentQuestion);
-                    }
-                    currentQuestion = null;
-                };
-
-                for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    const isOption = /^\s/.test(line) && trimmedLine; // Строка с отступом и не пустая
-
-                    if (!trimmedLine) {
-                        // Пустая строка - надежный разделитель блоков
-                        saveCurrentQuestion();
-                        continue;
-                    }
-
-                    if (isOption) {
-                        // Это вариант ответа
-                        if (currentQuestion) {
-                            let optionText = trimmedLine;
-                            if (optionText.endsWith('+')) {
-                                optionText = optionText.slice(0, -1).trim();
-                                currentQuestion.correctAnswer = optionText;
-                            }
-                            currentQuestion.options.push(optionText);
-                        }
-                    } else {
-                        // Это строка без отступа - начало нового вопроса
-                        // Сначала сохраняем предыдущий, если он был
-                        saveCurrentQuestion();
-                        // Начинаем новый
-                        currentQuestion = {
-                            text: trimmedLine,
-                            options: [],
-                            correctAnswer: null
-                        };
-                    }
-                }
-
-                // Сохраняем самый последний вопрос после окончания цикла
-                saveCurrentQuestion();
-
-                return questions;
-            }
-        },
-
         {
             id: 'plus_at_end_generic', // ИЗМЕНЕНИЕ: Новое, более общее имя
             name: "Ответ с '+' в конце строки",
@@ -5476,70 +5417,89 @@ const mainApp = (function() {
 
 
     function processTextWithMultiFormat(text) {
-        let allParsedQuestions = [];
-        const parsingErrors = []; // Оставим для будущих улучшений
-        let currentQuestionData = null;
-        const lines = text.replace(/\r\n/g, '\n').split('\n');
+        // === НАЧАЛО ИСПРАВЛЕНИЯ: Нормализация и ручной подсчёт индекса ===
 
-        // Вспомогательная функция для сохранения готового вопроса
-        const saveCurrentQuestion = () => {
-            if (currentQuestionData && currentQuestionData.options.length > 0) {
-                // Устанавливаем первый вариант как правильный, если другого не указано
-                if (!currentQuestionData.correctAnswer) {
-                    currentQuestionData.correctAnswer = currentQuestionData.options[0];
+        let allParsedQuestions = [];
+        let parsingErrors = [];
+
+        // 1. Нормализуем все переносы строк к единому формату '\n'.
+        //    Это решает проблему с \r\n и делает подсчет надежным.
+        const normalizedText = text.replace(/\r\n/g, '\n');
+        const lines = normalizedText.split('\n');
+
+        const processAndAddBlock = (blockLines, startIndex) => {
+            if (blockLines.length === 0) return;
+            const blockText = blockLines.join('\n');
+            // Рассчитываем конечный индекс
+            const endIndex = startIndex + blockText.length;
+
+            const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
+            let blockParsed = false;
+
+            for (const pattern of individualPatterns) {
+                if (pattern.detector(blockText)) {
+                    try {
+                        const parsed = pattern.processor(blockText);
+                        if (parsed.length > 0) {
+                            allParsedQuestions.push(...parsed);
+                            blockParsed = true;
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
+                    }
                 }
-                allParsedQuestions.push(currentQuestionData);
             }
-            currentQuestionData = null;
+            if (!blockParsed) {
+                console.warn("Не удалось определить формат для блока:\n---\n", blockText);
+                parsingErrors.push({
+                    text: blockText.trim(),
+                    start: startIndex,
+                    end: endIndex
+                });
+            }
         };
 
-        for (const line of lines) {
+        // 2. Используем ручной подсчет индекса вместо ненадежного indexOf.
+        let currentIndex = 0;
+        let currentBlockLines = [];
+        let currentBlockStartIndex = 0;
+
+        lines.forEach(line => {
             const trimmedLine = line.trim();
-            if (trimmedLine === '') continue; // Пропускаем пустые строки
-
-            // 1. Проверяем на тег категории
-            if (trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#')) {
-                saveCurrentQuestion(); // Сохраняем предыдущий вопрос, если он был
-                const categoryName = trimmedLine.slice(3, -3).trim();
-                allParsedQuestions.push({ type: 'category', text: categoryName });
-                continue;
-            }
-
-            // 2. Проверяем на начало нового вопроса с тегом <question>
-            const questionMatch = trimmedLine.match(/^\s*\d*\.?\s*<question>(.*)/i);
-            if (questionMatch) {
-                saveCurrentQuestion(); // Сохраняем предыдущий
-                currentQuestionData = {
-                    text: questionMatch[1].trim(), // Текст вопроса из этой же строки
-                    options: [],
-                    correctAnswer: null // Правильный ответ пока не известен
-                };
-                continue;
-            }
-
-            // 3. Проверяем на вариант ответа с тегом <variant>
-            const variantMatch = trimmedLine.match(/^<variant>(.*)/i);
-            if (variantMatch) {
-                if (currentQuestionData) {
-                    const optionText = variantMatch[1].trim();
-                    currentQuestionData.options.push(optionText);
-                }
-                continue;
-            }
+            const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
+            const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
             
-            // 4. Если мы внутри вопроса и это не тег, значит это продолжение текста вопроса
-            if (currentQuestionData && currentQuestionData.options.length === 0) {
-                currentQuestionData.text += ' ' + trimmedLine;
+            if (isCategoryTag) {
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+                const categoryName = trimmedLine.slice(3, -3).trim();
+                allParsedQuestions.push({ text: categoryName, type: 'category' });
+                currentBlockLines = [];
+            } else if (isNewBlockStart && currentBlockLines.length > 0) {
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+                currentBlockLines = [line];
+                // Новый блок начинается с текущей позиции
+                currentBlockStartIndex = currentIndex;
+            } else {
+                if (currentBlockLines.length === 0) {
+                    // Это первая строка нового блока
+                    currentBlockStartIndex = currentIndex;
+                }
+                currentBlockLines.push(line);
             }
-        }
 
-        // Не забываем сохранить самый последний вопрос после окончания цикла
-        saveCurrentQuestion();
+            // 3. В конце каждой итерации сдвигаем индекс на длину строки + 1 (за символ '\n')
+            currentIndex += line.length + 1;
+        });
+
+        // Не забываем обработать самый последний блок
+        processAndAddBlock(currentBlockLines, currentBlockStartIndex);
 
         return {
             questions: allParsedQuestions,
-            errors: parsingErrors // Пока всегда будет пустым, но структура сохранена
+            errors: parsingErrors
         };
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
     }
 
 
