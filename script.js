@@ -5418,9 +5418,11 @@ const mainApp = (function() {
 
     function processTextWithMultiFormat(text) {
         let allParsedQuestions = [];
+        // Создаем массив для хранения ошибок
+        let parsingErrors = [];
         
         // Вспомогательная функция, чтобы не дублировать код обработки блока
-        const processAndAddBlock = (blockLines) => {
+        const processAndAddBlock = (blockLines, blockStartIndex, blockEndIndex) => {
             if (blockLines.length === 0) return;
 
             const blockText = blockLines.join('\n');
@@ -5441,42 +5443,57 @@ const mainApp = (function() {
                     }
                 }
             }
+            // Если ни один паттерн не сработал, считаем это ошибкой
             if (!blockParsed) {
-                console.warn("Не удалось определить формат для блока:\n---\n", blockLines[0]);
+                console.warn("Не удалось определить формат для блока:\n---\n", blockLines.join('\n'));
+                parsingErrors.push({
+                    text: blockText.trim(),
+                    start: blockStartIndex,
+                    end: blockEndIndex
+                });
             }
         };
 
         let currentBlockLines = [];
+        let currentIndex = 0;
+        let blockStartIndex = 0;
         const lines = text.trim().split('\n');
 
         for (const line of lines) {
             const trimmedLine = line.trim();
+            // Определяем начало нового блока (по номеру или тегу)
             const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
-            const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
-
-            if (isNewBlockStart) {
+            
+            if (isNewBlockStart && currentBlockLines.length > 0) {
                 // Нашли начало нового вопроса. Обрабатываем предыдущий блок...
-                processAndAddBlock(currentBlockLines);
+                const blockTextForIndex = currentBlockLines.join('\n');
+                const endIndex = blockStartIndex + blockTextForIndex.length;
+                processAndAddBlock(currentBlockLines, blockStartIndex, endIndex);
+                
                 // ...и начинаем собирать новый.
+                blockStartIndex = text.indexOf(line, endIndex);
                 currentBlockLines = [line];
-            } else if (isCategoryTag) {
-                // Нашли тег категории. Обрабатываем блок, который был ПЕРЕД ним...
-                processAndAddBlock(currentBlockLines);
-                // ...добавляем саму категорию в результат...
-                const categoryName = trimmedLine.slice(3, -3).trim();
-                allParsedQuestions.push({ text: categoryName, type: 'category' });
-                // ...и сбрасываем "корзину", так как вопрос закончился.
-                currentBlockLines = [];
             } else {
                 // Это обычная строка, добавляем её к текущему вопросу.
+                if (currentBlockLines.length === 0) {
+                   blockStartIndex = text.indexOf(line, currentIndex);
+                }
                 currentBlockLines.push(line);
             }
+            currentIndex = text.indexOf(line, currentIndex) + line.length;
         }
 
         // Не забываем обработать самый последний блок в файле после окончания цикла
-        processAndAddBlock(currentBlockLines);
-
-        return allParsedQuestions;
+        if (currentBlockLines.length > 0) {
+            const lastBlockText = currentBlockLines.join('\n');
+            processAndAddBlock(currentBlockLines, blockStartIndex, blockStartIndex + lastBlockText.length);
+        }
+        
+        // Возвращаем объект с вопросами и ошибками
+        return {
+            questions: allParsedQuestions,
+            errors: parsingErrors
+        };
     }
 
 
@@ -5501,73 +5518,133 @@ const mainApp = (function() {
     }
 
 
+
+
+    function renderErrors(errors) {
+        const errorsArea = getEl('parserErrorsArea');
+        const errorCountEl = getEl('errorCount');
+        const errorListEl = getEl('errorList');
+
+        if (!errorsArea || !errorCountEl || !errorListEl) return;
+
+        errorListEl.innerHTML = ''; // Очищаем старый список
+        errorCountEl.textContent = errors.length;
+        errorsArea.classList.remove('hidden');
+
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.className = 'error-list-item';
+            li.textContent = error.text.split('\n')[0] || '[пустая строка]'; // Показываем первую строку ошибки
+            li.title = `Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
+            
+            // Добавляем обработчик клика для подсветки
+            li.addEventListener('click', () => {
+                highlightErrorInTextarea(error.start, error.end);
+            });
+            
+            errorListEl.appendChild(li);
+        });
+    }
+
+    function highlightErrorInTextarea(start, end) {
+        if (!parserInput) return;
+        
+        parserInput.focus(); // Переводим фокус на поле ввода
+        
+        // Выделяем текст ошибки
+        parserInput.setSelectionRange(start, end);
+
+        // Прокручиваем поле ввода, чтобы выделение было видно
+        // (Создаем временный элемент для расчета высоты строк)
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
+        tempDiv.textContent = parserInput.value.substring(0, start);
+        document.body.appendChild(tempDiv);
+        parserInput.scrollTop = tempDiv.offsetHeight;
+        document.body.removeChild(tempDiv);
+    }
+
+    function hideAndResetErrorArea() {
+        getEl('parserErrorsArea')?.classList.add('hidden');
+        getEl('errorList').innerHTML = '';
+        getEl('errorCount').textContent = '0';
+    }
+
+
+
+
     function runParser() {
-        const text = parserInput.value.trim();
-        if (!text) {
+        const text = parserInput.value; // Берем полный текст для сохранения индексов
+        if (text.trim() === '') {
             alert("Поле для ввода текста пустое!");
             return;
         }
+        
+        // Прячем старые результаты и ошибки перед новым запуском
+        hideAndResetErrorArea();
+        parserOutputArea.classList.add('hidden');
 
         const selectedPatternId = parserPatternSelect.value;
-        let parsedQuestions = [];
+        let result;
 
         if (selectedPatternId === 'auto') {
-            // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
-            // В автоматическом режиме мы всегда используем нашу новую "супер-функцию"
-            parsedQuestions = processTextWithMultiFormat(text);
-            if (parsedQuestions.length > 0) {
-                 alert(`Автоматический режим: успешно распознано ${parsedQuestions.length} вопросов разного формата.`);
-            } else {
-                 alert("Автоматический режим не смог распознать вопросы. Попробуйте выбрать формат вручную.");
-                 return;
-            }
-
+            // В автоматическом режиме всегда используем мультиформатный обработчик
+            result = processTextWithMultiFormat(text);
         } else {
-            // Логика для ручного выбора формата остается прежней
+            // Логика для ручного выбора формата
             const pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
             if (!pattern) {
                 alert("Произошла ошибка. Выбранный паттерн не найден.");
                 return;
             }
-            parsedQuestions = pattern.processor(text);
+            // Для одиночных паттернов считаем, что ошибок нет, просто парсим
+            result = {
+                questions: pattern.processor(text),
+                errors: []
+            };
         }
 
+        const parsedQuestions = result.questions;
+        const errors = result.errors;
+        
+        // Показываем ошибки, если они есть
+        if (errors.length > 0) {
+            renderErrors(errors);
+        }
 
+        // Обрабатываем результат
         if (parsedQuestions.length === 0) {
-            alert("Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой.");
+            if (errors.length > 0) {
+                alert(`Не удалось распознать ни одного вопроса. Обнаружено ошибок: ${errors.length}.`);
+            } else {
+                alert("Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой.");
+            }
             return;
         }
-
-
 
         // Конвертируем в .qst формат
         let qstResult = '';
         parsedQuestions.forEach(q => {
-            // ЕСЛИ ЭТО КАТЕГОРИЯ
             if (q.type === 'category') {
-                // Форматируем её в правильный синтаксис
-                qstResult += `#_#${q.text}#_#\n\n`; // Двойной перенос для красивого разделения
-            }
-            // ЕСЛИ ЭТО ВОПРОС
-            else {
-                // Используем старую проверку только для вопросов
+                qstResult += `#_#${q.text}#_#\n\n`;
+            } else {
                 if (q.text && q.options && q.options.length > 0) {
                     qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
                     q.options.forEach(opt => {
                         const prefix = (opt === q.correctAnswer) ? '+' : '-';
                         qstResult += `${prefix} ${opt.replace(/\n/g, ' ')}\n`;
                     });
-                    qstResult += '\n'; // Пустая строка после каждого вопроса
+                    qstResult += '\n';
                 }
             }
         });
 
-
-
-
         parserOutput.value = qstResult.trim();
         parserOutputArea.classList.remove('hidden');
-        if (selectedPatternId !== 'auto') {
+
+        if (selectedPatternId === 'auto' && errors.length > 0) {
+             alert(`Операция завершена. Распознано вопросов: ${parsedQuestions.length}. Обнаружено ошибок: ${errors.length}.`);
+        } else {
              alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
         }
     }
@@ -5585,6 +5662,7 @@ const mainApp = (function() {
         parserInput.value = '';
         parserFileInput.value = ''; // Важно также сбросить выбранный файл!
         parserInput.focus(); // Возвращаем курсор в поле для удобства
+        hideAndResetErrorArea();
     }
 
 

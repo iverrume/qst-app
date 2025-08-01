@@ -212,7 +212,14 @@
                 <div class="settings-group" style="text-align: center;">
                     <button id="runParserBtn">3. Конвертировать</button>
                 </div>
-
+                <div id="parserErrorsArea" class="hidden">
+                    <button id="showErrorsBtn">
+                        ⚠️ Ошибки форматирования (<span id="errorCount">0</span>)
+                    </button>
+                    <ul id="errorList">
+                        <!-- Сюда будут динамически добавляться ошибки -->
+                    </ul>
+                </div>
                 <div id="parserOutputArea" class="hidden">
                     <hr>
                     <h3>Результат:</h3>

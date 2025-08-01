@@ -3967,3 +3967,58 @@ button[onclick*="copyToClipboard"].copied:after {
     margin: 0;
     line-height: 1.2;
 }
+
+/* --- СТИЛИ ДЛЯ БЛОКА ОШИБОК ПАРСЕРА --- */
+#parserErrorsArea {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid var(--feedback-incorrect-border);
+    background-color: var(--feedback-incorrect-bg);
+    border-radius: 8px;
+    animation: fadeIn 0.4s ease;
+}
+
+#showErrorsBtn {
+    width: 100%;
+    background-color: var(--chat-accent);
+    color: white;
+    font-weight: bold;
+    text-align: left;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border: none;
+    cursor: default; /* Кнопка не кликабельна, это просто заголовок */
+}
+
+#errorList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--container-bg-color);
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+}
+
+.error-list-item {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--dashed-border-color);
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s;
+}
+
+.error-list-item:last-child {
+    border-bottom: none;
+}
+
+.error-list-item:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
