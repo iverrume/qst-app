@@ -4096,8 +4096,3 @@ button[onclick*="copyToClipboard"].copied:after {
     box-shadow: none !important;
 }
 
-/* Стили для каждого номера-строки */
-#parserLineNumbers div {
-    /* Это гарантирует, что высота строки номера будет соответствовать высоте строки текста */
-    height: 1.4em; /* Должно совпадать с line-height всего редактора */
-}
