@@ -3130,7 +3130,7 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZB
 const mainApp = (function() {
     'use strict';
 
-    // --- СЛОВАРЬ ПЕРЕВОДОВ ---
+// --- СЛОВАРЬ ПЕРЕВОДОВ ---
     const LANG_PACK = {
         ru: {
             // Главный экран
@@ -3200,7 +3200,7 @@ const mainApp = (function() {
             parser_result_title: 'Результат:',
             download_parsed_button: 'Скачать .qst файл',
             back_button: 'Назад',
-            // Кнопки в шапке
+            // Кнопки в шапке (ДОБАВЛЕНО для единообразия)
             copy_question_title: 'Копировать текущий вопрос',
             search_web_title: 'Найти в интернете',
             chat_button_title: 'Открыть чат',
@@ -3209,7 +3209,7 @@ const mainApp = (function() {
             theme_button_title: 'Сменить тему',
             language_toggle_title: 'Сменить язык',
             favorite_button_title: 'Добавить в избранное',
-            // Сообщения
+            // Сообщения (ДОБАВЛЕНО)
             search_query_too_short: 'Поисковый запрос должен содержать минимум 3 символа.',
             file_empty_or_invalid_part1: 'Файл "',
             file_empty_or_invalid_part2: '" пуст или имеет неверный формат.',
@@ -3284,7 +3284,7 @@ const mainApp = (function() {
             parser_result_title: 'Result:',
             download_parsed_button: 'Download .qst file',
             back_button: 'Back',
-            // Header Buttons
+            // Header Buttons (ПОЛНОСТЬЮ ПЕРЕВЕДЕНО)
             copy_question_title: 'Copy current question',
             search_web_title: 'Search the web',
             chat_button_title: 'Open Chat',
@@ -3293,7 +3293,7 @@ const mainApp = (function() {
             theme_button_title: 'Change Theme',
             language_toggle_title: 'Change Language',
             favorite_button_title: 'Add to Favorites',
-            // Messages
+            // Messages (ПОЛНОСТЬЮ ПЕРЕВЕДЕНО)
             search_query_too_short: 'Search query must contain at least 3 characters.',
             file_empty_or_invalid_part1: 'File "',
             file_empty_or_invalid_part2: '" is empty or has an invalid format.',
@@ -3301,7 +3301,6 @@ const mainApp = (function() {
             confirm_finish_early: 'Are you sure you want to finish the quiz early?'
         }
     };
-
 
 
     function _(key) {
