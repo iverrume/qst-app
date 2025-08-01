@@ -3409,9 +3409,22 @@ const ChatModule = (function() {
             currentUser = user;
             updateUserUI();
         },
+
         openChatModal: () => {
             if (!chatOverlay) return;
-            
+
+            // === ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ===
+            // Каждый раз перед открытием проверяем, соответствует ли язык чата сохраненному
+            const desiredLang = localStorage.getItem('chatLanguage') || 'ru';
+            if (currentChatLang !== desiredLang) {
+                // Если язык изменился, пока чат был закрыт,
+                // обновляем внутреннюю переменную...
+                currentChatLang = desiredLang;
+                // ...и "хирургически" обновляем весь текст в уже существующем DOM чата.
+                updateChatUIText();
+            }
+            // === КОНЕЦ ИЗМЕНЕНИЯ ===
+
             if (!currentUser) {
                 openChatAfterAuth = true;
                 ChatModule.openAuthModal();
@@ -3419,8 +3432,13 @@ const ChatModule = (function() {
             }
             
             chatOverlay.classList.remove('hidden');
-            if(!isInitialized) loadTabData(currentTab);
+            if(!isInitialized) {
+                loadTabData(currentTab);
+            }
         },
+
+
+        
         closeChatModal: () => {
             if (chatOverlay) {
                 chatOverlay.classList.add('hidden');
@@ -3439,30 +3457,13 @@ const ChatModule = (function() {
         
         // === НАЧАЛО НОВОГО МЕТОДА ===
         /**
-         * Устанавливает язык для модуля чата и обновляет его интерфейс в реальном времени.
+         * Устанавливает язык для модуля чата. Не обновляет UI напрямую.
          * @param {string} lang - Код языка ('ru' или 'en').
          */
         setLanguage: (lang) => {
             if (LANG_PACK_CHAT[lang]) {
                 currentChatLang = lang;
                 localStorage.setItem('chatLanguage', lang);
-
-                // Если чат не открыт, ничего больше делать не нужно
-                if (!chatOverlay || chatOverlay.classList.contains('hidden')) {
-                    return;
-                }
-
-                // 1. "Хирургически" обновляем весь статичный текст
-                updateChatUIText();
-                
-                // 2. Обновляем элементы, зависящие от состояния пользователя
-                updateUserUI(); 
-
-                // 3. Перерисовываем динамически генерируемые списки и контент,
-                //    так как в них могут быть переводимые строки (напр., "Вчера", "Сообщений пока нет").
-                loadTabData(currentTab); // Перерисует основной контент (сообщения, вопросы и т.д.)
-                renderChannelsList();
-                renderPrivateChatsList();
             }
         },
         // === КОНЕЦ НОВОГО МЕТОДА ===
