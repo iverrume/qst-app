@@ -5693,7 +5693,7 @@ const mainApp = (function() {
         mirrorDiv.textContent = targetTextarea.value.substring(0, start) + '\u00A0';
         document.body.appendChild(mirrorDiv);
 
-        const scrollPosition = mirrorDiv.scrollHeight - 30;
+        const scrollPosition = mirrorDiv.scrollHeight - 250;
         targetTextarea.scrollTop = scrollPosition > 0 ? scrollPosition : 0;
 
         document.body.removeChild(mirrorDiv);
