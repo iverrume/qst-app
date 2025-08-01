@@ -4022,3 +4022,46 @@ button[onclick*="copyToClipboard"].copied:after {
     background-color: var(--input-hover-bg-color);
     color: var(--text-color);
 }
+
+/* --- СТИЛИ ДЛЯ ПАРСЕРА С НУМЕРАЦИЕЙ СТРОК --- */
+.parser-container {
+    display: flex;
+    border: 1px solid var(--input-border-color);
+    border-radius: 5px;
+    overflow: hidden; /* Важно, чтобы скруглить углы */
+    margin-top: 10px;
+    position: relative;
+    resize: vertical; /* Позволяем изменять размер всего блока */
+    min-height: 150px; /* Минимальная высота */
+}
+
+.parser-container:focus-within {
+    border-color: var(--button-primary-bg);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.line-numbers {
+    width: 45px;
+    padding: 10px 5px;
+    text-align: right;
+    background-color: var(--input-bg-color);
+    color: var(--secondary-text-color);
+    border: none;
+    resize: none;
+    outline: none;
+    overflow-y: hidden; /* Скролл будет управляться JS */
+    font-family: monospace;
+    font-size: 1em; /* Убедимся, что размеры шрифтов совпадают */
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+#parserArea #parserInput {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    resize: none; /* Убираем индивидуальный ресайз */
+    margin-top: 0;
+    font-size: 1em;
+}
+

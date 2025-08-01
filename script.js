@@ -499,6 +499,23 @@ const ChatModule = (function() {
         });
 
 
+        // === НАЧАЛО НОВОГО КОДА: Синхронизация парсера и нумерации строк ===
+        const lineNumbersEl = getEl('lineNumbers');
+
+        parserInput?.addEventListener('input', updateLineNumbers);
+        parserInput?.addEventListener('scroll', () => {
+            if (lineNumbersEl) {
+                lineNumbersEl.scrollTop = parserInput.scrollTop;
+            }
+        });
+        
+        // Также обновляем при изменении размера, т.к. текст может перенестись
+        new ResizeObserver(updateLineNumbers).observe(parserInput);
+
+        // Инициализируем номера при загрузке
+        updateLineNumbers();
+
+
         const debouncedSearch = debounce(handleSearch, 300);
         if (searchInput) searchInput.addEventListener('input', debouncedSearch);
 
@@ -5417,21 +5434,19 @@ const mainApp = (function() {
 
 
     function processTextWithMultiFormat(text) {
-        // === НАЧАЛО ИСПРАВЛЕНИЯ: Нормализация и ручной подсчёт индекса ===
-
         let allParsedQuestions = [];
         let parsingErrors = [];
 
-        // 1. Нормализуем все переносы строк к единому формату '\n'.
-        //    Это решает проблему с \r\n и делает подсчет надежным.
         const normalizedText = text.replace(/\r\n/g, '\n');
         const lines = normalizedText.split('\n');
 
         const processAndAddBlock = (blockLines, startIndex) => {
             if (blockLines.length === 0) return;
             const blockText = blockLines.join('\n');
-            // Рассчитываем конечный индекс
             const endIndex = startIndex + blockText.length;
+
+            // Определяем номер строки по начальному индексу
+            const lineNumber = normalizedText.substring(0, startIndex).split('\n').length;
 
             const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
             let blockParsed = false;
@@ -5455,17 +5470,17 @@ const mainApp = (function() {
                 parsingErrors.push({
                     text: blockText.trim(),
                     start: startIndex,
-                    end: endIndex
+                    end: endIndex,
+                    lineNumber: lineNumber // <-- ДОБАВЛЯЕМ НОМЕР СТРОКИ
                 });
             }
         };
 
-        // 2. Используем ручной подсчет индекса вместо ненадежного indexOf.
         let currentIndex = 0;
         let currentBlockLines = [];
         let currentBlockStartIndex = 0;
 
-        lines.forEach(line => {
+        lines.forEach((line, index) => {
             const trimmedLine = line.trim();
             const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
             const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
@@ -5478,30 +5493,24 @@ const mainApp = (function() {
             } else if (isNewBlockStart && currentBlockLines.length > 0) {
                 processAndAddBlock(currentBlockLines, currentBlockStartIndex);
                 currentBlockLines = [line];
-                // Новый блок начинается с текущей позиции
                 currentBlockStartIndex = currentIndex;
             } else {
                 if (currentBlockLines.length === 0) {
-                    // Это первая строка нового блока
                     currentBlockStartIndex = currentIndex;
                 }
                 currentBlockLines.push(line);
             }
-
-            // 3. В конце каждой итерации сдвигаем индекс на длину строки + 1 (за символ '\n')
+            
             currentIndex += line.length + 1;
         });
 
-        // Не забываем обработать самый последний блок
         processAndAddBlock(currentBlockLines, currentBlockStartIndex);
 
         return {
             questions: allParsedQuestions,
             errors: parsingErrors
         };
-        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
     }
-
 
 
 
@@ -5535,17 +5544,22 @@ const mainApp = (function() {
 
         if (!errorsArea || !errorCountEl || !errorListEl) return;
 
-        errorListEl.innerHTML = ''; // Очищаем старый список
+        errorListEl.innerHTML = '';
         errorCountEl.textContent = errors.length;
         errorsArea.classList.remove('hidden');
 
         errors.forEach(error => {
             const li = document.createElement('li');
             li.className = 'error-list-item';
-            li.textContent = error.text.split('\n')[0] || '[пустая строка]'; // Показываем первую строку ошибки
-            li.title = `Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
             
-            // Добавляем обработчик клика для подсветки
+            // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+            // Добавляем номер строки в текст ошибки
+            const firstLine = error.text.split('\n')[0] || '[пустая строка]';
+            li.textContent = `L${error.lineNumber}: ${firstLine}`;
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
+            li.title = `Нажмите, чтобы выделить ошибку на строке ${error.lineNumber}:\n\n${error.text}`;
+            
             li.addEventListener('click', () => {
                 highlightErrorInTextarea(error.start, error.end);
             });
@@ -5553,6 +5567,9 @@ const mainApp = (function() {
             errorListEl.appendChild(li);
         });
     }
+
+
+
 
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
@@ -5578,7 +5595,20 @@ const mainApp = (function() {
         getEl('errorCount').textContent = '0';
     }
 
+    function updateLineNumbers() {
+        const lineNumbersEl = getEl('lineNumbers');
+        const parserInputEl = getEl('parserInput');
+        if (!lineNumbersEl || !parserInputEl) return;
 
+        // Нормализуем текст и считаем строки
+        const lineCount = parserInputEl.value.split('\n').length;
+        const numbers = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
+        
+        lineNumbersEl.value = numbers;
+        
+        // Синхронизируем прокрутку
+        lineNumbersEl.scrollTop = parserInputEl.scrollTop;
+    }
 
 
     function runParser() {

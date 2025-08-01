@@ -198,7 +198,12 @@
                     </div>
 
                     <input type="file" id="parserFileInput" accept=".txt">
-                    <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..."></textarea>
+
+                    <div id="parserContainer" class="parser-container">
+                        <textarea id="lineNumbers" class="line-numbers" readonly></textarea>
+                        <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..."></textarea>
+                    </div>
+
                 </div>
 
                 <div class="settings-group">
