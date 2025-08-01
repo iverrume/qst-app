@@ -5281,28 +5281,42 @@ const mainApp = (function() {
 
          
         {
-            id: 'first_answer_correct_fallback', // ИЗМЕНЕНИЕ: Новое имя, отражающее суть
+            id: 'first_answer_correct_fallback',
             name: 'Без маркеров (первый ответ - верный)',
-            // Детектор: очень общий, сработает если другие, более точные, не сработали
+            // МОДИФИЦИРОВАННЫЙ ДЕТЕКТОР
             detector: (text) => {
-                // Этот детектор должен быть менее специфичным.
-                // Он сработает, если НЕТ других явных признаков.
-                const hasNoPlusAtStart = !/^\s*\+/m.test(text);
-                const hasNoPlusAtEnd = !/\+\s*$/m.test(text);
-                const hasNoTags = !/<question>|<variant>|<Вопрос>|<вариант>/i.test(text);
-                // Возвращаем true, если это "чистый" текст без маркеров
-                return hasNoPlusAtStart && hasNoPlusAtEnd && hasNoTags;
+                // 1. Быстрая отбраковка "мусорных" или пустых блоков
+                if (!text || text.trim() === '') {
+                    return false;
+                }
+
+                // 2. Проверяем, что в тексте НЕТ маркеров других, более точных форматов
+                const hasPlusAtStart = /^\s*\+/m.test(text);
+                const hasPlusAtEnd = /\+\s*$/m.test(text);
+                const hasTags = /<question>|<variant>|<Вопрос>|<вариант>/i.test(text);
+
+                // Если найден маркер другого формата, этот шаблон НЕ должен срабатывать
+                if (hasPlusAtStart || hasPlusAtEnd || hasTags) {
+                    return false;
+                }
+
+                // 3. НОВЫЕ ПРОВЕРКИ: Убеждаемся, что блок похож на настоящий вопрос
+                const lines = text.trim().split('\n');
+                const hasAtLeastTwoLines = lines.length >= 2;
+                const hasLetters = /[a-zA-Zа-яА-Я]/.test(text); // Есть ли в тексте хоть одна буква
+
+                // Шаблон сработает, ТОЛЬКО ЕСЛИ выполнены все условия:
+                // это "чистый" текст, в нем минимум 2 строки И есть буквы.
+                return hasAtLeastTwoLines && hasLetters;
             },
             processor: (text) => {
                 const questions = [];
-                // ИСПОЛЬЗУЕМ НОВЫЙ РАЗДЕЛИТЕЛЬ
                 const blocks = smartSplitIntoBlocks(text);
 
                 for (const block of blocks) {
                     const lines = block.trim().split('\n').filter(l => l.trim() !== '');
                     if (lines.length < 2) continue;
 
-                    // Вопрос - это первая строка, без номера. Остальное - опции.
                     const questionText = lines.shift().replace(/^\s*\d+\s*\.?\s*/, '').trim();
                     const options = lines.map(l => l.trim());
                     
@@ -5310,7 +5324,6 @@ const mainApp = (function() {
                         questions.push({
                             text: questionText,
                             options: options,
-                            // Правильный ответ - всегда первый из вариантов
                             correctAnswer: options[0]
                         });
                     }
