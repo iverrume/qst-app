@@ -10,6 +10,7 @@ const ChatModule = (function() {
     let auth = null;
     let currentUser = null;
     let allMessages = [];
+    let openChatAfterAuth = false;
     let currentChannel = 'general';
     let currentChannelType = 'public'; // 'public' или 'private'
     let currentTab = 'messages';
@@ -592,6 +593,10 @@ const ChatModule = (function() {
             }
             await auth.signInWithEmailAndPassword(email, password);
             ChatModule.closeAuthModal();
+            if (openChatAfterAuth) {
+                openChatAfterAuth = false; // Опускаем флажок
+                ChatModule.openChatModal(); // Открываем чат
+            }
         } catch (error) {
             console.error('Ошибка входа:', error);
             showError(getErrorMessage(error.code));
@@ -633,6 +638,12 @@ const ChatModule = (function() {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             ChatModule.closeAuthModal();
+
+            if (openChatAfterAuth) {
+                openChatAfterAuth = false; // Опускаем флажок
+                ChatModule.openChatModal(); // Открываем чат
+            }
+
         } catch (error) {
             console.error('Ошибка регистрации:', error);
             showError(getErrorMessage(error.code));
@@ -2998,6 +3009,7 @@ const ChatModule = (function() {
             if (!chatOverlay) return;
             
             if (!currentUser) {
+                openChatAfterAuth = true;
                 ChatModule.openAuthModal();
                 return;
             }
