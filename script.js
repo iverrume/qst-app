@@ -3120,17 +3120,6 @@ async function copyToClipboardMain(text) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZBTBIi1mi1tOnTpAIS5GQjKXptFJBEG3jcSNLklDKrPbMz38zlt6SDro/exec';
 
 
@@ -3148,6 +3137,7 @@ const mainApp = (function() {
             search_in_db: 'Поиск вопроса в базе:',
             search_placeholder: 'Введите часть текста вопроса...',
             find_button: 'Найти',
+            searching_in_db: 'Идет поиск по базе...',
             or_divider: '-- или --',
             choose_file: 'Выберите .qst либо .txt файл с устройства:',
             gradus_button_main: 'GRADUS',
@@ -3155,7 +3145,6 @@ const mainApp = (function() {
             parser_button_main: 'Перевести',
             parser_subtitle: 'текст в формат .qst',
             recent_files: 'Недавно использованные:',
-
             // Навигация и заголовки
             nav_gradus: 'Навигация по GRADUS',
             back_to_main: 'Назад к главному экрану',
@@ -3166,24 +3155,23 @@ const mainApp = (function() {
             quiz_finished_title: 'Тест завершен!',
             parser_title: 'Конвертер в .qst',
             parser_description: 'Загрузите файл или вставьте текст для преобразования в формат теста.',
-
             // Настройки теста
             time_limit: 'Лимит времени (минуты, 0 - без лимита):',
             time_limit_minutes: 'мин',
             question_range: 'Диапазон вопросов:',
             range_from: 'От',
             range_to: 'До',
+            total_questions_label: 'всего',
+            questions_label_for_range: 'вопросов',
             shuffle_questions: 'Перемешать вопросы',
             shuffle_answers: 'Перемешать ответы',
             feedback_mode: 'Режим обратной связи (сохранить ошибки)',
             start_quiz_button: 'Начать тест',
             generate_cheat_sheet_button: 'Создать шпору',
             choose_another_file_button: 'Выбрать другой файл',
-
             // Шпаргалка
             download_cheat_sheet_button: 'Скачать шпору (.txt)',
             back_to_settings_button: 'Назад к настройкам',
-
             // Экран теста
             timer_label: 'Время:',
             prev_question_button: 'Предыдущий',
@@ -3193,7 +3181,6 @@ const mainApp = (function() {
             correct_label: 'Правильно:',
             quick_nav_title: 'Навигация по вопросам:',
             finish_early_button: 'Завершить тест',
-
             // Результаты
             your_result: 'Ваш результат:',
             of_label: 'из',
@@ -3202,18 +3189,17 @@ const mainApp = (function() {
             review_errors_button: 'Работа над ошибками',
             download_triggered_quiz_button: 'Скачать тест с триггерами',
             restart_button: 'Пройти другой тест',
-            
             // Парсер
             parser_upload_or_paste: '1. Загрузите файл (.txt) или вставьте текст ниже:',
             clear_parser_input: 'Очистить поле',
             parser_input_placeholder: 'Или вставьте сюда текст из вашего документа...',
             parser_select_format: '2. Выберите формат (или оставьте для автоопределения):',
+            parser_auto_detect: '-- Автоматическое определение --',
             parser_run_button: '3. Конвертировать',
             parser_errors_found: '⚠️ Ошибки форматирования',
             parser_result_title: 'Результат:',
             download_parsed_button: 'Скачать .qst файл',
             back_button: 'Назад',
-
             // Кнопки в шапке
             copy_question_title: 'Копировать текущий вопрос',
             search_web_title: 'Найти в интернете',
@@ -3223,12 +3209,19 @@ const mainApp = (function() {
             theme_button_title: 'Сменить тему',
             language_toggle_title: 'Сменить язык',
             favorite_button_title: 'Добавить в избранное',
+            // Сообщения
+            search_query_too_short: 'Поисковый запрос должен содержать минимум 3 символа.',
+            file_empty_or_invalid_part1: 'Файл "',
+            file_empty_or_invalid_part2: '" пуст или имеет неверный формат.',
+            no_questions_for_settings: 'Нет вопросов для теста с текущими настройками.',
+            confirm_finish_early: 'Вы уверены, что хотите завершить тест досрочно?'
         },
         en: {
             // Main Screen
             search_in_db: 'Search question in database:',
             search_placeholder: 'Enter part of the question text...',
             find_button: 'Search',
+            searching_in_db: 'Searching database...',
             or_divider: '-- or --',
             choose_file: 'Select a .qst or .txt file from your device:',
             gradus_button_main: 'GRADUS',
@@ -3236,7 +3229,6 @@ const mainApp = (function() {
             parser_button_main: 'Convert',
             parser_subtitle: 'text to .qst format',
             recent_files: 'Recently used:',
-
             // Navigation & Headers
             nav_gradus: 'GRADUS Navigation',
             back_to_main: 'Back to Main Screen',
@@ -3247,24 +3239,23 @@ const mainApp = (function() {
             quiz_finished_title: 'Quiz Finished!',
             parser_title: 'Converter to .qst',
             parser_description: 'Upload a file or paste text to convert into a quiz format.',
-
             // Quiz Settings
             time_limit: 'Time limit (minutes, 0 - no limit):',
             time_limit_minutes: 'min',
             question_range: 'Question Range:',
             range_from: 'From',
             range_to: 'To',
+            total_questions_label: 'total',
+            questions_label_for_range: 'questions',
             shuffle_questions: 'Shuffle questions',
             shuffle_answers: 'Shuffle answers',
             feedback_mode: 'Feedback mode (save mistakes)',
             start_quiz_button: 'Start Quiz',
             generate_cheat_sheet_button: 'Generate Cheat Sheet',
             choose_another_file_button: 'Choose Another File',
-
             // Cheat Sheet
             download_cheat_sheet_button: 'Download Cheat Sheet (.txt)',
             back_to_settings_button: 'Back to Settings',
-
             // Quiz Screen
             timer_label: 'Time:',
             prev_question_button: 'Previous',
@@ -3274,7 +3265,6 @@ const mainApp = (function() {
             correct_label: 'Correct:',
             quick_nav_title: 'Quick Navigation:',
             finish_early_button: 'Finish Quiz',
-
             // Results
             your_result: 'Your result:',
             of_label: 'of',
@@ -3283,18 +3273,17 @@ const mainApp = (function() {
             review_errors_button: 'Review Mistakes',
             download_triggered_quiz_button: 'Download Quiz with Triggers',
             restart_button: 'Take Another Quiz',
-
             // Parser
             parser_upload_or_paste: '1. Upload a file (.txt) or paste text below:',
             clear_parser_input: 'Clear input',
             parser_input_placeholder: 'Or paste text from your document here...',
             parser_select_format: '2. Select format (or leave for auto-detection):',
+            parser_auto_detect: '-- Automatic detection --',
             parser_run_button: '3. Convert',
             parser_errors_found: '⚠️ Formatting errors',
             parser_result_title: 'Result:',
             download_parsed_button: 'Download .qst file',
             back_button: 'Back',
-
             // Header Buttons
             copy_question_title: 'Copy current question',
             search_web_title: 'Search the web',
@@ -3304,6 +3293,12 @@ const mainApp = (function() {
             theme_button_title: 'Change Theme',
             language_toggle_title: 'Change Language',
             favorite_button_title: 'Add to Favorites',
+            // Messages
+            search_query_too_short: 'Search query must contain at least 3 characters.',
+            file_empty_or_invalid_part1: 'File "',
+            file_empty_or_invalid_part2: '" is empty or has an invalid format.',
+            no_questions_for_settings: 'No questions found for the current settings.',
+            confirm_finish_early: 'Are you sure you want to finish the quiz early?'
         }
     };
 
@@ -3314,7 +3309,7 @@ const mainApp = (function() {
         return LANG_PACK[currentLang][key] || key;
     }
 
-
+    const getEl = (id) => document.getElementById(id);
 
 
     // --- Firebase & Auth ---
@@ -3328,95 +3323,33 @@ const mainApp = (function() {
         appId: "1:24969645733:web:47bc96a13817544246074c"
     };
 
-    // --- DOM Elements ---
-    const getEl = (id) => document.getElementById(id);
-    const fileInput = getEl('fileInput');
-    const fileUploadArea = getEl('fileUploadArea');
-    const quizSetupArea = getEl('quizSetupArea');
-    const quizArea = getEl('quizArea');
-    const resultsArea = getEl('resultsArea');
-    const questionTextEl = getEl('questionText');
-    const answerOptionsEl = getEl('answerOptions');
-    const feedbackAreaEl = getEl('feedbackArea');
-    const prevQuestionButton = getEl('prevQuestionButton');
-    const nextButton = getEl('nextButton');
-    const restartButton = getEl('restartButton');
-    const startQuizButton = getEl('startQuizButton');
-    const currentQuestionNumEl = getEl('currentQuestionNum');
-    const totalQuestionsNumEl = getEl('totalQuestionsNum');
-    const correctAnswersCountEl = getEl('correctAnswersCount');
-    const finalCorrectEl = getEl('finalCorrect');
-    const finalTotalEl = getEl('finalTotal');
-    const finalPercentageEl = getEl('finalPercentage');
-    const timeLimitInput = getEl('timeLimit');
-    const timeLimitValueDisplay = getEl('timeLimitValue');
-    const questionRangeStartInput = getEl('questionRangeStart');
-    const questionRangeEndInput = getEl('questionRangeEnd');
-    const maxQuestionsInfoEl = getEl('maxQuestionsInfo');
-    const shuffleQuestionsCheckbox = getEl('shuffleQuestions');
-    const shuffleAnswersCheckbox = getEl('shuffleAnswers');
-    const feedbackModeCheckbox = getEl('feedbackMode');
-    const timerDisplayEl = getEl('timerDisplay');
-    const timeLeftEl = getEl('timeLeft');
-    const quickNavPanel = getEl('quickNavPanel');
-    const quickNavButtonsContainer = getEl('quickNavButtons');
-    const feedbackDownloadArea = getEl('feedbackDownloadArea');
-    const downloadErrorsButton = getEl('downloadErrorsButton');
-    const themeToggleButton = getEl('themeToggle');
-    const quickModeToggle = getEl('quickModeToggle');
-    const triggerWordToggle = getEl('triggerWordToggle');
-    const recentFilesArea = getEl('recentFilesArea');
-    const recentFilesListEl = getEl('recentFilesList');
-    const errorReviewArea = getEl('errorReviewArea');
-    const reviewErrorsButton = getEl('reviewErrorsButton');
-    const generateCheatSheetButton = getEl('generateCheatSheetButton');
-    const cheatSheetResultArea = getEl('cheatSheetResultArea');
-    const cheatSheetOutputEl = getEl('cheatSheetOutput');
-    const downloadCheatSheetButton = getEl('downloadCheatSheetButton');
-    const backToSettingsButton = getEl('backToSettingsButton');
-    const chooseAnotherFileButton = getEl('chooseAnotherFileButton');
-    const finishTestButton = getEl('finishTestButton');
-    const triggeredQuizDownloadArea = getEl('triggeredQuizDownloadArea');
-    const downloadTriggeredQuizButton = getEl('downloadTriggeredQuizButton');
-    const gradusButton = getEl('gradusButton');
-    const gradusFoldersContainer = getEl('gradusFoldersContainer');
-    const gradusFolderList = getEl('gradusFolderList');
-    const backToFileUploadButton = getEl('backToFileUploadButton');
-    const gradusBreadcrumbs = getEl('gradusBreadcrumbs');
-    const searchContainer = getEl('searchContainer');
-    const searchQueryInput = getEl('searchQueryInput');
-    const searchButton = getEl('searchButton');
-    const searchResultsContainer = getEl('searchResultsContainer');
-    const backToSearchButton = getEl('backToSearchButton');
-    const webSearchDropdown = getEl('webSearchDropdown');
-    const searchWebButton = getEl('searchWebButton');
-    const searchDropdownContent = getEl('searchDropdownContent');
-    const chatToggleBtn = getEl('chatToggle');
-    const languageToggle = getEl('languageToggle');
-    const copyQuestionBtnQuiz = getEl('copyQuestionBtnQuiz');
-    const parserArea = getEl('parserArea');
-    const parserButton = getEl('parserButton');
-    const backToMainFromParserBtn = getEl('backToMainFromParserBtn');
-    const parserFileInput = getEl('parserFileInput');
-    const parserInput = getEl('parserInput');
-    const parserPatternSelect = getEl('parserPatternSelect');
-    const runParserBtn = getEl('runParserBtn');
-    const parserOutputArea = getEl('parserOutputArea');
-    const parserOutput = getEl('parserOutput');
-    const downloadParsedBtn = getEl('downloadParsedBtn');
-    const clearParserInputBtn = getEl('clearParserInputBtn');
-    const filterVariantsBtn = getEl('filterVariantsBtn');
-    const filterVariantsDropdown = getEl('filterVariantsDropdown');
-    const filterVariantCheckboxes = getEl('filterVariantCheckboxes');
-    const applyVariantFilterBtn = getEl('applyVariantFilterBtn');
-    const resetVariantFilterBtn = getEl('resetVariantFilterBtn');
-    
-    // Search results elements
-    const searchNavigation = getEl('searchNavigation');
-    const prevResultBtn = getEl('prevResultBtn');
-    const nextResultBtn = getEl('nextResultBtn');
-    const resultCounterEl = getEl('resultCounter');
-    const searchResultCardsContainer = getEl('searchResultCards');
+
+    // --- ИЗМЕНЕНИЕ: Объявляем переменные здесь, но не присваиваем значения ---
+    let fileInput, fileUploadArea, quizSetupArea, quizArea, resultsArea,
+        questionTextEl, answerOptionsEl, feedbackAreaEl, prevQuestionButton,
+        nextButton, restartButton, startQuizButton, currentQuestionNumEl,
+        totalQuestionsNumEl, correctAnswersCountEl, finalCorrectEl, finalTotalEl,
+        finalPercentageEl, timeLimitInput, timeLimitValueDisplay,
+        questionRangeStartInput, questionRangeEndInput, maxQuestionsInfoEl,
+        shuffleQuestionsCheckbox, shuffleAnswersCheckbox, feedbackModeCheckbox,
+        timerDisplayEl, timeLeftEl, quickNavPanel, quickNavButtonsContainer,
+        feedbackDownloadArea, downloadErrorsButton, themeToggleButton,
+        quickModeToggle, triggerWordToggle, recentFilesArea, recentFilesListEl,
+        errorReviewArea, reviewErrorsButton, generateCheatSheetButton,
+        cheatSheetResultArea, cheatSheetOutputEl, downloadCheatSheetButton,
+        backToSettingsButton, chooseAnotherFileButton, finishTestButton,
+        triggeredQuizDownloadArea, downloadTriggeredQuizButton, gradusButton,
+        gradusFoldersContainer, gradusFolderList, backToFileUploadButton,
+        gradusBreadcrumbs, searchContainer, searchQueryInput, searchButton,
+        searchResultsContainer, backToSearchButton, webSearchDropdown,
+        searchWebButton, searchDropdownContent, chatToggleBtn, languageToggle,
+        copyQuestionBtnQuiz, parserArea, parserButton, backToMainFromParserBtn,
+        parserFileInput, parserInput, parserPatternSelect, runParserBtn,
+        parserOutputArea, parserOutput, downloadParsedBtn, clearParserInputBtn,
+        filterVariantsBtn, filterVariantsDropdown, filterVariantCheckboxes,
+        applyVariantFilterBtn, resetVariantFilterBtn, searchNavigation,
+        prevResultBtn, nextResultBtn, resultCounterEl, searchResultCardsContainer;
+
 
     // --- State Variables ---
     let allParsedQuestions = [];
@@ -3452,50 +3385,129 @@ const mainApp = (function() {
         event.returnValue = '';
     };
 
-
-    // --- Инициализация ---
-
     function initializeApp() {
+        // --- ИЗМЕНЕНИЕ: Присваиваем значения переменным здесь ---
+        
+        
+        fileInput = getEl('fileInput');
+        fileUploadArea = getEl('fileUploadArea');
+        quizSetupArea = getEl('quizSetupArea');
+        quizArea = getEl('quizArea');
+        resultsArea = getEl('resultsArea');
+        questionTextEl = getEl('questionText');
+        answerOptionsEl = getEl('answerOptions');
+        feedbackAreaEl = getEl('feedbackArea');
+        prevQuestionButton = getEl('prevQuestionButton');
+        nextButton = getEl('nextButton');
+        restartButton = getEl('restartButton');
+        startQuizButton = getEl('startQuizButton');
+        currentQuestionNumEl = getEl('currentQuestionNum');
+        totalQuestionsNumEl = getEl('totalQuestionsNum');
+        correctAnswersCountEl = getEl('correctAnswersCount');
+        finalCorrectEl = getEl('finalCorrect');
+        finalTotalEl = getEl('finalTotal');
+        finalPercentageEl = getEl('finalPercentage');
+        timeLimitInput = getEl('timeLimit');
+        timeLimitValueDisplay = getEl('timeLimitValue');
+        questionRangeStartInput = getEl('questionRangeStart');
+        questionRangeEndInput = getEl('questionRangeEnd');
+        maxQuestionsInfoEl = getEl('maxQuestionsInfo');
+        shuffleQuestionsCheckbox = getEl('shuffleQuestions');
+        shuffleAnswersCheckbox = getEl('shuffleAnswers');
+        feedbackModeCheckbox = getEl('feedbackMode');
+        timerDisplayEl = getEl('timerDisplay');
+        timeLeftEl = getEl('timeLeft');
+        quickNavPanel = getEl('quickNavPanel');
+        quickNavButtonsContainer = getEl('quickNavButtons');
+        feedbackDownloadArea = getEl('feedbackDownloadArea');
+        downloadErrorsButton = getEl('downloadErrorsButton');
+        themeToggleButton = getEl('themeToggle');
+        quickModeToggle = getEl('quickModeToggle');
+        triggerWordToggle = getEl('triggerWordToggle');
+        recentFilesArea = getEl('recentFilesArea');
+        recentFilesListEl = getEl('recentFilesList');
+        errorReviewArea = getEl('errorReviewArea');
+        reviewErrorsButton = getEl('reviewErrorsButton');
+        generateCheatSheetButton = getEl('generateCheatSheetButton');
+        cheatSheetResultArea = getEl('cheatSheetResultArea');
+        cheatSheetOutputEl = getEl('cheatSheetOutput');
+        downloadCheatSheetButton = getEl('downloadCheatSheetButton');
+        backToSettingsButton = getEl('backToSettingsButton');
+        chooseAnotherFileButton = getEl('chooseAnotherFileButton');
+        finishTestButton = getEl('finishTestButton');
+        triggeredQuizDownloadArea = getEl('triggeredQuizDownloadArea');
+        downloadTriggeredQuizButton = getEl('downloadTriggeredQuizButton');
+        gradusButton = getEl('gradusButton');
+        gradusFoldersContainer = getEl('gradusFoldersContainer');
+        gradusFolderList = getEl('gradusFolderList');
+        backToFileUploadButton = getEl('backToFileUploadButton');
+        gradusBreadcrumbs = getEl('gradusBreadcrumbs');
+        searchContainer = getEl('searchContainer');
+        searchQueryInput = getEl('searchQueryInput');
+        searchButton = getEl('searchButton');
+        searchResultsContainer = getEl('searchResultsContainer');
+        backToSearchButton = getEl('backToSearchButton');
+        webSearchDropdown = getEl('webSearchDropdown');
+        searchWebButton = getEl('searchWebButton');
+        searchDropdownContent = getEl('searchDropdownContent');
+        chatToggleBtn = getEl('chatToggle');
+        languageToggle = getEl('languageToggle');
+        copyQuestionBtnQuiz = getEl('copyQuestionBtnQuiz');
+        parserArea = getEl('parserArea');
+        parserButton = getEl('parserButton');
+        backToMainFromParserBtn = getEl('backToMainFromParserBtn');
+        parserFileInput = getEl('parserFileInput');
+        parserInput = getEl('parserInput');
+        parserPatternSelect = getEl('parserPatternSelect');
+        runParserBtn = getEl('runParserBtn');
+        parserOutputArea = getEl('parserOutputArea');
+        parserOutput = getEl('parserOutput');
+        downloadParsedBtn = getEl('downloadParsedBtn');
+        clearParserInputBtn = getEl('clearParserInputBtn');
+        filterVariantsBtn = getEl('filterVariantsBtn');
+        filterVariantsDropdown = getEl('filterVariantsDropdown');
+        filterVariantCheckboxes = getEl('filterVariantCheckboxes');
+        applyVariantFilterBtn = getEl('applyVariantFilterBtn');
+        resetVariantFilterBtn = getEl('resetVariantFilterBtn');
+        searchNavigation = getEl('searchNavigation');
+        prevResultBtn = getEl('prevResultBtn');
+        nextResultBtn = getEl('nextResultBtn');
+        resultCounterEl = getEl('resultCounter');
+        searchResultCardsContainer = getEl('searchResultCards');
+
+        // Остальная часть функции initializeApp
         try {
-            // Проверяем доступность Firebase
             if (typeof firebase === 'undefined') {
                 throw new Error('Firebase SDK не загружен');
             }
-            
             firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
             auth = firebase.auth();
-            
             console.log('✅ Firebase инициализирован успешно');
-            
             ChatModule.init(db, auth);
-
             auth.onAuthStateChanged(user => {
                 currentUser = user;
                 ChatModule.setCurrentUser(user);
             });
-
         } catch (e) {
             console.error("❌ Firebase initialization failed:", e);
             alert("Не удалось инициализировать Firebase. Чат будет недоступен. Ошибка: " + e.message);
-            
-            // Инициализируем приложение без Firebase
             ChatModule.init(null, null);
         }
         
-        // Остальная инициализация...
         setupEventListeners();
         loadTheme();
         updateQuickModeToggleVisual();
         updateTriggerWordToggleVisual();
         loadRecentFiles();
         resetQuizForNewFile();
-
         const savedLang = localStorage.getItem('appLanguage') || 'ru';
         populateParserPatterns();
         setLanguage(savedLang);
         createVariantFilterCheckboxes();
     }
+
+
 
     
     function setupEventListeners() {
@@ -3634,6 +3646,7 @@ const mainApp = (function() {
     }
 
 
+
     async function performSearch() {
         const query = searchQueryInput.value.trim();
         if (query.length < 3) {
@@ -3643,12 +3656,16 @@ const mainApp = (function() {
 
         fileUploadArea.classList.add('hidden');
         searchResultsContainer.classList.remove('hidden');
+        
+        // Эта строка теперь будет работать правильно
         searchResultCardsContainer.innerHTML = `
             <div class="loading-placeholder">
             <div class="loading-spinner"></div>
-            <span>Идет поиск по базе...</span>
+            <span>${_('searching_in_db')}</span>
             </div>
         `;
+        // Добавьте в LANG_PACK: searching_in_db: 'Идет поиск по базе...' / 'Searching database...'
+
         searchNavigation.classList.add('hidden');
 
         try {
@@ -3669,6 +3686,8 @@ const mainApp = (function() {
             searchResultCardsContainer.innerHTML = `<div class="search-no-results-message">Произошла ошибка: ${error.message}</div>`;
         }
     }
+
+
 
     function renderSearchResults(results) {
         searchResultsData = results || [];
@@ -4617,7 +4636,7 @@ const mainApp = (function() {
             questionRangeEndInput.max = allParsedQuestions.length;
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${allParsedQuestions.filter(q => q.type !== 'category').length})`;
         } else {
-            alert(`Не удалось обработать "${fileName}" как валидный тест.`);
+            alert(`${_('file_processing_failed_part1')}"${fileName}"${_('file_processing_failed_part2')}`);
         }
     }
 

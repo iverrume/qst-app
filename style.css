@@ -4101,3 +4101,82 @@ button[onclick*="copyToClipboard"].copied:after {
 .error-list-item.reviewed:hover {
     background-color: #c3e6cb;
 }
+
+/* --- СТИЛИ ДЛЯ ФИЛЬТРА ВАРИАНТОВ ОТВЕТОВ --- */
+
+.filter-controls-container {
+    position: relative; /* Важно для позиционирования выпадающего меню */
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: flex-end; /* Выравниваем кнопку по правому краю */
+}
+
+#filterVariantsBtn {
+    background-color: var(--button-secondary-bg);
+    padding: 6px 12px;
+    font-size: 0.9em;
+}
+
+.filter-dropdown {
+    position: absolute;
+    top: 100%; /* Появляется под кнопкой */
+    right: 0;
+    width: 280px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    z-index: 100;
+    padding: 15px;
+    animation: fadeIn 0.2s;
+}
+
+.filter-dropdown-header {
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+.filter-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr); /* 5 колонок */
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.filter-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.filter-checkboxes input[type="checkbox"] {
+    accent-color: var(--button-primary-bg);
+}
+
+.filter-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--dashed-border-color);
+    padding-top: 10px;
+}
+
+#applyVariantFilterBtn {
+    background-color: var(--button-success-bg);
+}
+
+/* --- СТИЛИ ДЛЯ ОТМЕЧЕННЫХ ОШИБОК В СПИСКЕ --- */
+
+.error-list-item.reviewed {
+    background-color: #d4edda; /* Светло-зеленый фон */
+    color: #155724; /* Темно-зеленый текст для контраста */
+    font-weight: 500;
+}
+
+/* При наведении на уже отмеченный элемент, делаем его чуть темнее */
+.error-list-item.reviewed:hover {
+    background-color: #c3e6cb;
+}

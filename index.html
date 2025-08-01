@@ -81,7 +81,16 @@
                     <h2 data-lang-key="search_results_title">Результаты поиска</h2>
                     <button id="backToSearchButton" class="btn btn-secondary" data-lang-key="back_to_search">Новый поиск</button>
                 </div>
-                <!-- ... -->
+
+                <div id="searchNavigation" class="search-navigation hidden">
+                    <button id="prevResultBtn" class="nav-arrow" disabled><</button>
+                    <span id="resultCounter">0 / 0</span>
+                    <button id="nextResultBtn" class="nav-arrow" disabled>></button>
+                </div>
+
+                <div id="searchResultCards">
+                    <!-- Карточки с результатами будут вставляться сюда -->
+                </div>
             </div>
 
             <div id="gradusFoldersContainer" class="hidden">
@@ -131,7 +140,9 @@
             <div id="quizArea" class="hidden">
                 <div id="timerDisplay" class="hidden"><span data-lang-key="timer_label">Время:</span> <span id="timeLeft">--:--</span></div>
                 <div id="questionContainer">
-                    <!-- ... -->
+                    <div id="questionText"></div>
+                    <ul id="answerOptions"></ul>
+                    <div id="feedbackArea" class="feedback-area"></div>
                 </div>
                 <div id="questionNavigationControls">
                     <button id="prevQuestionButton" disabled data-lang-key="prev_question_button">Предыдущий</button>
@@ -196,7 +207,21 @@
                 <div id="parserOutputArea" class="hidden">
                     <hr>
                     <h3 data-lang-key="parser_result_title">Результат:</h3>
-                    <!-- ... -->
+                    
+                    <div class="filter-controls-container">
+                        <button id="filterVariantsBtn">⚙️ Фильтр по вариантам</button>
+                        <div id="filterVariantsDropdown" class="filter-dropdown hidden">
+                            <div class="filter-dropdown-header">Выберите кол-во вариантов:</div>
+                            <div id="filterVariantCheckboxes" class="filter-checkboxes">
+                                <!-- Чекбоксы будут сгенерированы скриптом -->
+                            </div>
+                            <div class="filter-actions">
+                                <button id="applyVariantFilterBtn">Применить</button>
+                                <button id="resetVariantFilterBtn" class="btn-secondary-small">Сброс</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <textarea id="parserOutput" rows="10"></textarea>
                     <button id="downloadParsedBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
                 </div>
