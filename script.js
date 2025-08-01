@@ -4,6 +4,290 @@
 
 const ChatModule = (function() {
     'use strict';
+
+    // === НАЧАЛО НОВОГО БЛОКА: ПЕРЕВОД ЧАТА ===
+    const LANG_PACK_CHAT = {
+        ru: {
+            // TABS
+            tab_messages: "Сообщения",
+            tab_questions: "Вопросы",
+            tab_favorites: "Избранное",
+            tab_users: "Пользователи",
+            // Auth
+            auth_title: "🔐 Авторизация",
+            auth_login_tab: "Вход",
+            auth_register_tab: "Регистрация",
+            auth_login_placeholder: "Имя пользователя или Email",
+            auth_password_placeholder: "Пароль",
+            auth_login_button: "Войти",
+            auth_register_username_placeholder: "Имя пользователя",
+            auth_register_email_placeholder: "Email",
+            auth_register_password_placeholder: "Пароль (минимум 6 символов)",
+            auth_register_confirm_placeholder: "Повторите пароль",
+            auth_register_button: "Зарегистрироваться",
+            auth_close_button: "Закрыть",
+            // Main Chat
+            chat_header_title: "💬 Чат",
+            guest_user: "Гость",
+            generic_user: "Пользователь",
+            edit_profile_link: "✏️ Редактировать профиль",
+            logout_link: "🚪 Выйти",
+            notifications_title: "Уведомления",
+            sidebar_sections: "📂 Разделы",
+            sidebar_channels: "📋 Каналы",
+            sidebar_create_channel: "+ Создать канал",
+            sidebar_private_messages: "✉️ Личные сообщения",
+            sidebar_online: "👥 Онлайн",
+            channel_general: "# Общий",
+            search_placeholder: "🔍 Поиск...",
+            pinned_toggle_title: "Закрепленные",
+            loading_message: "Загрузка...",
+            reply_panel_title: "Ответ на сообщение:",
+            emoji_button_title: "Эмодзи",
+            create_question_button_title: "Создать вопрос",
+            attach_file_button_title: "Прикрепить файл",
+            chat_input_placeholder: "Введите сообщение...",
+            // Modals
+            user_actions_title: "Действия",
+            user_actions_text: "Выберите, что вы хотите сделать.",
+            user_actions_chat_button: "Написать в чате",
+            user_actions_email_button: "Написать на Email",
+            modal_cancel_button: "Отмена",
+            channel_settings_title: "Настройки канала",
+            channel_edit_name_placeholder: "Новое название канала",
+            channel_edit_password_placeholder: "Новый пароль (пусто = без пароля)",
+            channel_edit_desc_placeholder: "Новое описание канала",
+            channel_members_title: "Участники канала",
+            channel_members_loading: "Загрузка...",
+            modal_save_button: "Сохранить",
+            delete_channel_button: "🗑️ Удалить Канал",
+            create_channel_title: "Создать новый канал",
+            channel_create_name_placeholder: "Название канала",
+            channel_create_password_placeholder: "Пароль (оставьте пустым для публичного)",
+            channel_create_desc_placeholder: "Описание канала",
+            modal_create_button: "Создать",
+            create_question_title: "Создать вопрос",
+            create_question_placeholder: "Введите ваш вопрос в формате .qst \\n \\n ?Столица Казахстана \\n +Астана \\n -Нур-Султан \\n -Утера \\n \\n *Можно ввести сразу несколько",
+            create_question_modal_button: "Создать вопрос",
+            edit_message_title: "Редактировать сообщение",
+            edit_profile_title: "Редактировать профиль",
+            edit_profile_name_placeholder: "Ваше имя",
+            edit_profile_new_password_placeholder: "Новый пароль (оставьте пустым, если не меняете)",
+            delete_account_button: "🗑️ Удалить аккаунт",
+            file_actions_title: "Действия с файлом",
+            file_actions_download: "📥 Скачать",
+            file_actions_test: "⚡️ Пройти тест",
+            // JS Messages & Alerts
+            auth_system_unavailable: "Система аутентификации не доступна",
+            fill_all_fields: "Заполните все поля",
+            password_min_length: "Пароль должен содержать минимум 6 символов",
+            passwords_do_not_match: "Пароли не совпадают!",
+            error_user_not_found: "Пользователь не найден",
+            error_wrong_password: "Неверный пароль",
+            error_email_in_use: "Email уже используется",
+            error_weak_password: "Слишком слабый пароль",
+            error_invalid_email: "Неверный формат email",
+            error_too_many_requests: "Слишком много попыток. Попробуйте позже",
+            error_generic: "Произошла ошибка. Попробуйте еще раз",
+            loading_messages: "Загрузка сообщений...",
+            loading_error: "Ошибка загрузки.",
+            pinned_messages_empty: "Закрепленных сообщений пока нет",
+            messages_empty: "Сообщений пока нет. Напишите первым!",
+            file_share_question_1: "вопрос",
+            file_share_question_2_4: "вопроса",
+            file_share_question_5_more: "вопросов",
+            new_question_notification: "Создан новый вопрос",
+            notification_new_message: "Новое сообщение!",
+            questions_empty: "Вопросов пока нет",
+            favorites_empty: "В избранном пока ничего нет",
+            favorites_loading_error: "Ошибка загрузки избранного",
+            users_not_found: "Пользователи не найдены.",
+            confirm_delete_message: "Вы уверены, что хотите удалить это сообщение?",
+            confirm_delete_question: "Вы уверены, что хотите удалить этот вопрос? Это действие необратимо.",
+            confirm_kick_user: "Вы уверены, что хотите удалить этого участника из канала?",
+            confirm_delete_channel: "Вы уверены, что хотите удалить этот канал? Все сообщения в нем будут потеряны. Это действие необратимо.",
+            confirm_delete_account: "Вы уверены, что хотите удалить свой аккаунт? Это действие НЕОБРАТИМО.",
+            confirm_clear_favorites: "Вы уверены, что хотите удалить ВСЕ элементы из избранного? Это действие необратимо.",
+            profile_updated_success: "Профиль успешно обновлен!",
+            channel_name_empty: "Название канала не может быть пустым.",
+            cant_delete_general: "Основной канал удалить нельзя.",
+            invalid_channel_password: "Неверный пароль.",
+            add_to_favorites_success: "Добавлено в избранное!",
+            add_to_favorites_auth_required: "Для добавления в избранное необходимо авторизоваться.",
+            question_format_unrecognized: "Формат вопроса не распознан. Проверьте синтаксис.",
+            questions_added_from_chat_success: "Успешно добавлено вопросов из чата:",
+            questions_added_success: "Успешно добавлено вопросов:",
+            notifications_enabled: "Звуковые уведомления включены",
+            notifications_disabled: "Звуковые уведомления выключены",
+            notifications_title_enabled: "Уведомления включены",
+            notifications_title_disabled: "Уведомления выключены",
+            pinned_mode_on_title: "Показать все сообщения",
+            pinned_mode_off_title: "Показать закрепленные",
+            download_qst_button: "📥 Скачать .qst",
+            download_txt_button: "📥 Скачать .txt",
+            clear_favorites_button: "🗑️ Очистить избранное",
+            download_no_data: "Нет данных для скачивания в разделе",
+            favorites_cleared_success: "Избранное успешно очищено.",
+            favorites_already_empty: "Избранное уже пусто.",
+            copy_success: "Содержимое скопировано в буфер обмена!",
+            copy_error: "Не удалось скопировать. Скопируйте текст вручную.",
+            file_type_unsupported: "Можно загружать только файлы .qst и .txt",
+            reauth_prompt: "Для подтверждения удаления, пожалуйста, введите ваш текущий пароль:",
+            reauth_cancelled: "Удаление отменено. Пароль не был введен.",
+            deleting_account_status: "Удаление...",
+            delete_account_success: "Ваш аккаунт был успешно удален.",
+            account_deleted_button: "🗑️ Удалить аккаунт",
+            question_deleted_message: "Этот вопрос был удален.",
+            file_download_error: "Не удалось скачать файл:",
+            test_start_error: "Не удалось запустить тест:",
+            global_loader_loading_test: "Загрузка теста",
+            password_reauth_required: "Для выполнения этого действия необходимо недавно войти в систему. Пожалуйста, выйдите и войдите снова.",
+            channel_enter_password_prompt: "защищен. Введите пароль:",
+        },
+        en: {
+            // TABS
+            tab_messages: "Messages",
+            tab_questions: "Questions",
+            tab_favorites: "Favorites",
+            tab_users: "Users",
+            // Auth
+            auth_title: "🔐 Authorization",
+            auth_login_tab: "Login",
+            auth_register_tab: "Register",
+            auth_login_placeholder: "Username or Email",
+            auth_password_placeholder: "Password",
+            auth_login_button: "Log In",
+            auth_register_username_placeholder: "Username",
+            auth_register_email_placeholder: "Email",
+            auth_register_password_placeholder: "Password (min. 6 characters)",
+            auth_register_confirm_placeholder: "Confirm password",
+            auth_register_button: "Register",
+            auth_close_button: "Close",
+            // Main Chat
+            chat_header_title: "💬 Chat",
+            guest_user: "Guest",
+            generic_user: "User",
+            edit_profile_link: "✏️ Edit Profile",
+            logout_link: "🚪 Logout",
+            notifications_title: "Notifications",
+            sidebar_sections: "📂 Sections",
+            sidebar_channels: "📋 Channels",
+            sidebar_create_channel: "+ Create Channel",
+            sidebar_private_messages: "✉️ Private Messages",
+            sidebar_online: "👥 Online",
+            channel_general: "# General",
+            search_placeholder: "🔍 Search...",
+            pinned_toggle_title: "Pinned",
+            loading_message: "Loading...",
+            reply_panel_title: "Replying to:",
+            emoji_button_title: "Emoji",
+            create_question_button_title: "Create Question",
+            attach_file_button_title: "Attach File",
+            chat_input_placeholder: "Enter a message...",
+            // Modals
+            user_actions_title: "Actions",
+            user_actions_text: "Choose what you want to do.",
+            user_actions_chat_button: "Send a message",
+            user_actions_email_button: "Send an Email",
+            modal_cancel_button: "Cancel",
+            channel_settings_title: "Channel Settings",
+            channel_edit_name_placeholder: "New channel name",
+            channel_edit_password_placeholder: "New password (empty = no password)",
+            channel_edit_desc_placeholder: "New channel description",
+            channel_members_title: "Channel Members",
+            channel_members_loading: "Loading...",
+            modal_save_button: "Save",
+            delete_channel_button: "🗑️ Delete Channel",
+            create_channel_title: "Create New Channel",
+            channel_create_name_placeholder: "Channel name",
+            channel_create_password_placeholder: "Password (leave empty for public)",
+            channel_create_desc_placeholder: "Channel description",
+            modal_create_button: "Create",
+            create_question_title: "Create Question",
+            create_question_placeholder: "Enter your question in .qst format \\n \\n ?Capital of Kazakhstan \\n +Astana \\n -Nur-Sultan \\n -Other \\n \\n *You can enter multiple questions at once",
+            create_question_modal_button: "Create Question",
+            edit_message_title: "Edit Message",
+            edit_profile_title: "Edit Profile",
+            edit_profile_name_placeholder: "Your name",
+            edit_profile_new_password_placeholder: "New password (leave empty if not changing)",
+            delete_account_button: "🗑️ Delete Account",
+            file_actions_title: "File Actions",
+            file_actions_download: "📥 Download",
+            file_actions_test: "⚡️ Take Test",
+            // JS Messages & Alerts
+            auth_system_unavailable: "Authentication system is not available",
+            fill_all_fields: "Please fill in all fields",
+            password_min_length: "Password must be at least 6 characters long",
+            passwords_do_not_match: "Passwords do not match!",
+            error_user_not_found: "User not found",
+            error_wrong_password: "Incorrect password",
+            error_email_in_use: "Email is already in use",
+            error_weak_password: "Password is too weak",
+            error_invalid_email: "Invalid email format",
+            error_too_many_requests: "Too many requests. Please try again later",
+            error_generic: "An error occurred. Please try again",
+            loading_messages: "Loading messages...",
+            loading_error: "Loading error.",
+            pinned_messages_empty: "No pinned messages yet",
+            messages_empty: "No messages yet. Be the first to write!",
+            file_share_question_1: "question",
+            file_share_question_2_4: "questions",
+            file_share_question_5_more: "questions",
+            new_question_notification: "A new question has been created",
+            notification_new_message: "New message!",
+            questions_empty: "No questions yet",
+            favorites_empty: "Nothing in favorites yet",
+            favorites_loading_error: "Error loading favorites",
+            users_not_found: "Users not found.",
+            confirm_delete_message: "Are you sure you want to delete this message?",
+            confirm_delete_question: "Are you sure you want to delete this question? This action is irreversible.",
+            confirm_kick_user: "Are you sure you want to remove this member from the channel?",
+            confirm_delete_channel: "Are you sure you want to delete this channel? All messages within it will be lost. This action is irreversible.",
+            confirm_delete_account: "Are you sure you want to delete your account? This action is IRREVERSIBLE.",
+            confirm_clear_favorites: "Are you sure you want to delete ALL items from your favorites? This action is irreversible.",
+            profile_updated_success: "Profile updated successfully!",
+            channel_name_empty: "Channel name cannot be empty.",
+            cant_delete_general: "The main channel cannot be deleted.",
+            invalid_channel_password: "Incorrect password.",
+            add_to_favorites_success: "Added to favorites!",
+            add_to_favorites_auth_required: "You must be logged in to add to favorites.",
+            question_format_unrecognized: "Question format not recognized. Please check the syntax.",
+            questions_added_from_chat_success: "Successfully added questions from chat:",
+            questions_added_success: "Successfully added questions:",
+            notifications_enabled: "Sound notifications are enabled",
+            notifications_disabled: "Sound notifications are disabled",
+            notifications_title_enabled: "Notifications on",
+            notifications_title_disabled: "Notifications off",
+            pinned_mode_on_title: "Show all messages",
+            pinned_mode_off_title: "Show pinned messages",
+            download_qst_button: "📥 Download .qst",
+            download_txt_button: "📥 Download .txt",
+            clear_favorites_button: "🗑️ Clear Favorites",
+            download_no_data: "No data to download in section",
+            favorites_cleared_success: "Favorites cleared successfully.",
+            favorites_already_empty: "Favorites is already empty.",
+            copy_success: "Content copied to clipboard!",
+            copy_error: "Could not copy. Please copy the text manually.",
+            file_type_unsupported: "Only .qst and .txt files can be uploaded",
+            reauth_prompt: "To confirm deletion, please enter your current password:",
+            reauth_cancelled: "Deletion cancelled. Password was not entered.",
+            deleting_account_status: "Deleting...",
+            delete_account_success: "Your account has been successfully deleted.",
+            account_deleted_button: "🗑️ Delete Account",
+            question_deleted_message: "This question has been deleted.",
+            file_download_error: "Failed to download file:",
+            test_start_error: "Failed to start test:",
+            global_loader_loading_test: "Loading test",
+            password_reauth_required: "This action requires a recent login. Please log out and log in again.",
+            channel_enter_password_prompt: "is protected. Please enter the password:",
+        }
+    };
+    let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
+
+    function _chat(key) {
+        return LANG_PACK_CHAT[currentChatLang]?.[key] || key;
+    }
+
     
     // Core variables
     let db = null;
@@ -50,10 +334,10 @@ const ChatModule = (function() {
     
     // Tabs configuration
     const TABS = {
-        messages: { name: 'Сообщения', icon: '💬', collection: 'messages' },
-        questions: { name: 'Вопросы', icon: '❓', collection: 'questions' },
-        favorites: { name: 'Избранное', icon: '⭐', collection: 'favorites' },
-        users: { name: 'Пользователи', icon: '👥' } // Новый таб
+        messages: { name: _chat('tab_messages'), icon: '💬', collection: 'messages' },
+        questions: { name: _chat('tab_questions'), icon: '❓', collection: 'questions' },
+        favorites: { name: _chat('tab_favorites'), icon: '⭐', collection: 'favorites' },
+        users: { name: _chat('tab_users'), icon: '👥' }
     };
 
 
@@ -120,38 +404,39 @@ const ChatModule = (function() {
         const oldChats = document.querySelectorAll('#chatOverlay, #advancedChatOverlay');
         oldChats.forEach(chat => chat.remove());
         
+        // Вся HTML-строка обернута в обратные кавычки (`) для использования ${}
         const chatHTML = `
         <!-- СИСТЕМА АУТЕНТИФИКАЦИИ -->
         <div id="authOverlay" class="auth-overlay hidden">
             <div class="auth-modal">
-                <h2 style="margin-bottom: 20px; color: var(--primary);">🔐 Авторизация</h2>
+                <h2 style="margin-bottom: 20px; color: var(--primary);">${_chat('auth_title')}</h2>
                 <div class="auth-tabs">
-                    <button class="auth-tab active" data-tab="login">Вход</button>
-                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                    <button class="auth-tab active" data-tab="login">${_chat('auth_login_tab')}</button>
+                    <button class="auth-tab" data-tab="register">${_chat('auth_register_tab')}</button>
                 </div>
                 <form class="auth-form active" id="loginForm">
-                    <input type="text" class="auth-input" id="loginUsername" placeholder="Имя пользователя или Email" required>
-                    <input type="password" class="auth-input" id="loginPassword" placeholder="Пароль" required>
-                    <button type="submit" class="auth-btn">Войти</button>
+                    <input type="text" class="auth-input" id="loginUsername" placeholder="${_chat('auth_login_placeholder')}" required>
+                    <input type="password" class="auth-input" id="loginPassword" placeholder="${_chat('auth_password_placeholder')}" required>
+                    <button type="submit" class="auth-btn">${_chat('auth_login_button')}</button>
                 </form>
                 <form class="auth-form" id="registerForm">
-                    <input type="text" class="auth-input" id="registerUsername" placeholder="Имя пользователя" required>
-                    <input type="email" class="auth-input" id="registerEmail" placeholder="Email" required>
+                    <input type="text" class="auth-input" id="registerUsername" placeholder="${_chat('auth_register_username_placeholder')}" required>
+                    <input type="email" class="auth-input" id="registerEmail" placeholder="${_chat('auth_register_email_placeholder')}" required>
 
                     <div class="password-wrapper">
-                        <input type="password" class="auth-input" id="registerPassword" placeholder="Пароль (минимум 6 символов)" required>
+                        <input type="password" class="auth-input" id="registerPassword" placeholder="${_chat('auth_register_password_placeholder')}" required>
                         <span class="toggle-password">👁️</span>
                     </div>
 
                     <div class="password-wrapper">
-                        <input type="password" class="auth-input" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
+                        <input type="password" class="auth-input" id="registerPasswordConfirm" placeholder="${_chat('auth_register_confirm_placeholder')}" required>
                         <span class="toggle-password">👁️</span>
                     </div>
 
-                    <button type="submit" class="auth-btn">Зарегистрироваться</button>
+                    <button type="submit" class="auth-btn">${_chat('auth_register_button')}</button>
                 </form>
                 <button onclick="ChatModule.closeAuthModal()" style="margin-top: 15px; background: none; border: none; color: var(--secondary-text-color); cursor: pointer;">
-                    Закрыть
+                    ${_chat('auth_close_button')}
                 </button>
             </div>
         </div>
@@ -163,20 +448,20 @@ const ChatModule = (function() {
 
                 <div class="advanced-chat-header">
                     <div class="chat-title">
-                        <h3 id="chatHeaderTitle">💬 Чат</h3>
+                        <h3 id="chatHeaderTitle">${_chat('chat_header_title')}</h3>
                         <span id="unreadBadge" class="unread-badge hidden">0</span>
                     </div>
                     <button id="sidebarToggleBtn" class="sidebar-toggle-btn">☰</button>
 
                     <div class="header-controls">
                         <div class="user-menu-container">
-                            <span id="currentUser">Гость</span>
+                            <span id="currentUser">${_chat('guest_user')}</span>
                             <div id="userDropdown" class="user-dropdown hidden">
-                                <a href="#" onclick="ChatModule.showProfileModal()">✏️ Редактировать профиль</a>
-                                <a href="#" onclick="ChatModule.logout()">🚪 Выйти</a>
+                                <a href="#" onclick="ChatModule.showProfileModal()">${_chat('edit_profile_link')}</a>
+                                <a href="#" onclick="ChatModule.logout()">${_chat('logout_link')}</a>
                             </div>
                         </div>
-                        <button id="notificationToggle" class="notification-toggle" title="Уведомления">🔔</button>
+                        <button id="notificationToggle" class="notification-toggle" title="${_chat('notifications_title')}">🔔</button>
                         <button onclick="ChatModule.closeChatModal()" class="close-btn">×</button>
                     </div>
                 </div>
@@ -188,39 +473,39 @@ const ChatModule = (function() {
                         <div class="chat-sidebar">
                             <!-- Navigation Tabs -->
                             <div class="sidebar-section">
-                                <h4>📂 Разделы</h4>
+                                <h4>${_chat('sidebar_sections')}</h4>
                                 <div id="chatTabsList" class="tabs-list">
                                     <div class="tab-item active" data-tab="messages">
-                                        <span class="tab-icon">💬</span><span class="tab-name">Сообщения</span><span class="tab-counter" id="messagesCount">0</span>
+                                        <span class="tab-icon">💬</span><span class="tab-name">${_chat('tab_messages')}</span><span class="tab-counter" id="messagesCount">0</span>
                                     </div>
                                     <div class="tab-item" data-tab="questions">
-                                        <span class="tab-icon">❓</span><span class="tab-name">Вопросы</span><span class="tab-counter" id="questionsCount">0</span>
+                                        <span class="tab-icon">❓</span><span class="tab-name">${_chat('tab_questions')}</span><span class="tab-counter" id="questionsCount">0</span>
                                     </div>
                                     <div class="tab-item" data-tab="favorites">
-                                        <span class="tab-icon">⭐</span><span class="tab-name">Избранное</span><span class="tab-counter" id="favoritesCount">0</span>
+                                        <span class="tab-icon">⭐</span><span class="tab-name">${_chat('tab_favorites')}</span><span class="tab-counter" id="favoritesCount">0</span>
                                     </div>
                                     <div class="tab-item" data-tab="users">
-                                        <span class="tab-icon">👥</span><span class="tab-name">Пользователи</span><span class="tab-counter" id="usersCount">0</span>
+                                        <span class="tab-icon">👥</span><span class="tab-name">${_chat('tab_users')}</span><span class="tab-counter" id="usersCount">0</span>
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- Channels -->
                             <div class="sidebar-section">
-                                <h4>📋 Каналы</h4>
+                                <h4>${_chat('sidebar_channels')}</h4>
                                 <div id="channelsList" class="channels-list"></div>
-                                <button id="createChannelBtn" class="create-btn">+ Создать канал</button>
+                                <button id="createChannelBtn" class="create-btn">${_chat('sidebar_create_channel')}</button>
                             </div>
 
                             <!-- Private Messages -->
                             <div class="sidebar-section" id="privateChatsSection">
-                                <h4>✉️ Личные сообщения</h4>
+                                <h4>${_chat('sidebar_private_messages')}</h4>
                                 <div id="privateChatsList" class="channels-list"></div>
                             </div>
                             
                             <!-- Online users -->
                             <div class="sidebar-section">
-                                <h4>👥 Онлайн (<span id="onlineCount">0</span>)</h4>
+                                <h4>${_chat('sidebar_online')} (<span id="onlineCount">0</span>)</h4>
                                 <div id="onlineUsersList" class="online-users-list"></div>
                             </div>
                         </div>
@@ -229,34 +514,34 @@ const ChatModule = (function() {
                     <!-- Main chat area -->
                     <div class="chat-main-content">
                         <div class="chat-top-bar">
-                             <h4 id="currentChannelName" style="margin: 0; flex-grow: 1; text-align: left; color: var(--heading-color);"># Общий</h4>
-                            <input type="text" id="chatSearchInput" placeholder="🔍 Поиск..." />
-                            <button id="togglePinnedBtn" title="Закрепленные">📌</button>
+                             <h4 id="currentChannelName" style="margin: 0; flex-grow: 1; text-align: left; color: var(--heading-color);">${_chat('channel_general')}</h4>
+                            <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
+                            <button id="togglePinnedBtn" title="${_chat('pinned_toggle_title')}">📌</button>
                         </div>
                         
                         <div id="tabActionsContainer" class="tab-actions-container hidden"></div>
                         
                         <div id="messageArea" class="message-area">
-                            <div class="empty-state">Загрузка...</div>
+                            <div class="empty-state">${_chat('loading_message')}</div>
                         </div>
                         
                         <div class="chat-input-area">
                             <div id="replyingToPanel" class="replying-to-panel hidden">
-                                <div class="reply-info"><span>Ответ на сообщение:</span><p id="replyingToText"></p></div>
+                                <div class="reply-info"><span>${_chat('reply_panel_title')}</span><p id="replyingToText"></p></div>
                                 <button onclick="ChatModule.cancelReply()" class="cancel-reply-btn">×</button>
                             </div>
                             
                             <!-- НОВАЯ СТРУКТУРА ДЛЯ КНОПОК НАД ПОЛЕМ ВВОДА -->
                             <div class="input-actions-top">
-                                <button id="emojiBtn" class="input-action-btn" title="Эмодзи">😊</button>
-                                <button id="questionBtn" class="input-action-btn" title="Создать вопрос">❓</button>
-                                <button id="uploadFileBtn" class="input-action-btn" title="Прикрепить файл">📎</button>
+                                <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}">😊</button>
+                                <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
+                                <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
                             </div>
 
                             <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt">
                             
                             <div class="input-wrapper">
-                                <textarea id="chatInput" placeholder="Введите сообщение..."></textarea>
+                                <textarea id="chatInput" placeholder="${_chat('chat_input_placeholder')}"></textarea>
                                 <button id="sendBtn" class="advanced-send-btn">➤</button>
                             </div>
                         </div>    
@@ -268,98 +553,99 @@ const ChatModule = (function() {
         <!-- MODALS -->
         <div id="userActionsModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3 id="userActionsModalTitle">Действия</h3>
-                <p id="userActionsModalText" style="margin-bottom: 25px;">Выберите, что вы хотите сделать.</p>
+                <h3 id="userActionsModalTitle">${_chat('user_actions_title')}</h3>
+                <p id="userActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p>
                 <div class="modal-buttons vertical">
-                    <button id="userActionsChatBtn">Написать в чате</button>
-                    <button id="userActionsEmailBtn">Написать на Email</button>
-                    <button onclick="ChatModule.closeModal('userActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">Отмена</button>
+                    <button id="userActionsChatBtn">${_chat('user_actions_chat_button')}</button>
+                    <button id="userActionsEmailBtn">${_chat('user_actions_email_button')}</button>
+                    <button onclick="ChatModule.closeModal('userActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
         </div>
         <div id="channelEditModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3>Настройки канала</h3>
+                <h3>${_chat('channel_settings_title')}</h3>
                 <input type="hidden" id="editChannelId">
-                <input type="text" id="editChannelNameInput" placeholder="Новое название канала" required />
-                <input type="password" id="editChannelPasswordInput" placeholder="Новый пароль (пусто = без пароля)" />
-                <textarea id="editChannelDescInput" placeholder="Новое описание канала"></textarea>
+                <input type="text" id="editChannelNameInput" placeholder="${_chat('channel_edit_name_placeholder')}" required />
+                <input type="password" id="editChannelPasswordInput" placeholder="${_chat('channel_edit_password_placeholder')}" />
+                <textarea id="editChannelDescInput" placeholder="${_chat('channel_edit_desc_placeholder')}"></textarea>
 
                 <div id="channelMembersSection" class="channel-members-section hidden">
-                    <h4>Участники канала</h4>
-                    <ul id="channelMembersList" class="channel-members-list"></ul>
+                    <h4>${_chat('channel_members_title')}</h4>
+                    <ul id="channelMembersList" class="channel-members-list"><li>${_chat('channel_members_loading')}</li></ul>
                 </div>
 
                 <div class="modal-buttons">
-                    <button onclick="ChatModule.saveChannelEdit()">Сохранить</button>
-                    <button onclick="ChatModule.closeModal('channelEditModal')">Отмена</button>
+                    <button onclick="ChatModule.saveChannelEdit()">${_chat('modal_save_button')}</button>
+                    <button onclick="ChatModule.closeModal('channelEditModal')">${_chat('modal_cancel_button')}</button>
                 </div>
-                <button id="deleteChannelBtn" class="delete-btn" onclick="ChatModule.deleteChannel()" style="margin-top: 15px;">🗑️ Удалить Канал</button>
+                <button id="deleteChannelBtn" class="delete-btn" onclick="ChatModule.deleteChannel()" style="margin-top: 15px;">${_chat('delete_channel_button')}</button>
             </div>
         </div>
         <div id="channelCreateModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3>Создать новый канал</h3>
-                <input type="text" id="channelNameInput" placeholder="Название канала" required />
-                <input type="password" id="channelPasswordInput" placeholder="Пароль (оставьте пустым для публичного)" />
-                <textarea id="channelDescInput" placeholder="Описание канала"></textarea>
+                <h3>${_chat('create_channel_title')}</h3>
+                <input type="text" id="channelNameInput" placeholder="${_chat('channel_create_name_placeholder')}" required />
+                <input type="password" id="channelPasswordInput" placeholder="${_chat('channel_create_password_placeholder')}" />
+                <textarea id="channelDescInput" placeholder="${_chat('channel_create_desc_placeholder')}"></textarea>
                 <div class="modal-buttons">
-                    <button onclick="ChatModule.createChannel()">Создать</button>
-                    <button onclick="ChatModule.closeModal('channelCreateModal')">Отмена</button>
+                    <button onclick="ChatModule.createChannel()">${_chat('modal_create_button')}</button>
+                    <button onclick="ChatModule.closeModal('channelCreateModal')">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
         </div>
         <div id="questionCreateModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3>Создать вопрос</h3>
-                <textarea id="questionTextInput" placeholder="Введите ваш вопрос в формате .qst \n \n ?Столица Казахстана \n +Астана \n -Нур-Султан \n -Утера \n \n *Можно ввести сразу несколько" rows="4"></textarea>
+                <h3>${_chat('create_question_title')}</h3>
+                <textarea id="questionTextInput" placeholder="${_chat('create_question_placeholder')}" rows="4"></textarea>
                 <div class="modal-buttons">
-                    <button onclick="ChatModule.createQuestion()">Создать вопрос</button>
-                    <button onclick="ChatModule.closeModal('questionCreateModal')">Отмена</button>
+                    <button onclick="ChatModule.createQuestion()">${_chat('create_question_modal_button')}</button>
+                    <button onclick="ChatModule.closeModal('questionCreateModal')">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
         </div>
         <div id="editMessageModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3>Редактировать сообщение</h3>
+                <h3>${_chat('edit_message_title')}</h3>
                 <textarea id="editMessageInput" rows="4"></textarea>
                 <input type="hidden" id="editMessageIdInput">
                 <div class="modal-buttons">
-                    <button onclick="ChatModule.saveMessageEdit()">Сохранить</button>
-                    <button onclick="ChatModule.closeModal('editMessageModal')">Отмена</button>
+                    <button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button>
+                    <button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
         </div>
         <div id="profileEditModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3>Редактировать профиль</h3>
-                <input type="text" id="profileDisplayName" placeholder="Ваше имя" />
+                <h3>${_chat('edit_profile_title')}</h3>
+                <input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" />
                 <input type="email" id="profileEmail" placeholder="Email" readonly />
-                <input type="password" id="profileNewPassword" placeholder="Новый пароль (оставьте пустым, если не меняете)" />
+                <input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" />
                 <div class="modal-buttons">
-                    <button onclick="ChatModule.saveProfile()">Сохранить</button>
-                    <button onclick="ChatModule.closeModal('profileEditModal')">Отмена</button>
+                    <button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button>
+                    <button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button>
                 </div>
-                <button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">🗑️ Удалить аккаунт</button>
+                <button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button>
             </div>
         </div>
 
         <div id="fileActionsModal" class="modal-overlay hidden">
             <div class="modal-content">
-                <h3 id="fileActionsModalTitle">Действия с файлом</h3>
-                <p id="fileActionsModalText" style="margin-bottom: 25px;">Выберите, что вы хотите сделать.</p>
+                <h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3>
+                <p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p>
                 <div class="modal-buttons vertical">
-                    <button id="fileActionDownloadBtn">📥 Скачать</button>
-                    <button id="fileActionTestBtn">⚡️ Пройти тест</button>
-                    <button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">Отмена</button>
+                    <button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button>
+                    <button id="fileActionTestBtn">${_chat('file_actions_test')}</button>
+                    <button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
         </div>
-
         `;
         document.body.insertAdjacentHTML('beforeend', chatHTML);
     }
     
+
+
     function initDOMElements() {
         chatOverlay = document.getElementById('chatOverlay');
         authOverlay = document.getElementById('authOverlay');
@@ -1733,7 +2019,7 @@ const ChatModule = (function() {
         if (!currentUser || !db) return;
 
         // Спрашиваем подтверждение для безопасности
-        if (confirm("Вы уверены, что хотите удалить это сообщение?")) {
+        if (confirm(_chat('confirm_delete_message'))) {
             try {
                 await db.collection('messages').doc(messageId).delete();
             } catch (error) {
@@ -3004,7 +3290,6 @@ const ChatModule = (function() {
 
 
 
-    
     // ========== PUBLIC METHODS ==========
     return {
         init,
@@ -3040,6 +3325,52 @@ const ChatModule = (function() {
             }
         },
         
+        // === НАЧАЛО НОВОГО МЕТОДА ===
+        /**
+         * Устанавливает язык для модуля чата и перерисовывает интерфейс, если он открыт.
+         * @param {string} lang - Код языка ('ru' или 'en').
+         */
+        setLanguage: (lang) => {
+            // Проверяем, существует ли такой язык в пакете чата
+            if (LANG_PACK_CHAT[lang]) {
+                currentChatLang = lang;
+                localStorage.setItem('chatLanguage', lang);
+
+                // Перерисовываем интерфейс, только если чат в данный момент открыт
+                if (chatOverlay && !chatOverlay.classList.contains('hidden')) {
+                    
+                    // Сохраняем важные состояния перед перерисовкой
+                    const scrollPosition = messageArea ? messageArea.scrollTop : 0;
+                    const inputText = chatInput ? chatInput.value : '';
+
+                    // Полностью пересоздаем HTML чата с новым языком
+                    createHybridChatHTML();
+                    // Повторно инициализируем все DOM-элементы, т.к. старые были удалены
+                    initDOMElements();
+                    // Повторно навешиваем все обработчики событий
+                    setupEventListeners();
+                    // Обновляем UI, зависящий от текущего пользователя
+                    updateUserUI();
+                    // Перезагружаем данные для активной вкладки (Сообщения, Вопросы и т.д.)
+                    loadTabData(currentTab);
+                    // Обновляем динамические списки в сайдбаре
+                    renderChannelsList();
+                    renderPrivateChatsList();
+                    updateOnlineUsersList();
+
+                    // Восстанавливаем сохраненные состояния
+                    if (chatInput) chatInput.value = inputText;
+                    if (messageArea) {
+                        // Используем небольшую задержку, чтобы DOM успел обновиться
+                        setTimeout(() => {
+                            messageArea.scrollTop = scrollPosition;
+                        }, 0);
+                    }
+                }
+            }
+        },
+        // === КОНЕЦ НОВОГО МЕТОДА ===
+
         // Action methods
         sendChatMessage: sendMessage,
         createChannel,
@@ -3121,6 +3452,16 @@ async function copyToClipboardMain(text) {
 
 
 const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZBTBIi1mi1tOnTpAIS5GQjKXptFJBEG3jcSNLklDKrPbMz38zlt6SDro/exec';
+
+
+
+
+
+
+
+
+
+
 
 
 // ============================================
@@ -5266,6 +5607,9 @@ const mainApp = (function() {
     function setLanguage(lang) {
         // Сохраняем выбор пользователя
         localStorage.setItem('appLanguage', lang);
+
+        // ВЫЗЫВАЕМ ПЕРЕВОДЧИК ЧАТА
+        ChatModule.setLanguage(lang);
 
         const translations = LANG_PACK[lang];
 
