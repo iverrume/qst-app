@@ -3186,7 +3186,6 @@ const mainApp = (function() {
 
     // --- DOM Elements ---
     const getEl = (id) => document.getElementById(id);
-    const parserLineNumbersEl = getEl('parserLineNumbers');
     const fileInput = getEl('fileInput');
     const fileUploadArea = getEl('fileUploadArea');
     const quizSetupArea = getEl('quizSetupArea');
@@ -3262,7 +3261,6 @@ const mainApp = (function() {
     const parserOutput = getEl('parserOutput');
     const downloadParsedBtn = getEl('downloadParsedBtn');
     const clearParserInputBtn = getEl('clearParserInputBtn');
-    const parserInputMirrorEl = getEl('parserInputMirror');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -3292,7 +3290,6 @@ const mainApp = (function() {
     let breadcrumbs = [];
     let searchResultsData = [];
     let currentResultIndex = 0;
-    let lastParserDigitCount = 0;
 
     // --- Constants ---
 
@@ -3396,10 +3393,6 @@ const mainApp = (function() {
         runParserBtn?.addEventListener('click', runParser);
         downloadParsedBtn?.addEventListener('click', downloadParsedQst);
         clearParserInputBtn?.addEventListener('click', clearParserInput);
-
-        // Обновленные обработчики для редактора
-        parserInput?.addEventListener('input', updateEditorContent);
-
 
 
         nextButton.addEventListener('click', handleNextButtonClick);
@@ -5424,15 +5417,20 @@ const mainApp = (function() {
 
 
     function processTextWithMultiFormat(text) {
+        // === НАЧАЛО ИСПРАВЛЕНИЯ: Нормализация и ручной подсчёт индекса ===
+
         let allParsedQuestions = [];
         let parsingErrors = [];
 
+        // 1. Нормализуем все переносы строк к единому формату '\n'.
+        //    Это решает проблему с \r\n и делает подсчет надежным.
         const normalizedText = text.replace(/\r\n/g, '\n');
         const lines = normalizedText.split('\n');
 
-        const processAndAddBlock = (blockLines, startIndex, startLineNum) => {
+        const processAndAddBlock = (blockLines, startIndex) => {
             if (blockLines.length === 0) return;
             const blockText = blockLines.join('\n');
+            // Рассчитываем конечный индекс
             const endIndex = startIndex + blockText.length;
 
             const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
@@ -5447,56 +5445,61 @@ const mainApp = (function() {
                             blockParsed = true;
                             break;
                         }
-                    } catch (e) { /*...*/ }
+                    } catch (e) {
+                        console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
+                    }
                 }
             }
             if (!blockParsed) {
+                console.warn("Не удалось определить формат для блока:\n---\n", blockText);
                 parsingErrors.push({
                     text: blockText.trim(),
                     start: startIndex,
-                    end: endIndex,
-                    lineNumber: startLineNum // <-- Добавляем номер строки
+                    end: endIndex
                 });
             }
         };
 
+        // 2. Используем ручной подсчет индекса вместо ненадежного indexOf.
         let currentIndex = 0;
         let currentBlockLines = [];
         let currentBlockStartIndex = 0;
-        let currentBlockStartLineNumber = 1;
 
-        lines.forEach((line, index) => {
-            const lineNumber = index + 1;
+        lines.forEach(line => {
             const trimmedLine = line.trim();
             const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
             const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
             
             if (isCategoryTag) {
-                processAndAddBlock(currentBlockLines, currentBlockStartIndex, currentBlockStartLineNumber);
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
                 const categoryName = trimmedLine.slice(3, -3).trim();
                 allParsedQuestions.push({ text: categoryName, type: 'category' });
                 currentBlockLines = [];
             } else if (isNewBlockStart && currentBlockLines.length > 0) {
-                processAndAddBlock(currentBlockLines, currentBlockStartIndex, currentBlockStartLineNumber);
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
                 currentBlockLines = [line];
+                // Новый блок начинается с текущей позиции
                 currentBlockStartIndex = currentIndex;
-                currentBlockStartLineNumber = lineNumber;
             } else {
                 if (currentBlockLines.length === 0) {
+                    // Это первая строка нового блока
                     currentBlockStartIndex = currentIndex;
-                    currentBlockStartLineNumber = lineNumber;
                 }
                 currentBlockLines.push(line);
             }
+
+            // 3. В конце каждой итерации сдвигаем индекс на длину строки + 1 (за символ '\n')
             currentIndex += line.length + 1;
         });
 
-        processAndAddBlock(currentBlockLines, currentBlockStartIndex, currentBlockStartLineNumber);
+        // Не забываем обработать самый последний блок
+        processAndAddBlock(currentBlockLines, currentBlockStartIndex);
 
         return {
             questions: allParsedQuestions,
             errors: parsingErrors
         };
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
     }
 
 
@@ -5518,7 +5521,6 @@ const mainApp = (function() {
         const reader = new FileReader();
         reader.onload = (e) => {
             parserInput.value = e.target.result;
-            updateEditorContent();
         };
         reader.readAsText(file, 'UTF-8');
     }
@@ -5533,22 +5535,17 @@ const mainApp = (function() {
 
         if (!errorsArea || !errorCountEl || !errorListEl) return;
 
-        errorListEl.innerHTML = '';
+        errorListEl.innerHTML = ''; // Очищаем старый список
         errorCountEl.textContent = errors.length;
         errorsArea.classList.remove('hidden');
 
         errors.forEach(error => {
             const li = document.createElement('li');
             li.className = 'error-list-item';
+            li.textContent = error.text.split('\n')[0] || '[пустая строка]'; // Показываем первую строку ошибки
+            li.title = `Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
             
-            // Формируем HTML с номером строки и превью текста
-            li.innerHTML = `
-                <span class="error-line-num">${error.lineNumber}</span>
-                <span class="error-text-preview">${escapeHTML(error.text.split('\n')[0] || '[пустая строка]')}</span>
-            `;
-            
-            li.title = `Строка ${error.lineNumber}: Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
-            
+            // Добавляем обработчик клика для подсветки
             li.addEventListener('click', () => {
                 highlightErrorInTextarea(error.start, error.end);
             });
@@ -5557,76 +5554,23 @@ const mainApp = (function() {
         });
     }
 
-
-    function updateEditorContent() {
-        if (!parserInput || !parserLineNumbersEl || !parserInputMirrorEl) return;
-        
-        const text = parserInput.value;
-        const lines = text.split('\n');
-        
-        // --- Логика для динамической ширины колонки ---
-        const newDigitCount = String(lines.length).length;
-        if (newDigitCount !== lastParserDigitCount) {
-            // Устанавливаем базовую ширину и добавляем место для каждого разряда
-            const newWidth = 20 + newDigitCount * 9; 
-            const textPadding = newWidth + 10;
-            
-            // Применяем ширину и отступы ко всем нужным элементам
-            parserLineNumbersEl.style.width = `${newWidth}px`;
-            parserInput.style.paddingLeft = `${textPadding}px`;
-            parserInputMirrorEl.style.paddingLeft = `${textPadding}px`;
-            
-            lastParserDigitCount = newDigitCount;
-        }
-        
-        // --- НОВАЯ ЛОГИКА ГЕНЕРАЦИИ ---
-        
-        // Генерируем ОДНУ строку с номерами, разделенными переносами.
-        // Браузер сам их расставит по высоте.
-        const numbersText = lines.map((_, i) => i + 1).join('\n');
-        
-        // Обновляем текстовое содержимое элементов. Это безопаснее и правильнее, чем innerHTML.
-        parserLineNumbersEl.textContent = numbersText;
-        parserInputMirrorEl.textContent = text;
-
-        // Синхронизируем прокрутку (если пользователь крутит textarea)
-        parserInput.onscroll = () => {
-            parserLineNumbersEl.scrollTop = parserInput.scrollTop;
-            parserInputMirrorEl.scrollTop = parserInput.scrollTop;
-        };
-    }
-
-
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
         
-        // Устанавливаем выделение в текстовом поле
-        parserInput.focus(); 
+        parserInput.focus(); // Переводим фокус на поле ввода
+        
+        // Выделяем текст ошибки
         parserInput.setSelectionRange(start, end);
 
-        // Получаем контейнер, который теперь имеет скроллбар
-        const editorContainer = document.querySelector('.parser-editor-container');
-        if (!editorContainer) return;
-        
-        // Используем `setTimeout`, чтобы браузер успел обработать выделение
-        setTimeout(() => {
-            // Создаем временный элемент для точного измерения высоты до ошибки
-            const tempDiv = document.createElement('div');
-            // ВАЖНО: Используем стили ЗЕРКАЛА, а не textarea!
-            // Это гарантирует, что переносы строк и размеры будут идентичны.
-            tempDiv.style.cssText = 'position:absolute;visibility:hidden;white-space:pre-wrap;word-break:break-word;font:inherit;padding-left:55px;width:' + parserInput.clientWidth + 'px;';
-            tempDiv.textContent = parserInput.value.substring(0, start);
-            document.body.appendChild(tempDiv);
-            
-            // Прокручиваем контейнер на вычисленную высоту
-            // Отнимаем ~30px, чтобы выделенный текст был не у самого верха, а чуть ниже
-            editorContainer.scrollTop = tempDiv.offsetHeight - 30; 
-            
-            // Удаляем временный элемент
-            document.body.removeChild(tempDiv);
-        }, 0);
+        // Прокручиваем поле ввода, чтобы выделение было видно
+        // (Создаем временный элемент для расчета высоты строк)
+        const tempDiv = document.createElement('div');
+        tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
+        tempDiv.textContent = parserInput.value.substring(0, start);
+        document.body.appendChild(tempDiv);
+        parserInput.scrollTop = tempDiv.offsetHeight;
+        document.body.removeChild(tempDiv);
     }
-
 
     function hideAndResetErrorArea() {
         getEl('parserErrorsArea')?.classList.add('hidden');
@@ -5728,13 +5672,8 @@ const mainApp = (function() {
         parserFileInput.value = ''; // Важно также сбросить выбранный файл!
         parserInput.focus(); // Возвращаем курсор в поле для удобства
         hideAndResetErrorArea();
-        updateParserLineNumbers();
-        updateEditorContent();
     }
 
-
-
-    
 
     // --- Public methods exposed from mainApp ---
     return {
