@@ -5278,6 +5278,8 @@ const mainApp = (function() {
                 return questions;
             }
         },
+        
+         /*
 
         {
             id: 'first_answer_correct_fallback', // ИЗМЕНЕНИЕ: Новое имя, отражающее суть
@@ -5317,7 +5319,7 @@ const mainApp = (function() {
                 return questions;
             }
         },
-
+       */ //
 
         {
             id: 'numbered_list_plus_answer',
