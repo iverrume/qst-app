@@ -430,7 +430,7 @@ const ChatModule = (function() {
 
     
     function setupEventListeners() {
-        // --- ИСПРАВЛЕНИЕ: Ошибочная строка удалена отсюда ---
+
 
         // Tab switching
         document.querySelectorAll('.tab-item').forEach(tab => {
@@ -497,6 +497,29 @@ const ChatModule = (function() {
                 }
             }
         });
+
+
+                // Новые обработчики для фильтра
+        filterVariantsBtn?.addEventListener('click', (event) => {
+            event.stopPropagation(); // Предотвращаем закрытие по клику на саму кнопку
+            filterVariantsDropdown.classList.toggle('hidden');
+        });
+
+        applyVariantFilterBtn?.addEventListener('click', filterByVariantCount);
+        resetVariantFilterBtn?.addEventListener('click', resetVariantFilter);
+        
+        // Закрываем выпадающее меню при клике вне его
+        window.addEventListener('click', (event) => {
+            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden')) {
+                if (!filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
+                    filterVariantsDropdown.classList.add('hidden');
+                }
+            }
+        });
+
+
+
+
 
 
         const debouncedSearch = debounce(handleSearch, 300);
@@ -3261,6 +3284,11 @@ const mainApp = (function() {
     const parserOutput = getEl('parserOutput');
     const downloadParsedBtn = getEl('downloadParsedBtn');
     const clearParserInputBtn = getEl('clearParserInputBtn');
+    const filterVariantsBtn = getEl('filterVariantsBtn');
+    const filterVariantsDropdown = getEl('filterVariantsDropdown');
+    const filterVariantCheckboxes = getEl('filterVariantCheckboxes');
+    const applyVariantFilterBtn = getEl('applyVariantFilterBtn');
+    const resetVariantFilterBtn = getEl('resetVariantFilterBtn');
     
     // Search results elements
     const searchNavigation = getEl('searchNavigation');
@@ -3345,6 +3373,7 @@ const mainApp = (function() {
         const savedLang = localStorage.getItem('appLanguage') || 'ru';
         populateParserPatterns();
         setLanguage(savedLang);
+        createVariantFilterCheckboxes();
     }
 
     
@@ -3414,6 +3443,7 @@ const mainApp = (function() {
                 showResults();
             }
         });
+
         quickModeToggle?.addEventListener('click', toggleQuickMode);
         triggerWordToggle?.addEventListener('click', toggleTriggerWordMode);
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
@@ -5665,10 +5695,95 @@ const mainApp = (function() {
         getEl('errorCount').textContent = '0';
     }
 
+ 
 
+    function createVariantFilterCheckboxes() {
+        if (!filterVariantCheckboxes) return;
+        let checkboxesHTML = '';
+        for (let i = 1; i <= 10; i++) {
+            checkboxesHTML += `
+                <label>
+                    <input type="checkbox" value="${i}">${i}
+                </label>
+            `;
+        }
+        filterVariantCheckboxes.innerHTML = checkboxesHTML;
+    }
+
+    /**
+     * Парсит готовый .qst текст для анализа количества вариантов.
+     * @param {string} qstText - Текст из поля "Результат".
+     * @returns {Array<Object>} Массив объектов вопросов { text, variantCount, start, end }.
+     */
+    function parseQstResultForFiltering(qstText) {
+        const questions = [];
+        let currentIndex = 0;
+        const blocks = qstText.split(/\n\s*\n/); // Делим по пустым строкам
+
+        for (const block of blocks) {
+            if (block.trim() === '') {
+                currentIndex += block.length + 2; // +2 за \n\n
+                continue;
+            }
+            
+            const lines = block.split('\n');
+            const questionLine = lines.find(l => l.trim().startsWith('?'));
+            if (!questionLine) {
+                currentIndex += block.length + 2;
+                continue;
+            }
+            
+            const variantCount = lines.filter(l => l.trim().startsWith('+') || l.trim().startsWith('-')).length;
+            
+            questions.push({
+                text: block,
+                variantCount: variantCount,
+                start: qstText.indexOf(block, currentIndex),
+                end: qstText.indexOf(block, currentIndex) + block.length
+            });
+            
+            currentIndex += block.length + 2;
+        }
+        return questions;
+    }
+
+    function filterByVariantCount() {
+        // Сначала сбрасываем старые ошибки
+        hideAndResetErrorArea();
+
+        const selectedCounts = Array.from(filterVariantCheckboxes.querySelectorAll('input:checked'))
+                                    .map(input => parseInt(input.value));
+
+        if (selectedCounts.length === 0) {
+            alert("Не выбрано ни одного количества вариантов для фильтрации.");
+            return;
+        }
+
+        const qstText = parserOutput.value;
+        const allQuestions = parseQstResultForFiltering(qstText);
+        
+        const defectiveQuestions = allQuestions.filter(q => !selectedCounts.includes(q.variantCount));
+
+        if (defectiveQuestions.length > 0) {
+            // Адаптируем заголовок блока ошибок
+            getEl('showErrorsBtn').innerHTML = `⚠️ Ошибки количества вариантов (<span id="errorCount">${defectiveQuestions.length}</span>)`;
+            renderErrors(defectiveQuestions);
+            alert(`Найдено ${defectiveQuestions.length} вопросов, не соответствующих фильтру.`);
+        } else {
+            alert("Все вопросы соответствуют заданному фильтру!");
+        }
+        filterVariantsDropdown.classList.add('hidden');
+    }
+
+    function resetVariantFilter() {
+        filterVariantCheckboxes.querySelectorAll('input:checked').forEach(input => input.checked = false);
+        hideAndResetErrorArea(); // Скрываем блок ошибок
+        filterVariantsDropdown.classList.add('hidden');
+    }
 
 
     function runParser() {
+        resetVariantFilter();
         const text = parserInput.value;
         if (text.trim() === '') {
             alert("Поле для ввода текста пустое!");
