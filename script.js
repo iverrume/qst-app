@@ -4443,7 +4443,7 @@ const mainApp = (function() {
             questionRangeStartInput.max = allParsedQuestions.length;
             questionRangeEndInput.value = allParsedQuestions.length;
             questionRangeEndInput.max = allParsedQuestions.length;
-            maxQuestionsInfoEl.textContent = `(всего ${allParsedQuestions.length} вопросов)`;
+            maxQuestionsInfoEl.textContent = `(всего ${allParsedQuestions.filter(q => q.type !== 'category').length} вопросов)`;
         } else {
             alert(`Не удалось обработать "${fileName}" как валидный тест.`);
         }
@@ -4586,7 +4586,6 @@ const mainApp = (function() {
     }
 
 
- 
 
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
         let sourceArray;
@@ -4604,11 +4603,17 @@ const mainApp = (function() {
             if (isNaN(startRange) || startRange < 1) startRange = 1;
             if (isNaN(endRange) || endRange < startRange) endRange = totalQuestionsCount;
             
-            // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
-            // Используем новую функцию для получения правильных индексов
             const indices = mapQuestionRangeToIndices(allParsedQuestions, startRange, endRange);
-            sourceArray = allParsedQuestions.slice(indices.startIndex, indices.endIndex + 1);
-            // --- КОНЕЦ ГЛАВНОГО ИЗМЕНЕНИЯ ---
+            
+            // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+            // Проверяем, не нужно ли захватить категорию перед первым вопросом
+            let finalStartIndex = indices.startIndex;
+            if (indices.startIndex > 0 && allParsedQuestions[indices.startIndex - 1].type === 'category') {
+                finalStartIndex = indices.startIndex - 1;
+            }
+            // --- КОНЕЦ ГЛАВНОГО ИСПРАВЛЕНИЯ ---
+
+            sourceArray = allParsedQuestions.slice(finalStartIndex, indices.endIndex + 1);
 
         } else {
             sourceArray = questionsSource;
@@ -4617,7 +4622,6 @@ const mainApp = (function() {
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
         }
         
-        // ... остальная часть функции остается без изменений
         if (quizSettings.shuffleQuestions && !isErrorReview) {
             let shuffledQuiz = [];
             let questionGroup = [];
@@ -4672,7 +4676,6 @@ const mainApp = (function() {
         resultsArea.classList.add('hidden');
         startQuiz();
     }
-
 
 
 
@@ -4929,8 +4932,9 @@ const mainApp = (function() {
         finishTestButton?.classList.add('hidden');
         copyQuestionBtnQuiz?.classList.add('hidden');
         finalCorrectEl.textContent = score;
-        finalTotalEl.textContent = questionsForCurrentQuiz.length;
-        const percentage = questionsForCurrentQuiz.length > 0 ? ((score / questionsForCurrentQuiz.length) * 100).toFixed(1) : 0;
+        const questionsInThisQuiz = questionsForCurrentQuiz.filter(q => q.type !== 'category');
+        finalTotalEl.textContent = questionsInThisQuiz.length;
+        const percentage = questionsInThisQuiz.length > 0 ? ((score / questionsInThisQuiz.length) * 100).toFixed(1) : 0;
         finalPercentageEl.textContent = percentage;
         if (quizSettings.feedbackMode && incorrectlyAnsweredQuestionsData.length > 0) {
             feedbackDownloadArea.classList.remove('hidden');
