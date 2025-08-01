@@ -5564,8 +5564,8 @@ const mainApp = (function() {
         const text = parserInput.value;
         const lines = text.split('\n');
         
-        // 1. Обновляем номера строк: создаем `<span>` для каждого номера
-        parserLineNumbersEl.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
+        // Внутри функции updateEditorContent
+        parserLineNumbersEl.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('\n');
         
         // 2. Обновляем содержимое "зеркала"
         // escapeHTML здесь критически важен для безопасности и правильного отображения!
