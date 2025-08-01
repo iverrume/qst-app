@@ -47,6 +47,12 @@ const ChatModule = (function() {
             create_question_button_title: "Создать вопрос",
             attach_file_button_title: "Прикрепить файл",
             chat_input_placeholder: "Введите сообщение...",
+            download_qst_button: "📥 Скачать .qst",
+            download_txt_button: "📥 Скачать .txt",
+            add_to_favorites_button: "⭐ В избранное",
+            copy_question_button: "📋 Копировать",
+            delete_question_button: "🗑️ Удалить вопрос",
+            clear_favorites_button: "🗑️ Очистить избранное", 
             // Modals
             user_actions_title: "Действия",
             user_actions_text: "Выберите, что вы хотите сделать.",
@@ -213,12 +219,12 @@ const ChatModule = (function() {
             create_question_title: "Сұрақ құру",
             create_question_placeholder: `Сұрағыңызды .qst пішімінде енгізіңіз
 
-    ?Қазақстанның астанасы
-    +Астана
-    -Нұр-Сұлтан
-    -Басқа
+?Қазақстанның астанасы
++Астана
+-Нұр-Сұлтан
+-Утера
 
-    *Бірден бірнеше сұрақ енгізуге болады`,
+*Бірден бірнеше сұрақ енгізуге болады`,
             create_question_modal_button: "Сұрақты құру",
             edit_message_title: "Хабарламаны өңдеу",
             edit_profile_title: "Профильді өңдеу",
@@ -276,6 +282,9 @@ const ChatModule = (function() {
             pinned_mode_off_title: "Бекітілгендерді көрсету",
             download_qst_button: "📥 .qst жүктеп алу",
             download_txt_button: "📥 .txt жүктеп алу",
+            add_to_favorites_button: "⭐ Таңдаулыларға қосу",
+            copy_question_button: "📋 Көшіру",
+            delete_question_button: "🗑️ Сұрақты жою",
             clear_favorites_button: "🗑️ Таңдаулыларды тазарту",
             download_no_data: "бөлімінде жүктеуге деректер жоқ",
             favorites_cleared_success: "Таңдаулылар сәтті тазартылды.",
@@ -421,6 +430,9 @@ const ChatModule = (function() {
             pinned_mode_off_title: "Show pinned messages",
             download_qst_button: "📥 Download .qst",
             download_txt_button: "📥 Download .txt",
+            add_to_favorites_button: "⭐ Add to Favorites",
+            copy_question_button: "📋 Copy",
+            delete_question_button: "🗑️ Delete Question",
             clear_favorites_button: "🗑️ Clear Favorites",
             download_no_data: "No data to download in section",
             favorites_cleared_success: "Favorites cleared successfully.",
@@ -1778,12 +1790,12 @@ const ChatModule = (function() {
             const totalVotes = question.options.reduce((sum, opt) => sum + (Array.isArray(opt.votedBy) ? opt.votedBy.length : 0), 0);
             
             let actionsHTML = `
-                <button class="add-to-favorites-btn">⭐ В избранное</button>
-                <button class="copy-question-btn">📋 Копировать</button> 
+                <button class="add-to-favorites-btn">${_chat('add_to_favorites_button')}</button>
+                <button class="copy-question-btn">${_chat('copy_question_button')}</button> 
             `;
 
             if (currentUser && question.authorId === currentUser?.uid) {
-                actionsHTML += `<button class="delete-question-btn" onclick="ChatModule.deleteQuestion('${question.id}')">🗑️ Удалить вопрос</button>`;
+                actionsHTML += `<button class="delete-question-btn" onclick="ChatModule.deleteQuestion('${question.id}')">${_chat('delete_question_button')}</button>`;
             }
 
             questionEl.innerHTML = `
@@ -3385,19 +3397,19 @@ const ChatModule = (function() {
     
         if (tabId === 'questions' || tabId === 'favorites') {
             const downloadQstBtn = document.createElement('button');
-            downloadQstBtn.textContent = '📥 Скачать .qst';
+            downloadQstBtn.textContent = _chat('download_qst_button'); // ИЗМЕНЕНО
             downloadQstBtn.onclick = () => handleDownload(tabId, 'qst');
             container.appendChild(downloadQstBtn);
     
             const downloadTxtBtn = document.createElement('button');
-            downloadTxtBtn.textContent = '📥 Скачать .txt';
+            downloadTxtBtn.textContent = _chat('download_txt_button'); // ИЗМЕНЕНО
             downloadTxtBtn.onclick = () => handleDownload(tabId, 'txt');
             container.appendChild(downloadTxtBtn);
         }
     
         if (tabId === 'favorites') {
             const clearBtn = document.createElement('button');
-            clearBtn.textContent = '🗑️';
+            clearBtn.textContent = _chat('clear_favorites_button'); // ИЗМЕНЕНО
             clearBtn.classList.add('btn-danger'); 
             clearBtn.onclick = () => clearAllFavorites();
             container.appendChild(clearBtn);
@@ -3798,6 +3810,7 @@ const mainApp = (function() {
             file_empty_or_invalid_part2: '" пуст или имеет неверный формат.',
             no_questions_for_settings: 'Нет вопросов для теста с текущими настройками.',
             confirm_finish_early: 'Вы уверены, что хотите завершить тест досрочно?'
+            copy_button: "Копировать",
         },
         kz: {
             // Main Screen
@@ -3882,6 +3895,7 @@ const mainApp = (function() {
             file_empty_or_invalid_part2: '" файлы бос немесе пішімі жарамсыз.',
             no_questions_for_settings: 'Ағымдағы баптаулар үшін сұрақтар табылмады.',
             confirm_finish_early: 'Тестті мерзімінен бұрын аяқтағыңыз келетініне сенімдісіз бе?'
+            copy_button: "Көшіру",
         },
         en: {
             // Main Screen
@@ -3966,6 +3980,7 @@ const mainApp = (function() {
             file_empty_or_invalid_part2: '" is empty or has an invalid format.',
             no_questions_for_settings: 'No questions found for the current settings.',
             confirm_finish_early: 'Are you sure you want to finish the quiz early?'
+            copy_button: "Copy",
         }
 
 
