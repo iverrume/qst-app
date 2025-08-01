@@ -5557,22 +5557,35 @@ const mainApp = (function() {
 
 
     function highlightErrorInTextarea(start, end) {
-        if (!parserInput) return;
-        
-        parserInput.focus(); // Переводим фокус на поле ввода
-        
-        // Выделяем текст ошибки
-        parserInput.setSelectionRange(start, end);
+            if (!parserInput) return;
+            
+            // Сначала переводим фокус на поле ввода
+            parserInput.focus(); 
+            
+            // Выделяем текст ошибки
+            parserInput.setSelectionRange(start, end);
 
-        // Прокручиваем поле ввода, чтобы выделение было видно
-        // (Создаем временный элемент для расчета высоты строк)
-        const tempDiv = document.createElement('div');
-        tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
-        tempDiv.textContent = parserInput.value.substring(0, start);
-        document.body.appendChild(tempDiv);
-        parserInput.scrollTop = tempDiv.offsetHeight;
-        document.body.removeChild(tempDiv);
-    }
+            // === НАЧАЛО ИСПРАВЛЕНИЯ 3: Отложенная прокрутка ===
+            // Оборачиваем прокрутку в setTimeout, чтобы она выполнилась после обновления DOM
+            setTimeout(() => {
+                // Создаем временный элемент для расчета высоты строк до ошибки
+                const tempDiv = document.createElement('div');
+                // Применяем стили, идентичные textarea, для точного расчета
+                tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
+                // Вставляем текст до начала ошибки
+                tempDiv.textContent = parserInput.value.substring(0, start);
+                document.body.appendChild(tempDiv);
+                
+                // Прокручиваем textarea на рассчитанную высоту
+                parserInput.scrollTop = tempDiv.offsetHeight;
+                
+                // Удаляем временный элемент
+                document.body.removeChild(tempDiv);
+            }, 0); // Задержка в 0 мс достаточна, чтобы поместить выполнение в конец очереди событий
+            // === КОНЕЦ ИСПРАВЛЕНИЯ 3 ===
+        }
+
+
 
     function hideAndResetErrorArea() {
         getEl('parserErrorsArea')?.classList.add('hidden');
