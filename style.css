@@ -4022,6 +4022,7 @@ button[onclick*="copyToClipboard"].copied:after {
     background-color: var(--input-hover-bg-color);
     color: var(--text-color);
 }
+
 /* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v5 - MIRROR SYNC) --- */
 .parser-editor-container {
     display: grid; /* Используем Grid для идеального наложения слоев */

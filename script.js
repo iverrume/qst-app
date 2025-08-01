@@ -5558,12 +5558,13 @@ const mainApp = (function() {
 
 
     function updateEditorContent() {
+        // Проверяем наличие всех нужных элементов
         if (!parserInput || !parserLineNumbersEl || !parserInputMirrorEl) return;
         
         const text = parserInput.value;
         const lines = text.split('\n');
         
-        // 1. Обновляем номера строк
+        // 1. Обновляем номера строк: создаем `<span>` для каждого номера
         parserLineNumbersEl.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('');
         
         // 2. Обновляем содержимое "зеркала"
@@ -5575,22 +5576,29 @@ const mainApp = (function() {
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
         
+        // Устанавливаем выделение в текстовом поле
         parserInput.focus(); 
         parserInput.setSelectionRange(start, end);
 
-        // Теперь прокрутка работает идеально, т.к. мы просто прокручиваем родителя
+        // Получаем контейнер, который теперь имеет скроллбар
         const editorContainer = document.querySelector('.parser-editor-container');
         if (!editorContainer) return;
         
-        // setTimeout все еще полезен, чтобы гарантировать выполнение после отрисовки
+        // Используем `setTimeout`, чтобы браузер успел обработать выделение
         setTimeout(() => {
+            // Создаем временный элемент для точного измерения высоты до ошибки
             const tempDiv = document.createElement('div');
-            // Важно использовать стили ЗЕРКАЛА, а не textarea!
+            // ВАЖНО: Используем стили ЗЕРКАЛА, а не textarea!
+            // Это гарантирует, что переносы строк и размеры будут идентичны.
             tempDiv.style.cssText = 'position:absolute;visibility:hidden;white-space:pre-wrap;word-break:break-word;font:inherit;padding-left:55px;width:' + parserInput.clientWidth + 'px;';
             tempDiv.textContent = parserInput.value.substring(0, start);
             document.body.appendChild(tempDiv);
             
-            editorContainer.scrollTop = tempDiv.offsetHeight - 30; // -30px чтобы дать небольшой отступ сверху
+            // Прокручиваем контейнер на вычисленную высоту
+            // Отнимаем ~30px, чтобы выделенный текст был не у самого верха, а чуть ниже
+            editorContainer.scrollTop = tempDiv.offsetHeight - 30; 
+            
+            // Удаляем временный элемент
             document.body.removeChild(tempDiv);
         }, 0);
     }
