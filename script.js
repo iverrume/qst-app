@@ -5564,35 +5564,31 @@ const mainApp = (function() {
         const text = parserInput.value;
         const lines = text.split('\n');
         
-        // --- НАЧАЛО НОВОГО КОДА ---
-        // Вычисляем, сколько разрядов в номере последней строки (напр., для 123 это 3)
+        // --- Логика для динамической ширины колонки (остается без изменений) ---
         const newDigitCount = String(lines.length).length;
-
-        // Обновляем ширину, только если количество разрядов изменилось (9 -> 10, 99 -> 100, и т.д.)
-        // Это оптимизация, чтобы не менять стили при каждом нажатии клавиши.
         if (newDigitCount !== lastParserDigitCount) {
-            // Устанавливаем базовую ширину и добавляем место для каждого разряда
-            // 20px - базовый отступ, 9px на каждый символ
             const newWidth = 20 + newDigitCount * 9; 
-            
             parserLineNumbersEl.style.width = `${newWidth}px`;
-            
-            // Устанавливаем отступ для поля ввода и зеркала, чтобы текст не залезал на номера
             const textPadding = newWidth + 10;
             parserInputMirrorEl.style.paddingLeft = `${textPadding}px`;
             parserInput.style.paddingLeft = `${textPadding}px`;
-            
-            // Запоминаем текущее количество разрядов, чтобы не пересчитывать лишний раз
             lastParserDigitCount = newDigitCount;
         }
-        // --- КОНЕЦ НОВОГО КОДА ---
-
-        // 1. Обновляем номера строк (этот код вы уже исправляли)
-        parserLineNumbersEl.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('\n');
         
-        // 2. Обновляем содержимое "зеркала"
-        parserInputMirrorEl.innerHTML = escapeHTML(text) + ' ';
+        // --- НАЧАЛО КЛЮЧЕВОГО ИЗМЕНЕНИЯ: ГЕНЕРАЦИЯ СТРОК ---
+
+        // Генерируем HTML для номеров, оборачивая каждый номер в свой <div>
+        const numbersHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('');
+
+        // Генерируем HTML для "зеркала", оборачивая КАЖДУЮ СТРОКУ текста в свой <div>.
+        // Если строка пустая, вставляем неразрывный пробел, чтобы div не "схлопнулся" и сохранил свою высоту.
+        const mirrorHTML = lines.map(line => `<div>${escapeHTML(line) || ' '}</div>`).join('');
+
+        // Обновляем DOM
+        parserLineNumbersEl.innerHTML = numbersHTML;
+        parserInputMirrorEl.innerHTML = mirrorHTML;
     }
+
 
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
