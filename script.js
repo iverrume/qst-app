@@ -3395,8 +3395,16 @@ const mainApp = (function() {
         downloadParsedBtn?.addEventListener('click', downloadParsedQst);
         clearParserInputBtn?.addEventListener('click', clearParserInput);
 
+        // Обновленные обработчики для редактора
         parserInput?.addEventListener('input', updateParserLineNumbers);
         parserInput?.addEventListener('scroll', syncScroll);
+
+        // === НАЧАЛО ИСПРАВЛЕНИЯ 3: Отслеживание изменения размера ===
+        const editorContainer = document.querySelector('.parser-editor-container');
+        if (editorContainer && typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(syncScroll).observe(editorContainer);
+        }
+        // === КОНЕЦ ИСПРАВЛЕНИЯ 3 ===
 
 
         nextButton.addEventListener('click', handleNextButtonClick);
@@ -5709,10 +5717,28 @@ const mainApp = (function() {
     }
     
     function syncScroll() {
-        if (parserLineNumbersEl) {
-            parserLineNumbersEl.scrollTop = parserInput.scrollTop;
+        if (!parserLineNumbersEl || !parserInput) return;
+
+        // === НАЧАЛО ИСПРАВЛЕНИЯ 2: Синхронизация по процентам ===
+        const textarea = parserInput;
+        const lineNumbers = parserLineNumbersEl;
+
+        // Проверяем, есть ли вообще скролл
+        if (textarea.scrollHeight <= textarea.clientHeight) {
+            lineNumbers.scrollTop = 0;
+            return;
         }
-    }    
+
+        // 1. Рассчитываем процент прокрутки для основного поля с текстом
+        const scrollPercentage = textarea.scrollTop / (textarea.scrollHeight - textarea.clientHeight);
+
+        // 2. Рассчитываем, какому значению scrollTop это соответствует в блоке с номерами
+        const targetScrollTop = scrollPercentage * (lineNumbers.scrollHeight - lineNumbers.clientHeight);
+
+        // 3. Устанавливаем рассчитанное значение
+        lineNumbers.scrollTop = targetScrollTop;
+        // === КОНЕЦ ИСПРАВЛЕНИЯ 2 ===
+    }   
 
 
     // --- Public methods exposed from mainApp ---

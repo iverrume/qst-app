@@ -4022,8 +4022,7 @@ button[onclick*="copyToClipboard"].copied:after {
     background-color: var(--input-hover-bg-color);
     color: var(--text-color);
 }
-
-/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v2) --- */
+/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v3 - FINAL) --- */
 .parser-editor-container {
     display: flex;
     margin-top: 10px;
@@ -4031,15 +4030,15 @@ button[onclick*="copyToClipboard"].copied:after {
     border-radius: 5px;
     overflow: hidden;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    height: 60vh;
+    max-height: 700px; /* Увеличим максимальную высоту */
     
-    /* === НАЧАЛО ИСПРАВЛЕНИЯ 1: Ограничение высоты === */
-    /* Задаем максимальную высоту, например, 500px или в единицах высоты экрана (60vh) */
-    max-height: 500px; 
-    height: 60vh; /* Позволяет редактору занимать 60% высоты видимой части окна */
+    /* === НАЧАЛО ИСПРАВЛЕНИЯ 1: Управление ресайзом === */
+    min-height: 150px; /* Задаем минимальную высоту, чтобы не сломать вид */
+    resize: vertical; /* Делаем ВЕСЬ КОНТЕЙНЕР изменяемым по высоте */
     /* === КОНЕЦ ИСПРАВЛЕНИЯ 1 === */
 }
 
-/* Стиль при фокусе на внутреннем textarea */
 .parser-editor-container:focus-within {
     border-color: var(--button-primary-bg);
     outline: none;
@@ -4056,10 +4055,7 @@ button[onclick*="copyToClipboard"].copied:after {
     font-family: monospace;
     font-size: 1em;
     line-height: 1.4;
-    
-    /* === НАЧАЛО ИСПРАВЛЕНИЯ 2: Скрываем скролл у номеров === */
-    overflow: hidden; /* Важно! Скрываем собственный скроллбар, будем управлять им из JS */
-    /* === КОНЕЦ ИСПРАВЛЕНИЯ 2 === */
+    overflow: hidden; 
 }
 
 #parserLineNumbers span {
@@ -4067,7 +4063,6 @@ button[onclick*="copyToClipboard"].copied:after {
     height: calc(1em * 1.4);
 }
 
-/* Адаптируем textarea */
 #parserArea textarea#parserInput {
     flex-grow: 1;
     border: none !important;
@@ -4075,10 +4070,11 @@ button[onclick*="copyToClipboard"].copied:after {
     border-radius: 0;
     line-height: 1.4;
     font-size: 1em;
+    overflow-y: auto !important;
+    height: 100%;
     
-    /* === НАЧАЛО ИСПРАВЛЕНИЯ 1: Включаем собственный скролл === */
-    overflow-y: auto !important; /* Включаем вертикальный скроллбар */
-    height: 100%; /* Занимает всю высоту родительского контейнера */
+    /* === НАЧАЛО ИСПРАВЛЕНИЯ 1: Отключаем стандартный ресайз у textarea === */
+    resize: none; /* Запрещаем изменение размера у самого поля ввода */
     /* === КОНЕЦ ИСПРАВЛЕНИЯ 1 === */
 }
 
