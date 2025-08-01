@@ -4540,7 +4540,53 @@ const mainApp = (function() {
 
 
 
+    /**
+     * Преобразует диапазон номеров вопросов в реальные индексы массива, пропуская категории.
+     * @param {Array} sourceArray - Массив со всеми элементами (вопросами и категориями).
+     * @param {number} startNum - Начальный номер вопроса (от пользователя).
+     * @param {number} endNum - Конечный номер вопроса (от пользователя).
+     * @returns {{startIndex: number, endIndex: number}} - Объект с начальным и конечным индексами.
+     */
+    function mapQuestionRangeToIndices(sourceArray, startNum, endNum) {
+        let questionCounter = 0;
+        let startIndex = -1;
+        let endIndex = -1;
+        
+        // Фильтруем массив, чтобы работать только с реальными вопросами
+        const onlyQuestions = sourceArray.filter(item => item.type !== 'category');
+        
+        // Проверяем, что диапазон не выходит за пределы количества вопросов
+        if (startNum < 1) startNum = 1;
+        if (endNum > onlyQuestions.length) endNum = onlyQuestions.length;
 
+        sourceArray.forEach((item, index) => {
+            // Считаем только реальные вопросы
+            if (item.type !== 'category') {
+                questionCounter++;
+                
+                // Находим индекс, соответствующий началу диапазона
+                if (questionCounter === startNum && startIndex === -1) {
+                    startIndex = index;
+                }
+                
+                // Находим индекс, соответствующий концу диапазона
+                if (questionCounter === endNum) {
+                    endIndex = index;
+                }
+            }
+        });
+
+        // Если конечный индекс не был найден (например, диапазон до конца),
+        // ищем до последнего элемента массива.
+        if (endIndex === -1) {
+            endIndex = sourceArray.length - 1;
+        }
+
+        return { startIndex, endIndex };
+    }
+
+
+ 
 
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
         let sourceArray;
@@ -4549,13 +4595,21 @@ const mainApp = (function() {
             quizSettings.shuffleQuestions = shuffleQuestionsCheckbox.checked;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
             quizSettings.feedbackMode = feedbackModeCheckbox.checked;
+            
+            const totalQuestionsCount = allParsedQuestions.filter(q => q.type !== 'category').length;
+            
             let startRange = parseInt(questionRangeStartInput.value);
             let endRange = parseInt(questionRangeEndInput.value);
-            if (isNaN(startRange) || startRange < 1 || startRange > allParsedQuestions.length) startRange = 1;
-            if (isNaN(endRange) || endRange < startRange || endRange > allParsedQuestions.length) endRange = allParsedQuestions.length;
-            quizSettings.questionRangeStart = startRange;
-            quizSettings.questionRangeEnd = endRange;
-            sourceArray = allParsedQuestions.slice(startRange - 1, endRange);
+
+            if (isNaN(startRange) || startRange < 1) startRange = 1;
+            if (isNaN(endRange) || endRange < startRange) endRange = totalQuestionsCount;
+            
+            // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            // Используем новую функцию для получения правильных индексов
+            const indices = mapQuestionRangeToIndices(allParsedQuestions, startRange, endRange);
+            sourceArray = allParsedQuestions.slice(indices.startIndex, indices.endIndex + 1);
+            // --- КОНЕЦ ГЛАВНОГО ИЗМЕНЕНИЯ ---
+
         } else {
             sourceArray = questionsSource;
             quizSettings.timeLimit = 0;
@@ -4563,53 +4617,41 @@ const mainApp = (function() {
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
         }
         
-        // --- НАЧАЛО ГЛАВНОГО ИЗМЕНЕНИЯ: УМНОЕ ПЕРЕМЕШИВАНИЕ ---
+        // ... остальная часть функции остается без изменений
         if (quizSettings.shuffleQuestions && !isErrorReview) {
             let shuffledQuiz = [];
             let questionGroup = [];
 
-            // Перебираем все элементы
             sourceArray.forEach((item, index) => {
                 if (item.type === 'category') {
-                    // Если мы встретили новую категорию:
-                    // 1. Перемешиваем собранную группу вопросов ПЕРЕД ней
                     if (questionGroup.length > 0) {
                         shuffleArray(questionGroup);
                         shuffledQuiz.push(...questionGroup);
-                        questionGroup = []; // Очищаем группу
+                        questionGroup = []; 
                     }
-                    // 2. Добавляем саму категорию в результат
                     shuffledQuiz.push(item);
                 } else {
-                    // Если это обычный вопрос, просто добавляем его в текущую группу
                     questionGroup.push(item);
                 }
             });
 
-            // Не забываем перемешать и добавить последнюю группу вопросов после цикла
             if (questionGroup.length > 0) {
                 shuffleArray(questionGroup);
                 shuffledQuiz.push(...questionGroup);
             }
             
-            // Заменяем наш исходный массив на новый, отсортированный по категориям
             questionsForCurrentQuiz = shuffledQuiz;
 
         } else {
-            // Если перемешивание вопросов отключено, просто копируем массив
             questionsForCurrentQuiz = [...sourceArray];
         }
-        // --- КОНЕЦ ГЛАВНОГО ИЗМЕНЕНИЯ ---
 
-        // Глубокое копирование, чтобы не изменять оригинальные данные
         questionsForCurrentQuiz = questionsForCurrentQuiz.map(q => JSON.parse(JSON.stringify(q)));
 
         triggerWordsUsedInQuiz = questionsForCurrentQuiz.some(q => q.type !== 'category' && q.triggeredWordIndices && q.triggeredWordIndices.length > 0);
 
-        // --- ИСПРАВЛЕНИЕ: Безопасное перемешивание ответов ---
         if (quizSettings.shuffleAnswers) {
             questionsForCurrentQuiz.forEach(q => {
-                // Перемешиваем ответы, только если это ВОПРОС, а не категория
                 if (q.type !== 'category' && q.options) {
                     const correctAnswerObject = q.options[q.correctAnswerIndex];
                     shuffleArray(q.options);
@@ -4618,7 +4660,7 @@ const mainApp = (function() {
             });
         }
         
-        if (questionsForCurrentQuiz.length === 0) {
+        if (questionsForCurrentQuiz.filter(q => q.type !== 'category').length === 0) {
             alert("Нет вопросов для теста с текущими настройками.");
             return;
         }
@@ -4639,7 +4681,7 @@ const mainApp = (function() {
         score = 0;
         userAnswers = new Array(questionsForCurrentQuiz.length).fill(null).map(() => ({ answered: false, correct: null, selectedOptionIndex: null }));
         incorrectlyAnsweredQuestionsData = [];
-        totalQuestionsNumEl.textContent = questionsForCurrentQuiz.length;
+        totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
         updateScoreDisplay();
         setupTimer();
         generateQuickNav();
@@ -4743,6 +4785,7 @@ const mainApp = (function() {
                 <h2>${escapeHTML(categoryName)}</h2>
             </div>
         `;
+        getEl('score').style.visibility = 'hidden';
         // Прячем ненужные элементы
         answerOptionsEl.innerHTML = '';
         feedbackAreaEl.textContent = '';
@@ -4754,6 +4797,7 @@ const mainApp = (function() {
 
 
 
+    // ЗАМЕНИТЕ ВСЮ ФУНКЦИЮ loadQuestion
     function loadQuestion(index) {
         if (index < 0 || index >= questionsForCurrentQuiz.length) return;
         currentQuestionIndex = index;
@@ -4763,6 +4807,13 @@ const mainApp = (function() {
         if (item.type === 'category') {
             displayCategoryPage(item.text); // Показываем экран категории
         } else {
+            // Показываем счетчик только для настоящих вопросов
+            getEl('score').style.visibility = 'visible';
+
+            // Рассчитываем правильный номер вопроса, игнорируя категории
+            const questionNumber = questionsForCurrentQuiz.slice(0, index + 1).filter(q => q.type !== 'category').length;
+            currentQuestionNumEl.textContent = questionNumber;
+
             // Это обычный вопрос, показываем его как раньше
             questionTextEl.innerHTML = renderQuestionTextWithTriggers(item);
             addTriggerClickListeners();
@@ -4770,12 +4821,10 @@ const mainApp = (function() {
             feedbackAreaEl.textContent = '';
             feedbackAreaEl.className = 'feedback-area';
             
-            // Показываем кнопки, которые могли быть скрыты на экране категории
             copyQuestionBtnQuiz?.classList.remove('hidden');
             getEl('favoriteQuestionBtn')?.classList.remove('hidden');
             webSearchDropdown?.classList.remove('hidden');
             
-            // Проверка на случай поврежденных данных
             if (!item.options) {
                 console.error("У вопроса отсутствуют опции:", item);
                 answerOptionsEl.innerHTML = "<li>Ошибка: варианты ответов не найдены.</li>";
@@ -4785,7 +4834,6 @@ const mainApp = (function() {
                     li.textContent = option.text;
                     li.dataset.index = i;
                     
-                    // Проверяем, был ли дан ответ на этот вопрос ранее
                     if (userAnswers[index] && userAnswers[index].answered) {
                         li.classList.add('answered');
                         if (i === userAnswers[index].selectedOptionIndex) {
@@ -4795,7 +4843,6 @@ const mainApp = (function() {
                             li.classList.add('actual-correct');
                         }
                     } else {
-                        // Если ответа не было, добавляем обработчик клика
                         li.addEventListener('click', handleAnswerSelect);
                     }
                     answerOptionsEl.appendChild(li);
@@ -4803,8 +4850,7 @@ const mainApp = (function() {
             }
         }
         
-        // Обновляем общую навигацию и счетчики для всех типов элементов
-        currentQuestionNumEl.textContent = index + 1;
+        // Обновляем общую навигацию для всех типов элементов
         updateNavigationButtons();
         updateQuickNavButtons();
     }
