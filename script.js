@@ -67,7 +67,14 @@ const ChatModule = (function() {
             channel_create_desc_placeholder: "Описание канала",
             modal_create_button: "Создать",
             create_question_title: "Создать вопрос",
-            create_question_placeholder: "Введите ваш вопрос в формате .qst \\n \\n ?Столица Казахстана \\n +Астана \\n -Нур-Султан \\n -Утера \\n \\n *Можно ввести сразу несколько",
+            create_question_placeholder: `Введите ваш вопрос в формате .qst
+
+?Столица Казахстана
++Астана
+-Нур-Султан
+-Утера
+
+*Можно ввести сразу несколько`,
             create_question_modal_button: "Создать вопрос",
             edit_message_title: "Редактировать сообщение",
             edit_profile_title: "Редактировать профиль",
@@ -204,7 +211,15 @@ const ChatModule = (function() {
             channel_create_desc_placeholder: "Channel description",
             modal_create_button: "Create",
             create_question_title: "Create Question",
-            create_question_placeholder: "Enter your question in .qst format \\n \\n ?Capital of Kazakhstan \\n +Astana \\n -Nur-Sultan \\n -Other \\n \\n *You can enter multiple questions at once",
+
+            create_question_placeholder: `Enter your question in .qst format
+
+?Capital of Kazakhstan
++Astana
+-Nur-Sultan
+-Utera
+
+*You can enter multiple questions at once`,
             create_question_modal_button: "Create Question",
             edit_message_title: "Edit Message",
             edit_profile_title: "Edit Profile",
