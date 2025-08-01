@@ -5477,73 +5477,68 @@ const mainApp = (function() {
 
     function processTextWithMultiFormat(text) {
         let allParsedQuestions = [];
-        let parsingErrors = [];
-        const normalizedText = text.replace(/\r\n/g, '\n');
+        const parsingErrors = []; // Оставим для будущих улучшений
+        let currentQuestionData = null;
+        const lines = text.replace(/\r\n/g, '\n').split('\n');
 
-        // 1. Сначала пытаемся обработать весь текст самым специфичным новым шаблоном
-        const paragraphPattern = PARSER_PATTERNS.find(p => p.id === 'paragraph_question_plus_at_end');
-        if (paragraphPattern && paragraphPattern.detector(normalizedText)) {
-            try {
-                const parsed = paragraphPattern.processor(normalizedText);
-                if (parsed.length > 0) {
-                     // Если этот шаблон успешно нашел вопросы, считаем задачу выполненной
-                    return { questions: parsed, errors: [] };
+        // Вспомогательная функция для сохранения готового вопроса
+        const saveCurrentQuestion = () => {
+            if (currentQuestionData && currentQuestionData.options.length > 0) {
+                // Устанавливаем первый вариант как правильный, если другого не указано
+                if (!currentQuestionData.correctAnswer) {
+                    currentQuestionData.correctAnswer = currentQuestionData.options[0];
                 }
-            } catch (e) {
-                 console.warn('Ошибка при обработке paragraph_question_plus_at_end:', e);
+                allParsedQuestions.push(currentQuestionData);
+            }
+            currentQuestionData = null;
+        };
+
+        for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine === '') continue; // Пропускаем пустые строки
+
+            // 1. Проверяем на тег категории
+            if (trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#')) {
+                saveCurrentQuestion(); // Сохраняем предыдущий вопрос, если он был
+                const categoryName = trimmedLine.slice(3, -3).trim();
+                allParsedQuestions.push({ type: 'category', text: categoryName });
+                continue;
+            }
+
+            // 2. Проверяем на начало нового вопроса с тегом <question>
+            const questionMatch = trimmedLine.match(/^\s*\d*\.?\s*<question>(.*)/i);
+            if (questionMatch) {
+                saveCurrentQuestion(); // Сохраняем предыдущий
+                currentQuestionData = {
+                    text: questionMatch[1].trim(), // Текст вопроса из этой же строки
+                    options: [],
+                    correctAnswer: null // Правильный ответ пока не известен
+                };
+                continue;
+            }
+
+            // 3. Проверяем на вариант ответа с тегом <variant>
+            const variantMatch = trimmedLine.match(/^<variant>(.*)/i);
+            if (variantMatch) {
+                if (currentQuestionData) {
+                    const optionText = variantMatch[1].trim();
+                    currentQuestionData.options.push(optionText);
+                }
+                continue;
+            }
+            
+            // 4. Если мы внутри вопроса и это не тег, значит это продолжение текста вопроса
+            if (currentQuestionData && currentQuestionData.options.length === 0) {
+                currentQuestionData.text += ' ' + trimmedLine;
             }
         }
 
-        // 2. Если первый шаблон не сработал, используем старую логику с разделением по тегам
-        // Это обеспечит совместимость с файлами, где смешаны разные форматы
-        const blocks = normalizedText.split(/(<question>|<Вопрос>)/i).filter(b => b.trim());
-        let questionBlocks = [];
-
-        for (let i = 0; i < blocks.length; i++) {
-            if (blocks[i].toLowerCase() === '<question>' || blocks[i].toLowerCase() === '<вопрос>') {
-                if (blocks[i + 1]) {
-                    questionBlocks.push(blocks[i] + blocks[i + 1]);
-                    i++; // Пропускаем следующий элемент, так как мы его уже добавили
-                }
-            } else {
-                 // Блок без тега, возможно, другой формат
-                 questionBlocks.push(blocks[i]);
-            }
-        }
-        
-        let currentIndex = 0;
-        for (const block of questionBlocks) {
-            let blockParsed = false;
-            const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
-
-            for (const pattern of individualPatterns) {
-                if (pattern.detector(block)) {
-                    try {
-                        const parsed = pattern.processor(block);
-                        if (parsed.length > 0) {
-                            allParsedQuestions.push(...parsed);
-                            blockParsed = true;
-                            break; // Переходим к следующему блоку
-                        }
-                    } catch (e) {
-                        console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
-                    }
-                }
-            }
-
-            if (!blockParsed) {
-                 parsingErrors.push({
-                    text: block.trim(),
-                    start: currentIndex,
-                    end: currentIndex + block.length
-                });
-            }
-            currentIndex += block.length;
-        }
+        // Не забываем сохранить самый последний вопрос после окончания цикла
+        saveCurrentQuestion();
 
         return {
             questions: allParsedQuestions,
-            errors: parsingErrors
+            errors: parsingErrors // Пока всегда будет пустым, но структура сохранена
         };
     }
 
