@@ -4022,3 +4022,74 @@ button[onclick*="copyToClipboard"].copied:after {
     background-color: var(--input-hover-bg-color);
     color: var(--text-color);
 }
+
+/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК --- */
+.parser-editor-container {
+    display: flex;
+    margin-top: 10px; /* Отступ сверху */
+    border: 1px solid var(--input-border-color);
+    border-radius: 5px;
+    overflow: hidden; /* Важно, чтобы скруглить углы */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Стиль при фокусе на внутреннем textarea */
+.parser-editor-container:focus-within {
+    border-color: var(--button-primary-bg);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+#parserLineNumbers {
+    background: var(--input-bg-color);
+    padding: 10px 8px;
+    text-align: right;
+    user-select: none; /* Запрещаем выделение номеров строк */
+    color: var(--secondary-text-color);
+    border-right: 1px solid var(--input-border-color);
+    font-family: monospace;
+    font-size: 1em; /* Размер шрифта как у textarea */
+    line-height: 1.4; /* Должен совпадать с textarea! */
+}
+
+#parserLineNumbers span {
+    display: block;
+    height: calc(1em * 1.4); /* Рассчитываем высоту строки: размер_шрифта * line-height */
+}
+
+/* Адаптируем textarea */
+#parserArea textarea#parserInput {
+    flex-grow: 1; /* Занимает все оставшееся место */
+    border: none !important; /* Убираем рамку, т.к. она теперь на контейнере */
+    margin-top: 0; /* Убираем старый отступ */
+    border-radius: 0; /* Убираем скругление */
+    line-height: 1.4; /* Должен совпадать с номерами строк! */
+    font-size: 1em; /* Убедимся что размер шрифта совпадает */
+}
+
+#parserArea textarea#parserInput:focus {
+    box-shadow: none !important; /* Убираем тень при фокусе, она теперь на контейнере */
+}
+
+/* --- ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ СПИСКА ОШИБОК --- */
+.error-list-item {
+    display: flex; /* Для выравнивания номера и текста */
+    gap: 10px;
+    align-items: center;
+}
+
+.error-line-num {
+    background-color: var(--chat-accent);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-family: sans-serif; /* Более читаемый шрифт для цифр */
+}
+
+.error-text-preview {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1; /* Занимает оставшееся место */
+}

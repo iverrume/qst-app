@@ -3186,6 +3186,7 @@ const mainApp = (function() {
 
     // --- DOM Elements ---
     const getEl = (id) => document.getElementById(id);
+    const parserLineNumbersEl = getEl('parserLineNumbers');
     const fileInput = getEl('fileInput');
     const fileUploadArea = getEl('fileUploadArea');
     const quizSetupArea = getEl('quizSetupArea');
@@ -3393,6 +3394,9 @@ const mainApp = (function() {
         runParserBtn?.addEventListener('click', runParser);
         downloadParsedBtn?.addEventListener('click', downloadParsedQst);
         clearParserInputBtn?.addEventListener('click', clearParserInput);
+
+        parserInput?.addEventListener('input', updateParserLineNumbers);
+        parserInput?.addEventListener('scroll', syncScroll);
 
 
         nextButton.addEventListener('click', handleNextButtonClick);
@@ -5417,20 +5421,15 @@ const mainApp = (function() {
 
 
     function processTextWithMultiFormat(text) {
-        // === НАЧАЛО ИСПРАВЛЕНИЯ: Нормализация и ручной подсчёт индекса ===
-
         let allParsedQuestions = [];
         let parsingErrors = [];
 
-        // 1. Нормализуем все переносы строк к единому формату '\n'.
-        //    Это решает проблему с \r\n и делает подсчет надежным.
         const normalizedText = text.replace(/\r\n/g, '\n');
         const lines = normalizedText.split('\n');
 
-        const processAndAddBlock = (blockLines, startIndex) => {
+        const processAndAddBlock = (blockLines, startIndex, startLineNum) => {
             if (blockLines.length === 0) return;
             const blockText = blockLines.join('\n');
-            // Рассчитываем конечный индекс
             const endIndex = startIndex + blockText.length;
 
             const individualPatterns = PARSER_PATTERNS.filter(p => p.id !== 'multi_format');
@@ -5445,61 +5444,56 @@ const mainApp = (function() {
                             blockParsed = true;
                             break;
                         }
-                    } catch (e) {
-                        console.warn(`Ошибка при обработке блока шаблоном "${pattern.name}":`, e);
-                    }
+                    } catch (e) { /*...*/ }
                 }
             }
             if (!blockParsed) {
-                console.warn("Не удалось определить формат для блока:\n---\n", blockText);
                 parsingErrors.push({
                     text: blockText.trim(),
                     start: startIndex,
-                    end: endIndex
+                    end: endIndex,
+                    lineNumber: startLineNum // <-- Добавляем номер строки
                 });
             }
         };
 
-        // 2. Используем ручной подсчет индекса вместо ненадежного indexOf.
         let currentIndex = 0;
         let currentBlockLines = [];
         let currentBlockStartIndex = 0;
+        let currentBlockStartLineNumber = 1;
 
-        lines.forEach(line => {
+        lines.forEach((line, index) => {
+            const lineNumber = index + 1;
             const trimmedLine = line.trim();
             const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
             const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
             
             if (isCategoryTag) {
-                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex, currentBlockStartLineNumber);
                 const categoryName = trimmedLine.slice(3, -3).trim();
                 allParsedQuestions.push({ text: categoryName, type: 'category' });
                 currentBlockLines = [];
             } else if (isNewBlockStart && currentBlockLines.length > 0) {
-                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex, currentBlockStartLineNumber);
                 currentBlockLines = [line];
-                // Новый блок начинается с текущей позиции
                 currentBlockStartIndex = currentIndex;
+                currentBlockStartLineNumber = lineNumber;
             } else {
                 if (currentBlockLines.length === 0) {
-                    // Это первая строка нового блока
                     currentBlockStartIndex = currentIndex;
+                    currentBlockStartLineNumber = lineNumber;
                 }
                 currentBlockLines.push(line);
             }
-
-            // 3. В конце каждой итерации сдвигаем индекс на длину строки + 1 (за символ '\n')
             currentIndex += line.length + 1;
         });
 
-        // Не забываем обработать самый последний блок
-        processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+        processAndAddBlock(currentBlockLines, currentBlockStartIndex, currentBlockStartLineNumber);
 
         return {
             questions: allParsedQuestions,
             errors: parsingErrors
         };
-        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
     }
 
 
@@ -5521,6 +5515,7 @@ const mainApp = (function() {
         const reader = new FileReader();
         reader.onload = (e) => {
             parserInput.value = e.target.result;
+            updateParserLineNumbers();
         };
         reader.readAsText(file, 'UTF-8');
     }
@@ -5535,17 +5530,22 @@ const mainApp = (function() {
 
         if (!errorsArea || !errorCountEl || !errorListEl) return;
 
-        errorListEl.innerHTML = ''; // Очищаем старый список
+        errorListEl.innerHTML = '';
         errorCountEl.textContent = errors.length;
         errorsArea.classList.remove('hidden');
 
         errors.forEach(error => {
             const li = document.createElement('li');
             li.className = 'error-list-item';
-            li.textContent = error.text.split('\n')[0] || '[пустая строка]'; // Показываем первую строку ошибки
-            li.title = `Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
             
-            // Добавляем обработчик клика для подсветки
+            // Формируем HTML с номером строки и превью текста
+            li.innerHTML = `
+                <span class="error-line-num">${error.lineNumber}</span>
+                <span class="error-text-preview">${escapeHTML(error.text.split('\n')[0] || '[пустая строка]')}</span>
+            `;
+            
+            li.title = `Строка ${error.lineNumber}: Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
+            
             li.addEventListener('click', () => {
                 highlightErrorInTextarea(error.start, error.end);
             });
@@ -5553,6 +5553,8 @@ const mainApp = (function() {
             errorListEl.appendChild(li);
         });
     }
+
+
 
     function highlightErrorInTextarea(start, end) {
         if (!parserInput) return;
@@ -5672,7 +5674,32 @@ const mainApp = (function() {
         parserFileInput.value = ''; // Важно также сбросить выбранный файл!
         parserInput.focus(); // Возвращаем курсор в поле для удобства
         hideAndResetErrorArea();
+        updateParserLineNumbers();
     }
+
+
+    function updateParserLineNumbers() {
+        if (!parserInput || !parserLineNumbersEl) return;
+        
+        // Небольшая задержка, чтобы браузер успел обработать ввод
+        setTimeout(() => {
+            const lines = parserInput.value.split('\n').length;
+            const lineCount = lines > 0 ? lines : 1; // Минимум 1 строка
+            
+            parserLineNumbersEl.innerHTML = '';
+            for (let i = 1; i <= lineCount; i++) {
+                const lineSpan = document.createElement('span');
+                lineSpan.textContent = i;
+                parserLineNumbersEl.appendChild(lineSpan);
+            }
+        }, 0);
+    }
+    
+    function syncScroll() {
+        if (parserLineNumbersEl) {
+            parserLineNumbersEl.scrollTop = parserInput.scrollTop;
+        }
+    }    
 
 
     // --- Public methods exposed from mainApp ---
