@@ -4022,21 +4022,21 @@ button[onclick*="copyToClipboard"].copied:after {
     background-color: var(--input-hover-bg-color);
     color: var(--text-color);
 }
-/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v3 - FINAL) --- */
+/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v4 - ABSOLUTE SYNC) --- */
 .parser-editor-container {
-    display: flex;
+    display: flex; /* Остается для внутренней структуры */
     margin-top: 10px;
     border: 1px solid var(--input-border-color);
     border-radius: 5px;
-    overflow: hidden;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     height: 60vh;
-    max-height: 700px; /* Увеличим максимальную высоту */
+    max-height: 700px;
+    min-height: 150px;
+    resize: vertical;
     
-    /* === НАЧАЛО ИСПРАВЛЕНИЯ 1: Управление ресайзом === */
-    min-height: 150px; /* Задаем минимальную высоту, чтобы не сломать вид */
-    resize: vertical; /* Делаем ВЕСЬ КОНТЕЙНЕР изменяемым по высоте */
-    /* === КОНЕЦ ИСПРАВЛЕНИЯ 1 === */
+    /* === ИЗМЕНЕНИЕ 1: Делаем контейнер точкой отсчета и даем ему скролл === */
+    position: relative; /* Обязательно для абсолютного позиционирования дочернего элемента */
+    overflow: auto;   /* Теперь этот контейнер будет иметь единственный скроллбар! */
 }
 
 .parser-editor-container:focus-within {
@@ -4051,11 +4051,16 @@ button[onclick*="copyToClipboard"].copied:after {
     text-align: right;
     user-select: none;
     color: var(--secondary-text-color);
-    border-right: 1px solid var(--input-border-color);
     font-family: monospace;
     font-size: 1em;
     line-height: 1.4;
-    overflow: hidden; 
+    
+    /* === ИЗМЕНЕНИЕ 2: Блок номеров больше не главный === */
+    position: sticky; /* Делаем его "липким" к левому краю */
+    top: 0;
+    left: 0;
+    z-index: 1; /* Размещаем под текстом */
+    border-right: 1px solid var(--input-border-color); /* Сохраняем разделитель */
 }
 
 #parserLineNumbers span {
@@ -4064,18 +4069,33 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 #parserArea textarea#parserInput {
-    flex-grow: 1;
-    border: none !important;
-    margin-top: 0;
-    border-radius: 0;
-    line-height: 1.4;
-    font-size: 1em;
-    overflow-y: auto !important;
+    /* === ИЗМЕНЕНИЕ 3: Делаем textarea прозрачным слоем поверх номеров === */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
     height: 100%;
     
-    /* === НАЧАЛО ИСПРАВЛЕНИЯ 1: Отключаем стандартный ресайз у textarea === */
-    resize: none; /* Запрещаем изменение размера у самого поля ввода */
-    /* === КОНЕЦ ИСПРАВЛЕНИЯ 1 === */
+    box-sizing: border-box; /* Важно для правильного расчета padding */
+    padding: 10px;
+    /* Сдвигаем сам текст вправо, чтобы не налезал на номера. Ширина ~ 40px + отступ */
+    padding-left: 55px; 
+    
+    color: var(--text-color); /* Явно задаем цвет текста, т.к. фон прозрачный */
+    background: transparent; /* Делаем поле ввода полностью прозрачным! */
+    z-index: 2; /* Размещаем над номерами */
+
+    /* Убираем все, что может помешать */
+    border: none !important;
+    margin: 0;
+    border-radius: 0;
+    resize: none;
+    overflow: hidden; /* У textarea не должно быть своего скролла */
+    
+    /* Сохраняем стили шрифта */
+    line-height: 1.4;
+    font-size: 1em;
+    font-family: monospace;
 }
 
 #parserArea textarea#parserInput:focus {

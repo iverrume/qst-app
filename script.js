@@ -3397,14 +3397,7 @@ const mainApp = (function() {
 
         // Обновленные обработчики для редактора
         parserInput?.addEventListener('input', updateParserLineNumbers);
-        parserInput?.addEventListener('scroll', syncScroll);
 
-        // === НАЧАЛО ИСПРАВЛЕНИЯ 3: Отслеживание изменения размера ===
-        const editorContainer = document.querySelector('.parser-editor-container');
-        if (editorContainer && typeof ResizeObserver !== 'undefined') {
-            new ResizeObserver(syncScroll).observe(editorContainer);
-        }
-        // === КОНЕЦ ИСПРАВЛЕНИЯ 3 ===
 
 
         nextButton.addEventListener('click', handleNextButtonClick);
@@ -5563,36 +5556,28 @@ const mainApp = (function() {
     }
 
 
-
     function highlightErrorInTextarea(start, end) {
-            if (!parserInput) return;
-            
-            // Сначала переводим фокус на поле ввода
-            parserInput.focus(); 
-            
-            // Выделяем текст ошибки
-            parserInput.setSelectionRange(start, end);
+        if (!parserInput) return;
+        
+        parserInput.focus(); 
+        parserInput.setSelectionRange(start, end);
 
-            // === НАЧАЛО ИСПРАВЛЕНИЯ 3: Отложенная прокрутка ===
-            // Оборачиваем прокрутку в setTimeout, чтобы она выполнилась после обновления DOM
-            setTimeout(() => {
-                // Создаем временный элемент для расчета высоты строк до ошибки
-                const tempDiv = document.createElement('div');
-                // Применяем стили, идентичные textarea, для точного расчета
-                tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
-                // Вставляем текст до начала ошибки
-                tempDiv.textContent = parserInput.value.substring(0, start);
-                document.body.appendChild(tempDiv);
-                
-                // Прокручиваем textarea на рассчитанную высоту
-                parserInput.scrollTop = tempDiv.offsetHeight;
-                
-                // Удаляем временный элемент
-                document.body.removeChild(tempDiv);
-            }, 0); // Задержка в 0 мс достаточна, чтобы поместить выполнение в конец очереди событий
-            // === КОНЕЦ ИСПРАВЛЕНИЯ 3 ===
-        }
-
+        // === ИЗМЕНЕНИЕ: Прокручиваем родительский контейнер ===
+        const editorContainer = document.querySelector('.parser-editor-container');
+        if (!editorContainer) return;
+        
+        setTimeout(() => {
+            const tempDiv = document.createElement('div');
+            tempDiv.style.cssText = 'position:absolute;top:-9999px;left:-9999px;white-space:pre-wrap;font:inherit;width:' + parserInput.clientWidth + 'px;';
+            tempDiv.textContent = parserInput.value.substring(0, start);
+            document.body.appendChild(tempDiv);
+            
+            // Прокручиваем КОНТЕЙНЕР, а не textarea
+            editorContainer.scrollTop = tempDiv.offsetHeight;
+            
+            document.body.removeChild(tempDiv);
+        }, 0);
+    }
 
 
     function hideAndResetErrorArea() {
@@ -5716,30 +5701,6 @@ const mainApp = (function() {
         }, 0);
     }
     
-    function syncScroll() {
-        if (!parserLineNumbersEl || !parserInput) return;
-
-        // === НАЧАЛО ИСПРАВЛЕНИЯ 2: Синхронизация по процентам ===
-        const textarea = parserInput;
-        const lineNumbers = parserLineNumbersEl;
-
-        // Проверяем, есть ли вообще скролл
-        if (textarea.scrollHeight <= textarea.clientHeight) {
-            lineNumbers.scrollTop = 0;
-            return;
-        }
-
-        // 1. Рассчитываем процент прокрутки для основного поля с текстом
-        const scrollPercentage = textarea.scrollTop / (textarea.scrollHeight - textarea.clientHeight);
-
-        // 2. Рассчитываем, какому значению scrollTop это соответствует в блоке с номерами
-        const targetScrollTop = scrollPercentage * (lineNumbers.scrollHeight - lineNumbers.clientHeight);
-
-        // 3. Устанавливаем рассчитанное значение
-        lineNumbers.scrollTop = targetScrollTop;
-        // === КОНЕЦ ИСПРАВЛЕНИЯ 2 ===
-    }   
-
 
     // --- Public methods exposed from mainApp ---
     return {
