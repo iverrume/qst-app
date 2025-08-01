@@ -660,6 +660,103 @@ const ChatModule = (function() {
     }
     
 
+    /**
+     * Обновляет текстовое содержимое всех элементов чата в соответствии с выбранным языком.
+     * Не пересоздает DOM, а только меняет текст.
+     */
+    function updateChatUIText() {
+        // Проверяем, существует ли DOM чата, чтобы избежать ошибок
+        if (!document.getElementById('authOverlay')) return;
+
+        // --- Модальное окно авторизации ---
+        document.querySelector('#authOverlay h2').textContent = _chat('auth_title');
+        document.querySelector('.auth-tab[data-tab="login"]').textContent = _chat('auth_login_tab');
+        document.querySelector('.auth-tab[data-tab="register"]').textContent = _chat('auth_register_tab');
+        document.getElementById('loginUsername').placeholder = _chat('auth_login_placeholder');
+        document.getElementById('loginPassword').placeholder = _chat('auth_password_placeholder');
+        document.querySelector('#loginForm button').textContent = _chat('auth_login_button');
+        document.getElementById('registerUsername').placeholder = _chat('auth_register_username_placeholder');
+        document.getElementById('registerEmail').placeholder = _chat('auth_register_email_placeholder');
+        document.getElementById('registerPassword').placeholder = _chat('auth_register_password_placeholder');
+        document.getElementById('registerPasswordConfirm').placeholder = _chat('auth_register_confirm_placeholder');
+        document.querySelector('#registerForm button').textContent = _chat('auth_register_button');
+        document.querySelector('#authOverlay > div > button').textContent = _chat('auth_close_button');
+
+        // --- Основное окно чата ---
+        // Шапка
+        document.getElementById('chatHeaderTitle').textContent = _chat('chat_header_title');
+        document.querySelector('#userDropdown a[onclick*="showProfileModal"]').textContent = _chat('edit_profile_link');
+        document.querySelector('#userDropdown a[onclick*="logout"]').textContent = _chat('logout_link');
+        document.getElementById('notificationToggle').title = _chat('notifications_title');
+        
+        // Сайдбар
+        document.querySelector('.sidebar-section:nth-of-type(1) h4').textContent = _chat('sidebar_sections');
+        document.querySelector('.tab-item[data-tab="messages"] .tab-name').textContent = _chat('tab_messages');
+        document.querySelector('.tab-item[data-tab="questions"] .tab-name').textContent = _chat('tab_questions');
+        document.querySelector('.tab-item[data-tab="favorites"] .tab-name').textContent = _chat('tab_favorites');
+        document.querySelector('.tab-item[data-tab="users"] .tab-name').textContent = _chat('tab_users');
+        document.querySelector('.sidebar-section:nth-of-type(2) h4').textContent = _chat('sidebar_channels');
+        document.getElementById('createChannelBtn').textContent = _chat('sidebar_create_channel');
+        document.getElementById('privateChatsSection').querySelector('h4').textContent = _chat('sidebar_private_messages');
+        document.querySelector('.sidebar-section:nth-of-type(4) h4').innerHTML = `${_chat('sidebar_online')} (<span id="onlineCount">${onlineUsers.size}</span>)`;
+        
+        // Основная область
+        document.getElementById('chatSearchInput').placeholder = _chat('search_placeholder');
+        document.getElementById('togglePinnedBtn').title = isPinnedMode ? _chat('pinned_mode_on_title') : _chat('pinned_mode_off_title');
+        document.querySelector('#replyingToPanel span').textContent = _chat('reply_panel_title');
+        document.getElementById('emojiBtn').title = _chat('emoji_button_title');
+        document.getElementById('questionBtn').title = _chat('create_question_button_title');
+        document.getElementById('uploadFileBtn').title = _chat('attach_file_button_title');
+        document.getElementById('chatInput').placeholder = _chat('chat_input_placeholder');
+
+        // --- Другие модальные окна ---
+        document.querySelector('#userActionsModal h3').textContent = _chat('user_actions_title');
+        document.querySelector('#userActionsModal p').textContent = _chat('user_actions_text');
+        document.querySelector('#userActionsChatBtn').textContent = _chat('user_actions_chat_button');
+        document.querySelector('#userActionsEmailBtn').textContent = _chat('user_actions_email_button');
+        document.querySelector('#userActionsModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+
+        document.querySelector('#channelEditModal h3').textContent = _chat('channel_settings_title');
+        document.getElementById('editChannelNameInput').placeholder = _chat('channel_edit_name_placeholder');
+        document.getElementById('editChannelPasswordInput').placeholder = _chat('channel_edit_password_placeholder');
+        document.getElementById('editChannelDescInput').placeholder = _chat('channel_edit_desc_placeholder');
+        document.querySelector('#channelMembersSection h4').textContent = _chat('channel_members_title');
+        document.querySelector('#channelEditModal button[onclick*="saveChannelEdit"]').textContent = _chat('modal_save_button');
+        document.querySelector('#channelEditModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+        document.getElementById('deleteChannelBtn').textContent = _chat('delete_channel_button');
+        
+        document.querySelector('#channelCreateModal h3').textContent = _chat('create_channel_title');
+        document.getElementById('channelNameInput').placeholder = _chat('channel_create_name_placeholder');
+        document.getElementById('channelPasswordInput').placeholder = _chat('channel_create_password_placeholder');
+        document.getElementById('channelDescInput').placeholder = _chat('channel_create_desc_placeholder');
+        document.querySelector('#channelCreateModal button[onclick*="createChannel"]').textContent = _chat('modal_create_button');
+        document.querySelector('#channelCreateModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+
+        document.querySelector('#questionCreateModal h3').textContent = _chat('create_question_title');
+        document.getElementById('questionTextInput').placeholder = _chat('create_question_placeholder');
+        document.querySelector('#questionCreateModal button[onclick*="createQuestion"]').textContent = _chat('create_question_modal_button');
+        document.querySelector('#questionCreateModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+
+        document.querySelector('#editMessageModal h3').textContent = _chat('edit_message_title');
+        document.querySelector('#editMessageModal button[onclick*="saveMessageEdit"]').textContent = _chat('modal_save_button');
+        document.querySelector('#editMessageModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+
+        document.querySelector('#profileEditModal h3').textContent = _chat('edit_profile_title');
+        document.getElementById('profileDisplayName').placeholder = _chat('edit_profile_name_placeholder');
+        document.getElementById('profileNewPassword').placeholder = _chat('edit_profile_new_password_placeholder');
+        document.querySelector('#profileEditModal button[onclick*="saveProfile"]').textContent = _chat('modal_save_button');
+        document.querySelector('#profileEditModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+        document.getElementById('deleteAccountBtn').textContent = _chat('delete_account_button');
+
+        document.querySelector('#fileActionsModal h3').textContent = _chat('file_actions_title');
+        document.querySelector('#fileActionsModal p').textContent = _chat('user_actions_text');
+        document.getElementById('fileActionDownloadBtn').textContent = _chat('file_actions_download');
+        document.getElementById('fileActionTestBtn').textContent = _chat('file_actions_test');
+        document.querySelector('#fileActionsModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+    }
+
+
+
 
     function initDOMElements() {
         chatOverlay = document.getElementById('chatOverlay');
@@ -3342,49 +3439,36 @@ const ChatModule = (function() {
         
         // === НАЧАЛО НОВОГО МЕТОДА ===
         /**
-         * Устанавливает язык для модуля чата и перерисовывает интерфейс, если он открыт.
+         * Устанавливает язык для модуля чата и обновляет его интерфейс в реальном времени.
          * @param {string} lang - Код языка ('ru' или 'en').
          */
         setLanguage: (lang) => {
-            // Проверяем, существует ли такой язык в пакете чата
             if (LANG_PACK_CHAT[lang]) {
                 currentChatLang = lang;
                 localStorage.setItem('chatLanguage', lang);
 
-                // Перерисовываем интерфейс, только если чат в данный момент открыт
-                if (chatOverlay && !chatOverlay.classList.contains('hidden')) {
-                    
-                    // Сохраняем важные состояния перед перерисовкой
-                    const scrollPosition = messageArea ? messageArea.scrollTop : 0;
-                    const inputText = chatInput ? chatInput.value : '';
-
-                    // Полностью пересоздаем HTML чата с новым языком
-                    createHybridChatHTML();
-                    // Повторно инициализируем все DOM-элементы, т.к. старые были удалены
-                    initDOMElements();
-                    // Повторно навешиваем все обработчики событий
-                    setupEventListeners();
-                    // Обновляем UI, зависящий от текущего пользователя
-                    updateUserUI();
-                    // Перезагружаем данные для активной вкладки (Сообщения, Вопросы и т.д.)
-                    loadTabData(currentTab);
-                    // Обновляем динамические списки в сайдбаре
-                    renderChannelsList();
-                    renderPrivateChatsList();
-                    updateOnlineUsersList();
-
-                    // Восстанавливаем сохраненные состояния
-                    if (chatInput) chatInput.value = inputText;
-                    if (messageArea) {
-                        // Используем небольшую задержку, чтобы DOM успел обновиться
-                        setTimeout(() => {
-                            messageArea.scrollTop = scrollPosition;
-                        }, 0);
-                    }
+                // Если чат не открыт, ничего больше делать не нужно
+                if (!chatOverlay || chatOverlay.classList.contains('hidden')) {
+                    return;
                 }
+
+                // 1. "Хирургически" обновляем весь статичный текст
+                updateChatUIText();
+                
+                // 2. Обновляем элементы, зависящие от состояния пользователя
+                updateUserUI(); 
+
+                // 3. Перерисовываем динамически генерируемые списки и контент,
+                //    так как в них могут быть переводимые строки (напр., "Вчера", "Сообщений пока нет").
+                loadTabData(currentTab); // Перерисует основной контент (сообщения, вопросы и т.д.)
+                renderChannelsList();
+                renderPrivateChatsList();
             }
         },
         // === КОНЕЦ НОВОГО МЕТОДА ===
+
+
+
 
         // Action methods
         sendChatMessage: sendMessage,
