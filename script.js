@@ -151,6 +151,150 @@ const ChatModule = (function() {
             password_reauth_required: "Для выполнения этого действия необходимо недавно войти в систему. Пожалуйста, выйдите и войдите снова.",
             channel_enter_password_prompt: "защищен. Введите пароль:",
         },
+        kz: {
+            // TABS
+            tab_messages: "Хабарламалар",
+            tab_questions: "Сұрақтар",
+            tab_favorites: "Таңдаулылар",
+            tab_users: "Пайдаланушылар",
+            // Auth
+            auth_title: "🔐 Авторизаттау",
+            auth_login_tab: "Кіру",
+            auth_register_tab: "Тіркелу",
+            auth_login_placeholder: "Пайдаланушы аты немесе Email",
+            auth_password_placeholder: "Құпия сөз",
+            auth_login_button: "Кіру",
+            auth_register_username_placeholder: "Пайдаланушы аты",
+            auth_register_email_placeholder: "Email",
+            auth_register_password_placeholder: "Құпия сөз (кемінде 6 таңба)",
+            auth_register_confirm_placeholder: "Құпия сөзді қайталаңыз",
+            auth_register_button: "Тіркелу",
+            auth_close_button: "Жабу",
+            // Main Chat
+            chat_header_title: "💬 Чат",
+            guest_user: "Қонақ",
+            generic_user: "Пайдаланушы",
+            edit_profile_link: "✏️ Профильді өңдеу",
+            logout_link: "🚪 Шығу",
+            notifications_title: "Хабарландырулар",
+            sidebar_sections: "📂 Бөлімдер",
+            sidebar_channels: "📋 Арналар",
+            sidebar_create_channel: "+ Арна құру",
+            sidebar_private_messages: "✉️ Жеке хабарламалар",
+            sidebar_online: "👥 Желіде",
+            channel_general: "# Жалпы",
+            search_placeholder: "🔍 Іздеу...",
+            pinned_toggle_title: "Бекітілгендер",
+            loading_message: "Жүктелуде...",
+            reply_panel_title: "Жауап беру:",
+            emoji_button_title: "Эмодзи",
+            create_question_button_title: "Сұрақ құру",
+            attach_file_button_title: "Файлды тіркеу",
+            chat_input_placeholder: "Хабарлама енгізіңіз...",
+            // Modals
+            user_actions_title: "Әрекеттер",
+            user_actions_text: "Не істегіңіз келетінін таңдаңыз.",
+            user_actions_chat_button: "Чатта жазу",
+            user_actions_email_button: "Email-ге жазу",
+            modal_cancel_button: "Болдырмау",
+            channel_settings_title: "Арна баптаулары",
+            channel_edit_name_placeholder: "Арнаның жаңа атауы",
+            channel_edit_password_placeholder: "Жаңа құпия сөз (бос = құпия сөзсіз)",
+            channel_edit_desc_placeholder: "Арнаның жаңа сипаттамасы",
+            channel_members_title: "Арна мүшелері",
+            channel_members_loading: "Жүктелуде...",
+            modal_save_button: "Сақтау",
+            delete_channel_button: "🗑️ Арнаны жою",
+            create_channel_title: "Жаңа арна құру",
+            channel_create_name_placeholder: "Арна атауы",
+            channel_create_password_placeholder: "Құпия сөз (жалпыға ортақ үшін бос қалдырыңыз)",
+            channel_create_desc_placeholder: "Арна сипаттамасы",
+            modal_create_button: "Құру",
+            create_question_title: "Сұрақ құру",
+            create_question_placeholder: `Сұрағыңызды .qst пішімінде енгізіңіз
+
+    ?Қазақстанның астанасы
+    +Астана
+    -Нұр-Сұлтан
+    -Басқа
+
+    *Бірден бірнеше сұрақ енгізуге болады`,
+            create_question_modal_button: "Сұрақты құру",
+            edit_message_title: "Хабарламаны өңдеу",
+            edit_profile_title: "Профильді өңдеу",
+            edit_profile_name_placeholder: "Сіздің атыңыз",
+            edit_profile_new_password_placeholder: "Жаңа құпия сөз (өзгертпесеңіз бос қалдырыңыз)",
+            delete_account_button: "🗑️ Аккаунтты жою",
+            file_actions_title: "Файл әрекеттері",
+            file_actions_download: "📥 Жүктеп алу",
+            file_actions_test: "⚡️ Тест өту",
+            // JS Messages & Alerts
+            auth_system_unavailable: "Авторизация жүйесі қолжетімсіз",
+            fill_all_fields: "Барлық өрістерді толтырыңыз",
+            password_min_length: "Құпия сөз кемінде 6 таңбадан тұруы керек",
+            passwords_do_not_match: "Құпия сөздер сәйкес келмейді!",
+            error_user_not_found: "Пайдаланушы табылмады",
+            error_wrong_password: "Қате құпия сөз",
+            error_email_in_use: "Email қазірдің өзінде қолданыста",
+            error_weak_password: "Тым әлсіз құпия сөз",
+            error_invalid_email: "Жарамсыз email пішімі",
+            error_too_many_requests: "Тым көп әрекет. Кейінірек қайталап көріңіз",
+            error_generic: "Қате пайда болды. Қайталап көріңіз",
+            loading_messages: "Хабарламалар жүктелуде...",
+            loading_error: "Жүктеу қатесі.",
+            pinned_messages_empty: "Бекітілген хабарламалар әзірге жоқ",
+            messages_empty: "Хабарламалар әзірге жоқ. Бірінші болып жазыңыз!",
+            file_share_question_1: "сұрақ",
+            file_share_question_2_4: "сұрақ",
+            file_share_question_5_more: "сұрақ",
+            new_question_notification: "Жаңа сұрақ құрылды",
+            notification_new_message: "Жаңа хабарлама!",
+            questions_empty: "Сұрақтар әзірге жоқ",
+            favorites_empty: "Таңдаулыларда әзірге ештеңе жоқ",
+            favorites_loading_error: "Таңдаулыларды жүктеу қатесі",
+            users_not_found: "Пайдаланушылар табылмады.",
+            confirm_delete_message: "Осы хабарламаны жойғыңыз келетініне сенімдісіз бе?",
+            confirm_delete_question: "Осы сұрақты жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті қайтару мүмкін емес.",
+            confirm_kick_user: "Осы мүшені арнадан алғыңыз келетініне сенімдісіз бе?",
+            confirm_delete_channel: "Осы арнаны жойғыңыз келетініне сенімдісіз бе? Ондағы барлық хабарламалар жоғалады. Бұл әрекетті қайтару мүмкін емес.",
+            confirm_delete_account: "Аккаунтыңызды жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті ҚАЙТАРУ МҮМКІН ЕМЕС.",
+            confirm_clear_favorites: "Таңдаулылардан БАРЛЫҚ элементтерді жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті қайтару мүмкін емес.",
+            profile_updated_success: "Профиль сәтті жаңартылды!",
+            channel_name_empty: "Арна атауы бос болмауы керек.",
+            cant_delete_general: "Негізгі арнаны жою мүмкін емес.",
+            invalid_channel_password: "Қате құпия сөз.",
+            add_to_favorites_success: "Таңдаулыларға қосылды!",
+            add_to_favorites_auth_required: "Таңдаулыларға қосу үшін авторизациядан өту қажет.",
+            question_format_unrecognized: "Сұрақ пішімі танылмады. Синтаксисті тексеріңіз.",
+            questions_added_from_chat_success: "Чаттан сәтті қосылған сұрақтар саны:",
+            questions_added_success: "Сәтті қосылған сұрақтар саны:",
+            notifications_enabled: "Дыбыстық хабарландырулар қосулы",
+            notifications_disabled: "Дыбыстық хабарландырулар өшірулі",
+            notifications_title_enabled: "Хабарландырулар қосулы",
+            notifications_title_disabled: "Хабарландырулар өшірулі",
+            pinned_mode_on_title: "Барлық хабарламаларды көрсету",
+            pinned_mode_off_title: "Бекітілгендерді көрсету",
+            download_qst_button: "📥 .qst жүктеп алу",
+            download_txt_button: "📥 .txt жүктеп алу",
+            clear_favorites_button: "🗑️ Таңдаулыларды тазарту",
+            download_no_data: "бөлімінде жүктеуге деректер жоқ",
+            favorites_cleared_success: "Таңдаулылар сәтті тазартылды.",
+            favorites_already_empty: "Таңдаулылар қазірдің өзінде бос.",
+            copy_success: "Мазмұн алмасу буферіне көшірілді!",
+            copy_error: "Көшіру мүмкін болмады. Мәтінді қолмен көшіріңіз.",
+            file_type_unsupported: "Тек .qst және .txt файлдарын жүктеуге болады",
+            reauth_prompt: "Жоюды растау үшін ағымдағы құпия сөзіңізді енгізіңіз:",
+            reauth_cancelled: "Жою болдырылмады. Құпия сөз енгізілмеді.",
+            deleting_account_status: "Жойылуда...",
+            delete_account_success: "Сіздің аккаунтыңыз сәтті жойылды.",
+            account_deleted_button: "🗑️ Аккаунтты жою",
+            question_deleted_message: "Бұл сұрақ жойылды.",
+            file_download_error: "Файлды жүктеу мүмкін болмады:",
+            test_start_error: "Тестті бастау мүмкін болмады:",
+            global_loader_loading_test: "Тест жүктелуде",
+            password_reauth_required: "Бұл әрекетті орындау үшін жақында кіру қажет. Шығып, қайта кіріңіз.",
+            channel_enter_password_prompt: "арнасы қорғалған. Құпия сөзді енгізіңіз:",
+        },
         en: {
             // TABS
             tab_messages: "Messages",
@@ -3430,7 +3574,7 @@ const ChatModule = (function() {
         },
 
 
-        
+
         closeChatModal: () => {
             if (chatOverlay) {
                 chatOverlay.classList.add('hidden');
@@ -3655,6 +3799,90 @@ const mainApp = (function() {
             no_questions_for_settings: 'Нет вопросов для теста с текущими настройками.',
             confirm_finish_early: 'Вы уверены, что хотите завершить тест досрочно?'
         },
+        kz: {
+            // Main Screen
+            search_in_db: 'Дерекқордан сұрақты іздеу:',
+            search_placeholder: 'Сұрақ мәтінінің бөлігін енгізіңіз...',
+            find_button: 'Іздеу',
+            searching_in_db: 'Дерекқордан іздеу жүріп жатыр...',
+            or_divider: '-- немесе --',
+            choose_file: 'Құрылғыдан .qst немесе .txt файлын таңдаңыз:',
+            gradus_button_main: 'GRADUS',
+            gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
+            parser_button_main: 'Аудару',
+            parser_subtitle: 'мәтінді .qst пішіміне',
+            recent_files: 'Жақында пайдаланылғандар:',
+            // Navigation & Headers
+            nav_gradus: 'GRADUS бойынша навигация',
+            back_to_main: 'Басты экранға оралу',
+            search_results_title: 'Іздеу нәтижелері',
+            back_to_search: 'Жаңа іздеу',
+            quiz_settings_title: 'Тест баптаулары',
+            cheat_sheet_title: 'Дайындалған шпаргалка:',
+            quiz_finished_title: 'Тест аяқталды!',
+            parser_title: '.qst форматына түрлендіргіш',
+            parser_description: 'Тест пішіміне түрлендіру үшін файлды жүктеңіз немесе мәтінді қойыңыз.',
+            // Quiz Settings
+            time_limit: 'Уақыт шектеуі (минут, 0 - шектеусіз):',
+            time_limit_minutes: 'мин',
+            question_range: 'Сұрақтар ауқымы:',
+            range_from: 'Бастап',
+            range_to: 'Дейін',
+            total_questions_label: 'барлығы',
+            questions_label_for_range: 'сұрақ',
+            shuffle_questions: 'Сұрақтарды араластыру',
+            shuffle_answers: 'Жауаптарды араластыру',
+            feedback_mode: 'Кері байланыс режимі (қателерді сақтау)',
+            start_quiz_button: 'Тестті бастау',
+            generate_cheat_sheet_button: 'Шпаргалка жасау',
+            choose_another_file_button: 'Басқа файл таңдау',
+            // Cheat Sheet
+            download_cheat_sheet_button: 'Шпаргалканы жүктеу (.txt)',
+            back_to_settings_button: 'Баптауларға оралу',
+            // Quiz Screen
+            timer_label: 'Уақыт:',
+            prev_question_button: 'Алдыңғы',
+            next_question_button: 'Келесі',
+            finish_button: 'Тестті аяқтау',
+            question_label: 'Сұрақ:',
+            correct_label: 'Дұрыс:',
+            quick_nav_title: 'Сұрақтар бойынша жылдам өту:',
+            finish_early_button: 'Тестті аяқтау',
+            // Results
+            your_result: 'Сіздің нәтижеңіз:',
+            of_label: 'ішінен',
+            accuracy_label: 'Дәлдік:',
+            download_errors_button: 'Жауап берілмеген/қате сұрақтарды жүктеу',
+            review_errors_button: 'Қателермен жұмыс',
+            download_triggered_quiz_button: 'Триггерлері бар тестті жүктеу',
+            restart_button: 'Басқа тест өту',
+            // Parser
+            parser_upload_or_paste: '1. Файлды (.txt) жүктеңіз немесе мәтінді төменге қойыңыз:',
+            clear_parser_input: 'Өрісті тазарту',
+            parser_input_placeholder: 'Немесе құжаттағы мәтінді осында қойыңыз...',
+            parser_select_format: '2. Пішімді таңдаңыз (немесе автоанықтау үшін қалдырыңыз):',
+            parser_auto_detect: '-- Автоматты түрде анықтау --',
+            parser_run_button: '3. Түрлендіру',
+            parser_errors_found: '⚠️ Пішімдеу қателері',
+            parser_result_title: 'Нәтиже:',
+            download_parsed_button: '.qst файлын жүктеу',
+            back_button: 'Артқа',
+            // Header Buttons
+            copy_question_title: 'Ағымдағы сұрақты көшіру',
+            search_web_title: 'Интернеттен іздеу',
+            chat_button_title: 'Чатты ашу',
+            quick_mode_title: 'Жылдам режим (Автоматты өту)',
+            trigger_words_title: 'Триггер-сөздер',
+            theme_button_title: 'Тақырыпты өзгерту',
+            language_toggle_title: 'Тілді өзгерту',
+            favorite_button_title: 'Таңдаулыларға қосу',
+            // Messages
+            search_query_too_short: 'Іздеу сұранысы кемінде 3 таңбадан тұруы керек.',
+            file_empty_or_invalid_part1: '"',
+            file_empty_or_invalid_part2: '" файлы бос немесе пішімі жарамсыз.',
+            no_questions_for_settings: 'Ағымдағы баптаулар үшін сұрақтар табылмады.',
+            confirm_finish_early: 'Тестті мерзімінен бұрын аяқтағыңыз келетініне сенімдісіз бе?'
+        },
         en: {
             // Main Screen
             search_in_db: 'Search question in database:',
@@ -3739,7 +3967,10 @@ const mainApp = (function() {
             no_questions_for_settings: 'No questions found for the current settings.',
             confirm_finish_early: 'Are you sure you want to finish the quiz early?'
         }
+
+
     };
+
 
 
     function _(key) {
@@ -5705,8 +5936,8 @@ const mainApp = (function() {
     function setLanguage(lang) {
         // Сохраняем выбор пользователя
         localStorage.setItem('appLanguage', lang);
-
-        // ВЫЗЫВАЕМ ПЕРЕВОДЧИК ЧАТА
+        
+        // Вызываем переводчик чата
         ChatModule.setLanguage(lang);
 
         const translations = LANG_PACK[lang];
@@ -5718,33 +5949,38 @@ const mainApp = (function() {
                 if (el.placeholder) {
                     el.placeholder = translations[key];
                 } else {
-                    // Используем innerHTML, чтобы сохранить вложенные теги, как в кнопке GRADUS
                     el.innerHTML = translations[key];
                 }
             }
         });
         
         // Обновляем title у кнопок
-        getEl('languageToggle').title = translations.toggle_language_title;
+        getEl('copyQuestionBtnQuiz').title = translations.copy_question_title;
+        getEl('searchWebButton').title = translations.search_web_title;
         getEl('chatToggle').title = translations.chat_button_title;
-        getEl('favoriteQuestionBtn').title = translations.favorite_button_title;
-        getEl('triggerWordToggle').title = translations.trigger_words_title;
         getEl('quickModeToggle').title = translations.quick_mode_title;
+        getEl('triggerWordToggle').title = translations.trigger_words_title;
         getEl('themeToggle').title = translations.theme_button_title;
-
-        // Обновляем текст (теперь флаг) на самой кнопке переключения
-        if (lang === 'ru') {
-            // Если язык интерфейса РУССКИЙ, показываем флаг для переключения на АНГЛИЙСКИЙ
-            languageToggle.textContent = 'En'; 
-        } else {
-            // Если язык интерфейса АНГЛИЙСКИЙ, показываем флаг для переключения на РУССКИЙ
-            languageToggle.textContent = 'Ру';
-        }
+        getEl('languageToggle').title = translations.language_toggle_title;
+        getEl('favoriteQuestionBtn').title = translations.favorite_button_title;
+        
+        // НОВАЯ ЛОГИКА ДЛЯ ТЕКСТА КНОПКИ
+        const langs = ['ru', 'en', 'kz'];
+        // Текст, который будет показан на кнопке, когда активен соответствующий язык
+        const displayLangs = ['En', 'Қаз', 'Ру'];
+        const currentIndex = langs.indexOf(lang);
+        languageToggle.textContent = displayLangs[currentIndex];
     }
+
+
 
     function toggleLanguage() {
         const currentLang = localStorage.getItem('appLanguage') || 'ru';
-        const newLang = currentLang === 'ru' ? 'en' : 'ru';
+        const langs = ['ru', 'en', 'kz']; // Массив доступных языков
+        const currentIndex = langs.indexOf(currentLang);
+        // Вычисляем следующий язык, зацикливая массив
+        const nextIndex = (currentIndex + 1) % langs.length;
+        const newLang = langs[nextIndex];
         setLanguage(newLang);
     }
 
