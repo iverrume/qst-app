@@ -5724,10 +5724,14 @@ const mainApp = (function() {
         parserOutput.value = qstResult.trim();
         parserOutputArea.classList.remove('hidden');
 
-        if (selectedPatternId === 'auto' && errors.length > 0) {
-             alert(`Операция завершена. Распознано вопросов: ${parsedQuestions.length}. Обнаружено ошибок: ${errors.length}.`);
+
+        // НОВАЯ УНИФИЦИРОВАННАЯ ЛОГИКА УВЕДОМЛЕНИЯ
+        if (errors.length > 0) {
+            // Если есть ошибки, ВСЕГДА показываем подробное сообщение
+            alert(`Операция завершена.\n\nРаспознано вопросов: ${parsedQuestions.length}\nОбнаружено ошибок форматирования: ${errors.length}`);
         } else {
-             alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
+            // И только если ошибок нет, показываем простое сообщение об успехе
+            alert(`Успешно сконвертировано ${parsedQuestions.length} вопросов!`);
         }
     }
 
