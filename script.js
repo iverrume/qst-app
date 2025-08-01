@@ -5418,11 +5418,10 @@ const mainApp = (function() {
 
     function processTextWithMultiFormat(text) {
         let allParsedQuestions = [];
-        // Создаем массив для хранения ошибок
         let parsingErrors = [];
-        
+
         // Вспомогательная функция, чтобы не дублировать код обработки блока
-        const processAndAddBlock = (blockLines, blockStartIndex, blockEndIndex) => {
+        const processAndAddBlock = (blockLines, blockStartIndex) => {
             if (blockLines.length === 0) return;
 
             const blockText = blockLines.join('\n');
@@ -5443,9 +5442,9 @@ const mainApp = (function() {
                     }
                 }
             }
-            // Если ни один паттерн не сработал, считаем это ошибкой
             if (!blockParsed) {
-                console.warn("Не удалось определить формат для блока:\n---\n", blockLines.join('\n'));
+                console.warn("Не удалось определить формат для блока:\n---\n", blockText);
+                const blockEndIndex = blockStartIndex + blockText.length;
                 parsingErrors.push({
                     text: blockText.trim(),
                     start: blockStartIndex,
@@ -5455,41 +5454,49 @@ const mainApp = (function() {
         };
 
         let currentBlockLines = [];
-        let currentIndex = 0;
-        let blockStartIndex = 0;
-        const lines = text.trim().split('\n');
+        let currentBlockStartIndex = 0;
+        let cumulativeIndex = 0;
+        const lines = text.split('\n');
 
-        for (const line of lines) {
+        lines.forEach((line, index) => {
             const trimmedLine = line.trim();
-            // Определяем начало нового блока (по номеру или тегу)
+            const isCategoryTag = trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#');
             const isNewBlockStart = /^\s*\d+\.\s+/.test(trimmedLine) || /^\s*<question>|^\s*<Вопрос>/i.test(trimmedLine);
             
-            if (isNewBlockStart && currentBlockLines.length > 0) {
-                // Нашли начало нового вопроса. Обрабатываем предыдущий блок...
-                const blockTextForIndex = currentBlockLines.join('\n');
-                const endIndex = blockStartIndex + blockTextForIndex.length;
-                processAndAddBlock(currentBlockLines, blockStartIndex, endIndex);
-                
-                // ...и начинаем собирать новый.
-                blockStartIndex = text.indexOf(line, endIndex);
+            // Если нашли тег категории
+            if (isCategoryTag) {
+                // 1. Обрабатываем предыдущий накопленный блок (если он был)
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+                // 2. Добавляем саму категорию в результат
+                const categoryName = trimmedLine.slice(3, -3).trim();
+                allParsedQuestions.push({ text: categoryName, type: 'category' });
+                // 3. Сбрасываем сборщик для следующего блока
+                currentBlockLines = [];
+            } 
+            // Если нашли начало нового вопроса (и это не первый вопрос в файле)
+            else if (isNewBlockStart && currentBlockLines.length > 0) {
+                // 1. Обрабатываем предыдущий блок
+                processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+                // 2. Начинаем новый блок с текущей строки
                 currentBlockLines = [line];
-            } else {
-                // Это обычная строка, добавляем её к текущему вопросу.
+            } 
+            // В противном случае просто добавляем строку к текущему блоку
+            else {
                 if (currentBlockLines.length === 0) {
-                   blockStartIndex = text.indexOf(line, currentIndex);
+                    // Запоминаем позицию начала нового блока
+                    currentBlockStartIndex = text.indexOf(line, cumulativeIndex);
                 }
                 currentBlockLines.push(line);
             }
-            currentIndex = text.indexOf(line, currentIndex) + line.length;
-        }
+            // Обновляем общий индекс для поиска
+             if (index < lines.length -1) {
+                cumulativeIndex = text.indexOf(lines[index+1], cumulativeIndex);
+            }
+        });
 
-        // Не забываем обработать самый последний блок в файле после окончания цикла
-        if (currentBlockLines.length > 0) {
-            const lastBlockText = currentBlockLines.join('\n');
-            processAndAddBlock(currentBlockLines, blockStartIndex, blockStartIndex + lastBlockText.length);
-        }
-        
-        // Возвращаем объект с вопросами и ошибками
+        // Не забываем обработать самый последний блок после окончания цикла
+        processAndAddBlock(currentBlockLines, currentBlockStartIndex);
+
         return {
             questions: allParsedQuestions,
             errors: parsingErrors
@@ -5574,13 +5581,12 @@ const mainApp = (function() {
 
 
     function runParser() {
-        const text = parserInput.value; // Берем полный текст для сохранения индексов
+        const text = parserInput.value;
         if (text.trim() === '') {
             alert("Поле для ввода текста пустое!");
             return;
         }
-        
-        // Прячем старые результаты и ошибки перед новым запуском
+
         hideAndResetErrorArea();
         parserOutputArea.classList.add('hidden');
 
@@ -5588,16 +5594,13 @@ const mainApp = (function() {
         let result;
 
         if (selectedPatternId === 'auto') {
-            // В автоматическом режиме всегда используем мультиформатный обработчик
             result = processTextWithMultiFormat(text);
         } else {
-            // Логика для ручного выбора формата
             const pattern = PARSER_PATTERNS.find(p => p.id === selectedPatternId);
             if (!pattern) {
                 alert("Произошла ошибка. Выбранный паттерн не найден.");
                 return;
             }
-            // Для одиночных паттернов считаем, что ошибок нет, просто парсим
             result = {
                 questions: pattern.processor(text),
                 errors: []
@@ -5607,12 +5610,10 @@ const mainApp = (function() {
         const parsedQuestions = result.questions;
         const errors = result.errors;
         
-        // Показываем ошибки, если они есть
         if (errors.length > 0) {
             renderErrors(errors);
         }
 
-        // Обрабатываем результат
         if (parsedQuestions.length === 0) {
             if (errors.length > 0) {
                 alert(`Не удалось распознать ни одного вопроса. Обнаружено ошибок: ${errors.length}.`);
@@ -5622,22 +5623,29 @@ const mainApp = (function() {
             return;
         }
 
-        // Конвертируем в .qst формат
+        // --- НАЧАЛО ИЗМЕНЕНИЯ ---
+        // Конвертируем в .qst формат, теперь с поддержкой категорий
         let qstResult = '';
         parsedQuestions.forEach(q => {
+            // ЕСЛИ ЭТО КАТЕГОРИЯ
             if (q.type === 'category') {
-                qstResult += `#_#${q.text}#_#\n\n`;
-            } else {
+                // Форматируем её в правильный синтаксис
+                qstResult += `#_#${q.text}#_#\n\n`; // Двойной перенос для красивого разделения
+            }
+            // ЕСЛИ ЭТО ВОПРОС
+            else {
+                // Используем старую проверку только для вопросов
                 if (q.text && q.options && q.options.length > 0) {
                     qstResult += `? ${q.text.replace(/\n/g, ' ')}\n`;
                     q.options.forEach(opt => {
                         const prefix = (opt === q.correctAnswer) ? '+' : '-';
                         qstResult += `${prefix} ${opt.replace(/\n/g, ' ')}\n`;
                     });
-                    qstResult += '\n';
+                    qstResult += '\n'; // Пустая строка после каждого вопроса
                 }
             }
         });
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
         parserOutput.value = qstResult.trim();
         parserOutputArea.classList.remove('hidden');
