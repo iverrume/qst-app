@@ -3809,7 +3809,7 @@ const mainApp = (function() {
             file_empty_or_invalid_part1: 'Файл "',
             file_empty_or_invalid_part2: '" пуст или имеет неверный формат.',
             no_questions_for_settings: 'Нет вопросов для теста с текущими настройками.',
-            confirm_finish_early: 'Вы уверены, что хотите завершить тест досрочно?'
+            confirm_finish_early: 'Вы уверены, что хотите завершить тест досрочно?',
             copy_button: "Копировать",
         },
         kz: {
@@ -3894,7 +3894,7 @@ const mainApp = (function() {
             file_empty_or_invalid_part1: '"',
             file_empty_or_invalid_part2: '" файлы бос немесе пішімі жарамсыз.',
             no_questions_for_settings: 'Ағымдағы баптаулар үшін сұрақтар табылмады.',
-            confirm_finish_early: 'Тестті мерзімінен бұрын аяқтағыңыз келетініне сенімдісіз бе?'
+            confirm_finish_early: 'Тестті мерзімінен бұрын аяқтағыңыз келетініне сенімдісіз бе?',
             copy_button: "Көшіру",
         },
         en: {
@@ -3979,7 +3979,7 @@ const mainApp = (function() {
             file_empty_or_invalid_part1: 'File "',
             file_empty_or_invalid_part2: '" is empty or has an invalid format.',
             no_questions_for_settings: 'No questions found for the current settings.',
-            confirm_finish_early: 'Are you sure you want to finish the quiz early?'
+            confirm_finish_early: 'Are you sure you want to finish the quiz early?',
             copy_button: "Copy",
         }
 
