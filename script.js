@@ -3450,7 +3450,7 @@ const mainApp = (function() {
                 displaySingleResult(currentResultIndex);
             }
         });
-        
+
         // Новые обработчики для фильтра
         filterVariantsBtn?.addEventListener('click', (event) => {
             event.stopPropagation(); // Предотвращаем закрытие по клику на саму кнопку
@@ -5626,45 +5626,57 @@ const mainApp = (function() {
 
 
 
-
-    function renderErrors(errors) {
+    /**
+     * Отображает список ошибок и привязывает к ним клики для подсветки в нужном поле.
+     * @param {HTMLTextAreaElement} targetTextarea - Поле, в котором будут подсвечиваться ошибки.
+     * @param {Array<Object>} errors - Массив объектов ошибок.
+     */
+    function renderErrors(targetTextarea, errors) {
         const errorsArea = getEl('parserErrorsArea');
         const errorCountEl = getEl('errorCount');
         const errorListEl = getEl('errorList');
 
         if (!errorsArea || !errorCountEl || !errorListEl) return;
 
-        errorListEl.innerHTML = ''; // Очищаем старый список
+        errorListEl.innerHTML = ''; 
         errorCountEl.textContent = errors.length;
         errorsArea.classList.remove('hidden');
 
         errors.forEach(error => {
             const li = document.createElement('li');
             li.className = 'error-list-item';
-            li.textContent = error.text.split('\n')[0] || '[пустая строка]'; // Показываем первую строку ошибки
+            // Отображаем первую строку ошибки или специальный текст
+            li.textContent = error.text.split('\n')[0].trim() || '[пустая строка]';
             li.title = `Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
             
-            // Добавляем обработчик клика для подсветки
+            // Привязываем клик к УНИВЕРСАЛЬНОЙ функции подсветки, передавая НУЖНОЕ поле
             li.addEventListener('click', () => {
-                highlightErrorInTextarea(error.start, error.end);
+                highlightErrorInTextarea(targetTextarea, error.start, error.end);
             });
             
             errorListEl.appendChild(li);
         });
     }
 
-    function highlightErrorInTextarea(start, end) {
-        if (!parserInput) return;
 
-        // 1. Сначала выделяем текст, чтобы пользователь сразу видел результат
-        parserInput.focus();
-        parserInput.setSelectionRange(start, end);
 
-        // 2. Создаем "зеркальный" div для точного расчета высоты
+
+
+    /**
+     * Выделяет фрагмент текста в УКАЗАННОМ текстовом поле и прокручивает к нему.
+     * @param {HTMLTextAreaElement} targetTextarea - Поле <textarea>, в котором нужно выделить текст.
+     * @param {number} start - Начальный индекс для выделения.
+     * @param {number} end - Конечный индекс для выделения.
+     */
+    function highlightErrorInTextarea(targetTextarea, start, end) {
+        if (!targetTextarea) return;
+
+        targetTextarea.focus();
+        targetTextarea.setSelectionRange(start, end);
+
         const mirrorDiv = document.createElement('div');
-        const computedStyle = getComputedStyle(parserInput);
+        const computedStyle = getComputedStyle(targetTextarea);
 
-        // 3. Копируем ВСЕ важные стили, влияющие на геометрию текста
         [
             'font', 'lineHeight', 'letterSpacing', 'wordSpacing',
             'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
@@ -5674,25 +5686,20 @@ const mainApp = (function() {
             mirrorDiv.style[prop] = computedStyle[prop];
         });
 
-        // 4. Позиционируем зеркало за пределами экрана
         mirrorDiv.style.position = 'absolute';
         mirrorDiv.style.top = '-9999px';
         mirrorDiv.style.left = '0px';
-        mirrorDiv.style.width = parserInput.clientWidth + 'px'; // Ширина контента, без вертикального скроллбара
-
-        // 5. Вставляем текст ДО начала ошибки, чтобы измерить его высоту
-        // Добавляем неразрывный пробел в конец, чтобы гарантировать правильный расчет высоты последней строки
-        mirrorDiv.textContent = parserInput.value.substring(0, start) + '\u00A0';
+        mirrorDiv.style.width = targetTextarea.clientWidth + 'px';
+        mirrorDiv.textContent = targetTextarea.value.substring(0, start) + '\u00A0';
         document.body.appendChild(mirrorDiv);
 
-        // 6. Рассчитываем и устанавливаем позицию скролла
-        // Отнимаем небольшой отступ (например, 30px), чтобы строка была не у самого края, а чуть ниже
-        const scrollPosition = mirrorDiv.scrollHeight - 200;
-        parserInput.scrollTop = scrollPosition > 0 ? scrollPosition : 0; // Проверяем, чтобы не уйти в минус
+        const scrollPosition = mirrorDiv.scrollHeight - 30;
+        targetTextarea.scrollTop = scrollPosition > 0 ? scrollPosition : 0;
 
-        // 7. Удаляем временный элемент
         document.body.removeChild(mirrorDiv);
     }
+
+
 
     function hideAndResetErrorArea() {
         getEl('parserErrorsArea')?.classList.add('hidden');
@@ -5787,7 +5794,7 @@ const mainApp = (function() {
         if (defectiveQuestions.length > 0) {
             // Адаптируем заголовок блока ошибок
             getEl('showErrorsBtn').innerHTML = `⚠️ Ошибки количества вариантов (<span id="errorCount">${defectiveQuestions.length}</span>)`;
-            renderErrors(defectiveQuestions);
+            renderErrors(parserOutput, defectiveQuestions);
             alert(`Найдено ${defectiveQuestions.length} вопросов, не соответствующих фильтру.`);
         } else {
             alert("Все вопросы соответствуют заданному фильтру!");
@@ -5834,7 +5841,7 @@ const mainApp = (function() {
         const errors = result.errors;
         
         if (errors.length > 0) {
-            renderErrors(errors);
+            renderErrors(parserInput, errors);
         }
 
         if (parsedQuestions.length === 0) {
