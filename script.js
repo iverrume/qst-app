@@ -5564,29 +5564,36 @@ const mainApp = (function() {
         const text = parserInput.value;
         const lines = text.split('\n');
         
-        // --- Логика для динамической ширины колонки (остается без изменений) ---
+        // --- Логика для динамической ширины колонки ---
         const newDigitCount = String(lines.length).length;
         if (newDigitCount !== lastParserDigitCount) {
+            // Устанавливаем базовую ширину и добавляем место для каждого разряда
             const newWidth = 20 + newDigitCount * 9; 
-            parserLineNumbersEl.style.width = `${newWidth}px`;
             const textPadding = newWidth + 10;
-            parserInputMirrorEl.style.paddingLeft = `${textPadding}px`;
+            
+            // Применяем ширину и отступы ко всем нужным элементам
+            parserLineNumbersEl.style.width = `${newWidth}px`;
             parserInput.style.paddingLeft = `${textPadding}px`;
+            parserInputMirrorEl.style.paddingLeft = `${textPadding}px`;
+            
             lastParserDigitCount = newDigitCount;
         }
         
-        // --- НАЧАЛО КЛЮЧЕВОГО ИЗМЕНЕНИЯ: ГЕНЕРАЦИЯ СТРОК ---
+        // --- НОВАЯ ЛОГИКА ГЕНЕРАЦИИ ---
+        
+        // Генерируем ОДНУ строку с номерами, разделенными переносами.
+        // Браузер сам их расставит по высоте.
+        const numbersText = lines.map((_, i) => i + 1).join('\n');
+        
+        // Обновляем текстовое содержимое элементов. Это безопаснее и правильнее, чем innerHTML.
+        parserLineNumbersEl.textContent = numbersText;
+        parserInputMirrorEl.textContent = text;
 
-        // Генерируем HTML для номеров, оборачивая каждый номер в свой <div>
-        const numbersHTML = lines.map((_, i) => `<div>${i + 1}</div>`).join('');
-
-        // Генерируем HTML для "зеркала", оборачивая КАЖДУЮ СТРОКУ текста в свой <div>.
-        // Если строка пустая, вставляем неразрывный пробел, чтобы div не "схлопнулся" и сохранил свою высоту.
-        const mirrorHTML = lines.map(line => `<div>${escapeHTML(line) || ' '}</div>`).join('');
-
-        // Обновляем DOM
-        parserLineNumbersEl.innerHTML = numbersHTML;
-        parserInputMirrorEl.innerHTML = mirrorHTML;
+        // Синхронизируем прокрутку (если пользователь крутит textarea)
+        parserInput.onscroll = () => {
+            parserLineNumbersEl.scrollTop = parserInput.scrollTop;
+            parserInputMirrorEl.scrollTop = parserInput.scrollTop;
+        };
     }
 
 

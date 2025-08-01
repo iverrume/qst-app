@@ -4023,37 +4023,28 @@ button[onclick*="copyToClipboard"].copied:after {
     color: var(--text-color);
 }
 
-/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (v5 - MIRROR SYNC) --- */
+/* --- СТИЛИ ДЛЯ РЕДАКТОРА С НУМЕРАЦИЕЙ СТРОК (ФИНАЛЬНАЯ ВЕРСИЯ) --- */
+
 .parser-editor-container {
-    display: grid; /* Используем Grid для идеального наложения слоев */
+    position: relative;
     margin-top: 10px;
     border: 1px solid var(--input-border-color);
     border-radius: 5px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
     height: 60vh;
     max-height: 700px;
     min-height: 150px;
     resize: vertical;
-    position: relative; 
-    overflow: auto;   /* Единственный скроллбар на всем компоненте */
+    overflow: auto; /* Единственный скроллбар */
+    background-color: var(--container-bg-color); /* Фон для всего редактора */
 }
 
-.parser-editor-container:focus-within {
-    border-color: var(--button-primary-bg);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
-}
-
-/* Общие стили для всех слоев, чтобы они занимали одну и ту же ячейку грида */
-#parserLineNumbers,
+/* ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ СЛОЕВ (ТЕКСТ, НОМЕРА, ЗЕРКАЛО) */
+#parserArea textarea#parserInput,
 #parserInputMirror,
-#parserArea textarea#parserInput {
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
-    
-    padding: 10px;
-    margin: 0;
+#parserLineNumbers {
     box-sizing: border-box;
+    padding-left: 55px; /* ОТСТУП ДЛЯ НОМЕРОВ. БУДЕТ МЕНЯТЬСЯ JS */
+    margin: 0;
     
     font-family: monospace;
     font-size: 1em;
@@ -4061,38 +4052,56 @@ button[onclick*="copyToClipboard"].copied:after {
     
     white-space: pre-wrap;
     word-break: break-word;
+    
+    color: var(--text-color);
 }
 
+/* СЛОЙ 1: НОМЕРА СТРОК (ПОЛУПРОЗРАЧНЫЕ) */
 #parserLineNumbers {
-    padding-right: 8px;
-    width: 45px; /* Фиксированная ширина для номеров */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 45px; /* ШИРИНА КОЛОНКИ. БУДЕТ МЕНЯТЬСЯ JS */
+    height: 100%;
+    padding: 10px 8px 10px 10px;
     text-align: right;
     user-select: none;
     color: var(--secondary-text-color);
-    background: var(--input-bg-color);
-    border-right: 1px solid var(--input-border-color);
-    z-index: 1; /* Слой 1 */
+    background-color: var(--input-bg-color); /* Фон для колонки с номерами */
+    border-right: 1px solid var(--border-color);
+    overflow: hidden; /* Важно, чтобы номера не вылезали */
 }
 
+/* СЛОЙ 2: ЗЕРКАЛО (НЕВИДИМОЕ, ДЛЯ ВЫДЕЛЕНИЯ) */
 #parserInputMirror {
-
-    color: transparent; /* Текст зеркала не должен быть виден */
-    z-index: 0; /* Слой 0 (самый нижний) */
+    position: relative; /* Чтобы быть над основным текстом */
+    color: transparent;
+    background: transparent;
 }
 
+/* СЛОЙ 3: ТЕКСТОВОЕ ПОЛЕ (ПРОЗРАЧНОЕ) */
 #parserArea textarea#parserInput {
-
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    padding-left: 55px; /* ОТСТУП ДЛЯ НОМЕРОВ. БУДЕТ МЕНЯТЬСЯ JS */
     color: var(--text-color);
-    background: transparent; /* Прозрачный, чтобы видеть номера и зеркало */
-    z-index: 2; /* Слой 2 (самый верхний) */
-    
-    border: none !important;
-    border-radius: 0;
+    background: transparent; /* Полностью прозрачное поле */
+    border: none;
     resize: none;
-    overflow: hidden; /* критически важно: у textarea не должно быть своего скролла */
+    outline: none;
+    overflow-y: auto; /* Убираем стандартный скролл, т.к. он на контейнере */
 }
 
+/* Убираем лишние стили при фокусе */
+.parser-editor-container:focus-within {
+    border-color: var(--button-primary-bg);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
 #parserArea textarea#parserInput:focus {
-    box-shadow: none !important;
+    box-shadow: none;
 }
-
