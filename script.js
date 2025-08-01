@@ -5588,7 +5588,7 @@ const mainApp = (function() {
 
         // 6. Рассчитываем и устанавливаем позицию скролла
         // Отнимаем небольшой отступ (например, 30px), чтобы строка была не у самого края, а чуть ниже
-        const scrollPosition = mirrorDiv.scrollHeight + 4000;
+        const scrollPosition = mirrorDiv.scrollHeight - 400;
         parserInput.scrollTop = scrollPosition > 0 ? scrollPosition : 0; // Проверяем, чтобы не уйти в минус
 
         // 7. Удаляем временный элемент
