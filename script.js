@@ -3412,26 +3412,18 @@ const ChatModule = (function() {
 
         openChatModal: () => {
             if (!chatOverlay) return;
-
-            // === ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ===
-            // Каждый раз перед открытием проверяем, соответствует ли язык чата сохраненному
-            const desiredLang = localStorage.getItem('chatLanguage') || 'ru';
-            if (currentChatLang !== desiredLang) {
-                // Если язык изменился, пока чат был закрыт,
-                // обновляем внутреннюю переменную...
-                currentChatLang = desiredLang;
-                // ...и "хирургически" обновляем весь текст в уже существующем DOM чата.
-                updateChatUIText();
-            }
-            // === КОНЕЦ ИЗМЕНЕНИЯ ===
-
+            
+            // Если пользователь не авторизован, показываем окно входа
             if (!currentUser) {
                 openChatAfterAuth = true;
                 ChatModule.openAuthModal();
                 return;
             }
             
+            // Просто показываем чат. Текст в нем уже будет на правильном языке.
             chatOverlay.classList.remove('hidden');
+
+            // Если это самый первый запуск, загружаем данные
             if(!isInitialized) {
                 loadTabData(currentTab);
             }
@@ -3457,13 +3449,19 @@ const ChatModule = (function() {
         
         // === НАЧАЛО НОВОГО МЕТОДА ===
         /**
-         * Устанавливает язык для модуля чата. Не обновляет UI напрямую.
+         * Устанавливает язык для модуля чата и немедленно обновляет его UI,
+         * даже если он скрыт.
          * @param {string} lang - Код языка ('ru' или 'en').
          */
         setLanguage: (lang) => {
             if (LANG_PACK_CHAT[lang]) {
                 currentChatLang = lang;
                 localStorage.setItem('chatLanguage', lang);
+
+                // Ключевой момент: Мы обновляем текст в DOM в любом случае.
+                // Элементы существуют, просто они невидимы.
+                // Внутри updateChatUIText() уже есть проверка на случай, если DOM еще не создан.
+                updateChatUIText();
             }
         },
         // === КОНЕЦ НОВОГО МЕТОДА ===
