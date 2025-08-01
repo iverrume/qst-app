@@ -499,23 +499,7 @@ const ChatModule = (function() {
         });
 
 
-                // Новые обработчики для фильтра
-        filterVariantsBtn?.addEventListener('click', (event) => {
-            event.stopPropagation(); // Предотвращаем закрытие по клику на саму кнопку
-            filterVariantsDropdown.classList.toggle('hidden');
-        });
 
-        applyVariantFilterBtn?.addEventListener('click', filterByVariantCount);
-        resetVariantFilterBtn?.addEventListener('click', resetVariantFilter);
-        
-        // Закрываем выпадающее меню при клике вне его
-        window.addEventListener('click', (event) => {
-            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden')) {
-                if (!filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
-                    filterVariantsDropdown.classList.add('hidden');
-                }
-            }
-        });
 
 
 
@@ -3466,6 +3450,27 @@ const mainApp = (function() {
                 displaySingleResult(currentResultIndex);
             }
         });
+        
+        // Новые обработчики для фильтра
+        filterVariantsBtn?.addEventListener('click', (event) => {
+            event.stopPropagation(); // Предотвращаем закрытие по клику на саму кнопку
+            filterVariantsDropdown.classList.toggle('hidden');
+        });
+
+        applyVariantFilterBtn?.addEventListener('click', filterByVariantCount);
+        resetVariantFilterBtn?.addEventListener('click', resetVariantFilter);
+        
+        // Закрываем выпадающее меню при клике вне его
+        window.addEventListener('click', (event) => {
+            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden')) {
+                if (!filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
+                    filterVariantsDropdown.classList.add('hidden');
+                }
+            }
+        });
+
+
+
     }
 
 
