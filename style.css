@@ -4075,13 +4075,13 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 #parserInputMirror {
-    padding-left: 55px; /* Отступ слева, чтобы текст не залезал на номера */
+
     color: transparent; /* Текст зеркала не должен быть виден */
     z-index: 0; /* Слой 0 (самый нижний) */
 }
 
 #parserArea textarea#parserInput {
-    padding-left: 55px; /* Точно такой же отступ, как у зеркала */
+
     color: var(--text-color);
     background: transparent; /* Прозрачный, чтобы видеть номера и зеркало */
     z-index: 2; /* Слой 2 (самый верхний) */

@@ -3292,6 +3292,7 @@ const mainApp = (function() {
     let breadcrumbs = [];
     let searchResultsData = [];
     let currentResultIndex = 0;
+    let lastParserDigitCount = 0;
 
     // --- Constants ---
 
@@ -5558,18 +5559,38 @@ const mainApp = (function() {
 
 
     function updateEditorContent() {
-        // Проверяем наличие всех нужных элементов
         if (!parserInput || !parserLineNumbersEl || !parserInputMirrorEl) return;
         
         const text = parserInput.value;
         const lines = text.split('\n');
         
-        // Внутри функции updateEditorContent
+        // --- НАЧАЛО НОВОГО КОДА ---
+        // Вычисляем, сколько разрядов в номере последней строки (напр., для 123 это 3)
+        const newDigitCount = String(lines.length).length;
+
+        // Обновляем ширину, только если количество разрядов изменилось (9 -> 10, 99 -> 100, и т.д.)
+        // Это оптимизация, чтобы не менять стили при каждом нажатии клавиши.
+        if (newDigitCount !== lastParserDigitCount) {
+            // Устанавливаем базовую ширину и добавляем место для каждого разряда
+            // 20px - базовый отступ, 9px на каждый символ
+            const newWidth = 20 + newDigitCount * 9; 
+            
+            parserLineNumbersEl.style.width = `${newWidth}px`;
+            
+            // Устанавливаем отступ для поля ввода и зеркала, чтобы текст не залезал на номера
+            const textPadding = newWidth + 10;
+            parserInputMirrorEl.style.paddingLeft = `${textPadding}px`;
+            parserInput.style.paddingLeft = `${textPadding}px`;
+            
+            // Запоминаем текущее количество разрядов, чтобы не пересчитывать лишний раз
+            lastParserDigitCount = newDigitCount;
+        }
+        // --- КОНЕЦ НОВОГО КОДА ---
+
+        // 1. Обновляем номера строк (этот код вы уже исправляли)
         parserLineNumbersEl.innerHTML = lines.map((_, i) => `<span>${i + 1}</span>`).join('\n');
         
         // 2. Обновляем содержимое "зеркала"
-        // escapeHTML здесь критически важен для безопасности и правильного отображения!
-        // Добавляем неразрывный пробел в конце, чтобы последняя пустая строка имела высоту.
         parserInputMirrorEl.innerHTML = escapeHTML(text) + ' ';
     }
 
