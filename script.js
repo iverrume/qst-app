@@ -3144,40 +3144,177 @@ const mainApp = (function() {
     // --- СЛОВАРЬ ПЕРЕВОДОВ ---
     const LANG_PACK = {
         ru: {
+            // Главный экран
             search_in_db: 'Поиск вопроса в базе:',
             search_placeholder: 'Введите часть текста вопроса...',
             find_button: 'Найти',
             or_divider: '-- или --',
             choose_file: 'Выберите .qst либо .txt файл с устройства:',
-            or_divider_2: '-- или --',
-            gradus_button: 'GRADUS',
+            gradus_button_main: 'GRADUS',
+            gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
+            parser_button_main: 'Перевести',
+            parser_subtitle: 'текст в формат .qst',
             recent_files: 'Недавно использованные:',
-            toggle_language_title: 'Сменить язык',
-            // Также добавим переводы для title других кнопок
+
+            // Навигация и заголовки
+            nav_gradus: 'Навигация по GRADUS',
+            back_to_main: 'Назад к главному экрану',
+            search_results_title: 'Результаты поиска',
+            back_to_search: 'Новый поиск',
+            quiz_settings_title: 'Настройки теста',
+            cheat_sheet_title: 'Сгенерированная шпора:',
+            quiz_finished_title: 'Тест завершен!',
+            parser_title: 'Конвертер в .qst',
+            parser_description: 'Загрузите файл или вставьте текст для преобразования в формат теста.',
+
+            // Настройки теста
+            time_limit: 'Лимит времени (минуты, 0 - без лимита):',
+            time_limit_minutes: 'мин',
+            question_range: 'Диапазон вопросов:',
+            range_from: 'От',
+            range_to: 'До',
+            shuffle_questions: 'Перемешать вопросы',
+            shuffle_answers: 'Перемешать ответы',
+            feedback_mode: 'Режим обратной связи (сохранить ошибки)',
+            start_quiz_button: 'Начать тест',
+            generate_cheat_sheet_button: 'Создать шпору',
+            choose_another_file_button: 'Выбрать другой файл',
+
+            // Шпаргалка
+            download_cheat_sheet_button: 'Скачать шпору (.txt)',
+            back_to_settings_button: 'Назад к настройкам',
+
+            // Экран теста
+            timer_label: 'Время:',
+            prev_question_button: 'Предыдущий',
+            next_question_button: 'Следующий',
+            finish_button: 'Завершить тест',
+            question_label: 'Вопрос:',
+            correct_label: 'Правильно:',
+            quick_nav_title: 'Навигация по вопросам:',
+            finish_early_button: 'Завершить тест',
+
+            // Результаты
+            your_result: 'Ваш результат:',
+            of_label: 'из',
+            accuracy_label: 'Точность:',
+            download_errors_button: 'Скачать неотвеченные/неправильные вопросы',
+            review_errors_button: 'Работа над ошибками',
+            download_triggered_quiz_button: 'Скачать тест с триггерами',
+            restart_button: 'Пройти другой тест',
+            
+            // Парсер
+            parser_upload_or_paste: '1. Загрузите файл (.txt) или вставьте текст ниже:',
+            clear_parser_input: 'Очистить поле',
+            parser_input_placeholder: 'Или вставьте сюда текст из вашего документа...',
+            parser_select_format: '2. Выберите формат (или оставьте для автоопределения):',
+            parser_run_button: '3. Конвертировать',
+            parser_errors_found: '⚠️ Ошибки форматирования',
+            parser_result_title: 'Результат:',
+            download_parsed_button: 'Скачать .qst файл',
+            back_button: 'Назад',
+
+            // Кнопки в шапке
+            copy_question_title: 'Копировать текущий вопрос',
+            search_web_title: 'Найти в интернете',
             chat_button_title: 'Открыть чат',
-            favorite_button_title: 'Добавить в избранное',
-            trigger_words_title: 'Триггер-слова',
             quick_mode_title: 'Быстрый режим (Автопереход)',
-            theme_button_title: 'Сменить тему'
+            trigger_words_title: 'Триггер-слова',
+            theme_button_title: 'Сменить тему',
+            language_toggle_title: 'Сменить язык',
+            favorite_button_title: 'Добавить в избранное',
         },
         en: {
+            // Main Screen
             search_in_db: 'Search question in database:',
             search_placeholder: 'Enter part of the question text...',
             find_button: 'Search',
             or_divider: '-- or --',
             choose_file: 'Select a .qst or .txt file from your device:',
-            or_divider_2: '-- or --',
-            gradus_button: 'GRADUS',
+            gradus_button_main: 'GRADUS',
+            gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
+            parser_button_main: 'Convert',
+            parser_subtitle: 'text to .qst format',
             recent_files: 'Recently used:',
-            toggle_language_title: 'Change language',
-            // Переводы для title
-            chat_button_title: 'Open chat',
-            favorite_button_title: 'Add to favorites',
-            trigger_words_title: 'Trigger words',
-            quick_mode_title: 'Quick mode (Auto-next)',
-            theme_button_title: 'Change theme'
+
+            // Navigation & Headers
+            nav_gradus: 'GRADUS Navigation',
+            back_to_main: 'Back to Main Screen',
+            search_results_title: 'Search Results',
+            back_to_search: 'New Search',
+            quiz_settings_title: 'Quiz Settings',
+            cheat_sheet_title: 'Generated Cheat Sheet:',
+            quiz_finished_title: 'Quiz Finished!',
+            parser_title: 'Converter to .qst',
+            parser_description: 'Upload a file or paste text to convert into a quiz format.',
+
+            // Quiz Settings
+            time_limit: 'Time limit (minutes, 0 - no limit):',
+            time_limit_minutes: 'min',
+            question_range: 'Question Range:',
+            range_from: 'From',
+            range_to: 'To',
+            shuffle_questions: 'Shuffle questions',
+            shuffle_answers: 'Shuffle answers',
+            feedback_mode: 'Feedback mode (save mistakes)',
+            start_quiz_button: 'Start Quiz',
+            generate_cheat_sheet_button: 'Generate Cheat Sheet',
+            choose_another_file_button: 'Choose Another File',
+
+            // Cheat Sheet
+            download_cheat_sheet_button: 'Download Cheat Sheet (.txt)',
+            back_to_settings_button: 'Back to Settings',
+
+            // Quiz Screen
+            timer_label: 'Time:',
+            prev_question_button: 'Previous',
+            next_question_button: 'Next',
+            finish_button: 'Finish Quiz',
+            question_label: 'Question:',
+            correct_label: 'Correct:',
+            quick_nav_title: 'Quick Navigation:',
+            finish_early_button: 'Finish Quiz',
+
+            // Results
+            your_result: 'Your result:',
+            of_label: 'of',
+            accuracy_label: 'Accuracy:',
+            download_errors_button: 'Download unanswered/incorrect questions',
+            review_errors_button: 'Review Mistakes',
+            download_triggered_quiz_button: 'Download Quiz with Triggers',
+            restart_button: 'Take Another Quiz',
+
+            // Parser
+            parser_upload_or_paste: '1. Upload a file (.txt) or paste text below:',
+            clear_parser_input: 'Clear input',
+            parser_input_placeholder: 'Or paste text from your document here...',
+            parser_select_format: '2. Select format (or leave for auto-detection):',
+            parser_run_button: '3. Convert',
+            parser_errors_found: '⚠️ Formatting errors',
+            parser_result_title: 'Result:',
+            download_parsed_button: 'Download .qst file',
+            back_button: 'Back',
+
+            // Header Buttons
+            copy_question_title: 'Copy current question',
+            search_web_title: 'Search the web',
+            chat_button_title: 'Open Chat',
+            quick_mode_title: 'Quick Mode (Auto-advance)',
+            trigger_words_title: 'Trigger Words',
+            theme_button_title: 'Change Theme',
+            language_toggle_title: 'Change Language',
+            favorite_button_title: 'Add to Favorites',
         }
     };
+
+
+
+    function _(key) {
+        const currentLang = localStorage.getItem('appLanguage') || 'ru';
+        return LANG_PACK[currentLang][key] || key;
+    }
+
+
 
 
     // --- Firebase & Auth ---
@@ -3422,7 +3559,7 @@ const mainApp = (function() {
         });
         chooseAnotherFileButton?.addEventListener('click', () => resetQuizForNewFile(true));
         finishTestButton?.addEventListener('click', () => {
-            if (confirm("Вы уверены, что хотите завершить тест досрочно?")) {
+            if (confirm(_('confirm_finish_early'))) {
                 if (timerInterval) clearInterval(timerInterval);
                 showResults();
             }
@@ -3500,7 +3637,7 @@ const mainApp = (function() {
     async function performSearch() {
         const query = searchQueryInput.value.trim();
         if (query.length < 3) {
-            alert('Поисковый запрос должен содержать минимум 3 символа.');
+            alert(_('search_query_too_short'));
             return;
         }
 
@@ -3733,7 +3870,7 @@ const mainApp = (function() {
                 allParsedQuestions = parseQstContent(data.content);
 
                 if (allParsedQuestions.length === 0) {
-                    alert(`Файл "${data.fileName}" пуст или имеет неверный формат.`);
+                    alert(`${_('file_empty_or_invalid_part1')}"${data.fileName}" ${_('file_empty_or_invalid_part2')}`);
                     renderGradusView(breadcrumbs[breadcrumbs.length - 1].id, breadcrumbs[breadcrumbs.length - 1].name);
                     return;
                 }
@@ -4478,7 +4615,7 @@ const mainApp = (function() {
             questionRangeStartInput.max = allParsedQuestions.length;
             questionRangeEndInput.value = allParsedQuestions.length;
             questionRangeEndInput.max = allParsedQuestions.length;
-            maxQuestionsInfoEl.textContent = `(всего ${allParsedQuestions.filter(q => q.type !== 'category').length} вопросов)`;
+            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${allParsedQuestions.filter(q => q.type !== 'category').length})`;
         } else {
             alert(`Не удалось обработать "${fileName}" как валидный тест.`);
         }
@@ -4954,7 +5091,7 @@ const mainApp = (function() {
     function updateNavigationButtons() {
         prevQuestionButton.disabled = currentQuestionIndex === 0;
         const isLastQuestion = currentQuestionIndex === questionsForCurrentQuiz.length - 1;
-        nextButton.textContent = isLastQuestion ? 'Завершить тест' : 'Следующий';
+        nextButton.textContent = isLastQuestion ? _('finish_button') : _('next_question_button');
         nextButton.classList.toggle('finish-test', isLastQuestion);
     }
 

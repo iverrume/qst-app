@@ -23,17 +23,15 @@
         }
     </style>
 </head>
+
 <body>
-
-
     <div class="app-wrapper">
         <div class="container">
             <div class="header-controls">
                 <h1></h1>
                 <div class="header-buttons">
-
+                    <!-- Эти кнопки управляются через JS, title уже в LANG_PACK -->
                     <button id="copyQuestionBtnQuiz" title="Копировать текущий вопрос" class="hidden">📋</button> 
-
                     <div class="dropdown hidden" id="webSearchDropdown">
                         <button id="searchWebButton" title="Найти в интернете">🌐</button>
                         <div id="searchDropdownContent" class="dropdown-content">
@@ -45,9 +43,7 @@
                     <button id="chatToggle" title="Открыть чат">
                          💬 <span id="chatNotificationBadge" class="chat-badge hidden">0</span>
                     </button>
-                    
                     <button id="quickModeToggle" title="Быстрый режим (Автопереход)" class="hidden">⚡</button> 
-
                     <button id="triggerWordToggle" title="Триггер-слова" class="hidden">✍️</button>
                     <button id="themeToggle" title="Сменить тему">🌙</button>
                     <button id="languageToggle" title="Сменить язык">Рус</button>
@@ -66,16 +62,14 @@
                 <input type="file" id="fileInput">
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
                 <button id="gradusButton" style="width: 100%; background-color: #6c757d; color: white;">
-                    <span data-lang-key="gradus_button">GRADUS</span>
-                    <span class="gradus-subtitle">(General Repository for Academic Data, Utility & Structure)</span>
+                    <span data-lang-key="gradus_button_main">GRADUS</span>
+                    <span class="gradus-subtitle" data-lang-key="gradus_subtitle">(General Repository for Academic Data, Utility & Structure)</span>
                 </button>
-
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
                 <button id="parserButton" style="width: 100%; background-color: #17a2b8; color: white;">
-                    <span>⚙️ Парсер</span>
-                    <span class="gradus-subtitle">(Конвертировать текст в формат .qst)</span>
+                    <span data-lang-key="parser_button_main">Перевести</span>
+                    <span class="gradus-subtitle" data-lang-key="parser_subtitle">текст в формат .qst</span>
                 </button>
-              
                 <div id="recentFilesArea" class="hidden">
                     <h4 data-lang-key="recent_files">Недавно использованные:</h4>
                     <ul id="recentFilesList"></ul>
@@ -84,169 +78,131 @@
 
             <div id="searchResultsContainer" class="view hidden">
                 <div class="search-results-header">
-                    <h2>Результаты поиска</h2>
-                    <button id="backToSearchButton" class="btn btn-secondary">Новый поиск</button>
+                    <h2 data-lang-key="search_results_title">Результаты поиска</h2>
+                    <button id="backToSearchButton" class="btn btn-secondary" data-lang-key="back_to_search">Новый поиск</button>
                 </div>
-
-                <!-- Навигация по результатам -->
-                <div class="search-navigation hidden" id="searchNavigation">
-                    <button class="nav-arrow" id="prevResultBtn" title="Предыдущий результат">←</button>
-                    <span id="resultCounter" class="result-counter">0 / 0</span>
-                    <button class="nav-arrow" id="nextResultBtn" title="Следующий результат">→</button>
-                </div>
-
-                <!-- Контейнер для одной карточки результата -->
-                <div id="searchResultCards">
-                    <!-- Сюда будет динамически загружаться одна карточка результата -->
-                </div>
+                <!-- ... -->
             </div>
 
             <div id="gradusFoldersContainer" class="hidden">
-                <h2>Навигация по GRADUS</h2>
+                <h2 data-lang-key="nav_gradus">Навигация по GRADUS</h2>
                 <div id="gradusBreadcrumbs"></div>
                 <div id="gradusFolderList"></div>
-                <button id="backToFileUploadButton" style="margin-top: 15px;">Назад к главному экрану</button>
+                <button id="backToFileUploadButton" style="margin-top: 15px;" data-lang-key="back_to_main">Назад к главному экрану</button>
             </div>
 
             <div id="quizSetupArea" class="hidden">
-                <h2>Настройки теста</h2>
+                <h2 data-lang-key="quiz_settings_title">Настройки теста</h2>
                 <div class="settings-group">
-                    <label for="timeLimit">Лимит времени (минуты, 0 - без лимита):</label>
+                    <label for="timeLimit" data-lang-key="time_limit">Лимит времени (минуты, 0 - без лимита):</label>
                     <input type="range" id="timeLimit" min="0" max="180" value="0" step="10">
-                    <span id="timeLimitValue">0</span> мин
+                    <span id="timeLimitValue">0</span> <span data-lang-key="time_limit_minutes">мин</span>
                 </div>
                 <div class="settings-group">
-                    <label for="questionRangeStart">Диапазон вопросов:</label>
-                    От <input type="number" id="questionRangeStart" min="1" value="1" class="range-input">
-                    До <input type="number" id="questionRangeEnd" min="1" class="range-input">
+                    <label for="questionRangeStart" data-lang-key="question_range">Диапазон вопросов:</label>
+                    <span data-lang-key="range_from">От</span> <input type="number" id="questionRangeStart" min="1" value="1" class="range-input">
+                    <span data-lang-key="range_to">До</span> <input type="number" id="questionRangeEnd" min="1" class="range-input">
                     <span id="maxQuestionsInfo"></span>
                 </div>
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleQuestions">
-                    <label for="shuffleQuestions">Перемешать вопросы</label>
+                    <label for="shuffleQuestions" data-lang-key="shuffle_questions">Перемешать вопросы</label>
                 </div>
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleAnswers">
-                    <label for="shuffleAnswers">Перемешать ответы</label>
+                    <label for="shuffleAnswers" data-lang-key="shuffle_answers">Перемешать ответы</label>
                 </div>
                 <div class="settings-group">
                     <input type="checkbox" id="feedbackMode">
-                    <label for="feedbackMode">Режим обратной связи (сохранить ошибки)</label>
+                    <label for="feedbackMode" data-lang-key="feedback_mode">Режим обратной связи (сохранить ошибки)</label>
                 </div>
-                <button id="startQuizButton">Начать тест</button>
-                <button id="generateCheatSheetButton" style="margin-top: 10px;">Создать шпору</button>
-                <button id="chooseAnotherFileButton" style="margin-top: 10px;">Выбрать другой файл</button>
+                <button id="startQuizButton" data-lang-key="start_quiz_button">Начать тест</button>
+                <button id="generateCheatSheetButton" style="margin-top: 10px;" data-lang-key="generate_cheat_sheet_button">Создать шпору</button>
+                <button id="chooseAnotherFileButton" style="margin-top: 10px;" data-lang-key="choose_another_file_button">Выбрать другой файл</button>
             </div>
 
             <div id="cheatSheetResultArea" class="hidden">
-                <h2>Сгенерированная шпора:</h2>
+                <h2 data-lang-key="cheat_sheet_title">Сгенерированная шпора:</h2>
                 <textarea id="cheatSheetOutput" readonly rows="15"></textarea>
-                <button id="downloadCheatSheetButton">Скачать шпору (.txt)</button>
-                <button id="backToSettingsButton" style="margin-top: 10px;">Назад к настройкам</button>
+                <button id="downloadCheatSheetButton" data-lang-key="download_cheat_sheet_button">Скачать шпору (.txt)</button>
+                <button id="backToSettingsButton" style="margin-top: 10px;" data-lang-key="back_to_settings_button">Назад к настройкам</button>
             </div>
 
             <div id="quizArea" class="hidden">
-                <div id="timerDisplay" class="hidden">Время: <span id="timeLeft">--:--</span></div>
+                <div id="timerDisplay" class="hidden"><span data-lang-key="timer_label">Время:</span> <span id="timeLeft">--:--</span></div>
                 <div id="questionContainer">
-                    <h2 id="questionText"></h2>
-                    <ul id="answerOptions"></ul>
+                    <!-- ... -->
                 </div>
-                <div id="feedbackArea"></div>
                 <div id="questionNavigationControls">
-                    <button id="prevQuestionButton" disabled>Предыдущий</button>
-                    <button id="nextButton">Следующий</button>
+                    <button id="prevQuestionButton" disabled data-lang-key="prev_question_button">Предыдущий</button>
+                    <button id="nextButton" data-lang-key="next_question_button">Следующий</button>
                 </div>
                 <div id="score">
-                    <p>Вопрос: <span id="currentQuestionNum">0</span> / <span id="totalQuestionsNum">0</span></p>
-                    <p>Правильно: <span id="correctAnswersCount">0</span></p>
+                    <p><span data-lang-key="question_label">Вопрос:</span> <span id="currentQuestionNum">0</span> / <span id="totalQuestionsNum">0</span></p>
+                    <p><span data-lang-key="correct_label">Правильно:</span> <span id="correctAnswersCount">0</span></p>
                 </div>
                 <div id="quickNavPanel" class="hidden">
-                    <h4>Навигация по вопросам:</h4>
+                    <h4 data-lang-key="quick_nav_title">Навигация по вопросам:</h4>
                     <div id="quickNavButtons"></div>
                 </div>
                 <div class="quiz-footer-controls">
-                     <button id="finishTestButton" class="finish-test-early hidden">Завершить тест</button>
+                     <button id="finishTestButton" class="finish-test-early hidden" data-lang-key="finish_early_button">Завершить тест</button>
                 </div>
             </div>
 
             <div id="resultsArea" class="hidden">
-                <h2>Тест завершен!</h2>
-                <p>Ваш результат: <span id="finalCorrect"></span> из <span id="finalTotal"></span>.</p>
-                <p>Точность: <span id="finalPercentage"></span>%</p>
+                <h2 data-lang-key="quiz_finished_title">Тест завершен!</h2>
+                <p><span data-lang-key="your_result">Ваш результат:</span> <span id="finalCorrect"></span> <span data-lang-key="of_label">из</span> <span id="finalTotal"></span>.</p>
+                <p><span data-lang-key="accuracy_label">Точность:</span> <span id="finalPercentage"></span>%</p>
                 <div id="feedbackDownloadArea" class="hidden">
-                    <button id="downloadErrorsButton">Скачать неотвеченные/неправильные вопросы</button>
+                    <button id="downloadErrorsButton" data-lang-key="download_errors_button">Скачать неотвеченные/неправильные вопросы</button>
                 </div>
                 <div id="errorReviewArea" class="hidden">
-                     <button id="reviewErrorsButton">Работа над ошибками</button>
+                     <button id="reviewErrorsButton" data-lang-key="review_errors_button">Работа над ошибками</button>
                 </div>
                 <div id="triggeredQuizDownloadArea" class="hidden">
-                    <button id="downloadTriggeredQuizButton">Скачать тест с триггерами</button>
+                    <button id="downloadTriggeredQuizButton" data-lang-key="download_triggered_quiz_button">Скачать тест с триггерами</button>
                 </div>
-                <button id="restartButton">Пройти другой тест</button>
+                <button id="restartButton" data-lang-key="restart_button">Пройти другой тест</button>
             </div>
 
 
             <div id="parserArea" class="hidden">
-                <h2>Конвертер в .qst</h2>
-                <p style="text-align: center; color: var(--secondary-text-color);">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
-
+                <h2 data-lang-key="parser_title">Конвертер в .qst</h2>
+                <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="parser_description">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
                 <div class="settings-group">
-
                     <div class="parser-label-container">
-                        <label for="parserFileInput">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
-                        <button id="clearParserInputBtn" class="btn-secondary-small">Очистить поле</button>
+                        <label for="parserFileInput" data-lang-key="parser_upload_or_paste">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+                        <button id="clearParserInputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить поле</button>
                     </div>
-
                     <input type="file" id="parserFileInput" accept=".txt">
-                    <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..."></textarea>
+                    <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..." data-lang-key="parser_input_placeholder"></textarea>
                 </div>
-
                 <div class="settings-group">
-                    <label for="parserPatternSelect">2. Выберите формат (или оставьте для автоопределения):</label>
+                    <label for="parserPatternSelect" data-lang-key="parser_select_format">2. Выберите формат (или оставьте для автоопределения):</label>
                     <select id="parserPatternSelect" style="width: 100%; padding: 8px; border-radius: 4px;">
                         <option value="auto" selected>-- Автоматическое определение --</option>
-                        <!-- Сюда будут добавляться паттерны из JS -->
                     </select>
                 </div>
-                
                 <div class="settings-group" style="text-align: center;">
-                    <button id="runParserBtn">3. Конвертировать</button>
+                    <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать</button>
                 </div>
                 <div id="parserErrorsArea" class="hidden">
                     <button id="showErrorsBtn">
-                        ⚠️ Ошибки форматирования (<span id="errorCount">0</span>)
+                        <span data-lang-key="parser_errors_found">⚠️ Ошибки форматирования</span> (<span id="errorCount">0</span>)
                     </button>
-                    <ul id="errorList">
-                        <!-- Сюда будут динамически добавляться ошибки -->
-                    </ul>
+                    <ul id="errorList"></ul>
                 </div>
                 <div id="parserOutputArea" class="hidden">
                     <hr>
-                    <h3>Результат:</h3>
-                    <div class="filter-controls-container">
-                        <button id="filterVariantsBtn">⚙️ Фильтр по вариантам</button>
-                        <div id="filterVariantsDropdown" class="filter-dropdown hidden">
-                            <div class="filter-dropdown-header">Выберите кол-во вариантов:</div>
-                            <div id="filterVariantCheckboxes" class="filter-checkboxes">
-                                <!-- Чекбоксы будут сгенерированы скриптом -->
-                            </div>
-                            <div class="filter-actions">
-                                <button id="applyVariantFilterBtn">Применить</button>
-                                <button id="resetVariantFilterBtn" class="btn-secondary-small">Сброс</button>
-                            </div>
-                        </div>
-                    </div>
+                    <h3 data-lang-key="parser_result_title">Результат:</h3>
+                    <!-- ... -->
                     <textarea id="parserOutput" rows="10"></textarea>
-                    <button id="downloadParsedBtn">Скачать .qst файл</button>
+                    <button id="downloadParsedBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
                 </div>
-
-                <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);">Назад</button>
+                <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);" data-lang-key="back_button">Назад</button>
             </div>
-
-
-        </div>
-
-        
+        </div>   
 
         <footer>
             <p>prod by @iverrum</p>
@@ -256,7 +212,7 @@
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
         <!-- === КОНЕЦ НОВОГО КОДА === -->
 
-    </div> <!-- Конец .app-wrapper -->
+    </div> 
 
 
     
