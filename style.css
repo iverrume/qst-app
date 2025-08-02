@@ -1142,18 +1142,16 @@ body.dark-mode {
 }
 
 
+/* --- И ЗАМЕНИТЕ ЕГО НА ЭТОТ --- */
 /* Header */
 .advanced-chat-header {
-    padding: 15px 25px;
-    /* ИЗМЕНЕНИЕ: Используем адаптивный цвет фона из темы */
+    padding: 10px 25px; /* ИЗМЕНЕНИЕ: Уменьшили вертикальные отступы */
     background: var(--container-bg-color); 
-    /* ИЗМЕНЕНИЕ: Используем адаптивный цвет текста из темы */
     color: var(--text-color); 
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
-    /* ИЗМЕНЕНИЕ: Заменяем тень на тонкую рамку для чистого вида */
     border-bottom: 1px solid var(--border-color); 
 }
 
@@ -1456,10 +1454,11 @@ body.dark-mode {
     flex-direction: column;
     overflow: hidden;
 }
-
+ 
+ 
 /* Top bar */
 .chat-top-bar {
-    padding: 15px 20px;
+    padding: 10px 20px; /* ИЗМЕНЕНИЕ: Уменьшили вертикальные отступы */
     background: var(--container-bg-color);
     border-bottom: 1px solid var(--border-color);
     display: flex;
