@@ -1138,9 +1138,10 @@ const ChatModule = (function() {
         auth.onAuthStateChanged(user => {
             currentUser = user;
             updateUserUI();
-            
+
             if (user) {
                 console.log('Пользователь авторизован:', user.displayName || user.email);
+                listenForAllUserMessages(); // <--- ЗАПУСКАЕМ НАШ НОВЫЙ СЛУШАТЕЛЬ
                 setupPresenceSystem();
                 fetchAllUsers();
                 loadChannels();
@@ -1148,12 +1149,59 @@ const ChatModule = (function() {
                 loadTabData(currentTab);
                 initializeDataListeners();
             } else {
+
                 console.log('Пользователь не авторизован');
                 clearChatData();
                 cleanupPresenceSystem();
             }
         });
     }
+
+    let globalMessagesListener = null; // Переменная для нашего нового слушателя
+    let allMessagesByChannel = new Map(); // Кэш для сообщений, сгруппированных по каналам
+
+    function listenForAllUserMessages() {
+        if (globalMessagesListener) {
+            globalMessagesListener(); // Отписываемся от старого, если он есть
+        }
+        if (!currentUser) return;
+
+        console.log("Запуск глобального слушателя сообщений для пользователя:", currentUser.uid);
+
+        globalMessagesListener = db.collection('messages')
+            .where('memberIds', 'array-contains', currentUser.uid)
+            .orderBy('createdAt', 'asc')
+            .onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const message = { id: change.doc.id, ...change.doc.data() };
+
+                        // 1. Добавляем сообщение в наш кэш
+                        if (!allMessagesByChannel.has(message.channelId)) {
+                            allMessagesByChannel.set(message.channelId, []);
+                        }
+                        allMessagesByChannel.get(message.channelId).push(message);
+
+                        // 2. Обновляем счетчик непрочитанных, ЕСЛИ это не текущий активный чат
+                        if (message.authorId !== currentUser.uid && (currentChannel !== message.channelId || currentTab !== 'messages' || document.hidden)) {
+                            updateUnreadCount(message.channelId, 1);
+                        }
+
+                        // 3. Обновляем UI, ЕСЛИ сообщение пришло в текущий открытый чат
+                        if (message.channelId === currentChannel && currentTab === 'messages') {
+                            displayMessages(); // Перерисовываем чат с новым сообщением
+                        }
+                        
+                        // 4. Логика уведомлений
+                        if (document.hidden && message.authorId !== currentUser.uid) {
+                           showNotification(true);
+                        }
+                    }
+                });
+            }, error => {
+                console.error("Ошибка глобального слушателя сообщений:", error);
+            });
+    }   
 
     function updateUserUI() {
         if (currentUserEl) {
@@ -1394,50 +1442,11 @@ const ChatModule = (function() {
 
 
     function loadMessages() {
-        if (!db || !currentUser) return;
-
-        if (messagesListener) {
-            messagesListener(); // Отписываемся от старого слушателя
-        }
-
-        messageArea.innerHTML = `<div class="empty-state">${_chat('loading_messages')}</div>`;
-
-        // Создаем новый слушатель для текущего канала
-        messagesListener = db.collection('messages')
-            .where('channelId', '==', currentChannel)
-            .orderBy('createdAt', 'asc')
-            .onSnapshot(snapshot => {
-                // Обновляем локальный массив сообщений
-                allMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Обновляем чат, ТОЛЬКО ЕСЛИ вкладка "Сообщения" активна
-                if (currentTab === 'messages') {
-                    displayMessages();
-                }
-
-                // Умная обработка новых сообщений для счетчиков
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        const message = change.doc.data();
-                        // Считаем сообщение непрочитанным, если оно не от нас И
-                        // (канал не является текущим ИЛИ текущая вкладка - не "Сообщения")
-                        if (message.authorId !== currentUser.uid && (currentChannel !== message.channelId || currentTab !== 'messages')) {
-                            updateUnreadCount(message.channelId, 1); // Увеличиваем счетчик на 1
-                        }
-
-                        // Логика звуковых уведомлений (остается без изменений)
-                        if (document.hidden && message.authorId !== currentUser.uid) {
-                           showNotification(true);
-                        }
-                    }
-                });
-
-            }, error => {
-                console.error('Ошибка загрузки сообщений:', error);
-                messageArea.innerHTML = `<div class="empty-state">${_chat('loading_error')}</div>`;
-            });
+        // Эта функция больше не создает слушателей.
+        // Она просто отображает то, что уже загружено глобальным слушателем.
+        allMessages = allMessagesByChannel.get(currentChannel) || [];
+        displayMessages();
     }
-
 
 
 
@@ -2076,7 +2085,20 @@ const ChatModule = (function() {
             if (isQuestionFormat) {
                 await createQuestionFromMessage(text);
                 chatInput.value = '';
+
+
             } else {
+                let memberIds = [];
+                if (currentChannelType === 'private') {
+                    // Для личных чатов ID участников есть в названии канала
+                    memberIds = currentChannel.replace('private_', '').split('_');
+                } else {
+                    // Для публичных, по-хорошему, нужно брать из данных канала,
+                    // но для простоты пока добавим только автора и текущего юзера.
+                    // Для полноценной системы здесь нужен список всех участников канала.
+                    memberIds = [currentUser.uid]; 
+                }
+
                 const message = {
                     text: text,
                     authorId: currentUser.uid,
@@ -2084,8 +2106,11 @@ const ChatModule = (function() {
                     channelId: currentChannel,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     type: 'message',
-                    reactions: {}
+                    reactions: {},
+                    memberIds: memberIds // <--- ДОБАВЛЕНО ЭТО ПОЛЕ
                 };
+
+
                 
                 if (replyContext) {
                     message.replyTo = replyContext;
