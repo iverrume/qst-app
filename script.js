@@ -5639,18 +5639,21 @@ const mainApp = (function() {
 
             if (isNaN(startRange) || startRange < 1) startRange = 1;
             if (isNaN(endRange) || endRange < startRange) endRange = totalQuestionsCount;
-            
+    
             const indices = mapQuestionRangeToIndices(allParsedQuestions, startRange, endRange);
-            
-            // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-            // Проверяем, не нужно ли захватить категорию перед первым вопросом
+
             let finalStartIndex = indices.startIndex;
             if (indices.startIndex > 0 && allParsedQuestions[indices.startIndex - 1].type === 'category') {
                 finalStartIndex = indices.startIndex - 1;
             }
-            // --- КОНЕЦ ГЛАВНОГО ИСПРАВЛЕНИЯ ---
 
-            sourceArray = allParsedQuestions.slice(finalStartIndex, indices.endIndex + 1);
+            // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем originalIndex ---
+            sourceArray = allParsedQuestions.slice(finalStartIndex, indices.endIndex + 1)
+                .map((question, localIndex) => ({
+                    ...question,
+                    // Запоминаем оригинальный индекс вопроса в полном массиве
+                    originalIndex: finalStartIndex + localIndex
+                }));     
 
         } else {
             sourceArray = questionsSource;
@@ -6119,17 +6122,18 @@ const mainApp = (function() {
     function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
-        // Собираем все необходимые данные в один объект
+        const questionOrderIndices = questionsForCurrentQuiz.map(q => q.originalIndex);
+
         const sessionData = {
-            allParsedQuestions,
-            questionsForCurrentQuiz,
+            // Больше не храним массивы с вопросами!
+            questionOrderIndices, // Храним только порядок
             userAnswers,
             currentQuestionIndex,
             score,
             quizSettings,
             timeLeftInSeconds,
-            originalFileNameForReview,
-            timestamp: new Date().getTime() // Сохраняем время для информации
+            originalFileNameForReview, // Это ключ к восстановлению!
+            timestamp: new Date().getTime()
         };
 
         try {
@@ -6199,9 +6203,26 @@ const mainApp = (function() {
 
         const sessionData = JSON.parse(savedSessionJSON);
 
-        // Восстанавливаем все состояние приложения
-        allParsedQuestions = sessionData.allParsedQuestions;
-        questionsForCurrentQuiz = sessionData.questionsForCurrentQuiz;
+        // 1. Находим исходный файл в "Недавно использованных"
+        const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
+        const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
+
+        if (!originalFile) {
+            alert("Не удалось восстановить сессию. Исходный файл не найден в 'Недавно использованных'.");
+            deleteSavedSession(); // Удаляем "осиротевшую" сессию
+            return;
+        }
+
+        // 2. Заново парсим исходный файл, чтобы получить полный список вопросов
+        allParsedQuestions = parseQstContent(originalFile.content);
+
+        // 3. Восстанавливаем ТОЧНЫЙ порядок вопросов из сохраненной "карты"
+        questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => {
+            // Важно также добавить originalIndex обратно в каждый вопрос
+            return { ...allParsedQuestions[originalIndex], originalIndex };
+        });
+
+        // 4. Восстанавливаем остальное состояние
         userAnswers = sessionData.userAnswers;
         currentQuestionIndex = sessionData.currentQuestionIndex;
         score = sessionData.score;
@@ -6209,23 +6230,30 @@ const mainApp = (function() {
         timeLeftInSeconds = sessionData.timeLeftInSeconds;
         originalFileNameForReview = sessionData.originalFileNameForReview;
 
-        // Переходим к экрану теста
+        // 5. Переходим на экран теста
         fileUploadArea.classList.add('hidden');
         quizSetupArea.classList.add('hidden');
         quizArea.classList.remove('hidden');
 
-        // Запускаем UI теста с восстановленными данными
+        // 6. Запускаем UI теста с восстановленными данными
         totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
         updateScoreDisplay();
-        setupTimer(); // Таймер запустится с сохраненного времени
+        setupTimer();
         generateQuickNav();
-        loadQuestion(currentQuestionIndex); // Загружаем вопрос, на котором остановились
+        loadQuestion(currentQuestionIndex);
 
-        // Показываем нужные кнопки
+        // 7. Показываем нужные кнопки
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
         continueLaterButton?.classList.remove('hidden');
         copyQuestionBtnQuiz?.classList.remove('hidden');
+        getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+        languageToggle?.classList.add('hidden');
+        quickModeToggle?.classList.remove('hidden');
+        triggerWordToggle?.classList.remove('hidden');
+
+        // 8. Добавляем защиту от случайного закрытия вкладки
+        window.addEventListener('beforeunload', handleBeforeUnload);
     }
     
     /**
