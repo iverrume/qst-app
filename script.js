@@ -5979,7 +5979,7 @@ const mainApp = (function() {
     }
 
     function showResults() {
-        localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
+        localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
         quizArea.classList.add('hidden');
