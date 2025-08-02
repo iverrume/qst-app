@@ -53,6 +53,10 @@ const ChatModule = (function() {
             copy_question_button: "📋 Копировать",
             delete_question_button: "🗑️ Удалить вопрос",
             clear_favorites_button: "🗑️ Очистить избранное", 
+            question_label: "Вопрос:",
+            author_label: "Автор:",
+            date_label: "Дата:",
+            anonymous_user: "Аноним",
             // Modals
             user_actions_title: "Действия",
             user_actions_text: "Выберите, что вы хотите сделать.",
@@ -197,6 +201,10 @@ const ChatModule = (function() {
             create_question_button_title: "Сұрақ құру",
             attach_file_button_title: "Файлды тіркеу",
             chat_input_placeholder: "Хабарлама енгізіңіз...",
+            question_label: "Сұрақ:",
+            author_label: "Авторы:",
+            date_label: "Күні:",
+            anonymous_user: "Аноним",
             // Modals
             user_actions_title: "Әрекеттер",
             user_actions_text: "Не істегіңіз келетінін таңдаңыз.",
@@ -434,6 +442,10 @@ const ChatModule = (function() {
             copy_question_button: "📋 Copy",
             delete_question_button: "🗑️ Delete Question",
             clear_favorites_button: "🗑️ Clear Favorites",
+            question_label: "Question:",
+            author_label: "Author:",
+            date_label: "Date:",
+            anonymous_user: "Anonymous",
             download_no_data: "No data to download in section",
             favorites_cleared_success: "Favorites cleared successfully.",
             favorites_already_empty: "Favorites is already empty.",
@@ -1499,13 +1511,11 @@ const ChatModule = (function() {
 
     function createMessageElement(message) {
         const messageEl = document.createElement('div');
-        const timestamp = message.createdAt; // Просто получаем объект Timestamp
+        const timestamp = message.createdAt;
 
-        // Генерируем строку для отображения с помощью нашей новой функции
         const displayTime = formatSmartTimestamp(timestamp); 
 
-        // Генерируем полную, недвусмысленную строку для всплывающей подсказки (title)
-        const fullTimeTitle = timestamp?.toDate()?.toLocaleString('ru-RU', {
+        const fullTimeTitle = timestamp?.toDate()?.toLocaleString(currentChatLang, { // ИЗМЕНЕНО
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -1521,11 +1531,10 @@ const ChatModule = (function() {
         }
 
         let contentHTML = '';
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
         if (message.type === 'file_share') {
             messageEl.classList.add('file-share-bubble');
             const qCount = message.fileInfo.questions;
-            const qText = qCount === 1 ? 'вопрос' : (qCount >= 2 && qCount <= 4 ? 'вопроса' : 'вопросов');
+            const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more')); // ИЗМЕНЕНО
             
             contentHTML = `
             <div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}')">
@@ -1537,9 +1546,8 @@ const ChatModule = (function() {
                 <div class="file-share-arrow">→</div>
             </div>`;
         } else if (message.type === 'question_link') {
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             messageEl.classList.add('question-link-bubble');
-            contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>Создан новый вопрос</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
+            contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`; // ИЗМЕНЕНО
         } else {
             const editedIndicator = message.editedAt ? `<span class="edited-indicator">(изм.)</span>` : '';
             const pinnedIcon = message.isPinned ? '<span class="pinned-icon" title="Закрепленное сообщение">📌</span>' : '';
@@ -1564,11 +1572,11 @@ const ChatModule = (function() {
             actionsHTML += `<button title="Редактировать" onclick="ChatModule.startEditMessage('${message.id}', '${escape(message.text)}')">✏️</button>`;
             actionsHTML += `<button title="Удалить" onclick="ChatModule.deleteMessage('${message.id}')">🗑️</button>`;
         }
-        messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || 'Аноним'}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
+        // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || _chat('anonymous_user')}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
+        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         return messageEl;
     }
-
-
 
 
 
@@ -1803,9 +1811,9 @@ const ChatModule = (function() {
                     <div class="question-square ${totalVotes > 0 ? 'has-votes' : ''}">
                         ${totalVotes > 0 ? `<span class="vote-indicator">${totalVotes}</span>` : ''}Q</div>
                     <div class="question-content">
-                        <p><strong>Вопрос:</strong> ${escapeHTML(question.text || '')}</p>
-                        <p><strong>Автор:</strong> ${escapeHTML(question.authorName || 'Аноним')}</p>
-                        <p><strong>Дата:</strong> ${timeStr}</p>
+                        <p><strong>${_chat('question_label')}</strong> ${escapeHTML(question.text || '')}</p>
+                        <p><strong>${_chat('author_label')}</strong> ${escapeHTML(question.authorName || _chat('anonymous_user'))}</p>
+                        <p><strong>${_chat('date_label')}</strong> ${timeStr}</p>
                         <div class="question-options-container">${optionsHTML}</div>
                         <div class="question-actions">${actionsHTML}</div>
                     </div>
