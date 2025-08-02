@@ -1478,10 +1478,30 @@ const ChatModule = (function() {
 
 
     function loadMessages() {
-        // Эта функция больше не создает слушателей.
-        // Она просто отображает то, что уже загружено глобальным слушателем.
-        allMessages = allMessagesByChannel.get(currentChannel) || [];
-        displayMessages();
+        if (!db || !currentUser) return;
+
+        // Отписываемся от старого слушателя сообщений, если он был
+        if (messagesListener) {
+            messagesListener();
+        }
+
+        messageArea.innerHTML = `<div class="empty-state">${_chat('loading_messages')}</div>`;
+
+        // Создаем новый слушатель ТОЛЬКО ДЛЯ ТЕКУЩЕГО КАНАЛА
+        messagesListener = db.collection('messages')
+            .where('channelId', '==', currentChannel)
+            .orderBy('createdAt', 'asc')
+            .onSnapshot(snapshot => {
+                // Этот код будет получать все изменения (новые, измененные, удаленные)
+                // для активного чата и мгновенно их отображать.
+                
+                allMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                displayMessages(); // Перерисовываем чат с актуальными данными
+
+            }, error => {
+                console.error('Ошибка загрузки сообщений:', error);
+                messageArea.innerHTML = `<div class="empty-state">${_chat('loading_error')}</div>`;
+            });
     }
 
 
