@@ -2797,7 +2797,7 @@ body.dark-mode .result-counter {
     display: none; /* Скрыта по умолчанию на больших экранах */
     background: none;
     border: none;
-    color: white;
+    color: var(--text-color);
     font-size: 2em;
     cursor: pointer;
     padding: 5px 10px;
@@ -4271,9 +4271,6 @@ body.claude-mode #currentUser:hover {
     background: var(--input-hover-bg-color);
 }
 
-body.claude-mode .sidebar-toggle-btn {
-    color: var(--text-color); /* Иконка-бургер тоже подстраивается */
-}
 
 body.claude-mode .channel-item.active {
     /* Активный канал (был зеленым) теперь использует основной цвет темы */
