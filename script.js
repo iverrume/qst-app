@@ -1149,8 +1149,8 @@ const ChatModule = (function() {
                     unlockedChannels = new Set(JSON.parse(savedUnlocked));
                 }
 
-                listenForAllUserMessages(); 
-                listenForUnreadCounts();
+                listenForUnreadCounts(); 
+                setupPresenceSystem();
                 fetchAllUsers();
                 loadChannels();
                 loadPrivateChats();
