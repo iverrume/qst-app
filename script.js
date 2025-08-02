@@ -6134,6 +6134,7 @@ const mainApp = (function() {
             quizSettings,
             timeLeftInSeconds,
             originalFileNameForReview, // Это ключ к восстановлению!
+            totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length, // <--- ДОБАВЬТЕ ЭТУ СТРОКУ
             timestamp: new Date().getTime()
         };
 
@@ -6160,8 +6161,9 @@ const mainApp = (function() {
         }
 
         const sessionData = JSON.parse(savedSessionJSON);
-        const totalQuestions = sessionData.questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
+        const totalQuestions = sessionData.totalQuestionCount; 
         const answeredQuestions = sessionData.userAnswers.filter(a => a && a.answered).length;
+
         const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
 
         let timeInfo = '';
