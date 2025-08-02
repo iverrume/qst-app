@@ -1141,16 +1141,20 @@ body.dark-mode {
     animation: slideUp 0.4s ease;
 }
 
+
 /* Header */
 .advanced-chat-header {
     padding: 15px 25px;
-    background: linear-gradient(135deg, var(--chat-primary), #34495e);
-    color: white;
+    /* ИЗМЕНЕНИЕ: Используем адаптивный цвет фона из темы */
+    background: var(--container-bg-color); 
+    /* ИЗМЕНЕНИЕ: Используем адаптивный цвет текста из темы */
+    color: var(--text-color); 
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    /* ИЗМЕНЕНИЕ: Заменяем тень на тонкую рамку для чистого вида */
+    border-bottom: 1px solid var(--border-color); 
 }
 
 .chat-title {
@@ -4247,15 +4251,6 @@ button[onclick*="copyToClipboard"].copied:after {
     transition: all 0.3s ease;
 }
 
-/* --- ДОБАВЬТЕ ЭТОТ БЛОК В САМЫЙ КОНЕЦ ФАЙЛА style.css --- */
-
-/* Обновление палитры для ЧАТА в режиме Claude */
-body.claude-mode .advanced-chat-header {
-    /* Убираем синий градиент с шапки чата */
-    background: var(--container-bg-color);
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-color); /* Используем основной цвет текста темы */
-}
 
 body.claude-mode .header-controls button,
 body.claude-mode #currentUser {
