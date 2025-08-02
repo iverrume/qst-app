@@ -1170,7 +1170,6 @@ const ChatModule = (function() {
     let globalMessagesListener = null; // Переменная для нашего нового слушателя
     let allMessagesByChannel = new Map(); // Кэш для сообщений, сгруппированных по каналам
 
-    let unreadListener = null; // Новая переменная для этого слушателя
 
     function listenForUnreadCounts() {
         if (unreadListener) {
