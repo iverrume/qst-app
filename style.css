@@ -4513,3 +4513,27 @@ body.claude-mode .message.mine.pinned .message-content {
     overflow-y: auto;  /* Показывать скроллбар, только если нужно */
     padding-right: 5px; /* Небольшой отступ, чтобы скроллбар не прилипал к тексту */
 }
+
+/* ===== КАСТОМНЫЕ СКРОЛЛБАРЫ ДЛЯ ТЕМНОЙ ТЕМЫ ===== */
+
+body.dark-mode ::-webkit-scrollbar {
+  width: 8px; /* Делаем скроллбар чуть тоньше для современного вида */
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  /* Фон скроллбара будет соответствовать фону сайдбара */
+  background: var(--input-bg-color);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  /* Ползунок делаем темно-серым и закругленным */
+  background-color: #444;
+  border-radius: 4px;
+  /* Добавляем рамку в цвет фона для эффекта отступа */
+  border: 2px solid var(--input-bg-color);
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+  /* При наведении делаем ползунок чуть светлее */
+  background-color: #555;
+}
