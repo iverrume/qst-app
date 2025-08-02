@@ -1189,9 +1189,10 @@ body.dark-mode {
 }
 
 #currentUser {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
+    /* ИЗМЕНЕНИЕ: Используем адаптивные цвета темы */
+    background: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
@@ -1201,14 +1202,17 @@ body.dark-mode {
 }
 
 #currentUser:hover {
-    background: rgba(255,255,255,0.3);
+    /* ИЗМЕНЕНИЕ: Используем адаптивные цвета темы */
+    background: var(--input-hover-bg-color);
+    border-color: var(--input-hover-border-color);
     transform: scale(1.05);
 }
 
 .header-controls button {
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
+    /* ИЗМЕНЕНИЕ: Используем адаптивные цвета темы */
+    background: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
     padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
@@ -1217,7 +1221,9 @@ body.dark-mode {
 }
 
 .header-controls button:hover {
-    background: rgba(255,255,255,0.3);
+    /* ИЗМЕНЕНИЕ: Используем адаптивные цвета темы */
+    background: var(--input-hover-bg-color);
+    border-color: var(--input-hover-border-color);
     transform: scale(1.05);
 }
 
