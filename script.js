@@ -3844,6 +3844,13 @@ const mainApp = (function() {
     const LANG_PACK = {
         ru: {
             // Главный экран
+            continue_later_button: 'Продолжить позже',
+            continue_sessions: 'Продолжить:',
+            answered_of: 'Отвечено',
+            from: 'из',
+            time_left: 'Осталось времени',
+            continue_quiz_button: 'Продолжить',
+            delete_session_button: 'Удалить',
             search_in_db: 'Поиск вопроса в базе:',
             search_placeholder: 'Введите часть текста вопроса...',
             find_button: 'Найти',
@@ -3930,6 +3937,13 @@ const mainApp = (function() {
         },
         kz: {
             // Main Screen
+            continue_later_button: 'Кейінірек жалғастыру',
+            continue_sessions: 'Жалғастыру:',
+            answered_of: 'Жауап берілді',
+            from: '-ден',
+            time_left: 'Қалған уақыт',
+            continue_quiz_button: 'Жалғастыру',
+            delete_session_button: 'Жою',
             search_in_db: 'Дерекқордан сұрақты іздеу:',
             search_placeholder: 'Сұрақ мәтінінің бөлігін енгізіңіз...',
             find_button: 'Іздеу',
@@ -4016,6 +4030,13 @@ const mainApp = (function() {
         },
         en: {
             // Main Screen
+            continue_later_button: 'Continue Later',
+            continue_sessions: 'Continue:',
+            answered_of: 'Answered',
+            from: 'of',
+            time_left: 'Time left',
+            continue_quiz_button: 'Continue',
+            delete_session_button: 'Delete',
             search_in_db: 'Search question in database:',
             search_placeholder: 'Enter part of the question text...',
             find_button: 'Search',
@@ -4151,7 +4172,8 @@ const mainApp = (function() {
         filterVariantsBtn, filterVariantsDropdown, filterVariantCheckboxes,
         applyVariantFilterBtn, resetVariantFilterBtn, searchNavigation,
         prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
-        searchResultCardsContainer;
+        searchResultCardsContainer, continueLaterButton, savedSessionArea, 
+        savedSessionList;
 
 
     // --- State Variables ---
@@ -4170,6 +4192,7 @@ const mainApp = (function() {
     let timeLeftInSeconds = 0;
     const MAX_RECENT_FILES = 5;
     const RECENT_FILES_STORAGE_KEY = 'recentQstFilesData';
+    const SAVED_SESSION_STORAGE_KEY = 'savedQuizSession';
     let originalFileNameForReview = '';
     let generatedCheatSheetContent = '';
     let breadcrumbs = [];
@@ -4278,6 +4301,9 @@ const mainApp = (function() {
         nextResultBtn = getEl('nextResultBtn');
         resultCounterEl = getEl('resultCounter');
         searchResultCardsContainer = getEl('searchResultCards');
+        continueLaterButton = getEl('continueLaterButton');
+        savedSessionArea = getEl('savedSessionArea');
+        savedSessionList = getEl('savedSessionList');
 
         // Остальная часть функции initializeApp
         try {
@@ -4304,6 +4330,7 @@ const mainApp = (function() {
         updateQuickModeToggleVisual();
         updateTriggerWordToggleVisual();
         loadRecentFiles();
+        loadSavedSession();
         resetQuizForNewFile();
         const savedLang = localStorage.getItem('appLanguage') || 'ru';
         populateParserPatterns();
@@ -4374,6 +4401,7 @@ const mainApp = (function() {
             quizSetupArea.classList.remove('hidden');
         });
         chooseAnotherFileButton?.addEventListener('click', () => resetQuizForNewFile(true));
+        continueLaterButton?.addEventListener('click', saveSessionForLater);
         finishTestButton?.addEventListener('click', () => {
             if (confirm(_('confirm_finish_early'))) {
                 if (timerInterval) clearInterval(timerInterval);
@@ -5714,6 +5742,7 @@ const mainApp = (function() {
         generateQuickNav();
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
+        continueLaterButton?.classList.remove('hidden');
         copyQuestionBtnQuiz?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         languageToggle?.classList.add('hidden');
@@ -5948,6 +5977,7 @@ const mainApp = (function() {
     }
 
     function showResults() {
+        localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
         quizArea.classList.add('hidden');
@@ -6027,6 +6057,12 @@ const mainApp = (function() {
     }
 
     function resetQuizForNewFile(clearInput = true) {
+        // Если мы сбрасываем тест, потому что начинаем новый,
+        // а не потому что сохранили старый, то удаляем сохранение.
+        if (clearInput) {
+             localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
+             loadSavedSession(); // Обновляем UI, чтобы карточка исчезла
+        }
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
         allParsedQuestions = [];
@@ -6074,6 +6110,134 @@ const mainApp = (function() {
             [array[i], array[j]] = [array[j], array[i]];
         }
     }
+
+
+    /**
+     * Собирает все данные текущего теста и сохраняет их в localStorage.
+     */
+    function saveSessionForLater() {
+        if (questionsForCurrentQuiz.length === 0) return;
+
+        // Собираем все необходимые данные в один объект
+        const sessionData = {
+            allParsedQuestions,
+            questionsForCurrentQuiz,
+            userAnswers,
+            currentQuestionIndex,
+            score,
+            quizSettings,
+            timeLeftInSeconds,
+            originalFileNameForReview,
+            timestamp: new Date().getTime() // Сохраняем время для информации
+        };
+
+        try {
+            // Сохраняем в localStorage
+            localStorage.setItem(SAVED_SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+            alert('Тест сохранён! Вы можете продолжить его в любой момент с главного экрана.');
+            // Возвращаемся на главный экран
+            resetQuizForNewFile();
+        } catch (e) {
+            console.error("Ошибка сохранения сессии в localStorage:", e);
+            alert("Не удалось сохранить сессию. Возможно, в браузере закончилось место.");
+        }
+    }
+
+    /**
+     * Проверяет наличие сохраненной сессии и отображает её на главном экране.
+     */
+    function loadSavedSession() {
+        const savedSessionJSON = localStorage.getItem(SAVED_SESSION_STORAGE_KEY);
+        if (!savedSessionJSON) {
+            savedSessionArea.classList.add('hidden');
+            return;
+        }
+
+        const sessionData = JSON.parse(savedSessionJSON);
+        const totalQuestions = sessionData.questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
+        const answeredQuestions = sessionData.userAnswers.filter(a => a && a.answered).length;
+        const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+
+        let timeInfo = '';
+        if (sessionData.quizSettings.timeLimit > 0) {
+            const minutes = Math.floor(sessionData.timeLeftInSeconds / 60);
+            const seconds = sessionData.timeLeftInSeconds % 60;
+            timeInfo = `<div class="saved-session-time">${_('time_left')}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>`;
+        }
+        
+        savedSessionList.innerHTML = `
+            <div class="saved-session-card">
+                <div class="saved-session-name">${sessionData.originalFileNameForReview || 'Сохраненный тест'}</div>
+                <div class="saved-session-progress-info">
+                    <span>${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}</span>
+                    ${timeInfo}
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" style="width: ${progress}%;"></div>
+                </div>
+                <div class="saved-session-actions">
+                    <button class="btn-resume">${_('continue_quiz_button')}</button>
+                    <button class="btn-delete">${_('delete_session_button')}</button>
+                </div>
+            </div>
+        `;
+
+        savedSessionArea.classList.remove('hidden');
+
+        // Привязываем события к новым кнопкам
+        savedSessionList.querySelector('.btn-resume').addEventListener('click', restoreQuizSession);
+        savedSessionList.querySelector('.btn-delete').addEventListener('click', deleteSavedSession);
+    }
+
+    /**
+     * Восстанавливает сохраненный тест из localStorage.
+     */
+    function restoreQuizSession() {
+        const savedSessionJSON = localStorage.getItem(SAVED_SESSION_STORAGE_KEY);
+        if (!savedSessionJSON) return;
+
+        const sessionData = JSON.parse(savedSessionJSON);
+
+        // Восстанавливаем все состояние приложения
+        allParsedQuestions = sessionData.allParsedQuestions;
+        questionsForCurrentQuiz = sessionData.questionsForCurrentQuiz;
+        userAnswers = sessionData.userAnswers;
+        currentQuestionIndex = sessionData.currentQuestionIndex;
+        score = sessionData.score;
+        quizSettings = sessionData.quizSettings;
+        timeLeftInSeconds = sessionData.timeLeftInSeconds;
+        originalFileNameForReview = sessionData.originalFileNameForReview;
+
+        // Переходим к экрану теста
+        fileUploadArea.classList.add('hidden');
+        quizSetupArea.classList.add('hidden');
+        quizArea.classList.remove('hidden');
+
+        // Запускаем UI теста с восстановленными данными
+        totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
+        updateScoreDisplay();
+        setupTimer(); // Таймер запустится с сохраненного времени
+        generateQuickNav();
+        loadQuestion(currentQuestionIndex); // Загружаем вопрос, на котором остановились
+
+        // Показываем нужные кнопки
+        webSearchDropdown?.classList.remove('hidden');
+        finishTestButton?.classList.remove('hidden');
+        continueLaterButton?.classList.remove('hidden');
+        copyQuestionBtnQuiz?.classList.remove('hidden');
+    }
+    
+    /**
+     * Удаляет сохраненную сессию из localStorage и с экрана.
+     */
+    function deleteSavedSession() {
+        if (confirm("Вы уверены, что хотите удалить сохраненный тест? Это действие необратимо.")) {
+            localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
+            savedSessionArea.classList.add('hidden');
+            savedSessionList.innerHTML = '';
+        }
+    }
+
 
  
 

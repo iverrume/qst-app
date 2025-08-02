@@ -70,6 +70,10 @@
                     <span data-lang-key="parser_button_main">Перевести</span>
                     <span class="gradus-subtitle" data-lang-key="parser_subtitle">текст в формат .qst</span>
                 </button>
+                <div id="savedSessionArea" class="hidden">
+                    <h4 data-lang-key="continue_sessions">Продолжить:</h4>
+                    <div id="savedSessionList"></div>
+                </div>
                 <div id="recentFilesArea" class="hidden">
                     <h4 data-lang-key="recent_files">Недавно использованные:</h4>
                     <ul id="recentFilesList"></ul>
@@ -161,6 +165,7 @@
                     <div id="quickNavButtons"></div>
                 </div>
                 <div class="quiz-footer-controls">
+                     <button id="continueLaterButton" class="hidden" data-lang-key="continue_later_button">Продолжить позже</button>
                      <button id="finishTestButton" class="finish-test-early hidden" data-lang-key="finish_early_button">Завершить тест</button>
                 </div>
             </div>
