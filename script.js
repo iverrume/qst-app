@@ -1218,6 +1218,10 @@ const ChatModule = (function() {
 
                 if (isPrivateMessage || isUnlockedPublicChannel) {
                     updateUnreadCount(messageData.channelId, 1);
+
+                    // --- ДОБАВЬТЕ ЭТУ СТРОКУ ---
+                    if (isPrivateMessage) loadPrivateChats(); // Пересортировать и обновить список ЛС
+                    // --- КОНЕЦ ДОБАВЛЕНИЯ ---
                 }
             }
         }
@@ -2887,17 +2891,56 @@ const ChatModule = (function() {
         if (!userDoc.exists) return;
 
         const partnerIds = userDoc.data().privateChatPartners || [];
-        privateChats = [];
-        for (const partnerId of partnerIds) {
+
+        // --- НАЧАЛО НОВОГО КОДА ---
+
+        // 1. Создаем массив промисов, чтобы для каждого партнера получить доп. информацию
+        const privateChatsPromises = partnerIds.map(async (partnerId) => {
+            // Получаем данные самого партнера (как и раньше)
             let partnerData = allUsers.get(partnerId);
-            if (!partnerData) { // Если данных еще нет в кэше, загружаем
+            if (!partnerData) {
                 const partnerDoc = await db.collection('users').doc(partnerId).get();
-                if(partnerDoc.exists) partnerData = partnerDoc.data();
+                if (partnerDoc.exists) partnerData = partnerDoc.data();
             }
-            if (partnerData) {
-                privateChats.push(partnerData);
+            if (!partnerData) return null; // Если партнера не нашли, пропускаем
+
+            // 2. Определяем ID личного чата
+            const channelId = `private_${[currentUser.uid, partnerId].sort().join('_')}`;
+
+            // 3. Находим ПОСЛЕДНЕЕ сообщение в этом чате, чтобы узнать его время
+            const messagesQuery = await db.collection('messages')
+                .where('channelId', '==', channelId)
+                .orderBy('createdAt', 'desc')
+                .limit(1)
+                .get();
+
+            let lastMessageTimestamp = null;
+            if (!messagesQuery.empty) {
+                // Если сообщения есть, берем время самого нового
+                lastMessageTimestamp = messagesQuery.docs[0].data().createdAt;
             }
-        }
+
+            // 4. Возвращаем объект, содержащий и данные партнера, и время последнего сообщения
+            return { ...partnerData, lastMessageTimestamp };
+        });
+
+        // Ждем выполнения всех запросов
+        let fetchedChats = await Promise.all(privateChatsPromises);
+
+        // Отфильтровываем пустые результаты (если партнера не удалось найти)
+        fetchedChats = fetchedChats.filter(chat => chat !== null);
+
+        // 5. СОРТИРУЕМ чаты: у кого новее сообщение, тот выше
+        fetchedChats.sort((a, b) => {
+            const timeA = a.lastMessageTimestamp ? a.lastMessageTimestamp.toMillis() : 0;
+            const timeB = b.lastMessageTimestamp ? b.lastMessageTimestamp.toMillis() : 0;
+            return timeB - timeA; // Сортировка по убыванию (новое вверху)
+        });
+
+        privateChats = fetchedChats;
+
+        // --- КОНЕЦ НОВОГО КОДА ---
+
         renderPrivateChatsList();
     }
 
