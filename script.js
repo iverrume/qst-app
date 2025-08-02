@@ -6193,7 +6193,7 @@ const mainApp = (function() {
             </div>
         `;
 
-        
+
 
         savedSessionArea.classList.remove('hidden');
 
@@ -6348,6 +6348,7 @@ const mainApp = (function() {
         const displayLangs = ['En', 'Қаз', 'Ру'];
         const currentIndex = langs.indexOf(lang);
         languageToggle.textContent = displayLangs[currentIndex];
+        loadSavedSession();
     }
 
 
