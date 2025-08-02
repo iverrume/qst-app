@@ -527,12 +527,13 @@ const ChatModule = (function() {
     let tabButtons = {};
     let tabCounters = {};
     
+
     // Tabs configuration
     const TABS = {
-        messages: { name: _chat('tab_messages'), icon: '💬', collection: 'messages' },
-        questions: { name: _chat('tab_questions'), icon: '❓', collection: 'questions' },
-        favorites: { name: _chat('tab_favorites'), icon: '⭐', collection: 'favorites' },
-        users: { name: _chat('tab_users'), icon: '👥' }
+        messages: { langKey: 'tab_messages', icon: '💬', collection: 'messages' },
+        questions: { langKey: 'tab_questions', icon: '❓', collection: 'questions' },
+        favorites: { langKey: 'tab_favorites', icon: '⭐', collection: 'favorites' },
+        users: { langKey: 'tab_users', icon: '👥' }
     };
 
 
@@ -864,7 +865,7 @@ const ChatModule = (function() {
 
         // --- Основное окно чата ---
         // Шапка
-        document.getElementById('chatHeaderTitle').textContent = _chat('chat_header_title');
+        document.getElementById('chatHeaderTitle').textContent = _chat(TABS[currentTab].langKey);
         document.querySelector('#userDropdown a[onclick*="showProfileModal"]').textContent = _chat('edit_profile_link');
         document.querySelector('#userDropdown a[onclick*="logout"]').textContent = _chat('logout_link');
         document.getElementById('notificationToggle').title = _chat('notifications_title');
@@ -1253,7 +1254,7 @@ const ChatModule = (function() {
         currentTab = tabId;
         document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
         document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-        document.getElementById('chatHeaderTitle').textContent = TABS[tabId].name;
+        document.getElementById('chatHeaderTitle').textContent = _chat(TABS[tabId].langKey);
         loadTabData(tabId);
     }
     
