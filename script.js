@@ -513,6 +513,8 @@ const ChatModule = (function() {
     let unreadMessageCount = 0; 
     let isPinnedMode = false;
     let messagesListener = null; // Cлушатель для сообщений
+    let unreadListener = null; // Слушатель для счетчиков
+    let listenerInitializationTime = null; // ВРЕМЯ ЗАПУСКА СЛУШАТЕЛЯ
     let questionToHighlight = null;
     let favoritesListener = null;
     let unlockedChannels = new Set();
@@ -1176,18 +1178,28 @@ const ChatModule = (function() {
         }
         if (!currentUser) return;
 
-        console.log("Запуск слушателя для счетчиков непрочитанных сообщений.");
+        // ШАГ 1: Записываем точное время, когда мы НАЧАЛИ слушать
+        listenerInitializationTime = new Date();
+        console.log("Запуск слушателя для счетчиков в:", listenerInitializationTime);
 
         unreadListener = db.collection('messages')
             .where('memberIds', 'array-contains', currentUser.uid)
-            .orderBy('createdAt', 'desc') // Слушаем только самые новые
-            .limit(10) // Ограничиваем, нам не нужна вся история
+            .orderBy('createdAt', 'desc')
+            .limit(10)
             .onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'added') {
                         const messageData = change.doc.data();
                         
-                        // --- УМНАЯ ЛОГИКА СЧЕТЧИКОВ (остается без изменений) ---
+                        // ШАГ 2: Проверяем, было ли сообщение создано ПОСЛЕ запуска слушателя
+                        const messageTimestamp = messageData.createdAt?.toDate();
+                        if (!messageTimestamp || messageTimestamp < listenerInitializationTime) {
+                            return; // Если сообщение старое (из первоначальной загрузки), игнорируем его
+                        }
+
+                        // Если мы дошли сюда, значит сообщение действительно новое.
+                        // Дальнейшая логика остается без изменений.
+                        
                         const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== messageData.channelId || currentTab !== 'messages' || document.hidden);
                         if (isUnread) {
                             const isPrivateMessage = !messageData.memberIds.includes('public');
@@ -1202,7 +1214,7 @@ const ChatModule = (function() {
             }, error => {
                 console.error("Ошибка слушателя непрочитанных сообщений:", error);
             });
-    } 
+    }
 
 
 
