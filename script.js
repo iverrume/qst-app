@@ -3952,8 +3952,8 @@ const mainApp = (function() {
             choose_file: 'Құрылғыдан .qst немесе .txt файлын таңдаңыз:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
-            parser_button_main: 'Аудару',
-            parser_subtitle: 'мәтінді .qst пішіміне',
+            parser_button_main: 'Мәтінді',
+            parser_subtitle: '.qst пішіміне аудару',
             recent_files: 'Жақында пайдаланылғандар:',
             // Navigation & Headers
             nav_gradus: 'GRADUS бойынша навигация',
@@ -6167,6 +6167,9 @@ const mainApp = (function() {
         const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
 
         let timeInfo = '';
+
+
+
         if (sessionData.quizSettings.timeLimit > 0) {
             const minutes = Math.floor(sessionData.timeLeftInSeconds / 60);
             const seconds = sessionData.timeLeftInSeconds % 60;
@@ -6189,6 +6192,8 @@ const mainApp = (function() {
                 </div>
             </div>
         `;
+
+        
 
         savedSessionArea.classList.remove('hidden');
 
