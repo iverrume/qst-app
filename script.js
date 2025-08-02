@@ -1230,7 +1230,7 @@ const ChatModule = (function() {
                     // Если изменение произошло в том канале, который сейчас открыт у пользователя,
                     // немедленно перерисовываем чат, чтобы показать результат.
                     if (channelId === currentChannel && currentTab === 'messages') {
-                        displayMessages(); 
+                        loadMessages(); 
                     }
                 });
             }, error => {
