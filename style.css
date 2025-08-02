@@ -188,6 +188,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    /* Мы убираем отступ отсюда, чтобы он не влиял на чат */
+}
+
+/* А здесь создаем новое, более точное правило ТОЛЬКО для главного экрана */
+.container > .header-controls {
     margin-bottom: 70px;
 }
 
