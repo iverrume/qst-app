@@ -4479,3 +4479,37 @@ body.claude-mode .message.mine.pinned .message-content {
 #continueLaterButton:hover {
     background-color: var(--button-secondary-hover-bg);
 }
+
+/* ===== НОВЫЕ СТИЛИ ДЛЯ ПОИСКА И СКРОЛЛИНГА В САЙДБАРЕ ===== */
+
+/* Контейнер для поля поиска */
+.sidebar-search-container {
+    margin-bottom: 15px;
+}
+
+/* Стиль самого поля поиска */
+.sidebar-search-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    font-size: 0.9em;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.sidebar-search-input:focus {
+    border-color: var(--button-primary-bg);
+    box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+/* ГЛАВНОЕ: Устанавливаем максимальную высоту и скроллинг */
+#channelsList,
+#privateChatsList,
+#onlineUsersList {
+    max-height: 180px; /* Вы можете изменить это значение по своему вкусу */
+    overflow-y: auto;  /* Показывать скроллбар, только если нужно */
+    padding-right: 5px; /* Небольшой отступ, чтобы скроллбар не прилипал к тексту */
+}

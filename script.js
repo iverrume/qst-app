@@ -696,14 +696,19 @@ const ChatModule = (function() {
                                     </div>
                                 </div>
                             </div>
-                            
                             <!-- Channels -->
                             <div class="sidebar-section">
                                 <h4>${_chat('sidebar_channels')}</h4>
+
+                                <!-- НОВЫЙ БЛОК ПОИСКА КАНАЛОВ -->
+                                <div class="sidebar-search-container">
+                                    <input type="text" id="channelSearchInput" class="sidebar-search-input" placeholder="Поиск каналов...">
+                                </div>
+                                <!-- КОНЕЦ НОВОГО БЛОКА -->
+
                                 <div id="channelsList" class="channels-list"></div>
                                 <button id="createChannelBtn" class="create-btn">${_chat('sidebar_create_channel')}</button>
                             </div>
-
                             <!-- Private Messages -->
                             <div class="sidebar-section" id="privateChatsSection">
                                 <h4>${_chat('sidebar_private_messages')}</h4>
@@ -1134,6 +1139,29 @@ const ChatModule = (function() {
         }
        
         console.log('Event listeners настроены');
+
+        const channelSearchInput = document.getElementById('channelSearchInput');
+        if (channelSearchInput) {
+            
+            // Создаем функцию-обработчик
+            const handleChannelSearch = (event) => {
+                const query = event.target.value.toLowerCase().trim();
+                const channels = document.querySelectorAll('#channelsList .channel-item');
+                
+                channels.forEach(channel => {
+                    const channelName = channel.textContent.toLowerCase();
+                    if (channelName.includes(query)) {
+                        channel.style.display = 'flex'; // Используем flex, т.к. у .channel-item такой display
+                    } else {
+                        channel.style.display = 'none';
+                    }
+                });
+            };
+
+            // Применяем debounce, чтобы поиск не срабатывал на каждую букву
+            const debouncedChannelSearch = debounce(handleChannelSearch, 250);
+            channelSearchInput.addEventListener('input', debouncedChannelSearch);
+        }
     }
     
     function setupAuthStateListener() {
