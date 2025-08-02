@@ -4363,3 +4363,24 @@ body.claude-mode .message.mine .message-content {
 .expand-message-btn:hover {
     background-color: var(--border-color);
 }
+
+
+
+
+/* Улучшенные стили для закрепленных сообщений в теме Claude */
+body.claude-mode .message.pinned .message-content {
+    /* ИЗМЕНЕНИЕ: Теплый, темно-серый фон для высокого контраста */
+    background-color: #6e6459; 
+    border-left: 4px solid #e58a56; 
+    /* ИЗМЕНЕНИЕ: Белый текст, который теперь отлично читается */
+    color: #ffffff; 
+}
+
+/* 
+ * Это правило теперь также использует новый цвет и фон, чтобы переопределить
+ * стили на ВАШИХ сообщениях, когда они закреплены.
+ */
+body.claude-mode .message.mine.pinned .message-content {
+    background-color: #6e6459; /* Используем тот же самый новый фон */
+    color: #ffffff; /* Используем тот же самый белый цвет */
+}

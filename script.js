@@ -3876,6 +3876,7 @@ const mainApp = (function() {
             shuffle_questions: 'Перемешать вопросы',
             shuffle_answers: 'Перемешать ответы',
             feedback_mode: 'Режим обратной связи (сохранить ошибки)',
+            reading_mode: 'Режим чтения (первый вариант верный)',
             start_quiz_button: 'Начать тест',
             generate_cheat_sheet_button: 'Создать шпору',
             choose_another_file_button: 'Выбрать другой файл',
@@ -3961,6 +3962,7 @@ const mainApp = (function() {
             shuffle_questions: 'Сұрақтарды араластыру',
             shuffle_answers: 'Жауаптарды араластыру',
             feedback_mode: 'Кері байланыс режимі (қателерді сақтау)',
+            reading_mode: 'Оқу режимі (бірінші жауап дұрыс)',
             start_quiz_button: 'Тестті бастау',
             generate_cheat_sheet_button: 'Шпаргалка жасау',
             choose_another_file_button: 'Басқа файл таңдау',
@@ -4046,6 +4048,7 @@ const mainApp = (function() {
             shuffle_questions: 'Shuffle questions',
             shuffle_answers: 'Shuffle answers',
             feedback_mode: 'Feedback mode (save mistakes)',
+            reading_mode: 'Reading mode (first option is correct)',
             start_quiz_button: 'Start Quiz',
             generate_cheat_sheet_button: 'Generate Cheat Sheet',
             choose_another_file_button: 'Choose Another File',
@@ -4147,7 +4150,8 @@ const mainApp = (function() {
         parserOutputArea, parserOutput, downloadParsedBtn, clearParserInputBtn,
         filterVariantsBtn, filterVariantsDropdown, filterVariantCheckboxes,
         applyVariantFilterBtn, resetVariantFilterBtn, searchNavigation,
-        prevResultBtn, nextResultBtn, resultCounterEl, searchResultCardsContainer;
+        prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
+        searchResultCardsContainer;
 
 
     // --- State Variables ---
@@ -4214,6 +4218,7 @@ const mainApp = (function() {
         shuffleQuestionsCheckbox = getEl('shuffleQuestions');
         shuffleAnswersCheckbox = getEl('shuffleAnswers');
         feedbackModeCheckbox = getEl('feedbackMode');
+        readingModeCheckbox = getEl('readingMode');
         timerDisplayEl = getEl('timerDisplay');
         timeLeftEl = getEl('timeLeft');
         quickNavPanel = getEl('quickNavPanel');
@@ -4379,6 +4384,7 @@ const mainApp = (function() {
         quickModeToggle?.addEventListener('click', toggleQuickMode);
         triggerWordToggle?.addEventListener('click', toggleTriggerWordMode);
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
+        readingModeCheckbox?.addEventListener('change', handleReadingModeChange);
         timeLimitInput.addEventListener('input', () => timeLimitValueDisplay.textContent = timeLimitInput.value);
         themeToggleButton?.addEventListener('click', toggleTheme);
         languageToggle?.addEventListener('click', toggleLanguage);
@@ -5413,6 +5419,19 @@ const mainApp = (function() {
         reader.readAsText(file, 'UTF-8');
     }
 
+    function handleReadingModeChange() {
+        if (readingModeCheckbox.checked) {
+            // Если режим чтения включен, отключаем и сбрасываем ненужные опции
+            shuffleQuestionsCheckbox.checked = false;
+            shuffleQuestionsCheckbox.disabled = true;
+            shuffleAnswersCheckbox.checked = false;
+            shuffleAnswersCheckbox.disabled = true;
+        } else {
+            // Если выключен, снова делаем опции доступными
+            shuffleQuestionsCheckbox.disabled = false;
+            shuffleAnswersCheckbox.disabled = false;
+        }
+    }
 
 
     function processFile(fileName, fileContent) {
@@ -5584,6 +5603,7 @@ const mainApp = (function() {
             quizSettings.shuffleQuestions = shuffleQuestionsCheckbox.checked;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
             quizSettings.feedbackMode = feedbackModeCheckbox.checked;
+            quizSettings.readingMode = readingModeCheckbox.checked;
             
             const totalQuestionsCount = allParsedQuestions.filter(q => q.type !== 'category').length;
             
@@ -5641,8 +5661,22 @@ const mainApp = (function() {
         }
 
         questionsForCurrentQuiz = questionsForCurrentQuiz.map(q => JSON.parse(JSON.stringify(q)));
-
         triggerWordsUsedInQuiz = questionsForCurrentQuiz.some(q => q.type !== 'category' && q.triggeredWordIndices && q.triggeredWordIndices.length > 0);
+        if (quizSettings.readingMode) {
+            questionsForCurrentQuiz.forEach(q => {
+                // Применяем логику только к вопросам, а не к категориям
+                if (q.type !== 'category' && q.options && q.correctAnswerIndex > -1) {
+                    // 1. Находим правильный ответ
+                    const correctAnswer = q.options[q.correctAnswerIndex];
+                    // 2. Удаляем его с текущей позиции
+                    q.options.splice(q.correctAnswerIndex, 1);
+                    // 3. Вставляем его в самое начало массива вариантов
+                    q.options.unshift(correctAnswer);
+                    // 4. Обновляем индекс правильного ответа на 0
+                    q.correctAnswerIndex = 0;
+                }
+            });
+        }
 
         if (quizSettings.shuffleAnswers) {
             questionsForCurrentQuiz.forEach(q => {
