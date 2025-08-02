@@ -2781,9 +2781,20 @@ const ChatModule = (function() {
         privateChats.forEach(chatPartner => {
             const channelId = `private_${[currentUser.uid, chatPartner.uid].sort().join('_')}`;
             const chatEl = document.createElement('div');
+            
+            chatEl.dataset.channelId = channelId; // <--- ДОБАВЛЕНО: Присваиваем ID для поиска счетчика
+
             chatEl.className = `channel-item ${channelId === currentChannel && currentChannelType === 'private' ? 'active' : ''}`;
             const isOnline = onlineUsers.has(chatPartner.uid);
-            chatEl.innerHTML = `<span class="status-indicator ${isOnline ? 'online' : ''}" style="margin-right: 8px;"></span> <span class="channel-name">${escapeHTML(chatPartner.username)}</span>`;
+            const unreadCount = unreadCounts.get(channelId) || 0; // <--- ДОБАВЛЕНО: Получаем текущий счетчик
+
+            // ИЗМЕНЕНО: Добавляем HTML-элемент для счетчика
+            chatEl.innerHTML = `
+                <span class="status-indicator ${isOnline ? 'online' : ''}" style="margin-right: 8px;"></span>
+                <span class="channel-name">${escapeHTML(chatPartner.username)}</span>
+                <span class="unread-channel-badge ${unreadCount > 0 ? '' : 'hidden'}">${unreadCount}</span>
+            `;
+
             chatEl.addEventListener('click', () => switchToChannel(channelId, chatPartner.username, 'private'));
             privateChatsList.appendChild(chatEl);
         });
