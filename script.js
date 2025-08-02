@@ -499,6 +499,7 @@ const ChatModule = (function() {
     let onlineUsers = new Map(); // Используем Map для хранения полной информации
     let unreadCounts = new Map();
     let isInitialized = false;
+    let unreadCounts = new Map(); // Хранит непрочитанные сообщения вида { channelId: count }
     let replyContext = null;
     let presenceListener = null;
     let heartbeatInterval = null; // Для "пульса"
@@ -1256,6 +1257,12 @@ const ChatModule = (function() {
     function switchTab(tabId) {
         if (!TABS[tabId]) return;
         currentTab = tabId;
+
+        // Если мы переключились на вкладку сообщений, сбрасываем счетчик для ТЕКУЩЕГО канала
+        if (tabId === 'messages') {
+            updateUnreadCount(currentChannel, 0); // <-- СБРАСЫВАЕМ СЧЕТЧИК ЗДЕСЬ
+        }
+
         document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
         document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
         document.getElementById('chatHeaderTitle').textContent = _chat(TABS[tabId].langKey);
@@ -1352,48 +1359,77 @@ const ChatModule = (function() {
         updateTabCounter('users', onlineUsers.size);
     }
 
+    /**
+     * Управляет счетчиками непрочитанных сообщений.
+     * @param {string} channelId - ID канала, для которого меняется счетчик.
+     * @param {number} change - Изменение (+1, 0 для сброса).
+     */
+    function updateUnreadCount(channelId, change) {
+        const currentCount = unreadCounts.get(channelId) || 0;
+        // Если change = 0, сбрасываем счетчик. Иначе - увеличиваем.
+        const newCount = change === 0 ? 0 : currentCount + change;
+        unreadCounts.set(channelId, newCount);
+
+        // Обновляем UI для конкретного канала
+        const channelCounter = document.querySelector(`.channel-item[data-channel-id="${channelId}"] .unread-channel-badge`);
+        if (channelCounter) {
+            if (newCount > 0) {
+                channelCounter.textContent = newCount;
+                channelCounter.classList.remove('hidden');
+            } else {
+                channelCounter.classList.add('hidden');
+            }
+        }
+
+        // Пересчитываем и обновляем общий счетчик на вкладке "Сообщения"
+        let totalUnread = 0;
+        unreadCounts.forEach(count => totalUnread += count);
+        updateTabCounter('messages', totalUnread);
+    }
 
 
     function loadMessages() {
         if (!db || !currentUser) return;
-    
-        // 1. Отписываемся от предыдущего слушателя сообщений, если он был.
-        // Это важно при переключении каналов, чтобы не слушать несколько каналов одновременно.
+
         if (messagesListener) {
-            messagesListener(); 
+            messagesListener(); // Отписываемся от старого слушателя
         }
-    
-        messageArea.innerHTML = '<div class="empty-state">Загрузка сообщений...</div>';
-    
-        // 2. Создаем НОВЫЙ слушатель для ТЕКУЩЕГО канала.
-        // Он будет автоматически срабатывать при любом добавлении, изменении или удалении сообщения.
+
+        messageArea.innerHTML = `<div class="empty-state">${_chat('loading_messages')}</div>`;
+
+        // Создаем новый слушатель для текущего канала
         messagesListener = db.collection('messages')
             .where('channelId', '==', currentChannel)
             .orderBy('createdAt', 'asc')
             .onSnapshot(snapshot => {
-                // 3. При любом изменении мы полностью обновляем локальный массив сообщений.
-                allMessages = []; 
-                snapshot.forEach(doc => {
-                    allMessages.push({ id: doc.id, ...doc.data() });
-                });
-    
-                // 4. И сразу же перерисовываем интерфейс с актуальными данными.
-                displayMessages();
-    
-                // Простая логика для уведомлений
+                // Обновляем локальный массив сообщений
+                allMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Обновляем чат, ТОЛЬКО ЕСЛИ вкладка "Сообщения" активна
+                if (currentTab === 'messages') {
+                    displayMessages();
+                }
+
+                // Умная обработка новых сообщений для счетчиков
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'added') {
                         const message = change.doc.data();
-                        // Уведомляем звуком, только если вкладка неактивна и автор - не я сам
+                        // Считаем сообщение непрочитанным, если оно не от нас И
+                        // (канал не является текущим ИЛИ текущая вкладка - не "Сообщения")
+                        if (message.authorId !== currentUser.uid && (currentChannel !== message.channelId || currentTab !== 'messages')) {
+                            updateUnreadCount(message.channelId, 1); // Увеличиваем счетчик на 1
+                        }
+
+                        // Логика звуковых уведомлений (остается без изменений)
                         if (document.hidden && message.authorId !== currentUser.uid) {
-                            showNotification(true);
+                           showNotification(true);
                         }
                     }
                 });
-    
+
             }, error => {
                 console.error('Ошибка загрузки сообщений:', error);
-                messageArea.innerHTML = '<div class="empty-state">Ошибка загрузки.</div>';
+                messageArea.innerHTML = `<div class="empty-state">${_chat('loading_error')}</div>`;
             });
     }
 
@@ -2667,20 +2703,20 @@ const ChatModule = (function() {
             const isOwner = channel.createdBy === currentUser.uid;
             const channelEl = document.createElement('div');
             // Добавляем data-атрибут для легкого доступа
-            channelEl.dataset.channelId = channel.id;
+            channelEl.dataset.channelId = channel.id; // <-- ДОБАВЛЕНО
             channelEl.className = `channel-item ${channel.id === currentChannel && currentChannelType === 'public' ? 'active' : ''}`;
-            
+
             const lockIcon = channel.hasPassword ? '🔒 ' : '';
             const settingsIcon = isOwner ? `<button class="channel-settings-btn" onclick="event.stopPropagation(); ChatModule.showChannelEditModal('${channel.id}')">⚙️</button>` : '';
-            const unreadCount = unreadCounts.get(channel.id) || 0;
+            const unreadCount = unreadCounts.get(channel.id) || 0; // <-- ДОБАВЛЕНО
 
             // Добавляем HTML для счетчика
             channelEl.innerHTML = `
                 <span class="channel-name">${lockIcon}# ${escapeHTML(channel.name)}</span>
                 <span class="unread-channel-badge ${unreadCount > 0 ? '' : 'hidden'}">${unreadCount}</span>
                 ${settingsIcon}
-            `;
-            
+            `; // <-- ИЗМЕНЕНО
+
             channelEl.addEventListener('click', () => handleChannelClick(channel));
             channelsList.appendChild(channelEl);
         });
@@ -2728,10 +2764,12 @@ const ChatModule = (function() {
             const prefix = type === 'public' ? '# ' : '@ ';
             channelNameEl.textContent = `${prefix}${channelName}`;
         }
+        updateUnreadCount(channelId, 0);
         switchTab('messages'); // Всегда переключаемся на сообщения при смене канала
         renderChannelsList();
         renderPrivateChatsList();
     }
+
     
     function loadChannels() {
         if (!db) return;
