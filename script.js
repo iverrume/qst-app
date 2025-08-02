@@ -4192,7 +4192,7 @@ const mainApp = (function() {
     let timeLeftInSeconds = 0;
     const MAX_RECENT_FILES = 5;
     const RECENT_FILES_STORAGE_KEY = 'recentQstFilesData';
-    const SAVED_SESSION_STORAGE_KEY = 'savedQuizSession';
+    const SAVED_SESSIONS_STORAGE_KEY = 'savedQuizSessions'; 
     let originalFileNameForReview = '';
     let generatedCheatSheetContent = '';
     let breadcrumbs = [];
@@ -6117,99 +6117,129 @@ const mainApp = (function() {
     }
 
 
-    /**
-     * Собирает все данные текущего теста и сохраняет их в localStorage.
-     */
     function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
-        const questionOrderIndices = questionsForCurrentQuiz.map(q => q.originalIndex);
-
-        const sessionData = {
-            // Больше не храним массивы с вопросами!
-            questionOrderIndices, // Храним только порядок
+        // 1. Создаем объект с данными НОВОЙ сессии
+        const newSessionData = {
+            questionOrderIndices: questionsForCurrentQuiz.map(q => q.originalIndex),
             userAnswers,
             currentQuestionIndex,
             score,
             quizSettings,
             timeLeftInSeconds,
-            originalFileNameForReview, // Это ключ к восстановлению!
-            totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length, // <--- ДОБАВЬТЕ ЭТУ СТРОКУ
+            originalFileNameForReview,
+            totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length,
             timestamp: new Date().getTime()
         };
 
         try {
-            // Сохраняем в localStorage
-            localStorage.setItem(SAVED_SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+            // 2. Читаем существующий массив сессий (или создаем пустой)
+            const savedSessions = JSON.parse(localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY)) || [];
+
+            // 3. Ищем, есть ли уже сохранение для этого файла
+            const existingSessionIndex = savedSessions.findIndex(
+                session => session.originalFileNameForReview === newSessionData.originalFileNameForReview
+            );
+
+            if (existingSessionIndex > -1) {
+                // Если есть - обновляем его
+                savedSessions[existingSessionIndex] = newSessionData;
+            } else {
+                // Если нет - добавляем новое в массив
+                savedSessions.push(newSessionData);
+            }
+
+            // 4. Сохраняем обновленный массив обратно в localStorage
+            localStorage.setItem(SAVED_SESSIONS_STORAGE_KEY, JSON.stringify(savedSessions));
+
             alert('Тест сохранён! Вы можете продолжить его в любой момент с главного экрана.');
-            // Возвращаемся на главный экран
             resetQuizForNewFile(false);
+
         } catch (e) {
             console.error("Ошибка сохранения сессии в localStorage:", e);
             alert("Не удалось сохранить сессию. Возможно, в браузере закончилось место.");
         }
     }
 
-    /**
-     * Проверяет наличие сохраненной сессии и отображает её на главном экране.
-     */
+
+
+
+
     function loadSavedSession() {
-        const savedSessionJSON = localStorage.getItem(SAVED_SESSION_STORAGE_KEY);
-        if (!savedSessionJSON) {
+        const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
+        const sessions = savedSessionsJSON ? JSON.parse(savedSessionsJSON) : [];
+
+        if (sessions.length === 0) {
             savedSessionArea.classList.add('hidden');
+            savedSessionList.innerHTML = '';
             return;
         }
 
-        const sessionData = JSON.parse(savedSessionJSON);
-        const totalQuestions = sessionData.totalQuestionCount; 
-        const answeredQuestions = sessionData.userAnswers.filter(a => a && a.answered).length;
+        let allCardsHTML = '';
+        sessions.forEach(sessionData => {
+            const totalQuestions = sessionData.totalQuestionCount;
+            const answeredQuestions = sessionData.userAnswers.filter(a => a && a.answered).length;
+            const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
 
-        const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
+            let timeInfo = '';
+            if (sessionData.quizSettings.timeLimit > 0 && sessionData.timeLeftInSeconds) {
+                const minutes = Math.floor(sessionData.timeLeftInSeconds / 60);
+                const seconds = sessionData.timeLeftInSeconds % 60;
+                timeInfo = `<div class="saved-session-time">${_('time_left')}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>`;
+            }
 
-        let timeInfo = '';
-
-
-
-        if (sessionData.quizSettings.timeLimit > 0) {
-            const minutes = Math.floor(sessionData.timeLeftInSeconds / 60);
-            const seconds = sessionData.timeLeftInSeconds % 60;
-            timeInfo = `<div class="saved-session-time">${_('time_left')}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>`;
-        }
-        
-        savedSessionList.innerHTML = `
-            <div class="saved-session-card">
-                <div class="saved-session-name">${sessionData.originalFileNameForReview || 'Сохраненный тест'}</div>
-                <div class="saved-session-progress-info">
-                    <span>${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}</span>
-                    ${timeInfo}
+            // ВАЖНО: Добавляем data-filename к кнопкам!
+            allCardsHTML += `
+                <div class="saved-session-card">
+                    <div class="saved-session-name">${sessionData.originalFileNameForReview || 'Сохраненный тест'}</div>
+                    <div class="saved-session-progress-info">
+                        <span>${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}</span>
+                        ${timeInfo}
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" style="width: ${progress}%;"></div>
+                    </div>
+                    <div class="saved-session-actions">
+                        <button class="btn-resume" data-filename="${sessionData.originalFileNameForReview}">${_('continue_quiz_button')}</button>
+                        <button class="btn-delete" data-filename="${sessionData.originalFileNameForReview}">${_('delete_session_button')}</button>
+                    </div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-bar-fill" style="width: ${progress}%;"></div>
-                </div>
-                <div class="saved-session-actions">
-                    <button class="btn-resume">${_('continue_quiz_button')}</button>
-                    <button class="btn-delete">${_('delete_session_button')}</button>
-                </div>
-            </div>
-        `;
+            `;
+        });
 
-
-
+        savedSessionList.innerHTML = allCardsHTML;
         savedSessionArea.classList.remove('hidden');
 
-        // Привязываем события к новым кнопкам
-        savedSessionList.querySelector('.btn-resume').addEventListener('click', restoreQuizSession);
-        savedSessionList.querySelector('.btn-delete').addEventListener('click', deleteSavedSession);
+        // Используем делегирование событий для всех кнопок
+        savedSessionList.removeEventListener('click', handleSessionCardClick); // Сначала удаляем старый, чтобы не было дублей
+        savedSessionList.addEventListener('click', handleSessionCardClick);
     }
 
-    /**
-     * Восстанавливает сохраненный тест из localStorage.
-     */
-    function restoreQuizSession() {
-        const savedSessionJSON = localStorage.getItem(SAVED_SESSION_STORAGE_KEY);
-        if (!savedSessionJSON) return;
+    // Это новая функция-обработчик для кнопок в карточках
+    function handleSessionCardClick(event) {
+        const target = event.target;
+        const fileName = target.dataset.filename;
+        if (!fileName) return;
 
-        const sessionData = JSON.parse(savedSessionJSON);
+        if (target.classList.contains('btn-resume')) {
+            restoreQuizSession(fileName);
+        } else if (target.classList.contains('btn-delete')) {
+            deleteSavedSession(fileName);
+        }
+    }
+
+    function restoreQuizSession(fileName) { // <-- Принимает имя файла
+        const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
+        if (!savedSessionsJSON) return;
+        
+        const sessions = JSON.parse(savedSessionsJSON);
+        const sessionData = sessions.find(s => s.originalFileNameForReview === fileName); // <-- Находим нужную сессию в массиве
+        
+        if (!sessionData) {
+            alert("Ошибка: сохраненная сессия для этого файла не найдена.");
+            return;
+        }
 
         // 1. Находим исходный файл в "Недавно использованных"
         const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
@@ -6264,17 +6294,21 @@ const mainApp = (function() {
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
     
-    /**
-     * Удаляет сохраненную сессию из localStorage и с экрана.
-     */
-    function deleteSavedSession() {
-        if (confirm("Вы уверены, что хотите удалить сохраненный тест? Это действие необратимо.")) {
-            localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
-            savedSessionArea.classList.add('hidden');
-            savedSessionList.innerHTML = '';
+    function deleteSavedSession(fileName) { // <-- Принимает имя файла
+        if (confirm(`Вы уверены, что хотите удалить сохраненный тест "${fileName}"? Это действие необратимо.`)) {
+            const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
+            let sessions = savedSessionsJSON ? JSON.parse(savedSessionsJSON) : [];
+            
+            // Создаем новый массив, отфильтровав удаляемую сессию
+            const updatedSessions = sessions.filter(s => s.originalFileNameForReview !== fileName);
+            
+            // Сохраняем новый массив
+            localStorage.setItem(SAVED_SESSIONS_STORAGE_KEY, JSON.stringify(updatedSessions));
+            
+            // Перерисовываем интерфейс
+            loadSavedSession();
         }
     }
-
 
  
 
