@@ -1139,9 +1139,17 @@ const ChatModule = (function() {
             currentUser = user;
             updateUserUI();
 
+
             if (user) {
                 console.log('Пользователь авторизован:', user.displayName || user.email);
-                listenForAllUserMessages(); // <--- ЗАПУСКАЕМ НАШ НОВЫЙ СЛУШАТЕЛЬ
+                
+                // ЗАГРУЖАЕМ РАЗБЛОКИРОВАННЫЕ КАНАЛЫ ИЗ ХРАНИЛИЩА
+                const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
+                if (savedUnlocked) {
+                    unlockedChannels = new Set(JSON.parse(savedUnlocked));
+                }
+
+                listenForAllUserMessages(); 
                 setupPresenceSystem();
                 fetchAllUsers();
                 loadChannels();
@@ -1173,34 +1181,62 @@ const ChatModule = (function() {
             .orderBy('createdAt', 'asc')
             .onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
+                    const messageData = { id: change.doc.id, ...change.doc.data() };
+                    const channelId = messageData.channelId;
+
+                    // Гарантируем, что кэш для канала существует
+                    if (!allMessagesByChannel.has(channelId)) {
+                        allMessagesByChannel.set(channelId, []);
+                    }
+                    let cachedChannelMessages = allMessagesByChannel.get(channelId);
+
+                    // --- НОВАЯ, РАСШИРЕННАЯ ЛОГИКА ---
+
                     if (change.type === 'added') {
-                        const message = { id: change.doc.id, ...change.doc.data() };
+                        // ... (код добавления в кэш)
 
-                        // 1. Добавляем сообщение в наш кэш
-                        if (!allMessagesByChannel.has(message.channelId)) {
-                            allMessagesByChannel.set(message.channelId, []);
+                        // --- НОВАЯ, УМНАЯ ЛОГИКА СЧЕТЧИКОВ ---
+                        const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== channelId || currentTab !== 'messages' || document.hidden);
+                        if (isUnread) {
+                            const isPrivateMessage = !messageData.memberIds.includes('public');
+                            const isUnlockedPublicChannel = messageData.memberIds.includes('public') && (channelId === 'general' || unlockedChannels.has(channelId));
+                            
+                            // Показываем счетчик, только если это личное сообщение
+                            // ИЛИ если это публичный канал, к которому у нас есть доступ
+                            if (isPrivateMessage || isUnlockedPublicChannel) {
+                                updateUnreadCount(channelId, 1);
+                            }
                         }
-                        allMessagesByChannel.get(message.channelId).push(message);
 
-                        // 2. Обновляем счетчик непрочитанных, ЕСЛИ это не текущий активный чат
-                        if (message.authorId !== currentUser.uid && (currentChannel !== message.channelId || currentTab !== 'messages' || document.hidden)) {
-                            updateUnreadCount(message.channelId, 1);
-                        }
-
-                        // 3. Обновляем UI, ЕСЛИ сообщение пришло в текущий открытый чат
-                        if (message.channelId === currentChannel && currentTab === 'messages') {
-                            displayMessages(); // Перерисовываем чат с новым сообщением
-                        }
-                        
-                        // 4. Логика уведомлений
-                        if (document.hidden && message.authorId !== currentUser.uid) {
+                        if (document.hidden && messageData.authorId !== currentUser.uid) {
                            showNotification(true);
                         }
+
+                    } else if (change.type === 'modified') {
+                        // 2. Обрабатываем измененные сообщения (реакции, правки, пины)
+                        const messageIndex = cachedChannelMessages.findIndex(m => m.id === messageData.id);
+                        if (messageIndex > -1) {
+                            // Находим старое сообщение в кэше и заменяем его на обновленное
+                            cachedChannelMessages[messageIndex] = messageData;
+                        }
+
+                    } else if (change.type === 'removed') {
+                        // 3. Обрабатываем удаленные сообщения
+                        // Обновляем кэш, отфильтровывая удаленное сообщение
+                        allMessagesByChannel.set(channelId, cachedChannelMessages.filter(m => m.id !== messageData.id));
+                    }
+                    
+                    // --- ОБЩАЯ ЛОГИКА ДЛЯ ВСЕХ ТИПОВ ИЗМЕНЕНИЙ ---
+                    // Если изменение произошло в том канале, который сейчас открыт у пользователя,
+                    // немедленно перерисовываем чат, чтобы показать результат.
+                    if (channelId === currentChannel && currentTab === 'messages') {
+                        displayMessages(); 
                     }
                 });
             }, error => {
                 console.error("Ошибка глобального слушателя сообщений:", error);
             });
+
     }   
 
     function updateUserUI() {
@@ -3012,7 +3048,6 @@ const ChatModule = (function() {
         return hashHex;
     }
 
-
     async function handleChannelClick(channel) {
         // Если канал защищен и еще не разблокирован, запрашиваем пароль
         if (channel.hasPassword && !unlockedChannels.has(channel.id)) {
@@ -3023,9 +3058,13 @@ const ChatModule = (function() {
 
             if (enteredPasswordHash === channel.passwordHash) {
                 unlockedChannels.add(channel.id);
+                // СОХРАНЯЕМ ОБНОВЛЕННЫЙ СПИСОК В ХРАНИЛИЩЕ
+                localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
+
                 // Если пароль верный, продолжаем переключение
                 switchToChannel(channel.id, channel.name, 'public');
             } else {
+
                 alert(_chat('invalid_channel_password'));
             }
         } else {
@@ -3181,6 +3220,11 @@ const ChatModule = (function() {
     
     
     function clearChatData() {
+        // ОЧИЩАЕМ ХРАНИЛИЩЕ ПРИ ВЫХОДЕ
+        if (currentUser) {
+            localStorage.removeItem(`unlockedChannels_${currentUser.uid}`);
+        }
+
         allMessages = [];
         channels = [];
         privateChats = [];
