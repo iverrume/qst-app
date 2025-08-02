@@ -6061,7 +6061,7 @@ const mainApp = (function() {
     function resetQuizForNewFile(clearInput = true) {
         // Если мы сбрасываем тест, потому что начинаем новый,
         // а не потому что сохранили старый, то удаляем сохранение.
-        if (clearSession) {
+        if (clearInput) {
              localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
         }
         window.removeEventListener('beforeunload', handleBeforeUnload);
