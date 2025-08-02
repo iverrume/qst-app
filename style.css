@@ -3783,11 +3783,11 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 #runParserBtn {
-    background-color: var(--button-success-bg);
+    background-color: var(--button-primary-bg); /* ИЗМЕНЕНИЕ */
     width: 50%;
 }
 #runParserBtn:hover {
-    background-color: var(--button-success-hover-bg);
+    background-color: var(--button-primary-hover-bg); /* ИЗМЕНЕНИЕ */
 }
 
 #parserOutputArea h3 {
@@ -4236,3 +4236,42 @@ button[onclick*="copyToClipboard"].copied:after {
     transition: all 0.3s ease;
 }
 
+/* --- ДОБАВЬТЕ ЭТОТ БЛОК В САМЫЙ КОНЕЦ ФАЙЛА style.css --- */
+
+/* Обновление палитры для ЧАТА в режиме Claude */
+body.claude-mode .advanced-chat-header {
+    /* Убираем синий градиент с шапки чата */
+    background: var(--container-bg-color);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color); /* Используем основной цвет текста темы */
+}
+
+body.claude-mode .header-controls button,
+body.claude-mode #currentUser {
+    /* Делаем кнопки в шапке чата соответствующими теме */
+    background: var(--input-bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.claude-mode .header-controls button:hover,
+body.claude-mode #currentUser:hover {
+    background: var(--input-hover-bg-color);
+}
+
+body.claude-mode .sidebar-toggle-btn {
+    color: var(--text-color); /* Иконка-бургер тоже подстраивается */
+}
+
+body.claude-mode .channel-item.active {
+    /* Активный канал (был зеленым) теперь использует основной цвет темы */
+    background: var(--button-primary-bg);
+    border-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+}
+
+body.claude-mode .message.mine .message-content {
+    /* Сообщение пользователя (было синим) теперь в цветах темы */
+    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
+    border-color: transparent;
+}
