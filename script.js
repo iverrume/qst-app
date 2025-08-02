@@ -1150,7 +1150,7 @@ const ChatModule = (function() {
                 }
 
                 listenForAllUserMessages(); 
-                setupPresenceSystem();
+                listenForUnreadCounts();
                 fetchAllUsers();
                 loadChannels();
                 loadPrivateChats();
@@ -1168,76 +1168,44 @@ const ChatModule = (function() {
     let globalMessagesListener = null; // Переменная для нашего нового слушателя
     let allMessagesByChannel = new Map(); // Кэш для сообщений, сгруппированных по каналам
 
-    function listenForAllUserMessages() {
-        if (globalMessagesListener) {
-            globalMessagesListener(); // Отписываемся от старого, если он есть
+    let unreadListener = null; // Новая переменная для этого слушателя
+
+    function listenForUnreadCounts() {
+        if (unreadListener) {
+            unreadListener(); // Отписываемся от старого
         }
         if (!currentUser) return;
 
-        console.log("Запуск глобального слушателя сообщений для пользователя:", currentUser.uid);
+        console.log("Запуск слушателя для счетчиков непрочитанных сообщений.");
 
-        globalMessagesListener = db.collection('messages')
-            .where('memberIds', 'array-contains-any', [currentUser.uid, 'public'])
-            .orderBy('createdAt', 'asc')
+        unreadListener = db.collection('messages')
+            .where('memberIds', 'array-contains', currentUser.uid)
+            .orderBy('createdAt', 'desc') // Слушаем только самые новые
+            .limit(10) // Ограничиваем, нам не нужна вся история
             .onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
-                    const messageData = { id: change.doc.id, ...change.doc.data() };
-                    const channelId = messageData.channelId;
-
-                    // Гарантируем, что кэш для канала существует
-                    if (!allMessagesByChannel.has(channelId)) {
-                        allMessagesByChannel.set(channelId, []);
-                    }
-                    let cachedChannelMessages = allMessagesByChannel.get(channelId);
-
-                    // --- НОВАЯ, РАСШИРЕННАЯ ЛОГИКА ---
-
                     if (change.type === 'added') {
-                        // ... (код добавления в кэш)
-
-                        // --- НОВАЯ, УМНАЯ ЛОГИКА СЧЕТЧИКОВ ---
-                        const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== channelId || currentTab !== 'messages' || document.hidden);
+                        const messageData = change.doc.data();
+                        
+                        // --- УМНАЯ ЛОГИКА СЧЕТЧИКОВ (остается без изменений) ---
+                        const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== messageData.channelId || currentTab !== 'messages' || document.hidden);
                         if (isUnread) {
                             const isPrivateMessage = !messageData.memberIds.includes('public');
-                            const isUnlockedPublicChannel = messageData.memberIds.includes('public') && (channelId === 'general' || unlockedChannels.has(channelId));
+                            const isUnlockedPublicChannel = messageData.memberIds.includes('public') && (messageData.channelId === 'general' || unlockedChannels.has(messageData.channelId));
                             
-                            // Показываем счетчик, только если это личное сообщение
-                            // ИЛИ если это публичный канал, к которому у нас есть доступ
                             if (isPrivateMessage || isUnlockedPublicChannel) {
-                                updateUnreadCount(channelId, 1);
+                                updateUnreadCount(messageData.channelId, 1);
                             }
                         }
-
-                        if (document.hidden && messageData.authorId !== currentUser.uid) {
-                           showNotification(true);
-                        }
-
-                    } else if (change.type === 'modified') {
-                        // 2. Обрабатываем измененные сообщения (реакции, правки, пины)
-                        const messageIndex = cachedChannelMessages.findIndex(m => m.id === messageData.id);
-                        if (messageIndex > -1) {
-                            // Находим старое сообщение в кэше и заменяем его на обновленное
-                            cachedChannelMessages[messageIndex] = messageData;
-                        }
-
-                    } else if (change.type === 'removed') {
-                        // 3. Обрабатываем удаленные сообщения
-                        // Обновляем кэш, отфильтровывая удаленное сообщение
-                        allMessagesByChannel.set(channelId, cachedChannelMessages.filter(m => m.id !== messageData.id));
-                    }
-                    
-                    // --- ОБЩАЯ ЛОГИКА ДЛЯ ВСЕХ ТИПОВ ИЗМЕНЕНИЙ ---
-                    // Если изменение произошло в том канале, который сейчас открыт у пользователя,
-                    // немедленно перерисовываем чат, чтобы показать результат.
-                    if (channelId === currentChannel && currentTab === 'messages') {
-                        loadMessages(); 
                     }
                 });
             }, error => {
-                console.error("Ошибка глобального слушателя сообщений:", error);
+                console.error("Ошибка слушателя непрочитанных сообщений:", error);
             });
+    } 
 
-    }   
+
+
 
     function updateUserUI() {
         if (currentUserEl) {
@@ -4034,8 +4002,8 @@ const mainApp = (function() {
             // Main Screen
             continue_later_button: 'Кейінірек жалғастыру',
             continue_sessions: 'Жалғастыру:',
-            answered_of: 'Жауап берілді',
-            from: '-ден',
+            answered_of: 'Жауап берілді:',
+            from: ', жалпы:',
             time_left: 'Қалған уақыт',
             continue_quiz_button: 'Жалғастыру',
             delete_session_button: 'Жою',
