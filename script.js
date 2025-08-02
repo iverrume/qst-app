@@ -6106,6 +6106,7 @@ const mainApp = (function() {
         }
         
         loadRecentFiles();
+        loadSavedSession();
     }
 
     function shuffleArray(array) {
