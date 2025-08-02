@@ -1432,7 +1432,6 @@ const ChatModule = (function() {
 
         messageArea.appendChild(userListEl);
         updateTabCounter('users', allUsers.size);
-        updateTabCounter('users', onlineUsers.size);
     }
 
     /**
@@ -1527,13 +1526,22 @@ const ChatModule = (function() {
         const messagesToDisplay = isPinnedMode ? allMessages.filter(msg => msg.isPinned) : allMessages;
 
         if (messagesToDisplay.length === 0) {
-            const message = isPinnedMode ? 'Закрепленных сообщений пока нет' : 'Сообщений пока нет. Напишите первым!';
-            messageArea.innerHTML = `<div class="empty-state">${message}</div>`;
+            // ...
             return;
         }
         messagesToDisplay.forEach(message => messageArea.appendChild(createMessageElement(message)));
+        
+        // --- НОВЫЙ КОД ДЛЯ МГНОВЕННОЙ ПРОКРУТКИ ---
+        // 1. Временно отключаем плавную анимацию
+        messageArea.style.scrollBehavior = 'auto';
+        // 2. Мгновенно прокручиваем вниз
         scrollToBottom();
-    }  
+        // 3. С небольшой задержкой возвращаем плавную прокрутку для будущих действий
+        setTimeout(() => {
+            messageArea.style.scrollBehavior = 'smooth';
+        }, 100);
+        // --- КОНЕЦ НОВОГО КОДА ---
+    } 
 
     
     function loadQuestions() {
@@ -2757,7 +2765,7 @@ const ChatModule = (function() {
         updateOnlineUsersList();
     }
 
-    
+
 
     function updateOnlineUsersList() {
         if (!onlineUsersList) return;
