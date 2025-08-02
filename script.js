@@ -6008,23 +6008,36 @@ const mainApp = (function() {
         }
     }
 
+ 
+
     function loadTheme() {
-        const currentTheme = localStorage.getItem('theme');
+        const currentTheme = localStorage.getItem('theme') || 'claude'; // По умолчанию ставим тему Claude
+        document.body.classList.remove('dark-mode', 'claude-mode'); // Сначала убираем все классы тем
+
         if (currentTheme === 'dark') {
             document.body.classList.add('dark-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '☀️';
+            if (themeToggleButton) themeToggleButton.textContent = '☀️'; // Солнце для перехода на светлую
+        } else if (currentTheme === 'claude') {
+            document.body.classList.add('claude-mode');
+            if (themeToggleButton) themeToggleButton.textContent = '🌙'; // Луна для перехода на темную
         } else {
-            document.body.classList.remove('dark-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '🌙';
+            // Светлая тема (light) - нет класса
+            if (themeToggleButton) themeToggleButton.textContent = '🌤️'; // Иконка Claude для перехода на нее
         }
     }
 
     function toggleTheme() {
-        document.body.classList.toggle('dark-mode');
-        let theme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-        if (themeToggleButton) themeToggleButton.textContent = theme === 'dark' ? '☀️' : '🌙';
-        localStorage.setItem('theme', theme);
+        const themes = ['light', 'claude', 'dark']; // Определяем порядок переключения
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        const currentIndex = themes.indexOf(currentTheme);
+        const nextIndex = (currentIndex + 1) % themes.length; // Находим индекс следующей темы
+        const newTheme = themes[nextIndex];
+
+        localStorage.setItem('theme', newTheme);
+        loadTheme(); // Вызываем обновленную функцию для применения темы и иконки
     }
+
+
     
 
 

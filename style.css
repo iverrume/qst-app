@@ -77,6 +77,47 @@ body.dark-mode {
     --triggered-word-color: #ff4d4d;
 }
 
+
+
+body.claude-mode {
+    --bg-color: #f7f4f1; /* Основной фон, как у Claude */
+    --container-bg-color: #faf9f7; /* Фон контейнеров, чуть светлее */
+    --text-color: #333; /* Основной темный текст */
+    --secondary-text-color: #8e8e8e; /* Вторичный серый текст */
+    --heading-color: #2d2d2d; /* Цвет заголовков */
+    --border-color: #e5e3e1; /* Цвет рамок */
+    --dashed-border-color: #e5e3e1;
+    --input-bg-color: #ffffff; /* Фон полей ввода */
+    --input-hover-bg-color: #f0f0f0;
+    --input-border-color: #dcdcdc;
+    --input-hover-border-color: #c0c0c0;
+    --button-primary-bg: #4a4a4a; /* Темно-серая кнопка */
+    --button-primary-hover-bg: #333333;
+    --button-primary-text: white;
+    --button-secondary-bg: #d4d4d4; /* Светло-серая вторичная кнопка */
+    --button-secondary-hover-bg: #c0c0c0;
+    --button-secondary-text: #333;
+    --button-secondary-border: #d4d4d4;
+    --button-success-bg: #28a745;
+    --button-success-hover-bg: #218838;
+    --feedback-correct-bg: #d4edda;
+    --feedback-correct-text: #155724;
+    --feedback-correct-border: #c3e6cb;
+    --feedback-incorrect-bg: #f8d7da;
+    --feedback-incorrect-text: #721c24;
+    --feedback-incorrect-border: #f5c6cb;
+    --shadow-color: rgba(0,0,0,0.05); /* Очень легкая тень */
+    --shadow-light-color: rgba(0,0,0,0.02);
+    --shadow-hover-color: rgba(0,0,0,0.08);
+    --timer-text-color: #4a4a4a;
+    --quick-nav-current-bg: #4a4a4a;
+    --quick-nav-current-text: white;
+    --theme-toggle-border: #ccc;
+    --theme-toggle-hover-bg: #f0f0f0;
+    --triggered-word-color: #c54848;
+}
+
+
 /* Общие стили */
 html {
     box-sizing: border-box;
