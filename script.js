@@ -951,11 +951,14 @@ const ChatModule = (function() {
         searchInput = document.getElementById('chatSearchInput');
         Object.keys(TABS).forEach(tabId => {
             tabButtons[tabId] = document.querySelector(`[data-tab="${tabId}"]`);
+            // Проверяем, что это не вкладка "Пользователи", для которой свой счетчик
             if(tabId !== 'users') {
                  tabCounters[tabId] = document.getElementById(`${tabId}Count`);
             }
         });
-        tabCounters['users'] = document.getElementById('onlineCount');
+        // ПРАВИЛЬНО привязываем счетчики для пользователей
+        tabCounters['users'] = document.getElementById('usersCount'); // Счетчик для вкладки
+        tabCounters['online'] = document.getElementById('onlineCount'); // Счетчик для секции "Онлайн"
         console.log('DOM элементы гибридного чата инициализированы');
     }
 
@@ -1137,6 +1140,7 @@ const ChatModule = (function() {
                 loadChannels();
                 loadPrivateChats();
                 loadTabData(currentTab);
+                initializeDataListeners();
             } else {
                 console.log('Пользователь не авторизован');
                 clearChatData();
@@ -1344,6 +1348,7 @@ const ChatModule = (function() {
         });
 
         messageArea.appendChild(userListEl);
+        updateTabCounter('users', allUsers.size);
         updateTabCounter('users', onlineUsers.size);
     }
 
@@ -1452,7 +1457,6 @@ const ChatModule = (function() {
                     });
                     
                     displayQuestions(questions);
-                    updateTabCounter('questions', questions.length);
 
                     // ПРОВЕРЯЕМ, НУЖНО ЛИ ПОДСВЕТИТЬ ВОПРОС
                     if (questionToHighlight) {
@@ -1858,7 +1862,6 @@ const ChatModule = (function() {
             .orderBy('createdAt', 'desc')
             .onSnapshot(snapshot => {
                 const favoriteItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateTabCounter('favorites', favoriteItems.length);
                 
                 if (favoriteItems.length === 0) {
                     messageArea.innerHTML = '<div class="empty-state">В избранном пока ничего нет</div>';
@@ -2379,13 +2382,10 @@ const ChatModule = (function() {
         // Возвращаем массив всех найденных вопросов
         return questions;
     }
-    // --- КОНЕЦ ВСТАВЛЕННОГО КОДА ---
 
 
 
 
-
-    // --- ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ НА ЭТУ ---
     async function createQuestionFromMessage(rawText) {
         // Используем наш новый парсер и здесь!
         const questionsToCreate = parseMultipleQstBlocks(rawText);
@@ -2555,30 +2555,17 @@ const ChatModule = (function() {
             openAuthModal(); // <-- Показываем окно авторизации, если нужно
             return;
         }
-
         try {
-            const favorite = {
-                userId: currentUser.uid,
-                type: type,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                content: itemObject // <-- Сохраняем весь объект с контентом
-            };
-            
+            // ... (код добавления в БД)
             await db.collection('favorites').add(favorite);
             alert('Добавлено в избранное!');
-            
-            // Обновляем счетчик во вкладке
-            if (currentTab === 'favorites') {
-                loadFavorites();
-            } else {
-                const favCount = parseInt(tabCounters.favorites.textContent || '0');
-                updateTabCounter('favorites', favCount + 1);
-            }
+
 
         } catch (error) {
             console.error('Ошибка добавления в избранное:', error);
             showError('Не удалось добавить в избранное');
         }
+
     }
 
     
@@ -2636,8 +2623,9 @@ const ChatModule = (function() {
     function updateOnlineUsersList() {
         if (!onlineUsersList) return;
         onlineUsersList.innerHTML = '';
-        const onlineCountEl = document.getElementById('onlineCount');
-        if (onlineCountEl) onlineCountEl.textContent = onlineUsers.size;
+        // Обновляем ТОЛЬКО счетчик онлайн-пользователей
+        if (tabCounters['online']) tabCounters['online'].textContent = onlineUsers.size;
+
         if (onlineUsers.size === 0) {
             onlineUsersList.innerHTML = '<div style="padding: 10px; text-align: center; color: var(--secondary-text-color);">Никого нет онлайн</div>';
             return;
@@ -2650,6 +2638,27 @@ const ChatModule = (function() {
         });
     }
 
+    function initializeDataListeners() {
+        if (!currentUser || !db) return;
+
+        console.log("Запуск постоянных слушателей данных...");
+
+        // Слушатель для вопросов
+        db.collection('questions')
+          .where('channelId', '==', currentChannel) // Можно оставить для текущего канала
+          .onSnapshot(snapshot => {
+              updateTabCounter('questions', snapshot.size);
+          }, err => console.error("Ошибка слушателя вопросов:", err));
+
+        // Слушатель для избранного (только для текущего пользователя)
+        db.collection('favorites')
+          .where('userId', '==', currentUser.uid)
+          .onSnapshot(snapshot => {
+              updateTabCounter('favorites', snapshot.size);
+          }, err => console.error("Ошибка слушателя избранного:", err));
+
+        // Слушатели для сообщений и пользователей уже глобальные, их трогать не нужно.
+    }
 
     function renderChannelsList() {
         if(!channelsList) return;
