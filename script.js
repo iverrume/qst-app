@@ -3116,28 +3116,67 @@ const ChatModule = (function() {
     }
 
     async function handleChannelClick(channel) {
-        // Если канал защищен и еще не разблокирован, запрашиваем пароль
-        if (channel.hasPassword && !unlockedChannels.has(channel.id)) {
-            const password = prompt(`${_chat('channel_enter_password_prompt', { channelName: channel.name })}`);
-            if (password === null) return; // Пользователь нажал "Отмена"
+        // --- НАЧАЛО НОВОГО КОДА ---
 
-            const enteredPasswordHash = await hashPassword(password);
+        // Функция-помощник для входа в канал и добавления в участники
+        const enterChannel = async () => {
+            // РЕШЕНИЕ ПРОБЛЕМЫ №2: Добавляем пользователя в участники при входе
+            // Проверяем, что это не основной канал и что пользователь еще не участник
+            if (channel.id !== 'general' && (!channel.members || !channel.members.includes(currentUser.uid))) {
+                try {
+                    const channelRef = db.collection('channels').doc(channel.id);
+                    await channelRef.update({
+                        members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                    });
+                    console.log(`Пользователь ${currentUser.displayName} добавлен в участники канала "${channel.name}"`);
+                } catch (error) {
+                    console.error("Ошибка добавления пользователя в участники:", error);
+                }
+            }
+            // Переключаемся на канал
+            switchToChannel(channel.id, channel.name, 'public');
+        };
 
-            if (enteredPasswordHash === channel.passwordHash) {
-                unlockedChannels.add(channel.id);
-                // СОХРАНЯЕМ ОБНОВЛЕННЫЙ СПИСОК В ХРАНИЛИЩЕ
-                localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
+        // Если канал защищен паролем
+        if (channel.hasPassword) {
+            // РЕШЕНИЕ ПРОБЛЕМЫ №1: Проверяем, является ли пользователь все еще участником
+            const isMember = channel.members && channel.members.includes(currentUser.uid);
 
-                // Если пароль верный, продолжаем переключение
-                switchToChannel(channel.id, channel.name, 'public');
+            // Если пользователь НЕ участник (или списка участников нет), то ключ недействителен
+            if (!isMember) {
+                // Если он был удален, но ключ остался в браузере - аннулируем ключ
+                if (unlockedChannels.has(channel.id)) {
+                    unlockedChannels.delete(channel.id);
+                    localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
+                    console.log(`Локальный ключ для канала "${channel.name}" аннулирован, так как пользователь был удален.`);
+                }
+            }
+
+            // Теперь стандартная проверка: если канал все еще не разблокирован, запрашиваем пароль
+            if (!unlockedChannels.has(channel.id)) {
+                const password = prompt(_chat('channel_enter_password_prompt', {
+                    channelName: channel.name
+                }));
+                if (password === null) return;
+
+                const enteredPasswordHash = await hashPassword(password);
+                if (enteredPasswordHash === channel.passwordHash) {
+                    // Если пароль верный, разблокируем и входим
+                    unlockedChannels.add(channel.id);
+                    localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
+                    await enterChannel();
+                } else {
+                    alert(_chat('invalid_channel_password'));
+                }
             } else {
-
-                alert(_chat('invalid_channel_password'));
+                // Если ключ есть и он действителен (пользователь все еще участник), просто входим
+                await enterChannel();
             }
         } else {
-            // Если канал публичный или уже разблокирован, просто переключаемся
-            switchToChannel(channel.id, channel.name, 'public');
+            // Если канал публичный (без пароля), просто входим
+            await enterChannel();
         }
+        // --- КОНЕЦ НОВОГО КОДА ---
     }
     
     async function createChannel() {
