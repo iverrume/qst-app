@@ -52,7 +52,7 @@ const ChatModule = (function() {
             add_to_favorites_button: "⭐ В избранное",
             copy_question_button: "📋 Копировать",
             delete_question_button: "🗑️ Удалить вопрос",
-            clear_favorites_button: "🗑️ Очистить избранное", 
+            clear_favorites_button: "🗑️ Очистить", 
             question_label: "Вопрос:",
             author_label: "Автор:",
             date_label: "Дата:",
@@ -142,7 +142,7 @@ const ChatModule = (function() {
             pinned_mode_off_title: "Показать закрепленные",
             download_qst_button: "📥 Скачать .qst",
             download_txt_button: "📥 Скачать .txt",
-            clear_favorites_button: "🗑️ Очистить избранное",
+            clear_favorites_button: "🗑️ Очистить",
             download_no_data: "Нет данных для скачивания в разделе",
             favorites_cleared_success: "Избранное успешно очищено.",
             favorites_already_empty: "Избранное уже пусто.",
@@ -297,7 +297,7 @@ const ChatModule = (function() {
             add_to_favorites_button: "⭐ Таңдаулыларға қосу",
             copy_question_button: "📋 Көшіру",
             delete_question_button: "🗑️ Сұрақты жою",
-            clear_favorites_button: "🗑️ Таңдаулыларды тазарту",
+            clear_favorites_button: "🗑️ Тазарту",
             download_no_data: "бөлімінде жүктеуге деректер жоқ",
             favorites_cleared_success: "Таңдаулылар сәтті тазартылды.",
             favorites_already_empty: "Таңдаулылар қазірдің өзінде бос.",
@@ -449,7 +449,7 @@ const ChatModule = (function() {
             add_to_favorites_button: "⭐ Add to Favorites",
             copy_question_button: "📋 Copy",
             delete_question_button: "🗑️ Delete Question",
-            clear_favorites_button: "🗑️ Clear Favorites",
+            clear_favorites_button: "🗑️ Clear",
             question_label: "Question:",
             author_label: "Author:",
             date_label: "Date:",
@@ -1259,7 +1259,7 @@ const ChatModule = (function() {
 
         // Если мы переключились на вкладку сообщений, сбрасываем счетчик для ТЕКУЩЕГО канала
         if (tabId === 'messages') {
-            updateUnreadCount(currentChannel, 0); // <-- СБРАСЫВАЕМ СЧЕТЧИК ЗДЕСЬ
+            updateUnreadCount(currentChannel, 0, true); // <-- СБРАСЫВАЕМ СЧЕТЧИК ЗДЕСЬ
         }
 
         document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
@@ -1436,13 +1436,14 @@ const ChatModule = (function() {
 
 
 
-
+ 
     function updateUnreadCount(channelId, change, isReset = false) {
         const currentCount = unreadCounts.get(channelId) || 0;
+        // Если isReset = true, обнуляем счетчик. Иначе - увеличиваем.
         const newCount = isReset ? 0 : currentCount + change;
         unreadCounts.set(channelId, newCount);
 
-        // Обновляем счетчик в боковой панели для конкретного канала (если он есть)
+        // Обновляем UI для конкретного канала
         const channelCounter = document.querySelector(`.channel-item[data-channel-id="${channelId}"] .unread-channel-badge`);
         if (channelCounter) {
             if (newCount > 0) {
@@ -1452,8 +1453,8 @@ const ChatModule = (function() {
                 channelCounter.classList.add('hidden');
             }
         }
-        
-        // Обновляем общий счетчик во вкладке "Сообщения"
+
+        // Пересчитываем и обновляем общий счетчик на вкладке "Сообщения"
         let totalUnread = 0;
         unreadCounts.forEach(count => totalUnread += count);
         updateTabCounter('messages', totalUnread);
@@ -2755,20 +2756,35 @@ const ChatModule = (function() {
         });
     }
    
+ 
     function switchToChannel(channelId, channelName, type = 'public') {
-        currentChannel = channelId;
-        currentChannelType = type;
+        // Действие №1: Всегда обнуляем счетчик для канала, на который кликнули.
+        // Это гарантирует, что счетчик исчезнет немедленно.
+        updateUnreadCount(channelId, 0, true);
+
+        // Действие №2: Обновляем заголовок с названием канала
         const channelNameEl = document.getElementById('currentChannelName');
         if (channelNameEl) {
             const prefix = type === 'public' ? '# ' : '@ ';
             channelNameEl.textContent = `${prefix}${channelName}`;
         }
-        updateUnreadCount(channelId, 0);
-        switchTab('messages'); // Всегда переключаемся на сообщения при смене канала
+
+        // Действие №3: Проверяем, нужно ли нам полностью менять контекст
+        if (currentChannel !== channelId) {
+            // Если мы переключаемся на ДРУГОЙ канал:
+            currentChannel = channelId;
+            currentChannelType = type;
+            // Загружаем сообщения для нового канала
+            loadMessages();
+        }
+
+        // Действие №4: В любом случае, переключаемся на вкладку "Сообщения"
+        // и обновляем визуальное состояние боковой панели.
+        // Функция switchTab сама позаботится о том, чтобы не делать лишней работы.
+        switchTab('messages');
         renderChannelsList();
         renderPrivateChatsList();
     }
-
     
     function loadChannels() {
         if (!db) return;
@@ -2929,25 +2945,24 @@ const ChatModule = (function() {
         return hashHex;
     }
 
-    async function handleChannelClick(channel) {
-        if (channel.id === currentChannel) return; // Не переключаться на тот же канал
 
-        // Проверяем, защищен ли канал и НЕ разблокирован ли он уже
+    async function handleChannelClick(channel) {
+        // Если канал защищен и еще не разблокирован, запрашиваем пароль
         if (channel.hasPassword && !unlockedChannels.has(channel.id)) {
-            const password = prompt(`Канал "${channel.name}" защищен. Введите пароль:`);
+            const password = prompt(`${_chat('channel_enter_password_prompt', { channelName: channel.name })}`);
             if (password === null) return; // Пользователь нажал "Отмена"
 
             const enteredPasswordHash = await hashPassword(password);
-            
+
             if (enteredPasswordHash === channel.passwordHash) {
-                // Если пароль верный, добавляем ID в сет разблокированных
                 unlockedChannels.add(channel.id);
+                // Если пароль верный, продолжаем переключение
                 switchToChannel(channel.id, channel.name, 'public');
             } else {
-                alert("Неверный пароль.");
+                alert(_chat('invalid_channel_password'));
             }
         } else {
-            // Если канал не защищен или уже был разблокирован, просто переключаемся
+            // Если канал публичный или уже разблокирован, просто переключаемся
             switchToChannel(channel.id, channel.name, 'public');
         }
     }
