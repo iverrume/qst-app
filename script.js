@@ -6062,7 +6062,7 @@ const mainApp = (function() {
         // Если мы сбрасываем тест, потому что начинаем новый,
         // а не потому что сохранили старый, то удаляем сохранение.
         if (clearInput) {
-             localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
+             localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         }
         window.removeEventListener('beforeunload', handleBeforeUnload);
 
