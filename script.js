@@ -57,6 +57,8 @@ const ChatModule = (function() {
             author_label: "Автор:",
             date_label: "Дата:",
             anonymous_user: "Аноним",
+            expand_message: "Развернуть", 
+            collapse_message: "Свернуть", 
             // Modals
             user_actions_title: "Действия",
             user_actions_text: "Выберите, что вы хотите сделать.",
@@ -209,6 +211,8 @@ const ChatModule = (function() {
             author_label: "Авторы:",
             date_label: "Күні:",
             anonymous_user: "Аноним",
+            expand_message: "Көбірек көрсету", 
+            collapse_message: "Жасыру", 
             // Modals
             user_actions_title: "Әрекеттер",
             user_actions_text: "Не істегіңіз келетінін таңдаңыз.",
@@ -454,6 +458,8 @@ const ChatModule = (function() {
             author_label: "Author:",
             date_label: "Date:",
             anonymous_user: "Anonymous",
+            expand_message: "Read more", 
+            collapse_message: "Show less", 
             download_no_data: "No data to download in section",
             favorites_cleared_success: "Favorites cleared successfully.",
             favorites_already_empty: "Favorites is already empty.",
@@ -1566,9 +1572,9 @@ const ChatModule = (function() {
         const messageEl = document.createElement('div');
         const timestamp = message.createdAt;
 
-        const displayTime = formatSmartTimestamp(timestamp); 
+        const displayTime = formatSmartTimestamp(timestamp);
 
-        const fullTimeTitle = timestamp?.toDate()?.toLocaleString(currentChatLang, { // ИЗМЕНЕНО
+        const fullTimeTitle = timestamp?.toDate()?.toLocaleString(currentChatLang, {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
@@ -1587,7 +1593,7 @@ const ChatModule = (function() {
         if (message.type === 'file_share') {
             messageEl.classList.add('file-share-bubble');
             const qCount = message.fileInfo.questions;
-            const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more')); // ИЗМЕНЕНО
+            const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
             
             contentHTML = `
             <div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}')">
@@ -1600,7 +1606,7 @@ const ChatModule = (function() {
             </div>`;
         } else if (message.type === 'question_link') {
             messageEl.classList.add('question-link-bubble');
-            contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`; // ИЗМЕНЕНО
+            contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
         } else {
             const editedIndicator = message.editedAt ? `<span class="edited-indicator">(изм.)</span>` : '';
             const pinnedIcon = message.isPinned ? '<span class="pinned-icon" title="Закрепленное сообщение">📌</span>' : '';
@@ -1625,9 +1631,36 @@ const ChatModule = (function() {
             actionsHTML += `<button title="Редактировать" onclick="ChatModule.startEditMessage('${message.id}', '${escape(message.text)}')">✏️</button>`;
             actionsHTML += `<button title="Удалить" onclick="ChatModule.deleteMessage('${message.id}')">🗑️</button>`;
         }
-        // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        
         messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || _chat('anonymous_user')}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
-        // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+        
+        const MAX_HEIGHT = 250; // Высота в пикселях, после которой сообщение сворачивается
+        const contentEl = messageEl.querySelector('.message-content');
+
+        // Проверяем, что это текстовое сообщение, и даем браузеру мгновение на расчет высоты
+        if (contentEl) {
+            // Использование setTimeout(..., 0) - это надежный способ убедиться,
+            // что браузер успел отрисовать элемент и правильно рассчитать его scrollHeight.
+            setTimeout(() => {
+                if (contentEl.scrollHeight > MAX_HEIGHT) {
+                    contentEl.classList.add('collapsible');
+
+                    const expandBtn = document.createElement('button');
+                    expandBtn.className = 'expand-message-btn';
+                    expandBtn.textContent = _chat('expand_message');
+
+                    expandBtn.onclick = function() {
+                        const isExpanded = contentEl.classList.toggle('expanded');
+                        // Меняем текст кнопки в зависимости от состояния
+                        this.textContent = isExpanded ? _chat('collapse_message') : _chat('expand_message');
+                    };
+
+                    // Добавляем кнопку после блока с сообщением, внутри основного элемента
+                    messageEl.appendChild(expandBtn);
+                }
+            }, 0); 
+        }
+
         return messageEl;
     }
 

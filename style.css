@@ -1455,7 +1455,7 @@ body.dark-mode {
     overflow: hidden;
 }
  
- 
+
 /* Top bar */
 .chat-top-bar {
     padding: 10px 20px; /* ИЗМЕНЕНИЕ: Уменьшили вертикальные отступы */
@@ -1530,7 +1530,7 @@ body.dark-mode {
 /* Messages */
 .message {
     margin-bottom: 20px;
-    max-width: 70%;
+    max-width: 85%;
     position: relative;
     animation: messageSlideIn 0.3s ease;
 }
@@ -4315,4 +4315,51 @@ body.claude-mode .message.mine .message-content {
         padding-top: 6px;
         padding-bottom: 6px;
     }
+}
+
+/* Стили для сворачивания длинных сообщений */
+.message-content.collapsible {
+    max-height: 250px; /* Максимальная высота свернутого сообщения */
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.4s ease-in-out;
+}
+
+/* Градиент внизу, намекающий на продолжение */
+.message-content.collapsible::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, var(--container-bg-color));
+    pointer-events: none; /* Чтобы не мешал кликам */
+}
+
+/* Состояние, когда сообщение развернуто */
+.message-content.collapsible.expanded {
+    max-height: 2000px; /* Большая высота для анимации */
+}
+
+/* Убираем градиент, когда сообщение развернуто */
+.message-content.collapsible.expanded::after {
+    opacity: 0;
+}
+
+/* Стиль для кнопки "Развернуть/Свернуть" */
+.expand-message-btn {
+    background-color: var(--input-hover-bg-color);
+    color: var(--secondary-text-color);
+    border: 1px solid var(--border-color);
+    padding: 5px 12px;
+    font-size: 0.8em;
+    border-radius: 15px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background-color 0.2s;
+}
+
+.expand-message-btn:hover {
+    background-color: var(--border-color);
 }
