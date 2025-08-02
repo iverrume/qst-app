@@ -4331,7 +4331,6 @@ const mainApp = (function() {
         updateTriggerWordToggleVisual();
         loadRecentFiles();
         loadSavedSession();
-        resetQuizForNewFile();
         const savedLang = localStorage.getItem('appLanguage') || 'ru';
         populateParserPatterns();
         setLanguage(savedLang);
@@ -6059,11 +6058,13 @@ const mainApp = (function() {
     function resetQuizForNewFile(clearInput = true) {
         // Если мы сбрасываем тест, потому что начинаем новый,
         // а не потому что сохранили старый, то удаляем сохранение.
-        if (clearInput) {
+        if (clearSession) {
              localStorage.removeItem(SAVED_SESSION_STORAGE_KEY);
-             loadSavedSession(); // Обновляем UI, чтобы карточка исчезла
         }
         window.removeEventListener('beforeunload', handleBeforeUnload);
+
+
+
         if (timerInterval) clearInterval(timerInterval);
         allParsedQuestions = [];
         questionsForCurrentQuiz = [];
@@ -6136,7 +6137,7 @@ const mainApp = (function() {
             localStorage.setItem(SAVED_SESSION_STORAGE_KEY, JSON.stringify(sessionData));
             alert('Тест сохранён! Вы можете продолжить его в любой момент с главного экрана.');
             // Возвращаемся на главный экран
-            resetQuizForNewFile();
+            resetQuizForNewFile(false);
         } catch (e) {
             console.error("Ошибка сохранения сессии в localStorage:", e);
             alert("Не удалось сохранить сессию. Возможно, в браузере закончилось место.");
