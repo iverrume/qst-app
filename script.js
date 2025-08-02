@@ -3728,13 +3728,10 @@ const ChatModule = (function() {
             // Просто показываем чат. Текст в нем уже будет на правильном языке.
             chatOverlay.classList.remove('hidden');
 
-            // Если это самый первый запуск, загружаем данные
-            if(!isInitialized) {
-                loadTabData(currentTab);
-            }
+            // Ключевое исправление: Загружаем данные для текущей вкладки КАЖДЫЙ РАЗ при открытии.
+            // Это гарантирует, что сообщения отобразятся, даже если они загрузились в фоне.
+            loadTabData(currentTab); 
         },
-
-
 
         closeChatModal: () => {
             if (chatOverlay) {
