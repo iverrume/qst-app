@@ -1169,7 +1169,7 @@ const ChatModule = (function() {
         console.log("Запуск глобального слушателя сообщений для пользователя:", currentUser.uid);
 
         globalMessagesListener = db.collection('messages')
-            .where('memberIds', 'array-contains', currentUser.uid)
+            .where('memberIds', 'array-contains-any', [currentUser.uid, 'public'])
             .orderBy('createdAt', 'asc')
             .onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
@@ -2085,18 +2085,16 @@ const ChatModule = (function() {
             if (isQuestionFormat) {
                 await createQuestionFromMessage(text);
                 chatInput.value = '';
-
-
             } else {
+
                 let memberIds = [];
                 if (currentChannelType === 'private') {
                     // Для личных чатов ID участников есть в названии канала
                     memberIds = currentChannel.replace('private_', '').split('_');
                 } else {
-                    // Для публичных, по-хорошему, нужно брать из данных канала,
-                    // но для простоты пока добавим только автора и текущего юзера.
-                    // Для полноценной системы здесь нужен список всех участников канала.
-                    memberIds = [currentUser.uid]; 
+                    // Для ПУБЛИЧНЫХ каналов добавляем специальную метку "public"
+                    // Это позволит любому пользователю подписаться на эти сообщения.
+                    memberIds = ['public']; 
                 }
 
                 const message = {
