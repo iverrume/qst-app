@@ -512,9 +512,12 @@ const ChatModule = (function() {
     let originalTitle = document.title;
     let unreadMessageCount = 0; 
     let isPinnedMode = false;
+
     let messagesListener = null; // Cлушатель для сообщений
-    let unreadListener = null; // Слушатель для счетчиков
+    let pmUnreadListener = null; // Слушатель для ЛИЧНЫХ непрочитанных
+    let publicUnreadListener = null; // Слушатель для ПУБЛИЧНЫХ непрочитанных
     let listenerInitializationTime = null; // ВРЕМЯ ЗАПУСКА СЛУШАТЕЛЯ
+
     let questionToHighlight = null;
     let favoritesListener = null;
     let unlockedChannels = new Set();
@@ -1151,7 +1154,7 @@ const ChatModule = (function() {
                     unlockedChannels = new Set(JSON.parse(savedUnlocked));
                 }
 
-                listenForUnreadCounts(); 
+                initializeUnreadListeners(); 
                 setupPresenceSystem();
                 fetchAllUsers();
                 loadChannels();
@@ -1171,48 +1174,53 @@ const ChatModule = (function() {
     let allMessagesByChannel = new Map(); // Кэш для сообщений, сгруппированных по каналам
 
 
-    function listenForUnreadCounts() {
-        if (unreadListener) {
-            unreadListener(); // Отписываемся от старого
+    function processUnreadMessage(change) {
+        if (change.type === 'added') {
+            const messageData = change.doc.data();
+            const messageTimestamp = messageData.createdAt?.toDate();
+
+            if (!messageTimestamp || messageTimestamp < listenerInitializationTime) {
+                return; // Игнорируем старые сообщения из первоначальной загрузки
+            }
+
+            const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== messageData.channelId || currentTab !== 'messages' || document.hidden);
+            if (isUnread) {
+                const isPrivateMessage = !messageData.memberIds.includes('public');
+                const isUnlockedPublicChannel = messageData.memberIds.includes('public') && (messageData.channelId === 'general' || unlockedChannels.has(messageData.channelId));
+
+                if (isPrivateMessage || isUnlockedPublicChannel) {
+                    updateUnreadCount(messageData.channelId, 1);
+                }
+            }
         }
+    }
+
+
+    function initializeUnreadListeners() {
+        if (pmUnreadListener) pmUnreadListener();
+        if (publicUnreadListener) publicUnreadListener();
         if (!currentUser) return;
 
-        // ШАГ 1: Записываем точное время, когда мы НАЧАЛИ слушать
         listenerInitializationTime = new Date();
-        console.log("Запуск слушателя для счетчиков в:", listenerInitializationTime);
+        console.log("Запуск двойного слушателя для счетчиков в:", listenerInitializationTime);
 
-        unreadListener = db.collection('messages')
+        // СЛУШАТЕЛЬ 1: Только для личных сообщений
+        pmUnreadListener = db.collection('messages')
             .where('memberIds', 'array-contains', currentUser.uid)
             .orderBy('createdAt', 'desc')
             .limit(10)
             .onSnapshot(snapshot => {
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        const messageData = change.doc.data();
-                        
-                        // ШАГ 2: Проверяем, было ли сообщение создано ПОСЛЕ запуска слушателя
-                        const messageTimestamp = messageData.createdAt?.toDate();
-                        if (!messageTimestamp || messageTimestamp < listenerInitializationTime) {
-                            return; // Если сообщение старое (из первоначальной загрузки), игнорируем его
-                        }
+                snapshot.docChanges().forEach(change => processUnreadMessage(change));
+            }, error => console.error("Ошибка слушателя ЛС:", error));
 
-                        // Если мы дошли сюда, значит сообщение действительно новое.
-                        // Дальнейшая логика остается без изменений.
-                        
-                        const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== messageData.channelId || currentTab !== 'messages' || document.hidden);
-                        if (isUnread) {
-                            const isPrivateMessage = !messageData.memberIds.includes('public');
-                            const isUnlockedPublicChannel = messageData.memberIds.includes('public') && (messageData.channelId === 'general' || unlockedChannels.has(messageData.channelId));
-                            
-                            if (isPrivateMessage || isUnlockedPublicChannel) {
-                                updateUnreadCount(messageData.channelId, 1);
-                            }
-                        }
-                    }
-                });
-            }, error => {
-                console.error("Ошибка слушателя непрочитанных сообщений:", error);
-            });
+        // СЛУШАТЕЛЬ 2: Только для публичных каналов
+        publicUnreadListener = db.collection('messages')
+            .where('memberIds', 'array-contains', 'public')
+            .orderBy('createdAt', 'desc')
+            .limit(10)
+            .onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => processUnreadMessage(change));
+            }, error => console.error("Ошибка слушателя каналов:", error));
     }
 
 
@@ -2743,9 +2751,13 @@ const ChatModule = (function() {
     function cleanupPresenceSystem() {
         if (presenceListener) presenceListener();
         if (heartbeatInterval) clearInterval(heartbeatInterval);
+        if (pmUnreadListener) pmUnreadListener(); // <-- ДОБАВЛЕНО
+        if (publicUnreadListener) publicUnreadListener(); // <-- ДОБАВЛЕНО
         onlineUsers.clear();
         updateOnlineUsersList();
     }
+
+    
 
     function updateOnlineUsersList() {
         if (!onlineUsersList) return;
