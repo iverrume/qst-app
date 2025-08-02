@@ -11,8 +11,10 @@
     --input-hover-bg-color: #e9e9e9;
     --input-border-color: #ddd;
     --input-hover-border-color: #ccc;
-    --button-primary-bg: #007bff;
-    --button-primary-hover-bg: #0056b3;
+    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
+    --button-primary-bg: #2c3e50; /* Строгий темно-серый вместо синего */
+    --button-primary-hover-bg: #34495e; /* Более светлый оттенок при наведении */
+    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --button-primary-text: white;
     --button-secondary-bg: #6c757d;
     --button-secondary-hover-bg: #5a6268;
@@ -29,8 +31,10 @@
     --shadow-color: rgba(0,0,0,0.1);
     --shadow-light-color: rgba(0,0,0,0.05);
     --shadow-hover-color: rgba(0,0,0,0.08);
-    --timer-text-color: #007bff;
-    --quick-nav-current-bg: #007bff;
+    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
+    --timer-text-color: #2c3e50; /* Таймер теперь тоже темно-серый */
+    --quick-nav-current-bg: #2c3e50; /* Выбранный вопрос в навигации */
+    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --quick-nav-current-text: white;
     --theme-toggle-border: #ccc;
     --theme-toggle-hover-bg: #f0f0f0;
@@ -38,6 +42,7 @@
     --primary: #2c3e50;
     --accent: #e74c3c;
 }
+
 
 body.dark-mode {
     --bg-color: #121212;
@@ -51,8 +56,10 @@ body.dark-mode {
     --input-hover-bg-color: #383838;
     --input-border-color: #444;
     --input-hover-border-color: #555;
-    --button-primary-bg: #0d6efd;
-    --button-primary-hover-bg: #0b5ed7;
+    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
+    --button-primary-bg: #4f5b66; /* Мягкий серо-голубой вместо яркого синего */
+    --button-primary-hover-bg: #65737e; /* Чуть светлее при наведении */
+    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --button-primary-text: #f0f0f0;
     --button-secondary-bg: #495057;
     --button-secondary-hover-bg: #343a40;
@@ -69,8 +76,10 @@ body.dark-mode {
     --shadow-color: rgba(0,0,0,0.4);
     --shadow-light-color: rgba(0,0,0,0.2);
     --shadow-hover-color: rgba(0,0,0,0.3);
-    --timer-text-color: #36a2eb;
-    --quick-nav-current-bg: #0d6efd;
+    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
+    --timer-text-color: #87ceeb; /* Небесно-голубой для таймера */
+    --quick-nav-current-bg: #4f5b66; /* Выбранный вопрос в навигации */
+    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --quick-nav-current-text: #f0f0f0;
     --theme-toggle-border: #555;
     --theme-toggle-hover-bg: #333;
@@ -981,13 +990,15 @@ body.dark-mode footer {
     --chat-success: #27ae60;
     --chat-warning: #f39c12;
     --chat-info: #3498db;
-    --chat-bubble-mine: #007bff;
+    /* ИЗМЕНЕНИЕ: Пузырь сообщения теперь использует основной цвет темы */
+    --chat-bubble-mine: var(--button-primary-bg);
     --chat-bubble-other: #f8f9fa;
     --chat-sidebar-width: 280px;
 }
 
 body.dark-mode {
-    --chat-bubble-mine: #0d6efd;
+    /* ИЗМЕНЕНИЕ: Здесь тоже самое для темной темы */
+    --chat-bubble-mine: var(--button-primary-bg);
     --chat-bubble-other: #343a40;
 }
 
