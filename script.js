@@ -708,11 +708,10 @@ const ChatModule = (function() {
                             <div class="sidebar-section" id="privateChatsSection">
                                 <h4>${_chat('sidebar_private_messages')}</h4>
                                 <div id="privateChatsList" class="channels-list"></div>
-                            </div>
-                            
+                            </div>                            
                             <!-- Online users -->
                             <div class="sidebar-section">
-                                <h4>${_chat('sidebar_online')} (<span id="onlineCount">0</span>)</h4>
+                                <h4><span class="online-label">${_chat('sidebar_online')}</span> (<span id="onlineCount">0</span>)</h4>
                                 <div id="onlineUsersList" class="online-users-list"></div>
                             </div>
                         </div>
@@ -890,7 +889,7 @@ const ChatModule = (function() {
         document.querySelector('.sidebar-section:nth-of-type(2) h4').textContent = _chat('sidebar_channels');
         document.getElementById('createChannelBtn').textContent = _chat('sidebar_create_channel');
         document.getElementById('privateChatsSection').querySelector('h4').textContent = _chat('sidebar_private_messages');
-        document.querySelector('.sidebar-section:nth-of-type(4) h4').innerHTML = `${_chat('sidebar_online')} (<span id="onlineCount">${onlineUsers.size}</span>)`;
+        document.querySelector('.online-label').textContent = _chat('sidebar_online');
         
         // Основная область
         document.getElementById('chatSearchInput').placeholder = _chat('search_placeholder');
@@ -1382,11 +1381,13 @@ const ChatModule = (function() {
             snapshot.forEach(doc => {
                 allUsers.set(doc.id, doc.data());
             });
+            updateTabCounter('users', allUsers.size); // <--- ДОБАВЬТЕ ЭТУ СТРОКУ
             console.log(`Загружено ${allUsers.size} пользователей.`);
         } catch (error) {
             console.error("Ошибка загрузки всех пользователей:", error);
         }
     }
+
     
     function loadUsers() {
         if (!messageArea) return;
