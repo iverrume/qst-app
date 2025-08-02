@@ -517,6 +517,7 @@ const ChatModule = (function() {
     let pmUnreadListener = null; // Слушатель для ЛИЧНЫХ непрочитанных
     let publicUnreadListener = null; // Слушатель для ПУБЛИЧНЫХ непрочитанных
     let listenerInitializationTime = null; // ВРЕМЯ ЗАПУСКА СЛУШАТЕЛЯ
+    let questionsListener = null; // СЛУШАТЕЛЬ ДЛЯ ВОПРОСОВ
 
     let questionToHighlight = null;
     let favoritesListener = null;
@@ -1358,7 +1359,20 @@ const ChatModule = (function() {
     
     // ========== TAB SWITCHING ==========
     function switchTab(tabId) {
-        if (!TABS[tabId]) return;
+        if (!TABS[tabId] || tabId === currentTab) return; // Не делаем ничего, если кликнули на активную вкладку
+
+        // --- НОВЫЙ БЛОК ОЧИСТКИ ---
+        // Перед переключением, отписываемся от слушателя СТАРОЙ вкладки
+        if (currentTab === 'questions' && questionsListener) {
+            questionsListener(); // Вызов функции отписки
+            questionsListener = null; // Сбрасываем переменную
+        }
+        if (currentTab === 'favorites' && favoritesListener) {
+            favoritesListener(); // Вызов функции отписки
+            favoritesListener = null; // Сбрасываем переменную
+        }
+        // --- КОНЕЦ НОВОГО БЛОКА ---
+
         currentTab = tabId;
 
         // Если мы переключились на вкладку сообщений, сбрасываем счетчик для ТЕКУЩЕГО канала
@@ -1576,8 +1590,14 @@ const ChatModule = (function() {
     function loadQuestions() {
         if (!db || !currentUser) return;
         
+        // Отписываемся от предыдущего слушателя вопросов, если он был
+        if (questionsListener) {
+            questionsListener();
+        }
+
         try {
-            db.collection('questions')
+            // Присваиваем нового слушателя нашей переменной
+            questionsListener = db.collection('questions')
                 .where('channelId', '==', currentChannel)
                 .orderBy('createdAt', 'desc')
                 .limit(20)
@@ -1608,7 +1628,6 @@ const ChatModule = (function() {
     }
 
 
-    // --- ВСТАВЬТЕ НОВУЮ ФУНКЦИЮ ЗДЕСЬ ---
     /**
      * Форматирует временную метку в зависимости от ее давности.
      * @param {firebase.firestore.Timestamp} fbTimestamp - Временная метка из Firebase.
