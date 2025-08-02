@@ -4284,3 +4284,36 @@ body.claude-mode .message.mine .message-content {
     background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
     border-color: transparent;
 }
+
+@media (max-width: 768px) {
+
+    /* 1. Уменьшаем высоту ОСНОВНОЙ шапки (с заголовком "Сообщения") */
+    .advanced-chat-header {
+        /* Уменьшаем вертикальные отступы (было 15px) */
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    /* 2. Уменьшаем высоту ВТОРОЙ шапки (с названием канала и поиском) */
+    .chat-top-bar {
+        /* Уменьшаем вертикальные отступы (было 15px) */
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    /* 3. (Опционально) Немного уменьшаем заголовок и кнопки для гармонии */
+    .advanced-chat-header .chat-title h3 {
+        font-size: 1.2em; /* Был 1.4em */
+    }
+
+    .advanced-chat-header .header-controls button,
+    .advanced-chat-header #currentUser {
+         padding: 5px 8px; /* Было 8px 12px */
+         font-size: 0.9em;  /* Немного уменьшаем шрифт */
+    }
+    
+    #chatSearchInput {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+}
