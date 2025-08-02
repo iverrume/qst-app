@@ -80,40 +80,40 @@ body.dark-mode {
 
 
 body.claude-mode {
-    --bg-color: #f7f4f1; /* Основной фон, как у Claude */
-    --container-bg-color: #faf9f7; /* Фон контейнеров, чуть светлее */
-    --text-color: #333; /* Основной темный текст */
-    --secondary-text-color: #8e8e8e; /* Вторичный серый текст */
-    --heading-color: #2d2d2d; /* Цвет заголовков */
-    --border-color: #e5e3e1; /* Цвет рамок */
-    --dashed-border-color: #e5e3e1;
-    --input-bg-color: #ffffff; /* Фон полей ввода */
-    --input-hover-bg-color: #f0f0f0;
-    --input-border-color: #dcdcdc;
-    --input-hover-border-color: #c0c0c0;
-    --button-primary-bg: #4a4a4a; /* Темно-серая кнопка */
-    --button-primary-hover-bg: #333333;
-    --button-primary-text: white;
-    --button-secondary-bg: #d4d4d4; /* Светло-серая вторичная кнопка */
-    --button-secondary-hover-bg: #c0c0c0;
-    --button-secondary-text: #333;
-    --button-secondary-border: #d4d4d4;
-    --button-success-bg: #28a745;
-    --button-success-hover-bg: #218838;
-    --feedback-correct-bg: #d4edda;
-    --feedback-correct-text: #155724;
-    --feedback-correct-border: #c3e6cb;
-    --feedback-incorrect-bg: #f8d7da;
-    --feedback-incorrect-text: #721c24;
-    --feedback-incorrect-border: #f5c6cb;
-    --shadow-color: rgba(0,0,0,0.05); /* Очень легкая тень */
-    --shadow-light-color: rgba(0,0,0,0.02);
-    --shadow-hover-color: rgba(0,0,0,0.08);
-    --timer-text-color: #4a4a4a;
-    --quick-nav-current-bg: #4a4a4a;
-    --quick-nav-current-text: white;
-    --theme-toggle-border: #ccc;
-    --theme-toggle-hover-bg: #f0f0f0;
+    --bg-color: #f2ede8; /* Более глубокий и теплый бежевый фон */
+    --container-bg-color: #f9f6f2; /* Контейнер чуть светлее, создавая эффект слоя */
+    --text-color: #4a443e; /* Мягкий, почти коричневый текст вместо черного */
+    --secondary-text-color: #8a7d70; /* Приглушенный вторичный текст */
+    --heading-color: #3d352f; /* Заголовки чуть темнее основного текста */
+    --border-color: #e0dace; /* Теплый цвет рамок */
+    --dashed-border-color: #e8e3dc;
+    --input-bg-color: #ffffff; /* Поля ввода остаются светлыми для контраста */
+    --input-hover-bg-color: #f5f2ee;
+    --input-border-color: #d9d3cb;
+    --input-hover-border-color: #c9c2ba;
+    --button-primary-bg: #8a7d70; /* Основная кнопка в цвет вторичного текста */
+    --button-primary-hover-bg: #6e6459; /* Ее более темный вариант при наведении */
+    --button-primary-text: #ffffff;
+    --button-secondary-bg: #e0dace; /* Вторичная кнопка в цвет рамок */
+    --button-secondary-hover-bg: #d4ccc1;
+    --button-secondary-text: #4a443e;
+    --button-secondary-border: #e0dace;
+    --button-success-bg: #5a8e6a; /* Более приглушенный зеленый */
+    --button-success-hover-bg: #4a7558;
+    --feedback-correct-bg: #e1efe6; /* Светло-зеленая обратная связь */
+    --feedback-correct-text: #3c654a;
+    --feedback-correct-border: #d0e4d7;
+    --feedback-incorrect-bg: #f8e5e6; /* Светло-красная обратная связь */
+    --feedback-incorrect-text: #8b454d;
+    --feedback-incorrect-border: #f1d8da;
+    --shadow-color: rgba(90, 80, 70, 0.1); /* Тень на основе теплых тонов */
+    --shadow-light-color: rgba(90, 80, 70, 0.05);
+    --shadow-hover-color: rgba(90, 80, 70, 0.12);
+    --timer-text-color: #6e6459;
+    --quick-nav-current-bg: #8a7d70;
+    --quick-nav-current-text: #ffffff;
+    --theme-toggle-border: #c9c2ba;
+    --theme-toggle-hover-bg: #f5f2ee;
     --triggered-word-color: #c54848;
 }
 
