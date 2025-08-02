@@ -160,6 +160,10 @@ const ChatModule = (function() {
             global_loader_loading_test: "Загрузка теста",
             password_reauth_required: "Для выполнения этого действия необходимо недавно войти в систему. Пожалуйста, выйдите и войдите снова.",
             channel_enter_password_prompt: "защищен. Введите пароль:",
+            question_card_question_label: "Вопрос:",
+            question_card_author_label: "Автор:",
+            question_card_date_label: "Дата:",
+            question_card_anonymous: "Аноним",
         },
         kz: {
             // TABS
@@ -311,6 +315,10 @@ const ChatModule = (function() {
             global_loader_loading_test: "Тест жүктелуде",
             password_reauth_required: "Бұл әрекетті орындау үшін жақында кіру қажет. Шығып, қайта кіріңіз.",
             channel_enter_password_prompt: "арнасы қорғалған. Құпия сөзді енгізіңіз:",
+            question_card_question_label: "Сұрақ:",
+            question_card_author_label: "Авторы:",
+            question_card_date_label: "Күні:",
+            question_card_anonymous: "Аноним",
         },
         en: {
             // TABS
@@ -463,6 +471,10 @@ const ChatModule = (function() {
             global_loader_loading_test: "Loading test",
             password_reauth_required: "This action requires a recent login. Please log out and log in again.",
             channel_enter_password_prompt: "is protected. Please enter the password:",
+            question_card_question_label: "Question:",
+            question_card_author_label: "Author:",
+            question_card_date_label: "Date:",
+            question_card_anonymous: "Anonymous",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -1811,9 +1823,9 @@ const ChatModule = (function() {
                     <div class="question-square ${totalVotes > 0 ? 'has-votes' : ''}">
                         ${totalVotes > 0 ? `<span class="vote-indicator">${totalVotes}</span>` : ''}Q</div>
                     <div class="question-content">
-                        <p><strong>${_chat('question_label')}</strong> ${escapeHTML(question.text || '')}</p>
-                        <p><strong>${_chat('author_label')}</strong> ${escapeHTML(question.authorName || _chat('anonymous_user'))}</p>
-                        <p><strong>${_chat('date_label')}</strong> ${timeStr}</p>
+                        <p><strong>${_chat('question_card_question_label')}</strong> ${escapeHTML(question.text || '')}</p>
+                        <p><strong>${_chat('question_card_author_label')}</strong> ${escapeHTML(question.authorName || _chat('question_card_anonymous'))}</p>
+                        <p><strong>${_chat('question_card_date_label')}</strong> ${timeStr}</p>
                         <div class="question-options-container">${optionsHTML}</div>
                         <div class="question-actions">${actionsHTML}</div>
                     </div>
