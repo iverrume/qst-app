@@ -1275,7 +1275,39 @@ const ChatModule = (function() {
         privateChatsList.addEventListener('pointerup', () => clearTimeout(longPressTimer));
         privateChatsList.addEventListener('pointerleave', () => clearTimeout(longPressTimer));
 
-        
+      
+        // --- ДОБАВЬТЕ ЭТОТ КОД В КОНЕЦ setupEventListeners ---
+
+        // Обработка правого клика и долгого нажатия на списке ЛС
+        privateChatsList.addEventListener('contextmenu', (e) => {
+            const chatItem = e.target.closest('.channel-item');
+            if (chatItem && chatItem.dataset.partnerId) { // Добавлена проверка
+                e.preventDefault();
+                const { partnerId, partnerName, isPinned } = chatItem.dataset;
+                showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
+            }
+        });
+
+        privateChatsList.addEventListener('pointerdown', (e) => {
+            const chatItem = e.target.closest('.channel-item');
+            if (chatItem && chatItem.dataset.partnerId) { // Добавлена проверка
+                // Отменяем предыдущий таймер, если он был
+                clearTimeout(longPressTimer); 
+                longPressTimer = setTimeout(() => {
+                    e.preventDefault(); // Предотвращаем клик после долгого нажатия
+                    const { partnerId, partnerName, isPinned } = chatItem.dataset;
+                    showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
+                }, 500); // 500 мс для долгого нажатия
+            }
+        });
+
+        privateChatsList.addEventListener('pointerup', () => clearTimeout(longPressTimer));
+        privateChatsList.addEventListener('pointerleave', () => clearTimeout(longPressTimer));
+        privateChatsList.addEventListener('pointermove', () => clearTimeout(longPressTimer)); // Дополнительная отмена при скролле
+      
+
+
+
     }
 
 
@@ -3110,17 +3142,25 @@ function showPrivateChatActions(partnerId, partnerName, isPinned) {
         });
     }
 
-    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ---
+    // --- ОБНОВЛЕННАЯ И БОЛЕЕ НАДЕЖНАЯ ВЕРСИЯ ---
     async function loadPrivateChats() {
         if (!db || !currentUser) return;
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         if (!userDoc.exists) return;
 
-        // Получаем массив объектов
         const partnerObjects = userDoc.data().privateChatPartners || [];
 
         const privateChatsPromises = partnerObjects.map(async (partnerObj) => {
-            const partnerId = partnerObj.partnerId;
+            // *** НАЧАЛО ГЛАВНОГО ИСПРАВЛЕНИЯ ***
+            // Проверяем, в каком формате хранятся данные
+            const isNewFormat = typeof partnerObj === 'object' && partnerObj.partnerId;
+            
+            const partnerId = isNewFormat ? partnerObj.partnerId : partnerObj; // partnerObj - это просто строка ID в старом формате
+            const isPinned = isNewFormat ? partnerObj.pinned : false; // Для старых чатов закрепление всегда false
+            // *** КОНЕЦ ГЛАВНОГО ИСПРАВЛЕНИЯ ***
+
+            if (!partnerId) return null; // Пропускаем некорректные записи
+
             let partnerData = allUsers.get(partnerId);
             if (!partnerData) {
                 const partnerDoc = await db.collection('users').doc(partnerId).get();
@@ -3135,14 +3175,12 @@ function showPrivateChatActions(partnerId, partnerName, isPinned) {
                 lastMessageTimestamp = messagesQuery.docs[0].data().createdAt;
             }
             
-            // Возвращаем объект, содержащий ВСЕ нужные данные
-            return { ...partnerData, pinned: partnerObj.pinned || false, lastMessageTimestamp };
+            return { ...partnerData, pinned: isPinned, lastMessageTimestamp };
         });
 
         let fetchedChats = await Promise.all(privateChatsPromises);
         fetchedChats = fetchedChats.filter(chat => chat !== null);
 
-        // СОРТИРУЕМ: сначала по статусу закрепления (true идет первым), потом по времени
         fetchedChats.sort((a, b) => {
             if (a.pinned !== b.pinned) {
                 return a.pinned ? -1 : 1;
