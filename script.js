@@ -2859,24 +2859,31 @@ const ChatModule = (function() {
             showError("Не удалось проголосовать. " + error);
         }
     }
-    
-    async function addToFavorites(itemObject, type) { // <-- Принимает объект, а не ID
+        
+    async function addToFavorites(itemObject, type) { 
         if (!currentUser || !db) {
             showError("Для добавления в избранное необходимо авторизоваться.");
-            openAuthModal(); // <-- Показываем окно авторизации, если нужно
+            openAuthModal(); 
             return;
         }
         try {
-            // ... (код добавления в БД)
-            await db.collection('favorites').add(favorite);
-            alert('Добавлено в избранное!');
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            // Создаем объект, который будет сохранен в Firestore
+            const favorite = {
+                userId: currentUser.uid,
+                content: itemObject, // Содержимое, которое пришло в функцию
+                type: type,          // Тип элемента ('question')
+                createdAt: firebase.firestore.FieldValue.serverTimestamp() // Время создания
+            };
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
+            await db.collection('favorites').add(favorite); // Теперь используем созданный объект
+            alert('Добавлено в избранное!');
 
         } catch (error) {
             console.error('Ошибка добавления в избранное:', error);
             showError('Не удалось добавить в избранное');
         }
-
     }
 
     
