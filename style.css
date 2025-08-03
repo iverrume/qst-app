@@ -237,7 +237,7 @@ body {
 
 /* А здесь создаем новое, более точное правило ТОЛЬКО для главного экрана */
 .container > .header-controls {
-    margin-bottom: 70px;
+    margin-bottom: 50px;
 }
 
 .header-controls h1 {
