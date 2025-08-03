@@ -177,6 +177,12 @@ const ChatModule = (function() {
             results_table_header_time: "Время",
             results_empty_state: "По этому тесту пока нет результатов.",
             file_actions_modal_title: "Файл:",
+
+            pm_actions_title: "Действия с чатом",
+            pm_pin_chat: "📌 Закрепить чат",
+            pm_unpin_chat: "📌 Открепить чат",
+            pm_delete_chat: "🗑️ Удалить чат",
+            pm_delete_confirm: "Вы уверены, что хотите удалить чат с этим пользователем? История переписки останется, но чат исчезнет из списка.",
         },
         kz: {
             // TABS
@@ -345,6 +351,11 @@ const ChatModule = (function() {
             results_table_header_time: "Уақыт",
             results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ.",
             file_actions_modal_title: "Файл:",
+            pm_actions_title: "Чат әрекеттері",
+            pm_pin_chat: "📌 Чатты бекіту",
+            pm_unpin_chat: "📌 Бекітуді алу",
+            pm_delete_chat: "🗑️ Чатты жою",
+            pm_delete_confirm: "Осы пайдаланушымен чатты жойғыңыз келетініне сенімдісіз бе? Хабарламалар тарихы сақталады, бірақ чат тізімнен жоғалады.",
         },
         en: {
             // TABS
@@ -514,6 +525,11 @@ const ChatModule = (function() {
             results_table_header_time: "Time",
             results_empty_state: "There are no results for this test yet.",
             file_actions_modal_title: "File:",
+            pm_actions_title: "Chat Actions",
+            pm_pin_chat: "📌 Pin Chat",
+            pm_unpin_chat: "📌 Unpin Chat",
+            pm_delete_chat: "🗑️ Delete Chat",
+            pm_delete_confirm: "Are you sure you want to delete the chat with this user? The message history will remain, but the chat will disappear from your list.",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -645,7 +661,6 @@ const ChatModule = (function() {
         const oldChats = document.querySelectorAll('#chatOverlay, #advancedChatOverlay');
         oldChats.forEach(chat => chat.remove());
         
-        // Вся HTML-строка обернута в обратные кавычки (`) для использования ${}
         const chatHTML = `
         <!-- СИСТЕМА АУТЕНТИФИКАЦИИ -->
         <div id="authOverlay" class="auth-overlay hidden">
@@ -663,17 +678,14 @@ const ChatModule = (function() {
                 <form class="auth-form" id="registerForm">
                     <input type="text" class="auth-input" id="registerUsername" placeholder="${_chat('auth_register_username_placeholder')}" required>
                     <input type="email" class="auth-input" id="registerEmail" placeholder="${_chat('auth_register_email_placeholder')}" required>
-
                     <div class="password-wrapper">
                         <input type="password" class="auth-input" id="registerPassword" placeholder="${_chat('auth_register_password_placeholder')}" required>
                         <span class="toggle-password">👁️</span>
                     </div>
-
                     <div class="password-wrapper">
                         <input type="password" class="auth-input" id="registerPasswordConfirm" placeholder="${_chat('auth_register_confirm_placeholder')}" required>
                         <span class="toggle-password">👁️</span>
                     </div>
-
                     <button type="submit" class="auth-btn">${_chat('auth_register_button')}</button>
                 </form>
                 <button onclick="ChatModule.closeAuthModal()" style="margin-top: 15px; background: none; border: none; color: var(--secondary-text-color); cursor: pointer;">
@@ -686,14 +698,12 @@ const ChatModule = (function() {
         <div id="chatOverlay" class="advanced-chat-overlay hidden">
             <div class="advanced-chat-modal">
                 <!-- Header -->
-
                 <div class="advanced-chat-header">
                     <div class="chat-title">
                         <h3 id="chatHeaderTitle">${_chat('chat_header_title')}</h3>
                         <span id="unreadBadge" class="unread-badge hidden">0</span>
                     </div>
                     <button id="sidebarToggleBtn" class="sidebar-toggle-btn">☰</button>
-
                     <div class="header-controls">
                         <div class="user-menu-container">
                             <span id="currentUser">${_chat('guest_user')}</span>
@@ -712,43 +722,25 @@ const ChatModule = (function() {
                     <div id="sidebarContainer" class="sidebar-container">
                         <!-- Sidebar -->
                         <div class="chat-sidebar">
-                            <!-- Navigation Tabs -->
                             <div class="sidebar-section">
                                 <h4>${_chat('sidebar_sections')}</h4>
                                 <div id="chatTabsList" class="tabs-list">
-                                    <div class="tab-item active" data-tab="messages">
-                                        <span class="tab-icon">💬</span><span class="tab-name">${_chat('tab_messages')}</span><span class="tab-counter" id="messagesCount">0</span>
-                                    </div>
-                                    <div class="tab-item" data-tab="questions">
-                                        <span class="tab-icon">❓</span><span class="tab-name">${_chat('tab_questions')}</span><span class="tab-counter" id="questionsCount">0</span>
-                                    </div>
-                                    <div class="tab-item" data-tab="favorites">
-                                        <span class="tab-icon">⭐</span><span class="tab-name">${_chat('tab_favorites')}</span><span class="tab-counter" id="favoritesCount">0</span>
-                                    </div>
-                                    <div class="tab-item" data-tab="users">
-                                        <span class="tab-icon">👥</span><span class="tab-name">${_chat('tab_users')}</span><span class="tab-counter" id="usersCount">0</span>
-                                    </div>
+                                    <div class="tab-item active" data-tab="messages"><span class="tab-icon">💬</span><span class="tab-name">${_chat('tab_messages')}</span><span class="tab-counter" id="messagesCount">0</span></div>
+                                    <div class="tab-item" data-tab="questions"><span class="tab-icon">❓</span><span class="tab-name">${_chat('tab_questions')}</span><span class="tab-counter" id="questionsCount">0</span></div>
+                                    <div class="tab-item" data-tab="favorites"><span class="tab-icon">⭐</span><span class="tab-name">${_chat('tab_favorites')}</span><span class="tab-counter" id="favoritesCount">0</span></div>
+                                    <div class="tab-item" data-tab="users"><span class="tab-icon">👥</span><span class="tab-name">${_chat('tab_users')}</span><span class="tab-counter" id="usersCount">0</span></div>
                                 </div>
                             </div>
-                            <!-- Channels -->
                             <div class="sidebar-section">
                                 <h4>${_chat('sidebar_channels')}</h4>
-
-                                <!-- НОВЫЙ БЛОК ПОИСКА КАНАЛОВ -->
-                                <div class="sidebar-search-container">
-                                    <input type="text" id="channelSearchInput" class="sidebar-search-input" placeholder="Поиск каналов...">
-                                </div>
-                                <!-- КОНЕЦ НОВОГО БЛОКА -->
-
+                                <div class="sidebar-search-container"><input type="text" id="channelSearchInput" class="sidebar-search-input" placeholder="Поиск каналов..."></div>
                                 <div id="channelsList" class="channels-list"></div>
                                 <button id="createChannelBtn" class="create-btn">${_chat('sidebar_create_channel')}</button>
                             </div>
-                            <!-- Private Messages -->
                             <div class="sidebar-section" id="privateChatsSection">
                                 <h4>${_chat('sidebar_private_messages')}</h4>
                                 <div id="privateChatsList" class="channels-list"></div>
                             </div>                            
-                            <!-- Online users -->
                             <div class="sidebar-section">
                                 <h4><span class="online-label">${_chat('sidebar_online')}</span> (<span id="onlineCount">0</span>)</h4>
                                 <div id="onlineUsersList" class="online-users-list"></div>
@@ -763,28 +755,19 @@ const ChatModule = (function() {
                             <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
                             <button id="togglePinnedBtn" title="${_chat('pinned_toggle_title')}">📌</button>
                         </div>
-                        
                         <div id="tabActionsContainer" class="tab-actions-container hidden"></div>
-                        
-                        <div id="messageArea" class="message-area">
-                            <div class="empty-state">${_chat('loading_message')}</div>
-                        </div>
-                        
+                        <div id="messageArea" class="message-area"><div class="empty-state">${_chat('loading_message')}</div></div>
                         <div class="chat-input-area">
                             <div id="replyingToPanel" class="replying-to-panel hidden">
                                 <div class="reply-info"><span>${_chat('reply_panel_title')}</span><p id="replyingToText"></p></div>
                                 <button onclick="ChatModule.cancelReply()" class="cancel-reply-btn">×</button>
                             </div>
-                            
-                            <!-- НОВАЯ СТРУКТУРА ДЛЯ КНОПОК НАД ПОЛЕМ ВВОДА -->
                             <div class="input-actions-top">
                                 <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}">😊</button>
                                 <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
                                 <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
                             </div>
-
                             <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt">
-                            
                             <div class="input-wrapper">
                                 <textarea id="chatInput" placeholder="${_chat('chat_input_placeholder')}"></textarea>
                                 <button id="sendBtn" class="advanced-send-btn">➤</button>
@@ -796,114 +779,17 @@ const ChatModule = (function() {
         </div>
 
         <!-- MODALS -->
-        <div id="userActionsModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3 id="userActionsModalTitle">${_chat('user_actions_title')}</h3>
-                <p id="userActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p>
-                <div class="modal-buttons vertical">
-                    <button id="userActionsChatBtn">${_chat('user_actions_chat_button')}</button>
-                    <button id="userActionsEmailBtn">${_chat('user_actions_email_button')}</button>
-                    <button onclick="ChatModule.closeModal('userActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
-                </div>
-            </div>
-        </div>
-        <div id="channelEditModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3>${_chat('channel_settings_title')}</h3>
-                <input type="hidden" id="editChannelId">
-                <input type="text" id="editChannelNameInput" placeholder="${_chat('channel_edit_name_placeholder')}" required />
-                <input type="password" id="editChannelPasswordInput" placeholder="${_chat('channel_edit_password_placeholder')}" />
-                <textarea id="editChannelDescInput" placeholder="${_chat('channel_edit_desc_placeholder')}"></textarea>
-
-                <div id="channelMembersSection" class="channel-members-section hidden">
-                    <h4>${_chat('channel_members_title')}</h4>
-                    <ul id="channelMembersList" class="channel-members-list"><li>${_chat('channel_members_loading')}</li></ul>
-                </div>
-
-                <div class="modal-buttons">
-                    <button onclick="ChatModule.saveChannelEdit()">${_chat('modal_save_button')}</button>
-                    <button onclick="ChatModule.closeModal('channelEditModal')">${_chat('modal_cancel_button')}</button>
-                </div>
-                <button id="deleteChannelBtn" class="delete-btn" onclick="ChatModule.deleteChannel()" style="margin-top: 15px;">${_chat('delete_channel_button')}</button>
-            </div>
-        </div>
-        <div id="channelCreateModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3>${_chat('create_channel_title')}</h3>
-                <input type="text" id="channelNameInput" placeholder="${_chat('channel_create_name_placeholder')}" required />
-                <input type="password" id="channelPasswordInput" placeholder="${_chat('channel_create_password_placeholder')}" />
-                <textarea id="channelDescInput" placeholder="${_chat('channel_create_desc_placeholder')}"></textarea>
-
-                <div class="settings-group" style="text-align: left; margin-top: 15px;">
-                    <input type="checkbox" id="channelIsForTesting">
-                    <label for="channelIsForTesting" data-lang-key="testing_channel_option">Канал для тестирования (с записью результатов)</label>
-                </div>
-
-                <div class="modal-buttons">
-                    <button onclick="ChatModule.createChannel()">${_chat('modal_create_button')}</button>
-                    <button onclick="ChatModule.closeModal('channelCreateModal')">${_chat('modal_cancel_button')}</button>
-                </div>
-            </div>
-        </div>
-        <div id="questionCreateModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3>${_chat('create_question_title')}</h3>
-                <textarea id="questionTextInput" placeholder="${_chat('create_question_placeholder')}" rows="4"></textarea>
-                <div class="modal-buttons">
-                    <button onclick="ChatModule.createQuestion()">${_chat('create_question_modal_button')}</button>
-                    <button onclick="ChatModule.closeModal('questionCreateModal')">${_chat('modal_cancel_button')}</button>
-                </div>
-            </div>
-        </div>
-        <div id="editMessageModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3>${_chat('edit_message_title')}</h3>
-                <textarea id="editMessageInput" rows="4"></textarea>
-                <input type="hidden" id="editMessageIdInput">
-                <div class="modal-buttons">
-                    <button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button>
-                    <button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button>
-                </div>
-            </div>
-        </div>
-        <div id="profileEditModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3>${_chat('edit_profile_title')}</h3>
-                <input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" />
-                <input type="email" id="profileEmail" placeholder="Email" readonly />
-                <input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" />
-                <div class="modal-buttons">
-                    <button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button>
-                    <button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button>
-                </div>
-                <button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button>
-            </div>
-        </div>
-
-        <div id="fileActionsModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3>
-                <p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p>
-                <div class="modal-buttons vertical">
-                    <button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button>
-                    <button id="fileActionTestBtn">${_chat('file_actions_test')}</button>
-                    <button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
-                </div>
-            </div>
-        <!-- === НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ДЕЙСТВИЙ С ЛС === -->
-        <div id="privateChatActionsModal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <h3 id="privateChatActionsTitle">Действия</h3>
-                <div class="modal-buttons vertical">
-                    <button id="pinChatBtn">📌 Закрепить чат</button>
-                    <button id="deleteChatBtn" class="delete-btn" style="width: 100%;">🗑️ Удалить чат</button>
-                    <button onclick="ChatModule.closeModal('privateChatActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
-                </div>
-            </div>
-        </div>
-
-
-        </div>
+        <div id="userActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="userActionsModalTitle">${_chat('user_actions_title')}</h3><p id="userActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="userActionsChatBtn">${_chat('user_actions_chat_button')}</button><button id="userActionsEmailBtn">${_chat('user_actions_email_button')}</button><button onclick="ChatModule.closeModal('userActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="channelEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('channel_settings_title')}</h3><input type="hidden" id="editChannelId"><input type="text" id="editChannelNameInput" placeholder="${_chat('channel_edit_name_placeholder')}" required /><input type="password" id="editChannelPasswordInput" placeholder="${_chat('channel_edit_password_placeholder')}" /><textarea id="editChannelDescInput" placeholder="${_chat('channel_edit_desc_placeholder')}"></textarea><div id="channelMembersSection" class="channel-members-section hidden"><h4>${_chat('channel_members_title')}</h4><ul id="channelMembersList" class="channel-members-list"><li>${_chat('channel_members_loading')}</li></ul></div><div class="modal-buttons"><button onclick="ChatModule.saveChannelEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('channelEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteChannelBtn" class="delete-btn" onclick="ChatModule.deleteChannel()" style="margin-top: 15px;">${_chat('delete_channel_button')}</button></div></div>
+        <div id="channelCreateModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('create_channel_title')}</h3><input type="text" id="channelNameInput" placeholder="${_chat('channel_create_name_placeholder')}" required /><input type="password" id="channelPasswordInput" placeholder="${_chat('channel_create_password_placeholder')}" /><textarea id="channelDescInput" placeholder="${_chat('channel_create_desc_placeholder')}"></textarea><div class="settings-group" style="text-align: left; margin-top: 15px;"><input type="checkbox" id="channelIsForTesting"><label for="channelIsForTesting" data-lang-key="testing_channel_option">Канал для тестирования (с записью результатов)</label></div><div class="modal-buttons"><button onclick="ChatModule.createChannel()">${_chat('modal_create_button')}</button><button onclick="ChatModule.closeModal('channelCreateModal')">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="questionCreateModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('create_question_title')}</h3><textarea id="questionTextInput" placeholder="${_chat('create_question_placeholder')}" rows="4"></textarea><div class="modal-buttons"><button onclick="ChatModule.createQuestion()">${_chat('create_question_modal_button')}</button><button onclick="ChatModule.closeModal('questionCreateModal')">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="editMessageModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_message_title')}</h3><textarea id="editMessageInput" rows="4"></textarea><input type="hidden" id="editMessageIdInput"><div class="modal-buttons"><button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button></div></div>
+        
+        <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button><button id="fileActionTestBtn">${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        
+        <!-- МОДАЛЬНОЕ ОКНО ДЛЯ ДЕЙСТВИЙ С ЛС (ТЕПЕРЬ НА СВОЕМ МЕСТЕ) -->
+        <div id="privateChatActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="privateChatActionsTitle">Действия</h3><div class="modal-buttons vertical"><button id="pinChatBtn">📌 Закрепить чат</button><button id="deleteChatBtn" class="delete-btn" style="width: 100%;">${_chat('pm_delete_chat')}</button><button onclick="ChatModule.closeModal('privateChatActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
         `;
         document.body.insertAdjacentHTML('beforeend', chatHTML);
     }
@@ -1096,8 +982,6 @@ const ChatModule = (function() {
 
     
     function setupEventListeners() {
-
-
         // Tab switching
         document.querySelectorAll('.tab-item').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -1118,15 +1002,10 @@ const ChatModule = (function() {
 
         if (chatInput) {
             chatInput.addEventListener('keydown', (e) => {
-                // Отправляем сообщение по Ctrl+Enter
                 if (e.key === 'Enter' && e.ctrlKey) {
-                    // Предотвращаем создание новой строки, которое может произойти
                     e.preventDefault(); 
-                    // Вызываем функцию отправки
                     sendMessage();
                 }
-                // Если нажат просто Enter (без Ctrl), то ничего не делаем,
-                // позволяя браузеру выполнить действие по умолчанию - создать новую строку.
             });
             chatInput.addEventListener('input', () => {
                 chatInput.style.height = 'auto'; 
@@ -1139,47 +1018,28 @@ const ChatModule = (function() {
         document.getElementById('emojiBtn')?.addEventListener('click', function() { showEmojiPicker(this) });
         document.getElementById('questionBtn')?.addEventListener('click', () => showModal('questionCreateModal'));
         document.getElementById('createChannelBtn')?.addEventListener('click', () => showModal('channelCreateModal'));
-        // Внутри функции setupEventListeners() в ChatModule
         document.getElementById('uploadFileBtn')?.addEventListener('click', handleChatFileUploadTrigger);
         document.getElementById('chatFileInput')?.addEventListener('change', handleChatFileSelected);
 
-
-        // Делегирование клика для переключения видимости пароля
         document.body.addEventListener('click', function(event) {
-            // Проверяем, был ли клик именно по нашей иконке
             if (event.target.classList.contains('toggle-password')) {
                 const icon = event.target;
-                // Находим соседний элемент - наше поле ввода
                 const passwordInput = icon.previousElementSibling;
-
                 if (passwordInput && passwordInput.type === 'password') {
-                    // Если поле скрыто - показываем
                     passwordInput.type = 'text';
-                    icon.textContent = '🙈'; // Меняем иконку на "открытый глаз"
+                    icon.textContent = '🙈';
                 } else if (passwordInput && passwordInput.type === 'text') {
-                    // Если поле видно - скрываем
                     passwordInput.type = 'password';
-                    icon.textContent = '👁️'; // Возвращаем иконку "закрытого глаза"
+                    icon.textContent = '👁️';
                 }
             }
         });
 
-
-
-
-
-
-
-
-
         const debouncedSearch = debounce(handleSearch, 300);
         if (searchInput) searchInput.addEventListener('input', debouncedSearch);
 
-        
-
         const currentUserBtn = document.getElementById('currentUser');
         const userDropdown = document.getElementById('userDropdown');
-
         if (currentUserBtn && userDropdown) {
             currentUserBtn.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -1207,55 +1067,37 @@ const ChatModule = (function() {
             });
         }
        
-        console.log('Event listeners настроены');
-
         const channelSearchInput = document.getElementById('channelSearchInput');
         if (channelSearchInput) {
-            
-            // Создаем функцию-обработчик
             const handleChannelSearch = (event) => {
                 const query = event.target.value.toLowerCase().trim();
                 const channels = document.querySelectorAll('#channelsList .channel-item');
-                
                 channels.forEach(channel => {
                     const channelName = channel.textContent.toLowerCase();
                     if (channelName.includes(query)) {
-                        channel.style.display = 'flex'; // Используем flex, т.к. у .channel-item такой display
+                        channel.style.display = 'flex';
                     } else {
                         channel.style.display = 'none';
                     }
                 });
             };
-
-            // Применяем debounce, чтобы поиск не срабатывал на каждую букву
             const debouncedChannelSearch = debounce(handleChannelSearch, 250);
             channelSearchInput.addEventListener('input', debouncedChannelSearch);
-
         }
 
-        // --- ДОБАВЛЕННЫЙ КОД ---
-
-        // Делегирование событий для кнопок редактирования сообщений
         messageArea.addEventListener('click', function(event) {
-            // Проверяем, была ли нажата именно кнопка с классом 'edit-message-btn'
             const editButton = event.target.closest('.edit-message-btn');
-            
             if (editButton) {
                 const messageId = editButton.dataset.messageId;
-                const messageText = editButton.dataset.rawText; // Получаем текст из нашего безопасного свойства
-                
-                // Вызываем функцию редактирования с полученными данными
+                const messageText = editButton.dataset.rawText;
                 ChatModule.startEditMessage(messageId, messageText);
             }
         });
 
-
-        // --- ДОБАВЬТЕ ЭТОТ КОД В КОНЕЦ setupEventListeners ---
-
-        // Обработка правого клика и долгого нажатия на списке ЛС
+        // --- НОВЫЙ И ЕДИНСТВЕННЫЙ БЛОК ДЛЯ ПРАВОГО КЛИКА / ДОЛГОГО НАЖАТИЯ ---
         privateChatsList.addEventListener('contextmenu', (e) => {
             const chatItem = e.target.closest('.channel-item');
-            if (chatItem) {
+            if (chatItem && chatItem.dataset.partnerId) {
                 e.preventDefault();
                 const { partnerId, partnerName, isPinned } = chatItem.dataset;
                 showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
@@ -1264,50 +1106,19 @@ const ChatModule = (function() {
 
         privateChatsList.addEventListener('pointerdown', (e) => {
             const chatItem = e.target.closest('.channel-item');
-            if (chatItem) {
-                longPressTimer = setTimeout(() => {
-                    const { partnerId, partnerName, isPinned } = chatItem.dataset;
-                    showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
-                }, 500); // 500 мс для долгого нажатия
-            }
-        });
-
-        privateChatsList.addEventListener('pointerup', () => clearTimeout(longPressTimer));
-        privateChatsList.addEventListener('pointerleave', () => clearTimeout(longPressTimer));
-
-      
-        // --- ДОБАВЬТЕ ЭТОТ КОД В КОНЕЦ setupEventListeners ---
-
-        // Обработка правого клика и долгого нажатия на списке ЛС
-        privateChatsList.addEventListener('contextmenu', (e) => {
-            const chatItem = e.target.closest('.channel-item');
-            if (chatItem && chatItem.dataset.partnerId) { // Добавлена проверка
-                e.preventDefault();
-                const { partnerId, partnerName, isPinned } = chatItem.dataset;
-                showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
-            }
-        });
-
-        privateChatsList.addEventListener('pointerdown', (e) => {
-            const chatItem = e.target.closest('.channel-item');
-            if (chatItem && chatItem.dataset.partnerId) { // Добавлена проверка
-                // Отменяем предыдущий таймер, если он был
+            if (chatItem && chatItem.dataset.partnerId) {
                 clearTimeout(longPressTimer); 
                 longPressTimer = setTimeout(() => {
-                    e.preventDefault(); // Предотвращаем клик после долгого нажатия
+                    e.preventDefault(); 
                     const { partnerId, partnerName, isPinned } = chatItem.dataset;
                     showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
-                }, 500); // 500 мс для долгого нажатия
+                }, 500);
             }
         });
 
         privateChatsList.addEventListener('pointerup', () => clearTimeout(longPressTimer));
         privateChatsList.addEventListener('pointerleave', () => clearTimeout(longPressTimer));
-        privateChatsList.addEventListener('pointermove', () => clearTimeout(longPressTimer)); // Дополнительная отмена при скролле
-      
-
-
-
+        privateChatsList.addEventListener('pointermove', () => clearTimeout(longPressTimer));
     }
 
 
@@ -2334,28 +2145,28 @@ const ChatModule = (function() {
         switchToChannel(channelId, targetName, 'private');
     }
 
-let longPressTimer;
-let targetPartnerId, targetPartnerName, targetIsPinned;
+    let longPressTimer;
+    let targetPartnerId, targetPartnerName, targetIsPinned;
 
-function showPrivateChatActions(partnerId, partnerName, isPinned) {
-    targetPartnerId = partnerId;
-    targetPartnerName = partnerName;
-    targetIsPinned = isPinned;
+    function showPrivateChatActions(partnerId, partnerName, isPinned) {
+        targetPartnerId = partnerId;
+        targetPartnerName = partnerName;
+        targetIsPinned = isPinned;
 
-    const modalTitle = document.getElementById('privateChatActionsTitle');
-    const pinBtn = document.getElementById('pinChatBtn');
-    const deleteBtn = document.getElementById('deleteChatBtn');
+        const modalTitle = document.getElementById('privateChatActionsTitle');
+        const pinBtn = document.getElementById('pinChatBtn');
+        const deleteBtn = document.getElementById('deleteChatBtn');
 
-    modalTitle.textContent = partnerName;
-    pinBtn.textContent = isPinned ? '📌 Открепить чат' : '📌 Закрепить чат';
+        modalTitle.textContent = partnerName;
+        // Используем перевод
+        pinBtn.textContent = isPinned ? _chat('pm_unpin_chat') : _chat('pm_pin_chat');
+        deleteBtn.textContent = _chat('pm_delete_chat');
 
-    // Переназначаем обработчики
-    pinBtn.onclick = () => togglePinChat(partnerId);
-    deleteBtn.onclick = () => deletePrivateChat(partnerId);
+        pinBtn.onclick = () => togglePinChat(partnerId);
+        deleteBtn.onclick = () => deletePrivateChat(partnerId);
 
-    showModal('privateChatActionsModal');
-}
-
+        showModal('privateChatActionsModal');
+    }
     async function togglePinChat(partnerId) {
         if (!currentUser) return;
         const userDocRef = db.collection('users').doc(currentUser.uid);
@@ -2382,9 +2193,11 @@ function showPrivateChatActions(partnerId, partnerName, isPinned) {
     }
 
     async function deletePrivateChat(partnerId) {
-        if (!confirm(`Вы уверены, что хотите удалить чат с этим пользователем? История переписки останется, но чат исчезнет из списка.`)) {
+        // Используем перевод
+        if (!confirm(_chat('pm_delete_confirm'))) {
             return;
         }
+        // ... остальной код функции остается без изменений
         if (!currentUser) return;
         const userDocRef = db.collection('users').doc(currentUser.uid);
 
@@ -2397,10 +2210,9 @@ function showPrivateChatActions(partnerId, partnerName, isPinned) {
                 const updatedPartners = partners.filter(p => p.partnerId !== partnerId);
                 transaction.update(userDocRef, { privateChatPartners: updatedPartners });
             });
-            await loadPrivateChats(); // Обновляем список
+            await loadPrivateChats();
             closeModal('privateChatActionsModal');
 
-            // Если удалили активный чат, переключаемся на общий
             if (currentChannel.includes(partnerId)) {
                 const generalChannel = channels.find(c => c.id === 'general');
                 if (generalChannel) switchToChannel(generalChannel.id, generalChannel.name, 'public');
