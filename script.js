@@ -2259,6 +2259,7 @@ const ChatModule = (function() {
             return;
         }
         
+        await loadPrivateChats(); 
         // Переключаемся на чат
         switchToChannel(channelId, targetName, 'private');
     }
