@@ -858,7 +858,7 @@ const ChatModule = (function() {
         document.getElementById('registerPassword').placeholder = _chat('auth_register_password_placeholder');
         document.getElementById('registerPasswordConfirm').placeholder = _chat('auth_register_confirm_placeholder');
         document.querySelector('#registerForm button').textContent = _chat('auth_register_button');
-        document.querySelector('#authOverlay > div > button').textContent = _chat('auth_close_button');
+        document.getElementById('authCloseButton').textContent = _chat('auth_close_button');
 
         // --- Основное окно чата ---
         // Шапка
