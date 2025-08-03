@@ -1690,6 +1690,22 @@ body.dark-mode .question-bubble {
     border-color: #a68b3e;
 }
 
+/* --- НОВЫЙ КОД: Стили для вопросов в теме "Глубокая ночь" --- */
+body.synthwave-mode .question-bubble {
+    /* Используем фон контейнера из этой темы */
+    background: var(--container-bg-color); 
+    /* Делаем акцентную рамку в цвет заголовков */
+    border: 2px solid var(--accent); 
+    /* Добавляем легкое неоновое свечение */
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1); 
+}
+
+/* Также стилизуем правильный ответ внутри вопроса */
+body.synthwave-mode .option-vote-btn.correct {
+    background-color: rgba(34, 197, 94, 0.15); /* Прозрачный зеленый */
+    border-color: var(--button-success-bg);
+}
+
 .question-square {
     display: inline-flex;
     align-items: center;
@@ -2736,49 +2752,57 @@ body.dark-mode .reply-text {
 
 
 
-/* ===== СТИЛИ ДЛЯ КАРТОЧЕК ПОИСКА В ТЕМНОМ РЕЖИМЕ ===== */
+/* --- ОБНОВЛЕННЫЙ КОД --- */
+/* ===== СТИЛИ ДЛЯ КАРТОЧЕК ПОИСКА В ТЕМНЫХ РЕЖИМАХ ===== */
 
-body.dark-mode .result-card {
+body.dark-mode .result-card,
+body.synthwave-mode .result-card {
     background: var(--container-bg-color);
     border-color: var(--border-color);
 }
 
-body.dark-mode .result-card-header {
+body.dark-mode .result-card-header,
+body.synthwave-mode .result-card-header {
     background-color: var(--input-bg-color);
     border-bottom-color: var(--border-color);
 }
 
-body.dark-mode .question-text-detail {
+body.dark-mode .question-text-detail,
+body.synthwave-mode .question-text-detail {
     color: var(--heading-color);
 }
 
-body.dark-mode .answer-option {
+body.dark-mode .answer-option,
+body.synthwave-mode .answer-option {
     background: var(--input-bg-color);
     border-color: var(--input-border-color);
     color: var(--text-color);
 }
 
-body.dark-mode .answer-option.correct {
+body.dark-mode .answer-option.correct,
+body.synthwave-mode .answer-option.correct {
     background-color: var(--feedback-correct-bg);
     color: var(--feedback-correct-text);
     border-color: var(--feedback-correct-border);
 }
 
-body.dark-mode .provider-tag {
+body.dark-mode .provider-tag,
+body.synthwave-mode .provider-tag {
     background: var(--input-hover-bg-color);
     color: var(--secondary-text-color);
 }
 
-/* Стили для навигации в темной теме */
-body.dark-mode .search-navigation {
+/* Стили для навигации в темных темах */
+body.dark-mode .search-navigation,
+body.synthwave-mode .search-navigation {
     background-color: var(--input-bg-color);
     border-color: var(--border-color);
 }
 
-body.dark-mode .result-counter {
+body.dark-mode .result-counter,
+body.synthwave-mode .result-counter {
     color: var(--text-color);
 }
-
 
 
 
