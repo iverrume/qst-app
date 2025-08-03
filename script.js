@@ -166,6 +166,16 @@ const ChatModule = (function() {
             question_card_author_label: "Автор:",
             question_card_date_label: "Дата:",
             question_card_anonymous: "Аноним",
+            testing_channel_option: "Канал для тестирования (с записью результатов)",
+            results_button: "📊 Результаты",
+            practice_test_button: "⚡️ Пробный тест",
+            official_test_button: "🏆 Пройти тест (с записью)",
+            results_modal_title: "Результаты по тесту",
+            results_table_header_num: "#",
+            results_table_header_user: "Пользователь",
+            results_table_header_accuracy: "Точность",
+            results_table_header_time: "Время",
+            results_empty_state: "По этому тесту пока нет результатов.",
         },
         kz: {
             // TABS
@@ -323,6 +333,16 @@ const ChatModule = (function() {
             question_card_author_label: "Авторы:",
             question_card_date_label: "Күні:",
             question_card_anonymous: "Аноним",
+            testing_channel_option: "Тестілеу арнасы (нәтижелерді жазумен)",
+            results_button: "📊 Нәтижелер",
+            practice_test_button: "⚡️ Сынақ тесті",
+            official_test_button: "🏆 Тестті өту (жазбамен)",
+            results_modal_title: "Тест нәтижелері",
+            results_table_header_num: "#",
+            results_table_header_user: "Пайдаланушы",
+            results_table_header_accuracy: "Дәлдік",
+            results_table_header_time: "Уақыт",
+            results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ.",
         },
         en: {
             // TABS
@@ -481,6 +501,16 @@ const ChatModule = (function() {
             question_card_author_label: "Author:",
             question_card_date_label: "Date:",
             question_card_anonymous: "Anonymous",
+            testing_channel_option: "Testing channel (with result tracking)",
+            results_button: "📊 Results",
+            practice_test_button: "⚡️ Practice Test",
+            official_test_button: "🏆 Take Official Test (Tracked)",
+            results_modal_title: "Test Results",
+            results_table_header_num: "#",
+            results_table_header_user: "User",
+            results_table_header_accuracy: "Accuracy",
+            results_table_header_time: "Time",
+            results_empty_state: "There are no results for this test yet.",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -803,7 +833,7 @@ const ChatModule = (function() {
 
                 <div class="settings-group" style="text-align: left; margin-top: 15px;">
                     <input type="checkbox" id="channelIsForTesting">
-                    <label for="channelIsForTesting">Канал для тестирования (с записью результатов)</label>
+                    <label for="channelIsForTesting" data-lang-key="testing_channel_option">Канал для тестирования (с записью результатов)</label>
                 </div>
 
                 <div class="modal-buttons">
@@ -1719,11 +1749,12 @@ const ChatModule = (function() {
         const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
 
         let resultsButtonHTML = '';
+
         if (isTestingChannel) {
             resultsButtonHTML = `
                 <div class="test-results-action">
                     <button class="results-btn" onclick="ChatModule.showTestResults('${message.fileInfo.id}', '${message.channelId}')">
-                        📊 Результаты
+                        ${_chat('results_button')}
                     </button>
                 </div>
             `;
@@ -3605,7 +3636,7 @@ const ChatModule = (function() {
             // Создаем кнопку "Пробный тест"
             const practiceTestBtn = document.createElement('button');
             practiceTestBtn.id = 'fileActionPracticeTestBtn';
-            practiceTestBtn.textContent = '⚡️ Пробный тест';
+            practiceTestBtn.textContent = _chat('practice_test_button');
             // Пробный тест не сохраняет результаты
             practiceTestBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
             
@@ -3613,12 +3644,12 @@ const ChatModule = (function() {
             modalButtonsContainer.insertBefore(practiceTestBtn, testBtn);
             
             // Переименовываем основную кнопку и задаем ей правильное действие
-            testBtn.textContent = '🏆 Пройти тест (с записью)';
+            testBtn.textContent = _chat('official_test_button');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: false });
 
         } else {
             // Для обычных каналов все как раньше
-            testBtn.textContent = '⚡️ Пройти тест';
+            testBtn.textContent = _chat('file_actions_test');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true }); // Обычный тест - это "пробный"
         }
         
@@ -3983,11 +4014,11 @@ const ChatModule = (function() {
             let tableHTML = `
                 <table>
                     <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Пользователь</th>
-                            <th>Точность</th>
-                            <th>Время</th>
+                        <tr>                      
+                            <th>${_chat('results_table_header_num')}</th>
+                            <th>${_chat('results_table_header_user')}</th>
+                            <th>${_chat('results_table_header_accuracy')}</th>
+                            <th>${_chat('results_table_header_time')}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -4075,11 +4106,15 @@ const ChatModule = (function() {
             if (LANG_PACK_CHAT[lang]) {
                 currentChatLang = lang;
                 localStorage.setItem('chatLanguage', lang);
-
-                // Ключевой момент: Мы обновляем текст в DOM в любом случае.
-                // Элементы существуют, просто они невидимы.
-                // Внутри updateChatUIText() уже есть проверка на случай, если DOM еще не создан.
                 updateChatUIText();
+
+                // === НАЧАЛО НОВОГО КОДА: Мгновенный перевод ===
+                // Если открыт чат и активна вкладка сообщений,
+                // перерисовываем их, чтобы применился новый язык.
+                if (chatOverlay && !chatOverlay.classList.contains('hidden') && currentTab === 'messages') {
+                    displayMessages();
+                }
+                // === КОНЕЦ НОВОГО КОДА ===
             }
         },
         // === КОНЕЦ НОВОГО МЕТОДА ===

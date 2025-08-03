@@ -251,12 +251,12 @@
     <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ === -->
     <div id="testResultsModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
-            <h3 id="testResultsModalTitle">Результаты по тесту</h3>
+            <h3 id="testResultsModalTitle" data-lang-key="results_modal_title">Результаты по тесту</h3>
             <div id="testResultsTableContainer" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
                 <!-- Таблица с результатами будет вставлена сюда -->
             </div>
             <div class="modal-buttons">
-                <button onclick="ChatModule.closeModal('testResultsModal')">Закрыть</button>
+                <button onclick="ChatModule.closeModal('testResultsModal')" data-lang-key="auth_close_button">Закрыть</button>
             </div>
         </div>
     </div>
