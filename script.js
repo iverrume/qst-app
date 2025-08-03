@@ -6848,7 +6848,7 @@ const mainApp = (function() {
 
         if (currentTheme === 'dark') {
             document.body.classList.add('dark-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '🌌'; // Солнце для перехода на светлую
+            if (themeToggleButton) themeToggleButton.textContent = '🔭'; // Солнце для перехода на светлую
         } else if (currentTheme === 'claude') {
             document.body.classList.add('claude-mode');
             if (themeToggleButton) themeToggleButton.textContent = '🌙'; // Луна для перехода на темную
