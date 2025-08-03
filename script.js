@@ -2243,11 +2243,19 @@ const ChatModule = (function() {
         try {
             const userDoc = await userDocRef.get();
             if (!userDoc.exists) throw "Текущий пользователь не найден.";
-            
+     
+
             const userData = userDoc.data();
-            // Обновляем ТОЛЬКО список текущего пользователя
-            if (!userData.privateChatPartners || !userData.privateChatPartners.includes(targetId)) {
-                await userDocRef.update({ privateChatPartners: firebase.firestore.FieldValue.arrayUnion(targetId) });
+
+            // ПРОВЕРКА: Убедимся, что и userData существует, и privateChatPartners является массивом
+            if (userData && Array.isArray(userData.privateChatPartners)) {
+                // Если все в порядке, используем стандартную логику
+                if (!userData.privateChatPartners.includes(targetId)) {
+                    await userDocRef.update({ privateChatPartners: firebase.firestore.FieldValue.arrayUnion(targetId) });
+                }
+            } else if (userData) {
+                // Если пользователь есть, а поля с чатами нет - создаем его
+                await userDocRef.update({ privateChatPartners: [targetId] });
             }
             
             // Мы НЕ ТРОГАЕМ документ собеседника, чтобы не нарушать права доступа.
@@ -2998,7 +3006,10 @@ const ChatModule = (function() {
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         if (!userDoc.exists) return;
 
-        const partnerIds = userDoc.data().privateChatPartners || [];
+        const userData = userDoc.data();
+        // ИСПРАВЛЕНИЕ: Сначала получаем данные пользователя, а потом безопасно берем поле.
+        // Если поля privateChatPartners нет, partnerIds станет пустым массивом [].
+        const partnerIds = userData?.privateChatPartners || []; 
 
         // --- НАЧАЛО НОВОГО КОДА ---
 
