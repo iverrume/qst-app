@@ -127,6 +127,59 @@ body.claude-mode {
 }
 
 
+
+body.synthwave-mode {
+    /* Основной фон - очень темный фиолетовый */
+    --bg-color: #1A103C; 
+    /* Контейнер чуть светлее фона */
+    --container-bg-color: #241856; 
+    /* Основной текст - светлый, почти белый */
+    --text-color: #E5E5E5; 
+    /* Вторичный текст - приглушенный неоново-голубой */
+    --secondary-text-color: #7A79B8; 
+    /* Заголовки - яркий неоновый розовый */
+    --heading-color: #FF00FF; 
+    /* Рамки - неоновая бирюза */
+    --border-color: #00FFFF; 
+    --dashed-border-color: #4A3F8C;
+    /* Поля ввода */
+    --input-bg-color: #1A103C;
+    --input-hover-bg-color: #312375;
+    --input-border-color: #4A3F8C;
+    --input-hover-border-color: #00FFFF;
+    /* Кнопки */
+    --button-primary-bg: #00FFFF; /* Неоновая бирюза */
+    --button-primary-hover-bg: #33FFFF;
+    --button-primary-text: #1A103C; /* Текст на кнопке темный для контраста */
+    --button-secondary-bg: #4A3F8C;
+    --button-secondary-hover-bg: #5D50AF;
+    --button-secondary-text: #E5E5E5;
+    --button-success-bg: #00FF00; /* Неоновый зеленый */
+    --button-success-hover-bg: #33FF33;
+    /* Обратная связь */
+    --feedback-correct-bg: rgba(0, 255, 0, 0.1); /* Прозрачный зеленый фон */
+    --feedback-correct-text: #00FF00;
+    --feedback-correct-border: #00FF00;
+    --feedback-incorrect-bg: rgba(255, 0, 128, 0.1); /* Прозрачный красный фон */
+    --feedback-incorrect-text: #FF0080;
+    --feedback-incorrect-border: #FF0080;
+    /* Тени - неоновое свечение */
+    --shadow-color: rgba(0, 255, 255, 0.1); 
+    --shadow-light-color: rgba(0, 255, 255, 0.05);
+    --shadow-hover-color: rgba(0, 255, 255, 0.12);
+    /* Таймер и навигация */
+    --timer-text-color: #FF00FF; /* Розовый таймер */
+    --quick-nav-current-bg: #00FFFF;
+    --quick-nav-current-text: #1A103C;
+    /* Прочее */
+    --theme-toggle-border: #7A79B8;
+    --theme-toggle-hover-bg: #312375;
+    --triggered-word-color: #FFD700; /* Золотой для триггеров */
+    --accent: #FF00FF; /* Розовый акцент */
+}
+
+
+
 /* Общие стили */
 html {
     box-sizing: border-box;

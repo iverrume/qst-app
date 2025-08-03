@@ -6809,8 +6809,9 @@ const mainApp = (function() {
  
 
     function loadTheme() {
-        const currentTheme = localStorage.getItem('theme') || 'claude'; // По умолчанию ставим тему Claude
-        document.body.classList.remove('dark-mode', 'claude-mode'); // Сначала убираем все классы тем
+        const currentTheme = localStorage.getItem('theme') || 'claude'; 
+        // Сначала убираем все классы тем
+        document.body.classList.remove('dark-mode', 'claude-mode', 'synthwave-mode'); 
 
         if (currentTheme === 'dark') {
             document.body.classList.add('dark-mode');
@@ -6818,6 +6819,9 @@ const mainApp = (function() {
         } else if (currentTheme === 'claude') {
             document.body.classList.add('claude-mode');
             if (themeToggleButton) themeToggleButton.textContent = '🌙'; // Луна для перехода на темную
+        } else if (currentTheme === 'synthwave') { // <-- Наш новый блок
+            document.body.classList.add('synthwave-mode');
+            if (themeToggleButton) themeToggleButton.textContent = '🚀'; // Ракета для перехода на светлую
         } else {
             // Светлая тема (light) - нет класса
             if (themeToggleButton) themeToggleButton.textContent = '🌤️'; // Иконка Claude для перехода на нее
@@ -6825,7 +6829,7 @@ const mainApp = (function() {
     }
 
     function toggleTheme() {
-        const themes = ['light', 'claude', 'dark']; // Определяем порядок переключения
+        const themes = ['light', 'claude', 'dark', 'synthwave']; // Определяем порядок переключения
         const currentTheme = localStorage.getItem('theme') || 'light';
         const currentIndex = themes.indexOf(currentTheme);
         const nextIndex = (currentIndex + 1) % themes.length; // Находим индекс следующей темы
