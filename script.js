@@ -693,8 +693,7 @@ const ChatModule = (function() {
                     ${_chat('auth_google_signin')}
                 </button>
                 
-                <button onclick="ChatModule.closeAuthModal()" style="margin-top: 15px; background: none; border: none; color: var(--secondary-text-color); cursor: pointer;">
-
+                <button id="authCloseButton" onclick="ChatModule.closeAuthModal()" style="margin-top: 15px; background: none; border: none; color: var(--secondary-text-color); cursor: pointer;">
                     ${_chat('auth_close_button')}
                 </button>
             </div>
