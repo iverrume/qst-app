@@ -176,6 +176,7 @@ const ChatModule = (function() {
             results_table_header_accuracy: "Точность",
             results_table_header_time: "Время",
             results_empty_state: "По этому тесту пока нет результатов.",
+            file_actions_modal_title: "Файл:",
         },
         kz: {
             // TABS
@@ -343,6 +344,7 @@ const ChatModule = (function() {
             results_table_header_accuracy: "Дәлдік",
             results_table_header_time: "Уақыт",
             results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ.",
+            file_actions_modal_title: "Файл:",
         },
         en: {
             // TABS
@@ -511,6 +513,7 @@ const ChatModule = (function() {
             results_table_header_accuracy: "Accuracy",
             results_table_header_time: "Time",
             results_empty_state: "There are no results for this test yet.",
+            file_actions_modal_title: "File:",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -3635,7 +3638,7 @@ const ChatModule = (function() {
     }
 
     function showFileActionsModal(fileId, fileName, isTestingChannel = false) {
-        document.getElementById('fileActionsModalTitle').textContent = `Файл: ${decodeURIComponent(fileName)}`;
+        document.getElementById('fileActionsModalTitle').textContent = `${_chat('file_actions_modal_title')} ${decodeURIComponent(fileName)}`;
 
         const downloadBtn = document.getElementById('fileActionDownloadBtn');
         const testBtn = document.getElementById('fileActionTestBtn');
