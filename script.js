@@ -5813,25 +5813,48 @@ const mainApp = (function() {
     function processFile(fileName, fileContent, quizContext = null) {
         originalFileNameForReview = fileName;
         allParsedQuestions = parseQstContent(fileContent);
+        currentQuizContext = quizContext; // Сохраняем контекст для дальнейшего использования
 
-        // Прячем лоадер, так как данные обработаны
         hideGlobalLoader();
 
         if (allParsedQuestions.length > 0) {
             saveRecentFile(fileName, fileContent);
             
+            // Показываем экран настроек
             fileUploadArea.classList.add('hidden');
             searchResultsContainer.classList.add('hidden');
             quizSetupArea.classList.remove('hidden');
             
+            const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
             questionRangeStartInput.value = 1;
-            questionRangeStartInput.max = allParsedQuestions.filter(q => q.type !== 'category').length;
-            questionRangeEndInput.value = allParsedQuestions.filter(q => q.type !== 'category').length;
-            questionRangeEndInput.max = allParsedQuestions.filter(q => q.type !== 'category').length;
-            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${allParsedQuestions.filter(q => q.type !== 'category').length} ${_('questions_label_for_range')})`;
+            questionRangeStartInput.max = questionCount;
+            questionRangeEndInput.value = questionCount;
+            questionRangeEndInput.max = questionCount;
+            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
 
-            // Сразу переходим к настройкам, передавая информацию о тесте
-            applySettingsAndStartQuiz(false, null, quizContext); 
+            // --- НАЧАЛО НОВОЙ ЛОГИКИ: Блокировка/разблокировка настроек ---
+            // Если это "официальный" тест
+            if (quizContext && !quizContext.isPractice) {
+                // Выставляем нужные настройки и блокируем их
+                shuffleQuestionsCheckbox.checked = true;
+                shuffleAnswersCheckbox.checked = true;
+                readingModeCheckbox.checked = false;
+                
+                shuffleQuestionsCheckbox.disabled = true;
+                shuffleAnswersCheckbox.disabled = true;
+                readingModeCheckbox.disabled = true;
+                questionRangeStartInput.disabled = true;
+                questionRangeEndInput.disabled = true;
+            } else {
+                // Для всех остальных случаев (пробный тест, обычный файл) - всё разблокировано
+                shuffleQuestionsCheckbox.disabled = false;
+                shuffleAnswersCheckbox.disabled = false;
+                readingModeCheckbox.disabled = false;
+                questionRangeStartInput.disabled = false;
+                questionRangeEndInput.disabled = false;
+            }
+            // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
         } else {
             alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
         }
@@ -5975,38 +5998,13 @@ const mainApp = (function() {
 
 
 
-    function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null, quizContext = null) {
-        let finalQuizContext = quizContext;
-
-        // Если это официальный тест (не пробный)
-        if (quizContext && !quizContext.isPractice) {
-            // Блокируем и выставляем нужные настройки
- 
-            // Принудительно включаем и блокируем опции
-            shuffleQuestionsCheckbox.checked = true; 
-            shuffleAnswersCheckbox.checked = true;
-
-            questionRangeStartInput.value = 1;
-            questionRangeStartInput.disabled = true;
-            questionRangeEndInput.value = allParsedQuestions.filter(q => q.type !== 'category').length;
-            questionRangeEndInput.disabled = true;
-            readingModeCheckbox.checked = false;
-            readingModeCheckbox.disabled = true;
-            shuffleQuestionsCheckbox.checked = true; // Принудительно перемешивать
-            shuffleQuestionsCheckbox.disabled = true;
-            shuffleAnswersCheckbox.checked = true;   // И ответы
-            shuffleAnswersCheckbox.disabled = true;
-        } else {
-            // Для пробных тестов и обычных файлов все доступно
-            questionRangeStartInput.disabled = false;
-            questionRangeEndInput.disabled = false;
-            readingModeCheckbox.disabled = false;
-            shuffleQuestionsCheckbox.disabled = false;
-            shuffleAnswersCheckbox.disabled = false;
-        }
+    function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
+        // Используем контекст, сохраненный ранее в processFile
+        let finalQuizContext = currentQuizContext; 
         
         let sourceArray;
         if (!isErrorReview) {
+            // Просто считываем значения с экрана настроек
             quizSettings.timeLimit = parseInt(timeLimitInput.value);
             quizSettings.shuffleQuestions = shuffleQuestionsCheckbox.checked;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
