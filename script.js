@@ -857,6 +857,16 @@ const ChatModule = (function() {
         document.getElementById('registerPassword').placeholder = _chat('auth_register_password_placeholder');
         document.getElementById('registerPasswordConfirm').placeholder = _chat('auth_register_confirm_placeholder');
         document.querySelector('#registerForm button').textContent = _chat('auth_register_button');
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // Обновляем текст кнопки Google Sign-In, сохраняя иконку
+        const googleBtn = document.getElementById('googleSignInBtn');
+        if (googleBtn) {
+            googleBtn.innerHTML = `
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon">
+                ${_chat('auth_google_signin')}
+            `;
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         document.getElementById('authCloseButton').textContent = _chat('auth_close_button');
 
         // --- Основное окно чата ---
