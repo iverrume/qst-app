@@ -890,6 +890,19 @@ const ChatModule = (function() {
                     <button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
+        <!-- === НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ДЕЙСТВИЙ С ЛС === -->
+        <div id="privateChatActionsModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h3 id="privateChatActionsTitle">Действия</h3>
+                <div class="modal-buttons vertical">
+                    <button id="pinChatBtn">📌 Закрепить чат</button>
+                    <button id="deleteChatBtn" class="delete-btn" style="width: 100%;">🗑️ Удалить чат</button>
+                    <button onclick="ChatModule.closeModal('privateChatActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
+                </div>
+            </div>
+        </div>
+
+
         </div>
         `;
         document.body.insertAdjacentHTML('beforeend', chatHTML);
@@ -1235,6 +1248,32 @@ const ChatModule = (function() {
                 ChatModule.startEditMessage(messageId, messageText);
             }
         });
+
+
+        // --- ДОБАВЬТЕ ЭТОТ КОД В КОНЕЦ setupEventListeners ---
+
+        // Обработка правого клика и долгого нажатия на списке ЛС
+        privateChatsList.addEventListener('contextmenu', (e) => {
+            const chatItem = e.target.closest('.channel-item');
+            if (chatItem) {
+                e.preventDefault();
+                const { partnerId, partnerName, isPinned } = chatItem.dataset;
+                showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
+            }
+        });
+
+        privateChatsList.addEventListener('pointerdown', (e) => {
+            const chatItem = e.target.closest('.channel-item');
+            if (chatItem) {
+                longPressTimer = setTimeout(() => {
+                    const { partnerId, partnerName, isPinned } = chatItem.dataset;
+                    showPrivateChatActions(partnerId, partnerName, isPinned === 'true');
+                }, 500); // 500 мс для долгого нажатия
+            }
+        });
+
+        privateChatsList.addEventListener('pointerup', () => clearTimeout(longPressTimer));
+        privateChatsList.addEventListener('pointerleave', () => clearTimeout(longPressTimer));
 
         
     }
@@ -2234,25 +2273,25 @@ const ChatModule = (function() {
         showModal('userActionsModal');
     }
 
-    // === ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ НАЧАЛА ЛИЧНОГО ЧАТА ===
+    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ---
     async function startPrivateChat(targetId, targetName) {
         closeModal('userActionsModal');
         const channelId = `private_${[currentUser.uid, targetId].sort().join('_')}`;
         const userDocRef = db.collection('users').doc(currentUser.uid);
-    
+
         try {
             const userDoc = await userDocRef.get();
             if (!userDoc.exists) throw "Текущий пользователь не найден.";
             
-            const userData = userDoc.data();
-            // Обновляем ТОЛЬКО список текущего пользователя
-            if (!userData.privateChatPartners || !userData.privateChatPartners.includes(targetId)) {
-                await userDocRef.update({ privateChatPartners: firebase.firestore.FieldValue.arrayUnion(targetId) });
-            }
+            const partners = userDoc.data().privateChatPartners || [];
+            const alreadyExists = partners.some(p => p.partnerId === targetId);
             
-            // Мы НЕ ТРОГАЕМ документ собеседника, чтобы не нарушать права доступа.
-            // Его список обновится, когда он сам зайдет в чат.
-    
+            if (!alreadyExists) {
+                // Добавляем нового партнера как объект
+                const newPartner = { partnerId: targetId, pinned: false };
+                await userDocRef.update({ privateChatPartners: firebase.firestore.FieldValue.arrayUnion(newPartner) });
+            }
+
         } catch (error) {
             console.error("Ошибка при создании личного чата: ", error);
             showError("Не удалось начать личный чат.");
@@ -2260,10 +2299,88 @@ const ChatModule = (function() {
         }
         
         await loadPrivateChats(); 
-        // Переключаемся на чат
         switchToChannel(channelId, targetName, 'private');
     }
-    
+
+let longPressTimer;
+let targetPartnerId, targetPartnerName, targetIsPinned;
+
+function showPrivateChatActions(partnerId, partnerName, isPinned) {
+    targetPartnerId = partnerId;
+    targetPartnerName = partnerName;
+    targetIsPinned = isPinned;
+
+    const modalTitle = document.getElementById('privateChatActionsTitle');
+    const pinBtn = document.getElementById('pinChatBtn');
+    const deleteBtn = document.getElementById('deleteChatBtn');
+
+    modalTitle.textContent = partnerName;
+    pinBtn.textContent = isPinned ? '📌 Открепить чат' : '📌 Закрепить чат';
+
+    // Переназначаем обработчики
+    pinBtn.onclick = () => togglePinChat(partnerId);
+    deleteBtn.onclick = () => deletePrivateChat(partnerId);
+
+    showModal('privateChatActionsModal');
+}
+
+    async function togglePinChat(partnerId) {
+        if (!currentUser) return;
+        const userDocRef = db.collection('users').doc(currentUser.uid);
+
+        try {
+            await db.runTransaction(async (transaction) => {
+                const userDoc = await transaction.get(userDocRef);
+                if (!userDoc.exists) throw "Пользователь не найден.";
+
+                const partners = userDoc.data().privateChatPartners || [];
+                const partnerIndex = partners.findIndex(p => p.partnerId === partnerId);
+
+                if (partnerIndex > -1) {
+                    partners[partnerIndex].pinned = !partners[partnerIndex].pinned;
+                    transaction.update(userDocRef, { privateChatPartners: partners });
+                }
+            });
+            await loadPrivateChats(); // Обновляем список
+            closeModal('privateChatActionsModal');
+        } catch (error) {
+            console.error("Ошибка закрепления/открепления чата:", error);
+            showError("Не удалось изменить статус чата.");
+        }
+    }
+
+    async function deletePrivateChat(partnerId) {
+        if (!confirm(`Вы уверены, что хотите удалить чат с этим пользователем? История переписки останется, но чат исчезнет из списка.`)) {
+            return;
+        }
+        if (!currentUser) return;
+        const userDocRef = db.collection('users').doc(currentUser.uid);
+
+        try {
+            await db.runTransaction(async (transaction) => {
+                const userDoc = await transaction.get(userDocRef);
+                if (!userDoc.exists) throw "Пользователь не найден.";
+
+                const partners = userDoc.data().privateChatPartners || [];
+                const updatedPartners = partners.filter(p => p.partnerId !== partnerId);
+                transaction.update(userDocRef, { privateChatPartners: updatedPartners });
+            });
+            await loadPrivateChats(); // Обновляем список
+            closeModal('privateChatActionsModal');
+
+            // Если удалили активный чат, переключаемся на общий
+            if (currentChannel.includes(partnerId)) {
+                const generalChannel = channels.find(c => c.id === 'general');
+                if (generalChannel) switchToChannel(generalChannel.id, generalChannel.name, 'public');
+            }
+        } catch (error) {
+            console.error("Ошибка удаления чата:", error);
+            showError("Не удалось удалить чат.");
+        }
+    }
+
+
+
     async function sendMessage() {
         if (!chatInput || !currentUser || !db) return;
         const text = chatInput.value.trim();
@@ -2993,65 +3110,55 @@ const ChatModule = (function() {
         });
     }
 
+    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ---
     async function loadPrivateChats() {
         if (!db || !currentUser) return;
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         if (!userDoc.exists) return;
 
-        const partnerIds = userDoc.data().privateChatPartners || [];
+        // Получаем массив объектов
+        const partnerObjects = userDoc.data().privateChatPartners || [];
 
-        // --- НАЧАЛО НОВОГО КОДА ---
-
-        // 1. Создаем массив промисов, чтобы для каждого партнера получить доп. информацию
-        const privateChatsPromises = partnerIds.map(async (partnerId) => {
-            // Получаем данные самого партнера (как и раньше)
+        const privateChatsPromises = partnerObjects.map(async (partnerObj) => {
+            const partnerId = partnerObj.partnerId;
             let partnerData = allUsers.get(partnerId);
             if (!partnerData) {
                 const partnerDoc = await db.collection('users').doc(partnerId).get();
                 if (partnerDoc.exists) partnerData = partnerDoc.data();
             }
-            if (!partnerData) return null; // Если партнера не нашли, пропускаем
+            if (!partnerData) return null;
 
-            // 2. Определяем ID личного чата
             const channelId = `private_${[currentUser.uid, partnerId].sort().join('_')}`;
-
-            // 3. Находим ПОСЛЕДНЕЕ сообщение в этом чате, чтобы узнать его время
-            const messagesQuery = await db.collection('messages')
-                .where('channelId', '==', channelId)
-                .orderBy('createdAt', 'desc')
-                .limit(1)
-                .get();
-
+            const messagesQuery = await db.collection('messages').where('channelId', '==', channelId).orderBy('createdAt', 'desc').limit(1).get();
             let lastMessageTimestamp = null;
             if (!messagesQuery.empty) {
-                // Если сообщения есть, берем время самого нового
                 lastMessageTimestamp = messagesQuery.docs[0].data().createdAt;
             }
-
-            // 4. Возвращаем объект, содержащий и данные партнера, и время последнего сообщения
-            return { ...partnerData, lastMessageTimestamp };
+            
+            // Возвращаем объект, содержащий ВСЕ нужные данные
+            return { ...partnerData, pinned: partnerObj.pinned || false, lastMessageTimestamp };
         });
 
-        // Ждем выполнения всех запросов
         let fetchedChats = await Promise.all(privateChatsPromises);
-
-        // Отфильтровываем пустые результаты (если партнера не удалось найти)
         fetchedChats = fetchedChats.filter(chat => chat !== null);
 
-        // 5. СОРТИРУЕМ чаты: у кого новее сообщение, тот выше
+        // СОРТИРУЕМ: сначала по статусу закрепления (true идет первым), потом по времени
         fetchedChats.sort((a, b) => {
+            if (a.pinned !== b.pinned) {
+                return a.pinned ? -1 : 1;
+            }
             const timeA = a.lastMessageTimestamp ? a.lastMessageTimestamp.toMillis() : 0;
             const timeB = b.lastMessageTimestamp ? b.lastMessageTimestamp.toMillis() : 0;
-            return timeB - timeA; // Сортировка по убыванию (новое вверху)
+            return timeB - timeA;
         });
 
         privateChats = fetchedChats;
-
-        // --- КОНЕЦ НОВОГО КОДА ---
-
         renderPrivateChatsList();
     }
 
+
+
+    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ---
      function renderPrivateChatsList() {
         if (!privateChatsList) return;
         privateChatsList.innerHTML = '';
@@ -3059,19 +3166,25 @@ const ChatModule = (function() {
             const channelId = `private_${[currentUser.uid, chatPartner.uid].sort().join('_')}`;
             const chatEl = document.createElement('div');
             
-            chatEl.dataset.channelId = channelId; // <--- ДОБАВЛЕНО: Присваиваем ID для поиска счетчика
+            chatEl.dataset.channelId = channelId;
+            // Добавляем данные для обработчиков
+            chatEl.dataset.partnerId = chatPartner.uid;
+            chatEl.dataset.partnerName = escapeHTML(chatPartner.username);
+            chatEl.dataset.isPinned = chatPartner.pinned;
 
             chatEl.className = `channel-item ${channelId === currentChannel && currentChannelType === 'private' ? 'active' : ''}`;
             const isOnline = onlineUsers.has(chatPartner.uid);
-            const unreadCount = unreadCounts.get(channelId) || 0; // <--- ДОБАВЛЕНО: Получаем текущий счетчик
+            const unreadCount = unreadCounts.get(channelId) || 0;
+            const pinIcon = chatPartner.pinned ? '<span class="pinned-icon">📌</span>' : '';
 
-            // ИЗМЕНЕНО: Добавляем HTML-элемент для счетчика
             chatEl.innerHTML = `
+                ${pinIcon}
                 <span class="status-indicator ${isOnline ? 'online' : ''}" style="margin-right: 8px;"></span>
                 <span class="channel-name">${escapeHTML(chatPartner.username)}</span>
                 <span class="unread-channel-badge ${unreadCount > 0 ? '' : 'hidden'}">${unreadCount}</span>
             `;
 
+            // Клик по-прежнему переключает чат
             chatEl.addEventListener('click', () => switchToChannel(channelId, chatPartner.username, 'private'));
             privateChatsList.appendChild(chatEl);
         });

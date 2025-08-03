@@ -4668,3 +4668,20 @@ body.synthwave-mode ::-webkit-scrollbar-thumb:hover {
   color: var(--secondary-text-color);
 }
 
+/* --- СТИЛИ ДЛЯ ЗАКРЕПЛЕННОГО ЧАТА --- */
+.channel-item .pinned-icon {
+    font-size: 0.9em;
+    margin-right: 8px;
+    opacity: 0.8;
+}
+
+/* Стили для кнопки "Удалить чат" в модальном окне */
+#privateChatActionsModal .delete-btn {
+    background-color: var(--feedback-incorrect-bg);
+    color: var(--feedback-incorrect-text);
+    border: 1px solid var(--feedback-incorrect-border);
+}
+#privateChatActionsModal .delete-btn:hover {
+    background-color: var(--accent);
+    color: white;
+}
