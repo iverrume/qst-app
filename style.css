@@ -128,54 +128,45 @@ body.claude-mode {
 
 
 
+
+
+/* --- Глубокая ночь --- */
 body.synthwave-mode {
-    /* Основной фон - очень темный фиолетовый */
-    --bg-color: #1A103C; 
-    /* Контейнер чуть светлее фона */
-    --container-bg-color: #241856; 
-    /* Основной текст - светлый, почти белый */
-    --text-color: #E5E5E5; 
-    /* Вторичный текст - приглушенный неоново-голубой */
-    --secondary-text-color: #7A79B8; 
-    /* Заголовки - яркий неоновый розовый */
-    --heading-color: #FF00FF; 
-    /* Рамки - неоновая бирюза */
-    --border-color: #00FFFF; 
-    --dashed-border-color: #4A3F8C;
-    /* Поля ввода */
-    --input-bg-color: #1A103C;
-    --input-hover-bg-color: #312375;
-    --input-border-color: #4A3F8C;
-    --input-hover-border-color: #00FFFF;
-    /* Кнопки */
-    --button-primary-bg: #00FFFF; /* Неоновая бирюза */
-    --button-primary-hover-bg: #33FFFF;
-    --button-primary-text: #1A103C; /* Текст на кнопке темный для контраста */
-    --button-secondary-bg: #4A3F8C;
-    --button-secondary-hover-bg: #5D50AF;
-    --button-secondary-text: #E5E5E5;
-    --button-success-bg: #00FF00; /* Неоновый зеленый */
-    --button-success-hover-bg: #33FF33;
-    /* Обратная связь */
-    --feedback-correct-bg: rgba(0, 255, 0, 0.1); /* Прозрачный зеленый фон */
-    --feedback-correct-text: #00FF00;
-    --feedback-correct-border: #00FF00;
-    --feedback-incorrect-bg: rgba(255, 0, 128, 0.1); /* Прозрачный красный фон */
-    --feedback-incorrect-text: #FF0080;
-    --feedback-incorrect-border: #FF0080;
-    /* Тени - неоновое свечение */
-    --shadow-color: rgba(0, 255, 255, 0.1); 
-    --shadow-light-color: rgba(0, 255, 255, 0.05);
-    --shadow-hover-color: rgba(0, 255, 255, 0.12);
-    /* Таймер и навигация */
-    --timer-text-color: #FF00FF; /* Розовый таймер */
-    --quick-nav-current-bg: #00FFFF;
-    --quick-nav-current-text: #1A103C;
-    /* Прочее */
-    --theme-toggle-border: #7A79B8;
-    --theme-toggle-hover-bg: #312375;
-    --triggered-word-color: #FFD700; /* Золотой для триггеров */
-    --accent: #FF00FF; /* Розовый акцент */
+    --bg-color: #0F172A; /* Очень темный синий */
+    --container-bg-color: #1E293B;
+    --text-color: #E2E8F0;
+    --secondary-text-color: #94A3B8;
+    --heading-color: #38BDF8; /* Небесно-голубой */
+    --border-color: #334155;
+    --dashed-border-color: #475569;
+    --input-bg-color: #1E293B;
+    --input-hover-bg-color: #334155;
+    --input-border-color: #475569;
+    --input-hover-border-color: #94A3B8;
+    --button-primary-bg: #14B8A6; /* Холодный бирюзовый (teal) */
+    --button-primary-hover-bg: #2DD4BF;
+    --button-primary-text: #FFFFFF;
+    --button-secondary-bg: #475569;
+    --button-secondary-hover-bg: #64748B;
+    --button-secondary-text: #E2E8F0;
+    --button-success-bg: #22C55E; /* Более спокойный зеленый */
+    --button-success-hover-bg: #4ADE80;
+    --feedback-correct-bg: #1F2E2A;
+    --feedback-correct-text: #6EE7B7;
+    --feedback-correct-border: #3A735E;
+    --feedback-incorrect-bg: #3A232A;
+    --feedback-incorrect-text: #F87171;
+    --feedback-incorrect-border: #804343;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-light-color: rgba(0, 0, 0, 0.2);
+    --shadow-hover-color: rgba(0, 0, 0, 0.4);
+    --timer-text-color: #38BDF8;
+    --quick-nav-current-bg: #14B8A6;
+    --quick-nav-current-text: #FFFFFF;
+    --theme-toggle-border: #475569;
+    --theme-toggle-hover-bg: #334155;
+    --triggered-word-color: #FACC15; /* Желтый для триггеров */
+    --accent: #38BDF8;
 }
 
 
@@ -4567,28 +4558,30 @@ body.claude-mode .message.mine.pinned .message-content {
     padding-right: 5px; /* Небольшой отступ, чтобы скроллбар не прилипал к тексту */
 }
 
-/* ===== КАСТОМНЫЕ СКРОЛЛБАРЫ ДЛЯ ТЕМНОЙ ТЕМЫ ===== */
+/* --- ИСПРАВЛЕННЫЙ КОД --- */
 
-body.dark-mode ::-webkit-scrollbar {
-  width: 8px; /* Делаем скроллбар чуть тоньше для современного вида */
+/* ===== КАСТОМНЫЕ СКРОЛЛБАРЫ ДЛЯ ТЕМНЫХ ТЕМ ===== */
+
+body.dark-mode ::-webkit-scrollbar,
+body.synthwave-mode ::-webkit-scrollbar {
+  width: 8px; 
 }
 
-body.dark-mode ::-webkit-scrollbar-track {
-  /* Фон скроллбара будет соответствовать фону сайдбара */
+body.dark-mode ::-webkit-scrollbar-track,
+body.synthwave-mode ::-webkit-scrollbar-track {
   background: var(--input-bg-color);
 }
 
-body.dark-mode ::-webkit-scrollbar-thumb {
-  /* Ползунок делаем темно-серым и закругленным */
-  background-color: #444;
+body.dark-mode ::-webkit-scrollbar-thumb,
+body.synthwave-mode ::-webkit-scrollbar-thumb {
+  background-color: #475569; /* Используем цвет из палитры synthwave */
   border-radius: 4px;
-  /* Добавляем рамку в цвет фона для эффекта отступа */
   border: 2px solid var(--input-bg-color);
 }
 
-body.dark-mode ::-webkit-scrollbar-thumb:hover {
-  /* При наведении делаем ползунок чуть светлее */
-  background-color: #555;
+body.dark-mode ::-webkit-scrollbar-thumb:hover,
+body.synthwave-mode ::-webkit-scrollbar-thumb:hover {
+  background-color: #64748B; /* Используем цвет из палитры synthwave */
 }
 
 /* ===== СТИЛИ ДЛЯ КАНАЛОВ ТЕСТИРОВАНИЯ ===== */

@@ -1217,8 +1217,31 @@ const ChatModule = (function() {
             // Применяем debounce, чтобы поиск не срабатывал на каждую букву
             const debouncedChannelSearch = debounce(handleChannelSearch, 250);
             channelSearchInput.addEventListener('input', debouncedChannelSearch);
+
         }
+
+        // --- ДОБАВЛЕННЫЙ КОД ---
+
+        // Делегирование событий для кнопок редактирования сообщений
+        messageArea.addEventListener('click', function(event) {
+            // Проверяем, была ли нажата именно кнопка с классом 'edit-message-btn'
+            const editButton = event.target.closest('.edit-message-btn');
+            
+            if (editButton) {
+                const messageId = editButton.dataset.messageId;
+                const messageText = editButton.dataset.rawText; // Получаем текст из нашего безопасного свойства
+                
+                // Вызываем функцию редактирования с полученными данными
+                ChatModule.startEditMessage(messageId, messageText);
+            }
+        });
+
+        
     }
+
+
+
+
     
     function setupAuthStateListener() {
         if (!auth) return;
@@ -1813,8 +1836,9 @@ const ChatModule = (function() {
             <button title="Добавить реакцию" onclick="ChatModule.showReactionPicker('${message.id}', this)">😊</button>
             <button title="${message.isPinned ? 'Открепить' : 'Закрепить'}" onclick="ChatModule.togglePinMessage('${message.id}')">📌</button>
         `;
+
         if (message.authorId === currentUser?.uid && message.type !== 'question_link') {
-            actionsHTML += `<button title="Редактировать" onclick="ChatModule.startEditMessage('${message.id}', '${escape(message.text)}')">✏️</button>`;
+            actionsHTML += `<button class="edit-message-btn" title="Редактировать" data-message-id="${message.id}">✏️</button>`;
             actionsHTML += `<button title="Удалить" onclick="ChatModule.deleteMessage('${message.id}')">🗑️</button>`;
         }
         
@@ -1845,6 +1869,15 @@ const ChatModule = (function() {
                     messageEl.appendChild(expandBtn);
                 }
             }, 0); 
+        }
+
+        // Находим только что созданную кнопку редактирования внутри элемента сообщения
+        const editBtn = messageEl.querySelector('.edit-message-btn');
+        if (editBtn) {
+            // Это самый надежный способ передать текст:
+            // мы присваиваем его свойству DOM-элемента, а не в HTML-атрибут.
+            // Это полностью решает проблему с лимитами и экранированием.
+            editBtn.dataset.rawText = message.text; 
         }
 
         return messageEl;
@@ -6815,13 +6848,13 @@ const mainApp = (function() {
 
         if (currentTheme === 'dark') {
             document.body.classList.add('dark-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '☀️'; // Солнце для перехода на светлую
+            if (themeToggleButton) themeToggleButton.textContent = '🌌'; // Солнце для перехода на светлую
         } else if (currentTheme === 'claude') {
             document.body.classList.add('claude-mode');
             if (themeToggleButton) themeToggleButton.textContent = '🌙'; // Луна для перехода на темную
         } else if (currentTheme === 'synthwave') { // <-- Наш новый блок
             document.body.classList.add('synthwave-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '🚀'; // Ракета для перехода на светлую
+            if (themeToggleButton) themeToggleButton.textContent = '☀️'; // Ракета для перехода на светлую
         } else {
             // Светлая тема (light) - нет класса
             if (themeToggleButton) themeToggleButton.textContent = '🌤️'; // Иконка Claude для перехода на нее
