@@ -800,6 +800,12 @@ const ChatModule = (function() {
                 <input type="text" id="channelNameInput" placeholder="${_chat('channel_create_name_placeholder')}" required />
                 <input type="password" id="channelPasswordInput" placeholder="${_chat('channel_create_password_placeholder')}" />
                 <textarea id="channelDescInput" placeholder="${_chat('channel_create_desc_placeholder')}"></textarea>
+
+                <div class="settings-group" style="text-align: left; margin-top: 15px;">
+                    <input type="checkbox" id="channelIsForTesting">
+                    <label for="channelIsForTesting">Канал для тестирования (с записью результатов)</label>
+                </div>
+
                 <div class="modal-buttons">
                     <button onclick="ChatModule.createChannel()">${_chat('modal_create_button')}</button>
                     <button onclick="ChatModule.closeModal('channelCreateModal')">${_chat('modal_cancel_button')}</button>
@@ -1703,19 +1709,37 @@ const ChatModule = (function() {
 
         let contentHTML = '';
         if (message.type === 'file_share') {
-            messageEl.classList.add('file-share-bubble');
-            const qCount = message.fileInfo.questions;
-            const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
-            
-            contentHTML = `
-            <div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}')">
-                <div class="file-share-icon">📄</div>
-                <div class="file-share-details">
-                    <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
-                    <div class="file-share-info">${qCount} ${qText}</div>
+        messageEl.classList.add('file-share-bubble');
+        const qCount = message.fileInfo.questions;
+        const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
+        
+        // --- НАЧАЛО НОВОГО КОДА ---
+        // Проверяем, является ли текущий канал тестовым
+        const currentChannelData = channels.find(c => c.id === currentChannel);
+        const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
+
+        let resultsButtonHTML = '';
+        if (isTestingChannel) {
+            resultsButtonHTML = `
+                <div class="test-results-action">
+                    <button class="results-btn" onclick="ChatModule.showTestResults('${message.fileInfo.id}', '${message.channelId}')">
+                        📊 Результаты
+                    </button>
                 </div>
-                <div class="file-share-arrow">→</div>
-            </div>`;
+            `;
+        }
+
+        contentHTML = `
+        <div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}', ${isTestingChannel})">
+            <div class="file-share-icon">📄</div>
+            <div class="file-share-details">
+                <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
+                <div class="file-share-info">${qCount} ${qText}</div>
+            </div>
+            <div class="file-share-arrow">→</div>
+        </div>
+        ${resultsButtonHTML}`; // Добавляем кнопку результатов
+
         } else if (message.type === 'question_link') {
             messageEl.classList.add('question-link-bubble');
             contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
@@ -3226,6 +3250,9 @@ const ChatModule = (function() {
         const name = document.getElementById('channelNameInput').value.trim();
         const description = document.getElementById('channelDescInput').value.trim();
         const password = document.getElementById('channelPasswordInput').value;
+        // --- НОВЫЙ КОД ---
+        const isForTesting = document.getElementById('channelIsForTesting').checked;
+        // --- КОНЕЦ НОВОГО КОДА ---
         
         if (!name) {
             alert('Введите название канала');
@@ -3240,14 +3267,20 @@ const ChatModule = (function() {
                 description: description,
                 createdBy: currentUser.uid,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                hasPassword: !!password, // true если пароль есть, false если нет
-                passwordHash: passwordHash // null если пароля нет
+                hasPassword: !!password,
+                passwordHash: passwordHash,
+                // --- НОВЫЙ КОД ---
+                isForTesting: isForTesting // Сохраняем новый флаг
+                // --- КОНЕЦ НОВОГО КОДА ---
             });
             
             closeModal('channelCreateModal');
             document.getElementById('channelNameInput').value = '';
             document.getElementById('channelDescInput').value = '';
             document.getElementById('channelPasswordInput').value = '';
+            // --- НОВЫЙ КОД ---
+            document.getElementById('channelIsForTesting').checked = false;
+            // --- КОНЕЦ НОВОГО КОДА ---
         } catch (error) {
             console.error('Ошибка создания канала:', error);
             showError('Не удалось создать канал');
@@ -3554,14 +3587,43 @@ const ChatModule = (function() {
         await db.collection('messages').add(message);
     }
 
-    function showFileActionsModal(fileId, fileName) {
-        document.getElementById('fileActionsModalTitle').textContent = `Файл: ${fileName}`;
+    function showFileActionsModal(fileId, fileName, isTestingChannel = false) {
+        document.getElementById('fileActionsModalTitle').textContent = `Файл: ${decodeURIComponent(fileName)}`;
 
         const downloadBtn = document.getElementById('fileActionDownloadBtn');
         const testBtn = document.getElementById('fileActionTestBtn');
+        const modalButtonsContainer = testBtn.parentElement;
 
+        // Удаляем кнопку пробного теста, если она была добавлена ранее
+        const oldPracticeBtn = document.getElementById('fileActionPracticeTestBtn');
+        if (oldPracticeBtn) {
+            oldPracticeBtn.remove();
+        }
+
+        // Переименовываем и переназначаем кнопки в зависимости от типа канала
+        if (isTestingChannel) {
+            // Создаем кнопку "Пробный тест"
+            const practiceTestBtn = document.createElement('button');
+            practiceTestBtn.id = 'fileActionPracticeTestBtn';
+            practiceTestBtn.textContent = '⚡️ Пробный тест';
+            // Пробный тест не сохраняет результаты
+            practiceTestBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
+            
+            // Вставляем ее перед основной кнопкой "Пройти тест"
+            modalButtonsContainer.insertBefore(practiceTestBtn, testBtn);
+            
+            // Переименовываем основную кнопку и задаем ей правильное действие
+            testBtn.textContent = '🏆 Пройти тест (с записью)';
+            testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: false });
+
+        } else {
+            // Для обычных каналов все как раньше
+            testBtn.textContent = '⚡️ Пройти тест';
+            testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true }); // Обычный тест - это "пробный"
+        }
+        
+        // Скачивание работает одинаково
         downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
-        testBtn.onclick = () => startTestFromShare(fileId, fileName);
         
         showModal('fileActionsModal');
     }
@@ -3583,33 +3645,35 @@ const ChatModule = (function() {
 
 
 
-    async function startTestFromShare(fileId, fileName) {
+    async function startTestFromShare(fileId, fileName, options = { isPractice: true }) {
          try {
             closeModal('fileActionsModal');
-            ChatModule.closeChatModal(); // Закрываем чат
+            ChatModule.closeChatModal();
 
-            // ИСПРАВЛЕНИЕ: Вызываем функцию через объект mainApp
-            window.mainApp.showGlobalLoader(`Загрузка теста "${fileName}"...`);
+            window.mainApp.showGlobalLoader(`Загрузка теста "${decodeURIComponent(fileName)}"...`);
 
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
             const response = await fetch(url);
             const data = await response.json();
             if (!data.success) throw new Error(data.error);
             
-            // Эта функция сама скроет лоадер, когда будет готова
-            window.mainApp.processFile(fileName, data.content);
+            // --- НОВЫЙ КОД ---
+            // Сохраняем контекст для записи результатов
+            const quizContext = {
+                fileId: fileId,
+                channelId: currentChannel,
+                isPractice: options.isPractice
+            };
+            // Передаем контекст и режим в следующую функцию
+            window.mainApp.processFile(decodeURIComponent(fileName), data.content, quizContext);
+            // --- КОНЕЦ НОВОГО КОДА ---
 
         } catch (error) {
             console.error('Ошибка запуска теста из чата:', error);
-
-            // ИСПРАВЛЕНИЕ: Вызываем функцию через объект mainApp
             window.mainApp.hideGlobalLoader();
-            
             alert(`Не удалось запустить тест: ${error.message}`);
         }
     }
-
-    // --- КОНЕЦ НОВОГО КОДА ---
 
 
 
@@ -3896,7 +3960,64 @@ const ChatModule = (function() {
         }
     }
 
+    async function showTestResults(fileId, channelId) {
+        const modalTitle = document.getElementById('testResultsModalTitle');
+        const tableContainer = document.getElementById('testResultsTableContainer');
+        
+        modalTitle.textContent = 'Результаты по тесту';
+        tableContainer.innerHTML = `<div class="loading-placeholder">${_chat('loading_message')}</div>`;
+        showModal('testResultsModal');
 
+        try {
+            const querySnapshot = await db.collection('testResults')
+                .where('fileId', '==', fileId)
+                .where('channelId', '==', channelId)
+                .orderBy('accuracy', 'desc') // Сортируем по точности (лучшие вверху)
+                .get();
+                
+            if (querySnapshot.empty) {
+                tableContainer.innerHTML = `<div class="results-empty-state">По этому тесту пока нет результатов.</div>`;
+                return;
+            }
+            
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Пользователь</th>
+                            <th>Точность</th>
+                            <th>Время</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            querySnapshot.docs.forEach((doc, index) => {
+                const result = doc.data();
+                const time = result.timeSpentSeconds;
+                const minutes = Math.floor(time / 60);
+                const seconds = time % 60;
+                const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                tableHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${escapeHTML(result.userName || 'Аноним')}</td>
+                        <td>${result.accuracy.toFixed(1)}%</td>
+                        <td>${timeFormatted}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `</tbody></table>`;
+            tableContainer.innerHTML = tableHTML;
+
+        } catch (error) {
+            console.error("Ошибка загрузки результатов теста:", error);
+            tableContainer.innerHTML = `<div class="results-empty-state">Ошибка загрузки: ${error.message}</div>`;
+        }
+    }
 
 
 
@@ -3925,6 +4046,8 @@ const ChatModule = (function() {
             // Это гарантирует, что сообщения отобразятся, даже если они загрузились в фоне.
             loadTabData(currentTab); 
         },
+
+        showTestResults,
 
         closeChatModal: () => {
             if (chatOverlay) {
@@ -4422,6 +4545,8 @@ const mainApp = (function() {
     let breadcrumbs = [];
     let searchResultsData = [];
     let currentResultIndex = 0;
+    let currentQuizContext = null;
+    let quizStartTime = 0;
 
     // --- Constants ---
 
@@ -5685,7 +5810,7 @@ const mainApp = (function() {
     }
 
 
-    function processFile(fileName, fileContent) {
+    function processFile(fileName, fileContent, quizContext = null) {
         originalFileNameForReview = fileName;
         allParsedQuestions = parseQstContent(fileContent);
 
@@ -5700,12 +5825,15 @@ const mainApp = (function() {
             quizSetupArea.classList.remove('hidden');
             
             questionRangeStartInput.value = 1;
-            questionRangeStartInput.max = allParsedQuestions.length;
-            questionRangeEndInput.value = allParsedQuestions.length;
-            questionRangeEndInput.max = allParsedQuestions.length;
-            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${allParsedQuestions.filter(q => q.type !== 'category').length})`;
+            questionRangeStartInput.max = allParsedQuestions.filter(q => q.type !== 'category').length;
+            questionRangeEndInput.value = allParsedQuestions.filter(q => q.type !== 'category').length;
+            questionRangeEndInput.max = allParsedQuestions.filter(q => q.type !== 'category').length;
+            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${allParsedQuestions.filter(q => q.type !== 'category').length} ${_('questions_label_for_range')})`;
+
+            // Сразу переходим к настройкам, передавая информацию о тесте
+            applySettingsAndStartQuiz(false, null, quizContext); 
         } else {
-            alert(`${_('file_processing_failed_part1')}"${fileName}"${_('file_processing_failed_part2')}`);
+            alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
         }
     }
 
@@ -5847,7 +5975,36 @@ const mainApp = (function() {
 
 
 
-    function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
+    function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null, quizContext = null) {
+        let finalQuizContext = quizContext;
+
+        // Если это официальный тест (не пробный)
+        if (quizContext && !quizContext.isPractice) {
+            // Блокируем и выставляем нужные настройки
+ 
+            // Принудительно включаем и блокируем опции
+            shuffleQuestionsCheckbox.checked = true; 
+            shuffleAnswersCheckbox.checked = true;
+
+            questionRangeStartInput.value = 1;
+            questionRangeStartInput.disabled = true;
+            questionRangeEndInput.value = allParsedQuestions.filter(q => q.type !== 'category').length;
+            questionRangeEndInput.disabled = true;
+            readingModeCheckbox.checked = false;
+            readingModeCheckbox.disabled = true;
+            shuffleQuestionsCheckbox.checked = true; // Принудительно перемешивать
+            shuffleQuestionsCheckbox.disabled = true;
+            shuffleAnswersCheckbox.checked = true;   // И ответы
+            shuffleAnswersCheckbox.disabled = true;
+        } else {
+            // Для пробных тестов и обычных файлов все доступно
+            questionRangeStartInput.disabled = false;
+            questionRangeEndInput.disabled = false;
+            readingModeCheckbox.disabled = false;
+            shuffleQuestionsCheckbox.disabled = false;
+            shuffleAnswersCheckbox.disabled = false;
+        }
+        
         let sourceArray;
         if (!isErrorReview) {
             quizSettings.timeLimit = parseInt(timeLimitInput.value);
@@ -5863,7 +6020,7 @@ const mainApp = (function() {
 
             if (isNaN(startRange) || startRange < 1) startRange = 1;
             if (isNaN(endRange) || endRange < startRange) endRange = totalQuestionsCount;
-    
+
             const indices = mapQuestionRangeToIndices(allParsedQuestions, startRange, endRange);
 
             let finalStartIndex = indices.startIndex;
@@ -5871,11 +6028,9 @@ const mainApp = (function() {
                 finalStartIndex = indices.startIndex - 1;
             }
 
-            // --- НАЧАЛО ИЗМЕНЕНИЯ: Добавляем originalIndex ---
             sourceArray = allParsedQuestions.slice(finalStartIndex, indices.endIndex + 1)
                 .map((question, localIndex) => ({
                     ...question,
-                    // Запоминаем оригинальный индекс вопроса в полном массиве
                     originalIndex: finalStartIndex + localIndex
                 }));     
 
@@ -5918,15 +6073,10 @@ const mainApp = (function() {
         triggerWordsUsedInQuiz = questionsForCurrentQuiz.some(q => q.type !== 'category' && q.triggeredWordIndices && q.triggeredWordIndices.length > 0);
         if (quizSettings.readingMode) {
             questionsForCurrentQuiz.forEach(q => {
-                // Применяем логику только к вопросам, а не к категориям
                 if (q.type !== 'category' && q.options && q.correctAnswerIndex > -1) {
-                    // 1. Находим правильный ответ
                     const correctAnswer = q.options[q.correctAnswerIndex];
-                    // 2. Удаляем его с текущей позиции
                     q.options.splice(q.correctAnswerIndex, 1);
-                    // 3. Вставляем его в самое начало массива вариантов
                     q.options.unshift(correctAnswer);
-                    // 4. Обновляем индекс правильного ответа на 0
                     q.correctAnswerIndex = 0;
                 }
             });
@@ -5952,12 +6102,14 @@ const mainApp = (function() {
         gradusFoldersContainer.classList.add('hidden');
         quizArea.classList.remove('hidden');
         resultsArea.classList.add('hidden');
-        startQuiz();
+        startQuiz(finalQuizContext);
     }
 
 
 
-    function startQuiz() {
+    function startQuiz(quizContext = null) {
+        currentQuizContext = quizContext; // Сохраняем контекст для всего теста
+        quizStartTime = new Date().getTime();
         currentQuestionIndex = 0;
         score = 0;
         userAnswers = new Array(questionsForCurrentQuiz.length).fill(null).map(() => ({ answered: false, correct: null, selectedOptionIndex: null }));
@@ -5976,8 +6128,9 @@ const mainApp = (function() {
         triggerWordToggle?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
         window.addEventListener('beforeunload', handleBeforeUnload);
-
     }
+
+
 
     function setupTimer() {
         if (timerInterval) clearInterval(timerInterval);
@@ -6202,20 +6355,71 @@ const mainApp = (function() {
         nextButton.classList.toggle('finish-test', isLastQuestion);
     }
 
-    function showResults() {
+    async function showResults() {
         localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
+
+        // Проверяем, был ли это официальный тест, который нужно сохранить
+        if (currentQuizContext && !currentQuizContext.isPractice && currentUser) {
+            
+            // --- ИЗМЕНЕНИЕ №1: Правильный подсчет времени ---
+            const timeTaken = quizStartTime > 0 ? Math.round((new Date().getTime() - quizStartTime) / 1000) : 0;
+            
+            const questionsInThisQuiz = questionsForCurrentQuiz.filter(q => q.type !== 'category');
+            const finalAccuracy = questionsInThisQuiz.length > 0 
+                ? ((score / questionsInThisQuiz.length) * 100) 
+                : 0;
+
+            const resultData = {
+                userId: currentUser.uid,
+                userName: currentUser.displayName || 'Аноним',
+                fileId: currentQuizContext.fileId,
+                channelId: currentQuizContext.channelId,
+                accuracy: finalAccuracy,
+                timeSpentSeconds: timeTaken,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // --- ИЗМЕНЕНИЕ №2: Логика перезаписи результата ---
+            try {
+                // Ищем предыдущий результат этого же пользователя для этого же файла
+                const querySnapshot = await db.collection('testResults')
+                    .where('userId', '==', currentUser.uid)
+                    .where('fileId', '==', currentQuizContext.fileId)
+                    .limit(1)
+                    .get();
+
+                if (querySnapshot.empty) {
+                    // Если результатов нет - просто добавляем новый
+                    await db.collection('testResults').add(resultData);
+                    console.log("Результат теста успешно сохранен!");
+                } else {
+                    // Если результат есть - обновляем существующий
+                    const docId = querySnapshot.docs[0].id;
+                    await db.collection('testResults').doc(docId).update(resultData);
+                    console.log("Результат теста успешно обновлен!");
+                }
+            } catch (err) {
+                console.error("Ошибка сохранения/обновления результата:", err);
+            }
+        }
+        
+        currentQuizContext = null;
+        quizStartTime = 0; // Сбрасываем таймер
+
         quizArea.classList.add('hidden');
         resultsArea.classList.remove('hidden');
         webSearchDropdown?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
         copyQuestionBtnQuiz?.classList.add('hidden');
+        
         finalCorrectEl.textContent = score;
         const questionsInThisQuiz = questionsForCurrentQuiz.filter(q => q.type !== 'category');
         finalTotalEl.textContent = questionsInThisQuiz.length;
         const percentage = questionsInThisQuiz.length > 0 ? ((score / questionsInThisQuiz.length) * 100).toFixed(1) : 0;
         finalPercentageEl.textContent = percentage;
+
         if (quizSettings.feedbackMode && incorrectlyAnsweredQuestionsData.length > 0) {
             feedbackDownloadArea.classList.remove('hidden');
             errorReviewArea.classList.remove('hidden');
@@ -6223,12 +6427,14 @@ const mainApp = (function() {
             feedbackDownloadArea.classList.add('hidden');
             errorReviewArea.classList.add('hidden');
         }
+
         if (triggerWordsUsedInQuiz) {
             triggeredQuizDownloadArea.classList.remove('hidden');
         } else {
             triggeredQuizDownloadArea.classList.add('hidden');
         }
     }
+
 
     function startErrorReviewQuiz() {
         const errorContent = incorrectlyAnsweredQuestionsData.join('\n');
@@ -6285,6 +6491,7 @@ const mainApp = (function() {
     function resetQuizForNewFile(clearInput = true) {
         // Если мы сбрасываем тест, потому что начинаем новый,
         // а не потому что сохранили старый, то удаляем сохранение.
+        quizStartTime = 0;
         if (clearInput) {
              localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         }

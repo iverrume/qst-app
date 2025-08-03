@@ -4537,3 +4537,64 @@ body.dark-mode ::-webkit-scrollbar-thumb:hover {
   /* При наведении делаем ползунок чуть светлее */
   background-color: #555;
 }
+
+/* ===== СТИЛИ ДЛЯ КАНАЛОВ ТЕСТИРОВАНИЯ ===== */
+
+/* Контейнер для кнопки "Результаты" */
+.test-results-action {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--dashed-border-color);
+}
+
+/* Сама кнопка "Результаты" */
+.results-btn {
+  width: 100%;
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  padding: 8px 15px;
+  font-weight: 500;
+}
+.results-btn:hover {
+  background: var(--button-secondary-hover-bg);
+}
+
+/* Кнопка "Пробный тест" в модальном окне */
+#fileActionPracticeTestBtn {
+  background-color: var(--button-success-bg);
+  color: white;
+}
+#fileActionPracticeTestBtn:hover {
+  background-color: var(--button-success-hover-bg);
+}
+
+/* Таблица результатов */
+#testResultsTableContainer table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+#testResultsTableContainer th,
+#testResultsTableContainer td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#testResultsTableContainer th {
+  background-color: var(--input-bg-color);
+  font-weight: 600;
+  color: var(--heading-color);
+}
+
+#testResultsTableContainer tbody tr:hover {
+  background-color: var(--input-hover-bg-color);
+}
+
+/* Сообщение-заглушка для пустой таблицы */
+.results-empty-state {
+  padding: 30px;
+  text-align: center;
+  color: var(--secondary-text-color);
+}
+

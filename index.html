@@ -248,7 +248,19 @@
 
     </div> 
 
-
+    <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ === -->
+    <div id="testResultsModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <h3 id="testResultsModalTitle">Результаты по тесту</h3>
+            <div id="testResultsTableContainer" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
+                <!-- Таблица с результатами будет вставлена сюда -->
+            </div>
+            <div class="modal-buttons">
+                <button onclick="ChatModule.closeModal('testResultsModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+        <!-- === КОНЕЦ НОВОГО КОДА === -->
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
