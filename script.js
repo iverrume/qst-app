@@ -986,6 +986,22 @@ const ChatModule = (function() {
         document.getElementById('fileActionDownloadBtn').textContent = _chat('file_actions_download');
         document.getElementById('fileActionTestBtn').textContent = _chat('file_actions_test');
         document.querySelector('#fileActionsModal button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
+
+        // Перевод опции в модальном окне создания канала
+        const testingChannelLabel = document.querySelector('label[for="channelIsForTesting"]');
+        if (testingChannelLabel) {
+            testingChannelLabel.textContent = _chat('testing_channel_option');
+        }
+
+        // Перевод элементов в модальном окне результатов
+        const resultsModal = document.getElementById('testResultsModal');
+        if (resultsModal) {
+            const title = resultsModal.querySelector('#testResultsModalTitle');
+            const closeButton = resultsModal.querySelector('button[onclick*="closeModal"]');
+            
+            if (title) title.textContent = _chat('results_modal_title');
+            if (closeButton) closeButton.textContent = _chat('auth_close_button');
+        }
     }
 
 
