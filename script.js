@@ -4335,6 +4335,10 @@ const mainApp = (function() {
             no_questions_for_settings: 'Нет вопросов для теста с текущими настройками.',
             confirm_finish_early: 'Вы уверены, что хотите завершить тест досрочно?',
             copy_button: "Копировать",
+            search_provider_db: "База данных",
+            relevance_tag: "Релевантность:",
+            copy_question_tooltip: "Копировать вопрос",
+            favorite_question_tooltip: "Добавить в избранное",
         },
         kz: {
             // Main Screen
@@ -4428,6 +4432,10 @@ const mainApp = (function() {
             no_questions_for_settings: 'Ағымдағы баптаулар үшін сұрақтар табылмады.',
             confirm_finish_early: 'Тестті мерзімінен бұрын аяқтағыңыз келетініне сенімдісіз бе?',
             copy_button: "Көшіру",
+            search_provider_db: "Дерекқор",
+            relevance_tag: "Сәйкестілік:",
+            copy_question_tooltip: "Сұрақты көшіру",
+            favorite_question_tooltip: "Таңдаулыларға қосу",
         },
         en: {
             // Main Screen
@@ -4521,6 +4529,10 @@ const mainApp = (function() {
             no_questions_for_settings: 'No questions found for the current settings.',
             confirm_finish_early: 'Are you sure you want to finish the quiz early?',
             copy_button: "Copy",
+            search_provider_db: "Database",
+            relevance_tag: "Relevance:",
+            copy_question_tooltip: "Copy question",
+            favorite_question_tooltip: "Add to favorites",
         }
 
 
@@ -4944,14 +4956,15 @@ const mainApp = (function() {
 
         const cardContentHTML = parseAndRenderQuestionBlock(resultText);
 
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
         searchResultCardsContainer.innerHTML = `
             <div class="result-card">
                 <div class="result-card-header">
-                    <span class="provider-tag">🗄️ База данных</span>
+                    <span class="provider-tag">🗄️ ${_('search_provider_db')}</span>
                     <div class="result-card-actions">
-                        <span class="relevance-tag">Релевантность: ${100 - index}%</span>
-                        <button class="copy-search-result-btn" title="Копировать вопрос" onclick="window.mainApp.handleCopyClickInSearch(event, \`${escape(resultText)}\`)">📋</button>
-                        <button class="favorite-search-result-btn" title="Добавить в избранное" onclick="window.mainApp.handleFavoriteClickInSearch(event, \`${escape(resultText)}\`)">⭐</button>
+                        <span class="relevance-tag">${_('relevance_tag')} ${100 - index}%</span>
+                        <button class="copy-search-result-btn" title="${_('copy_question_tooltip')}" onclick="window.mainApp.handleCopyClickInSearch(event, \`${escape(resultText)}\`)">📋</button>
+                        <button class="favorite-search-result-btn" title="${_('favorite_question_tooltip')}" onclick="window.mainApp.handleFavoriteClickInSearch(event, \`${escape(resultText)}\`)">⭐</button>
                     </div>
                 </div>
                 <div class="result-card-content">
@@ -6828,6 +6841,8 @@ const mainApp = (function() {
 
     // --- НОВЫЕ ФУНКЦИИ ДЛЯ ПЕРЕВОДА ЯЗЫКА ---
 
+ 
+
     function setLanguage(lang) {
         // Сохраняем выбор пользователя
         localStorage.setItem('appLanguage', lang);
@@ -6865,6 +6880,17 @@ const mainApp = (function() {
         const displayLangs = ['En', 'Қаз', 'Ру'];
         const currentIndex = langs.indexOf(lang);
         languageToggle.textContent = displayLangs[currentIndex];
+
+        // === НАЧАЛО НОВОГО КОДА: Мгновенный перевод результатов поиска ===
+        // Проверяем, активен ли экран результатов поиска и есть ли что перерисовывать
+        if (searchResultsContainer && !searchResultsContainer.classList.contains('hidden') && searchResultsData.length > 0) {
+            console.log('Перерисовываем результаты поиска для нового языка...');
+            // Вызываем функцию, которая заново отрисует текущую карточку с результатами,
+            // используя уже обновленный словарь LANG_PACK.
+            displaySingleResult(currentResultIndex);
+        }
+        // === КОНЕЦ НОВОГО КОДА ===
+        
         loadSavedSession();
     }
 
