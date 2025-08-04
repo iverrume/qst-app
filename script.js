@@ -4347,7 +4347,10 @@ const mainApp = (function() {
             ai_explanation_title: '💡 Объяснение от ИИ',
             ai_explanation_style_label: 'Стиль объяснения:',
             ai_explain_button: '💡 Объяснить',
-            ai_explanation_loading: 'ИИ готовит объяснение...',            
+            ai_explanation_loading: 'ИИ готовит объяснение...',  
+            ai_generating_button: '🤖 Генерация...',
+            ai_error_text_empty: 'Пожалуйста, вставьте текст для анализа.',
+            ai_error_generation: 'Произошла ошибка при генерации теста.',          
         },
         kz: {
             // Main Screen
@@ -4542,6 +4545,9 @@ const mainApp = (function() {
             relevance_tag: "Relevance:",
             copy_question_tooltip: "Copy question",
             favorite_question_tooltip: "Add to favorites",
+            ai_generating_button: '🤖 Generating...',
+            ai_error_text_empty: 'Please paste text to analyze.',
+            ai_error_generation: 'An error occurred while generating the test.',
         }
 
 
@@ -4596,6 +4602,8 @@ const mainApp = (function() {
         prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList;
+
+    let generateTestFromTextBtn, aiQuestionCount, aiAutoCount;
 
 
     // --- State Variables ---
@@ -4729,6 +4737,9 @@ const mainApp = (function() {
         continueLaterButton = getEl('continueLaterButton');
         savedSessionArea = getEl('savedSessionArea');
         savedSessionList = getEl('savedSessionList');
+        generateTestFromTextBtn = getEl('generateTestFromTextBtn');
+        aiQuestionCount = getEl('aiQuestionCount');
+        aiAutoCount = getEl('aiAutoCount');
 
         // Остальная часть функции initializeApp
         try {
@@ -4793,6 +4804,12 @@ const mainApp = (function() {
             if (!event.target.matches('#searchWebButton') && searchDropdownContent?.classList.contains('show')) {
                 searchDropdownContent.classList.remove('show');
             }
+        });
+
+
+        generateTestFromTextBtn?.addEventListener('click', handleAIGenerationRequest);
+        aiAutoCount?.addEventListener('change', () => {
+            aiQuestionCount.disabled = aiAutoCount.checked;
         });
 
 
@@ -7706,6 +7723,59 @@ const mainApp = (function() {
 
 
 
+
+    async function handleAIGenerationRequest() {
+        const text = parserInput.value.trim();
+        if (!text) {
+            alert(_('ai_error_text_empty'));
+            return;
+        }
+
+        // Временно изменяем вид кнопки на время загрузки
+        const originalButtonHTML = generateTestFromTextBtn.innerHTML;
+        generateTestFromTextBtn.disabled = true;
+        generateTestFromTextBtn.innerHTML = `<span>${_('ai_generating_button')}</span>`;
+        showGlobalLoader('ИИ анализирует текст и создает вопросы...');
+
+        const questionCount = aiAutoCount.checked ? 'auto' : aiQuestionCount.value;
+
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                // Важно: убираем 'no-cors', так как мы ждем JSON-ответ
+                headers: {
+                  'Content-Type': 'text/plain', // Google Apps Script лучше работает с text/plain для POST
+                },
+                body: JSON.stringify({
+                    action: 'generateTest',
+                    text: text,
+                    count: questionCount
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.qst) {
+                parserOutput.value = result.qst;
+                parserOutputArea.classList.remove('hidden');
+                // Прокручиваем к результату для удобства
+                parserOutputArea.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                throw new Error(result.error || _('ai_error_generation'));
+            }
+
+        } catch (error) {
+            console.error("Ошибка генерации теста:", error);
+            alert(error.message);
+        } finally {
+            // Возвращаем кнопку в исходное состояние
+            generateTestFromTextBtn.disabled = false;
+            generateTestFromTextBtn.innerHTML = originalButtonHTML;
+            hideGlobalLoader();
+        }
+    }
+
+
     function showAIExplanation(question) {
         currentAIQuestion = question; // Сохраняем вопрос
         const questionEl = getEl('aiExplanationQuestion');
@@ -7723,7 +7793,8 @@ const mainApp = (function() {
         styleButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
         firstButton.classList.add('active');
 
-        showModal('aiExplanationModal');
+        ChatModule.showModal('aiExplanationModal');
+
         fetchAndDisplayExplanation(firstButton.dataset.style);
     }
 
