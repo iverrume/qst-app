@@ -179,6 +179,7 @@ const ChatModule = (function() {
             results_table_header_time: "Время",
             results_empty_state: "По этому тесту пока нет результатов.",
             file_actions_modal_title: "Файл:",
+
         },
         kz: {
             // TABS
@@ -956,6 +957,18 @@ const ChatModule = (function() {
             if (title) title.textContent = _chat('results_modal_title');
             if (closeButton) closeButton.textContent = _chat('auth_close_button');
         }
+
+        // --- НОВЫЙ БЛОК: Перевод модального окна объяснений ИИ ---
+        const aiModal = document.getElementById('aiExplanationModal');
+        if (aiModal) {
+            // Находим кнопку "Закрыть" внутри этого модального окна.
+            // Используем более точный селектор, чтобы не затронуть другие кнопки.
+            const closeButton = aiModal.querySelector('button[data-lang-key="auth_close_button"]');
+            if (closeButton) {
+                closeButton.textContent = _chat('auth_close_button');
+            }
+        }
+
     }
 
 
@@ -4362,7 +4375,8 @@ const mainApp = (function() {
             ai_style_associative: "Аналогия",
             ai_style_stepbystep: "Пошагово",
             ai_style_practical: "Практично",
-            ai_style_visual: "Наглядно",  
+            ai_style_visual: "Наглядно",
+            ai_answer_count_label: '5. Укажите количество вариантов ответа:',  
 
 
         },
@@ -4481,6 +4495,7 @@ const mainApp = (function() {
             ai_style_stepbystep: "Қадаммен",
             ai_style_practical: "Практикалық",
             ai_style_visual: "Көрнекі"
+            ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
         },
         en: {
             // Main Screen
@@ -4600,6 +4615,7 @@ const mainApp = (function() {
             ai_style_stepbystep: "Step-by-step",
             ai_style_practical: "Practical",
             ai_style_visual: "Visual",
+            ai_answer_count_label: '5. Specify the number of answer choices:',
         }
 
 
@@ -7804,18 +7820,19 @@ const mainApp = (function() {
         showGlobalLoader('ИИ анализирует текст и создает вопросы...');
 
         const questionCount = aiAutoCount.checked ? 'auto' : aiQuestionCount.value;
+        const answerCount = getEl('aiAnswerCount').value; // <-- НОВАЯ СТРОКА: Получаем количество ответов
 
         try {
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                // Важно: убираем 'no-cors', так как мы ждем JSON-ответ
                 headers: {
-                  'Content-Type': 'text/plain', // Google Apps Script лучше работает с text/plain для POST
+                  'Content-Type': 'text/plain',
                 },
                 body: JSON.stringify({
                     action: 'generateTest',
                     text: text,
-                    count: questionCount
+                    count: questionCount,
+                    answerCount: answerCount // <-- НОВАЯ СТРОКА: Отправляем количество ответов на сервер
                 })
             });
 
@@ -7824,7 +7841,6 @@ const mainApp = (function() {
             if (result.success && result.qst) {
                 parserOutput.value = result.qst;
                 parserOutputArea.classList.remove('hidden');
-                // Прокручиваем к результату для удобства
                 parserOutputArea.scrollIntoView({ behavior: 'smooth' });
             } else {
                 throw new Error(result.error || _('ai_error_generation'));
@@ -7880,7 +7896,7 @@ const mainApp = (function() {
         if (!currentAIQuestion) return;
 
         const outputEl = getEl('aiExplanationOutput');
-        outputEl.innerHTML = `<div class="loading-placeholder">${_('ai_explanation_loading')}</div>`;
+        outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
 
         try {
             const response = await fetch(googleAppScriptUrl, {

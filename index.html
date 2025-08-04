@@ -208,8 +208,9 @@
                     <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать</button>
                 </div>
 
-                <!-- === НАЧАЛО НОВОГО КОДА: AI-ГЕНЕРАТОР === -->
+                <!-- === НАЧАЛО ОБНОВЛЕННОГО КОДА: AI-ГЕНЕРАТОР === -->
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                
                 <div class="settings-group">
                     <label for="aiQuestionCount" data-lang-key="ai_question_count_label">4. Укажите количество вопросов для ИИ:</label>
                     <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
@@ -218,12 +219,24 @@
                         <label for="aiAutoCount" data-lang-key="ai_auto_mode_label">Авто</label>
                     </div>
                 </div>
+
+                <!-- НОВЫЙ БЛОК ДЛЯ ВЫБОРА КОЛИЧЕСТВА ОТВЕТОВ -->
+                <div class="settings-group">
+                    <label for="aiAnswerCount" data-lang-key="ai_answer_count_label">5. Укажите количество вариантов ответа:</label>
+                    <select id="aiAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
+                        <option value="3">3</option>
+                        <option value="4" selected>4 (стандарт)</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                    </select>
+                </div>
+
                 <div class="settings-group" style="text-align: center;">
                      <button id="generateTestFromTextBtn">
-                        <span data-lang-key="ai_generate_button">🤖 Сгенерировать тест (ИИ)</span>
+                        <span data-lang-key="ai_generate_button">6. 🤖 Сгенерировать тест (ИИ)</span>
                      </button>
                 </div>
-                <!-- === КОНЕЦ НОВОГО КОДА === -->
+                <!-- === КОНЕЦ ОБНОВЛЕННОГО КОДА === -->
                 
                 <div id="parserErrorsArea" class="hidden">
                     <button id="showErrorsBtn">

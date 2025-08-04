@@ -4817,3 +4817,44 @@ body.synthwave-mode .google-signin-btn:hover {
 #copyExplanationBtn:hover {
     background-color: var(--button-success-hover-bg);
 }
+
+/* ===== СТИЛИ ДЛЯ АНИМАЦИИ ПЕЧАТАНИЯ ===== */
+
+/* Контейнер, чтобы отцентрировать анимацию */
+.typing-loader-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100px; /* Даем немного пространства */
+    width: 100%;
+}
+
+/* Сам элемент с текстом и анимацией */
+.typing-loader {
+    font-family: monospace; /* Моноширинный шрифт лучше всего подходит для эффекта печати */
+    font-size: 1.1em;
+    color: var(--secondary-text-color);
+    
+    /* Эти три свойства - ключ к анимации */
+    white-space: nowrap;      /* Запрещаем тексту переноситься на новую строку */
+    overflow: hidden;         /* Скрываем символы, которые еще не "напечатаны" */
+    border-right: 3px solid var(--text-color); /* Это наш мигающий курсор */
+    
+    /* Подключаем две анимации одновременно */
+    animation: 
+        typing 8.5s steps(80, end) infinite, /* Анимация печатания */
+        blink-caret .75s step-end infinite;  /* Анимация мигания курсора */
+}
+
+/* Описание анимации "печатания" */
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+/* Описание анимации мигания курсора */
+@keyframes blink-caret {
+    from, to { border-color: transparent }
+    50% { border-color: var(--text-color); }
+}
+
