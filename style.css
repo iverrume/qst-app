@@ -4942,26 +4942,58 @@ body.synthwave-mode .google-signin-btn:hover {
     opacity: 0;
 }
 
-/* 4. Стили для кнопки "Развернуть/Свернуть" */
+
+
+
+/* ======================================================= */
+/* === УЛУЧШЕННЫЕ СТИЛИ ДЛЯ КНОПКИ СВОРАЧИВАНИЯ (v2)    === */
+/* ======================================================= */
+
+/* 1. Стили для самой кнопки "Развернуть/Свернуть" */
 .expand-question-btn {
     position: absolute;
-    bottom: 5px;
+    /* Позиционируем кнопку в центре по горизонтали и чуть выше центра по вертикали */
+    top: 50%; 
     left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0,0,0,0.05);
-    color: var(--secondary-text-color);
+    transform: translate(-50%, -50%); /* Точное центрирование */
+    
+    background-color: rgba(0, 0, 0, 0.5); /* Полупрозрачный фон для читаемости */
+    color: white; /* Белый текст */
     border: none;
-    padding: 4px 12px;
-    font-size: 0.8em;
-    border-radius: 12px;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-radius: 15px;
     cursor: pointer;
-    z-index: 2; /* Чтобы кнопка была над градиентом */
-    transition: background-color 0.2s;
+    z-index: 10; /* Высокий z-index, чтобы быть поверх всего */
+    
+    /* Изначально кнопка полностью прозрачна и невидима */
+    opacity: 0;
+    pointer-events: none; /* Не реагирует на клики, когда невидима */
+    
+    transition: opacity 0.2s ease-in-out;
 }
 
-.expand-question-btn:hover {
-    background-color: rgba(0,0,0,0.1);
+/* 2. Показываем кнопку только при наведении на свернутый блок вопроса */
+#aiExplanationQuestion.collapsible:hover .expand-question-btn {
+    opacity: 1;
+    pointer-events: auto; /* Включаем реакцию на клики */
 }
+
+/* 3. Когда блок развернут, кнопка всегда видна (так как она уже не перекрывается) */
+#aiExplanationQuestion.collapsible.expanded .expand-question-btn {
+    opacity: 1;
+    pointer-events: auto;
+    /* Смещаем ее вниз, чтобы она не мешала читать начало вопроса */
+    top: auto;
+    bottom: 5px;
+    transform: translateX(-50%); /* Убираем вертикальное центрирование */
+}
+
+/* 4. Убираем старый :hover, так как теперь фон и так контрастный */
+.expand-question-btn:hover {
+    background-color: rgba(0, 0, 0, 0.7); /* Делаем чуть темнее при наведении */
+}
+
 
 /* =============================================================== */
 /* === ИСПРАВЛЕНИЕ ЦВЕТА АКТИВНОЙ КНОПКИ В ТЕМНЫХ ТЕМАХ (v2) === */
