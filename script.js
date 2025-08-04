@@ -4378,7 +4378,10 @@ const mainApp = (function() {
             ai_style_visual: "Наглядно",
             ai_answer_count_label: '5. Укажите количество вариантов ответа:', 
             ai_auto_category_label: 'Автоматически создавать категории', 
-
+            exit_modal_title: 'Подтверждение',
+            exit_modal_text: 'Вы уверены, что хотите выйти из приложения?',
+            exit_modal_confirm: 'Выйти',
+            exit_modal_cancel: 'Остаться',
 
         },
         kz: {
@@ -4498,6 +4501,10 @@ const mainApp = (function() {
             ai_style_visual: "Көрнекі",
             ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
             ai_auto_category_label: 'Санаттарды автоматты түрде жасау',
+            exit_modal_title: 'Растау',
+            exit_modal_text: 'Қосымшадан шыққыңыз келетініне сенімдісіз бе?',
+            exit_modal_confirm: 'Шығу',
+            exit_modal_cancel: 'Қалу',
         },
         en: {
             // Main Screen
@@ -4619,6 +4626,11 @@ const mainApp = (function() {
             ai_style_visual: "Visual",
             ai_answer_count_label: '5. Specify the number of answer choices:',
             ai_auto_category_label: 'Automatically create categories',
+
+            exit_modal_title: 'Confirmation',
+            exit_modal_text: 'Are you sure you want to exit the application?',
+            exit_modal_confirm: 'Exit',
+            exit_modal_cancel: 'Stay',
         }
 
 
@@ -4675,6 +4687,7 @@ const mainApp = (function() {
         savedSessionList;
 
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
+    let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
 
 
     // --- State Variables ---
@@ -4812,6 +4825,9 @@ const mainApp = (function() {
         aiQuestionCount = getEl('aiQuestionCount');
         aiAutoCount = getEl('aiAutoCount');
         aiAutoCategory = getEl('aiAutoCategory');
+        exitConfirmationModal = getEl('exitConfirmationModal');
+        confirmExitBtn = getEl('confirmExitBtn');
+        cancelExitBtn = getEl('cancelExitBtn');
 
         // Остальная часть функции initializeApp
         try {
@@ -4843,6 +4859,7 @@ const mainApp = (function() {
         populateParserPatterns();
         setLanguage(savedLang);
         createVariantFilterCheckboxes();
+        manageBackButtonInterceptor(); 
     }
 
 
@@ -5005,9 +5022,66 @@ const mainApp = (function() {
         });
 
 
+        // Обработчики для кнопок в модальном окне выхода
+        cancelExitBtn?.addEventListener('click', hideExitConfirmationModal);
+        confirmExitBtn?.addEventListener('click', () => {
+            // history.back() эмулирует настоящее нажатие "назад",
+            // что приведет к закрытию PWA или переходу на предыдущую страницу в браузере.
+            window.history.back();
+        });
+
 
     }
 
+    /**
+     * Показывает модальное окно подтверждения выхода.
+     */
+    function showExitConfirmationModal() {
+        if (exitConfirmationModal) {
+            exitConfirmationModal.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Скрывает модальное окно подтверждения выхода.
+     */
+    function hideExitConfirmationModal() {
+        if (exitConfirmationModal) {
+            exitConfirmationModal.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Обработчик события popstate, который перехватывает нажатие кнопки "Назад".
+     */
+    function handleBackButton(event) {
+        // Проверяем, что мы находимся именно на главном экране
+        if (!fileUploadArea.classList.contains('hidden')) {
+            event.preventDefault(); // Предотвращаем стандартное действие (выход)
+            showExitConfirmationModal(); // Показываем наше красивое окно
+            
+            // ВАЖНО: Сразу же возвращаем наше состояние в историю, чтобы "отменить"
+            // действие кнопки "Назад" и остаться на странице.
+            history.pushState({ page: 'main' }, "Main Screen", "#main");
+        }
+    }
+
+    /**
+     * Управляет активацией и деактивацией перехватчика кнопки "Назад".
+     */
+    function manageBackButtonInterceptor() {
+        // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
+        window.removeEventListener('popstate', handleBackButton);
+
+        // Если мы на главном экране - активируем перехватчик
+        if (!fileUploadArea.classList.contains('hidden')) {
+            // Добавляем фиктивное состояние в историю, чтобы было куда "возвращаться"
+            history.pushState({ page: 'main' }, "Main Screen", "#main");
+            window.addEventListener('popstate', handleBackButton);
+        }
+        // Если мы на любом другом экране, обработчик просто не будет добавлен,
+        // и кнопка "Назад" будет работать как обычно (например, в браузере).
+    }
 
     function showGlobalLoader(message = 'Загрузка...') {
         // Проверяем, есть ли уже лоадер, чтобы не создавать дубликаты
@@ -6307,6 +6381,7 @@ const mainApp = (function() {
         quizArea.classList.remove('hidden');
         resultsArea.classList.add('hidden');
         startQuiz(finalQuizContext);
+        manageBackButtonInterceptor();
     }
 
 
@@ -6777,6 +6852,7 @@ const mainApp = (function() {
         
         loadRecentFiles();
         loadSavedSession();
+        manageBackButtonInterceptor();
     }
 
     function shuffleArray(array) {

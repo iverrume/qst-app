@@ -5129,3 +5129,74 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     font-weight: bold;
 }
 
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ПОДТВЕРЖДЕНИЯ ВЫХОДА === */
+/* ======================================================= */
+
+.modal-overlay-exit {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9998; /* Чуть ниже, чем у чата или лоадера */
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content-exit {
+    background: var(--container-bg-color);
+    padding: 25px 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px var(--shadow-color);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    animation: slideUp 0.4s ease;
+    border-top: 5px solid var(--feedback-incorrect-border);
+}
+
+.modal-content-exit h3 {
+    margin: 0 0 10px 0;
+    color: var(--heading-color);
+    font-size: 1.4em;
+}
+
+.modal-content-exit p {
+    margin: 0 0 25px 0;
+    color: var(--secondary-text-color);
+    font-size: 1.05em;
+    line-height: 1.5;
+}
+
+.modal-content-exit .modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-content-exit .btn-danger {
+    background-color: var(--feedback-incorrect-bg);
+    color: var(--feedback-incorrect-text);
+    border: 1px solid var(--feedback-incorrect-border);
+    font-weight: bold;
+}
+
+.modal-content-exit .btn-danger:hover {
+    background-color: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.modal-content-exit .btn-secondary {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+}
+
+.modal-content-exit .btn-secondary:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
