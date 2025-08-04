@@ -3695,25 +3695,32 @@ const ChatModule = (function() {
         showModal('fileActionsModal');
     }
 
+
     async function downloadSharedFile(fileId, fileName) {
         try {
             closeModal('fileActionsModal');
-            const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            // Убираем параметры из URL, так как будем передавать их в теле запроса
+            const url = googleAppScriptUrl; 
             
-            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-            // Мы делаем запрос более явным, добавляя опции.
-            // Это может помочь обойти некоторые блокировщики, которые 
-            // некорректно обрабатывают "простые" запросы.
             const response = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',      // Явно указываем режим CORS
-                cache: 'no-cache'  // Запрещаем браузеру использовать старый (возможно, ошибочный) кэш
+                method: 'POST', // 1. Меняем метод на POST
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: {
+                    // 2. Указываем, что отправляем JSON
+                    'Content-Type': 'application/json',
+                },
+                // 3. Передаем action и fileId в теле запроса
+                body: JSON.stringify({
+                    action: 'getChatFileContent',
+                    fileId: fileId
+                })
             });
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
             const data = await response.json();
             if (!data.success) throw new Error(data.error);
 
+            // Эта часть остается без изменений
             await window.mainApp.downloadOrShareFile(fileName, data.content, 'text/plain;charset=utf-8', `Файл`);
         } catch (error) {
             console.error('Ошибка скачивания файла из чата:', error);
@@ -7988,7 +7995,7 @@ const mainApp = (function() {
         const activeLink = styleContentEl.querySelector(`a[data-style="${style}"]`);
         if (activeLink) activeLink.classList.add('active');
         // --- КОНЕЦ НОВОГО КОДА ---
-            
+
 
         const outputEl = getEl('aiExplanationOutput');
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
