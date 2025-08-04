@@ -5270,13 +5270,10 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     padding: 0 5px;
 }
 
-/* --- НОВЫЙ КОД (ВСТАВИТЬ ВМЕСТО СТАРОГО) --- */
+/* --- ЗАМЕНИТЕ СТАРЫЙ МЕДИА-ЗАПРОС НА ЭТОТ --- */
 @media (max-width: 768px) {
     /* УМЕНЬШАЕМ ВЫСОТУ ШАПОК */
-    .advanced-chat-header {
-        padding-top: 8px;
-        padding-bottom: 8px;
-    }
+    .advanced-chat-header,
     .chat-top-bar {
         padding-top: 8px;
         padding-bottom: 8px;
@@ -5292,7 +5289,6 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     
     /* Когда поиск АКТИВЕН */
     .chat-top-bar.search-active {
-        /* Растягиваем панель на всю ширину для поля ввода */
         justify-content: flex-start; 
     }
 
@@ -5308,5 +5304,10 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
         width: 100%;
     }
 }
-/* --- КОНЕЦ НОВОГО КОДА --- */
+/* --- КОНЕЦ БЛОКА НА ЗАМЕНУ --- */
 
+#togglePinnedBtn.active {
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
+}
