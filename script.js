@@ -4225,7 +4225,7 @@ async function copyToClipboardMain(text) {
 
 
 
-const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbxReS-pYPMZBTBIi1mi1tOnTpAIS5GQjKXptFJBEG3jcSNLklDKrPbMz38zlt6SDro/exec';
+const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91gDiuj4Ha-gTLesCMI8gSqMC3D0GYbGZ0YHIsP2mvu5ePmiftA03GLso/exec';
 
 
 
