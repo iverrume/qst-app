@@ -4858,3 +4858,51 @@ body.synthwave-mode .google-signin-btn:hover {
     50% { border-color: var(--text-color); }
 }
 
+/* ======================================================= */
+/* === АДАПТИВНОСТЬ ОКНА ОБЪЯСНЕНИЙ ДЛЯ МОБИЛЬНЫХ (v2) === */
+/* ======================================================= */
+
+/* Применяем эти стили на экранах шириной 600px или меньше */
+@media (max-width: 600px) {
+
+    /* 1. Делаем само модальное окно больше и убираем лишние отступы */
+    #aiExplanationModal .modal-content {
+        width: 95%; /* Занимает почти всю ширину экрана */
+        max-height: 90vh; /* Занимает почти всю высоту экрана */
+        padding: 20px 15px; /* Уменьшаем внутренние отступы */
+    }
+
+    /* 2. Уменьшаем заголовок */
+    #aiExplanationModal h3 {
+        font-size: 1.2em;
+        margin-bottom: 15px;
+    }
+
+    /* 3. Уменьшаем блок с текстом вопроса */
+    #aiExplanationQuestion {
+        padding: 10px;
+        font-size: 0.9em;
+    }
+    
+    /* 4. Адаптируем кнопки стилей */
+    #aiExplanationStyleButtons {
+        gap: 8px; /* Чуть меньше расстояние между кнопками */
+    }
+
+    #aiExplanationStyleButtons .btn-secondary-small {
+        padding: 6px 10px; /* Делаем кнопки компактнее */
+        font-size: 0.85em;
+    }
+
+    /* 5. Улучшаем область вывода текста */
+    #aiExplanationOutput {
+        padding-right: 10px; /* Уменьшаем отступ справа от скроллбара */
+        margin-right: -10px;
+    }
+
+    /* 6. Уменьшаем нижние кнопки */
+    #aiExplanationModal .modal-buttons button {
+        padding: 8px 16px;
+        font-size: 0.9em;
+    }
+}
