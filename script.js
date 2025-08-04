@@ -4343,6 +4343,11 @@ const mainApp = (function() {
             relevance_tag: "Релевантность:",
             copy_question_tooltip: "Копировать вопрос",
             favorite_question_tooltip: "Добавить в избранное",
+
+            ai_explanation_title: '💡 Объяснение от ИИ',
+            ai_explanation_style_label: 'Стиль объяснения:',
+            ai_explain_button: '💡 Объяснить',
+            ai_explanation_loading: 'ИИ готовит объяснение...',            
         },
         kz: {
             // Main Screen
@@ -4617,6 +4622,7 @@ const mainApp = (function() {
     let currentResultIndex = 0;
     let currentQuizContext = null;
     let quizStartTime = 0;
+    let currentAIQuestion = null; // Переменная для хранения текущего вопроса
 
     // --- Constants ---
 
@@ -4786,6 +4792,16 @@ const mainApp = (function() {
         window.addEventListener('click', (event) => {
             if (!event.target.matches('#searchWebButton') && searchDropdownContent?.classList.contains('show')) {
                 searchDropdownContent.classList.remove('show');
+            }
+        });
+
+
+        // Внутри setupEventListeners()
+        getEl('aiExplanationStyleButtons').addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                getEl('aiExplanationStyleButtons').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                fetchAndDisplayExplanation(e.target.dataset.style);
             }
         });
 
@@ -6388,6 +6404,19 @@ const mainApp = (function() {
             li.removeEventListener('click', handleAnswerSelect);
             li.classList.add('answered');
         });
+
+
+        // Очищаем предыдущую кнопку, если она была
+        const existingBtn = feedbackAreaEl.querySelector('.explain-btn');
+        if (existingBtn) existingBtn.remove();
+
+        // Создаем и добавляем новую кнопку
+        const explainBtn = document.createElement('button');
+        explainBtn.textContent = _('ai_explain_button');
+        explainBtn.className = 'explain-btn'; // Можно добавить стили
+        explainBtn.style.marginLeft = '15px';
+        explainBtn.onclick = () => showAIExplanation(question); // `question` уже доступен в этой функции
+        feedbackAreaEl.appendChild(explainBtn);
         updateScoreDisplay();
         updateNavigationButtons();
         updateQuickNavButtons();
@@ -7674,6 +7703,62 @@ const mainApp = (function() {
         parserInput.focus(); // Возвращаем курсор в поле для удобства
         hideAndResetErrorArea();
     }
+
+
+
+    function showAIExplanation(question) {
+        currentAIQuestion = question; // Сохраняем вопрос
+        const questionEl = getEl('aiExplanationQuestion');
+        const outputEl = getEl('aiExplanationOutput');
+
+        // Показываем вопрос и правильный ответ
+        const correctAnswerText = question.options[question.correctAnswerIndex].text;
+        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
+        
+        outputEl.innerHTML = ''; // Очищаем предыдущий результат
+
+        // Активируем первую кнопку стиля и запускаем запрос
+        const styleButtons = getEl('aiExplanationStyleButtons');
+        const firstButton = styleButtons.querySelector('button');
+        styleButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+        firstButton.classList.add('active');
+
+        showModal('aiExplanationModal');
+        fetchAndDisplayExplanation(firstButton.dataset.style);
+    }
+
+    async function fetchAndDisplayExplanation(style) {
+        if (!currentAIQuestion) return;
+
+        const outputEl = getEl('aiExplanationOutput');
+        outputEl.innerHTML = `<div class="loading-placeholder">${_('ai_explanation_loading')}</div>`;
+
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'getExplanation',
+                    question_text: currentAIQuestion.text,
+                    correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
+                    style: style
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                // Используем библиотеку, если она доступна, или простой рендеринг
+                if (window.marked) {
+                     outputEl.innerHTML = marked.parse(result.explanation);
+                } else {
+                     outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
+                }
+            } else {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            outputEl.innerHTML = `<p style="color: var(--feedback-incorrect-text);">${error.message}</p>`;
+        }
+    }
+
 
 
     // --- Public methods exposed from mainApp ---

@@ -207,6 +207,24 @@
                 <div class="settings-group" style="text-align: center;">
                     <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать</button>
                 </div>
+
+                <!-- === НАЧАЛО НОВОГО КОДА: AI-ГЕНЕРАТОР === -->
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                <div class="settings-group">
+                    <label for="aiQuestionCount" data-lang-key="ai_question_count_label">4. Укажите количество вопросов для ИИ:</label>
+                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                        <input type="number" id="aiQuestionCount" min="1" value="5" class="range-input" style="width: 80px;">
+                        <input type="checkbox" id="aiAutoCount" style="margin-left: 15px;">
+                        <label for="aiAutoCount" data-lang-key="ai_auto_mode_label">Авто</label>
+                    </div>
+                </div>
+                <div class="settings-group" style="text-align: center;">
+                     <button id="generateTestFromTextBtn">
+                        <span data-lang-key="ai_generate_button">🤖 Сгенерировать тест (ИИ)</span>
+                     </button>
+                </div>
+                <!-- === КОНЕЦ НОВОГО КОДА === -->
+                
                 <div id="parserErrorsArea" class="hidden">
                     <button id="showErrorsBtn">
                         <span data-lang-key="parser_errors_found">⚠️ Ошибки форматирования</span> (<span id="errorCount">0</span>)
@@ -242,13 +260,10 @@
             <p>prod by @iverrum</p>
         </footer>
         
-        <!-- === НАЧАЛО НОВОГО КОДА: ЗВУК УВЕДОМЛЕНИЯ === -->
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
-        <!-- === КОНЕЦ НОВОГО КОДА === -->
 
     </div> 
-
-    <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ === -->
+    
     <div id="testResultsModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
             <h3 id="testResultsModalTitle" data-lang-key="results_modal_title">Результаты по тесту</h3>
@@ -260,7 +275,29 @@
             </div>
         </div>
     </div>
-        <!-- === КОНЕЦ НОВОГО КОДА === -->
+
+    <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО ОБЪЯСНЕНИЙ === -->
+    <div id="aiExplanationModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px; text-align: left;">
+            <h3 data-lang-key="ai_explanation_title">💡 Объяснение от ИИ</h3>
+            <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
+            <div class="settings-group" style="border: none; padding: 0; margin-bottom: 15px;">
+                <label data-lang-key="ai_explanation_style_label">Стиль объяснения:</label>
+                <div id="aiExplanationStyleButtons" style="display: flex; gap: 10px; margin-top: 5px;">
+                    <button class="btn-secondary-small active" data-style="simple">Просто</button>
+                    <button class="btn-secondary-small" data-style="scientific">Научно</button>
+                    <button class="btn-secondary-small" data-style="associative">Аналогия</button>
+                </div>
+            </div>
+            <div id="aiExplanationOutput">
+                <!-- Сюда будет вставляться объяснение или спиннер -->
+            </div>
+            <div class="modal-buttons" style="justify-content: flex-end; margin-top: 20px;">
+                <button onclick="ChatModule.closeModal('aiExplanationModal')" data-lang-key="auth_close_button">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    <!-- === КОНЕЦ НОВОГО КОДА === -->
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
