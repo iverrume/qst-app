@@ -4376,7 +4376,8 @@ const mainApp = (function() {
             ai_style_stepbystep: "Пошагово",
             ai_style_practical: "Практично",
             ai_style_visual: "Наглядно",
-            ai_answer_count_label: '5. Укажите количество вариантов ответа:',  
+            ai_answer_count_label: '5. Укажите количество вариантов ответа:', 
+            ai_auto_category_label: 'Автоматически создавать категории', 
 
 
         },
@@ -4496,6 +4497,7 @@ const mainApp = (function() {
             ai_style_practical: "Практикалық",
             ai_style_visual: "Көрнекі",
             ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
+            ai_auto_category_label: 'Санаттарды автоматты түрде жасау',
         },
         en: {
             // Main Screen
@@ -4616,6 +4618,7 @@ const mainApp = (function() {
             ai_style_practical: "Practical",
             ai_style_visual: "Visual",
             ai_answer_count_label: '5. Specify the number of answer choices:',
+            ai_auto_category_label: 'Automatically create categories',
         }
 
 
@@ -4671,7 +4674,7 @@ const mainApp = (function() {
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList;
 
-    let generateTestFromTextBtn, aiQuestionCount, aiAutoCount;
+    let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
 
 
     // --- State Variables ---
@@ -4808,6 +4811,7 @@ const mainApp = (function() {
         generateTestFromTextBtn = getEl('generateTestFromTextBtn');
         aiQuestionCount = getEl('aiQuestionCount');
         aiAutoCount = getEl('aiAutoCount');
+        aiAutoCategory = getEl('aiAutoCategory');
 
         // Остальная часть функции initializeApp
         try {
@@ -7871,7 +7875,8 @@ const mainApp = (function() {
         showGlobalLoader('ИИ анализирует текст и создает вопросы...');
 
         const questionCount = aiAutoCount.checked ? 'auto' : aiQuestionCount.value;
-        const answerCount = getEl('aiAnswerCount').value; // <-- НОВАЯ СТРОКА: Получаем количество ответов
+        const answerCount = getEl('aiAnswerCount').value;
+        const autoCategorize = getEl('aiAutoCategory').checked; // Считываем состояние нового чекбокса
 
         try {
             const response = await fetch(googleAppScriptUrl, {
@@ -7883,7 +7888,8 @@ const mainApp = (function() {
                     action: 'generateTest',
                     text: text,
                     count: questionCount,
-                    answerCount: answerCount // <-- НОВАЯ СТРОКА: Отправляем количество ответов на сервер
+                    answerCount: answerCount,
+                    autoCategorize: autoCategorize // Добавляем новое поле в запрос
                 })
             });
 
