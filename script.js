@@ -5358,29 +5358,19 @@ const mainApp = (function() {
             // Создаем уникальное имя файла прямо на клиенте для надежности
             const uniqueFileName = `qstium.com_${new Date().getTime()}_${fileName.replace(/[^a-zA-Zа-яА-Я0-9.\-_]/g, '_')}`;
 
+            // Формируем URL с параметрами
+            const url = `${googleAppScriptUrl}?action=createTempFile&fileName=${encodeURIComponent(uniqueFileName)}`;
 
-
-            // Внутри функции createTemporaryDownloadLink
-            // Убираем параметры из URL, так как теперь мы всё передаем в теле запроса
-            const url = googleAppScriptUrl; 
-
+            // Отправляем содержимое файла как простой текст, чтобы избежать CORS preflight
             const response = await fetch(url, {
                 method: 'POST',
-                mode: 'cors',
+                mode: 'cors', // Используем 'cors', так как Google Script вернет JSON с правильными заголовками
                 headers: {
-                  // Говорим серверу, что отправляем JSON
-                  'Content-Type': 'application/json',
+                    // Отправляем как обычный текст
+                    'Content-Type': 'text/plain;charset=utf-8',
                 },
-                // Упаковываем все данные в один JSON объект
-                body: JSON.stringify({
-                    action: 'createTempFile', // Передаем действие здесь
-                    fileName: uniqueFileName, // И имя файла
-                    content: content          // И содержимое
-                })
+                body: content // Отправляем содержимое файла напрямую
             });
-
-
-
 
             if (!response.ok) {
                 throw new Error(`Ошибка сервера: ${response.statusText}`);
