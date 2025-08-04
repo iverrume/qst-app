@@ -1532,20 +1532,6 @@ body.dark-mode {
     box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
 }
 
-#togglePinnedBtn {
-    padding: 10px 15px;
-    background: var(--button-secondary-bg);
-    color: var(--button-secondary-text);
-    border: 1px solid var(--button-secondary-border);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#togglePinnedBtn:hover {
-    background: var(--button-secondary-hover-bg);
-}
-
 /* Message area */
 .message-area {
     flex: 1;
@@ -1846,16 +1832,32 @@ body.synthwave-mode .option-vote-btn.correct {
     gap: 8px;
 }
 
+/* --- НОВЫЙ КОД (ЗАМЕНИТЬ СТАРЫЙ) --- */
 .input-action-btn {
     background: var(--container-bg-color);
     border: 1px solid var(--border-color);
     color: var(--secondary-text-color);
     border-radius: 8px;
-    padding: 8px;
-    font-size: 1.2em;
+    /* Делаем кнопки квадратными для единообразия */
+    width: 40px;
+    height: 40px;
+    font-size: 1.3em; /* Немного увеличим иконки */
     cursor: pointer;
     transition: all 0.2s ease;
+    /* Центрируем иконку внутри кнопки */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Убираем лишние отступы */
 }
+
+/* Добавляем стиль для активной кнопки "Закрепить" */
+#togglePinnedBtn.active {
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
+}
+/* --- КОНЕЦ НОВОГО КОДА --- */
 
 .input-action-btn:hover {
     background: var(--input-hover-bg-color);
@@ -5268,40 +5270,43 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     padding: 0 5px;
 }
 
-/* 3. Медиа-запрос для мобильных устройств (ширина до 768px) */
+/* --- НОВЫЙ КОД (ВСТАВИТЬ ВМЕСТО СТАРОГО) --- */
 @media (max-width: 768px) {
-    .chat-top-bar {
-        /* Делаем так, чтобы заголовок не занимал все место */
-        justify-content: flex-end;
+    /* УМЕНЬШАЕМ ВЫСОТУ ШАПОК */
+    .advanced-chat-header {
+        padding-top: 8px;
+        padding-bottom: 8px;
     }
-    #currentChannelName {
-        /* Заголовок теперь не растягивается, а занимает место по содержимому */
-        flex-grow: 0;
+    .chat-top-bar {
+        padding-top: 8px;
+        padding-bottom: 8px;
     }
 
-    /* Показываем нашу иконку-кнопку */
+    /* ИСПРАВЛЯЕМ ЛОГИКУ ПОИСКА */
     .chat-search-toggle {
-        display: block;
-        margin-left: auto; /* Прижимаем иконку к правому краю, перед полем ввода */
+        display: block; /* Показываем иконку-лупу */
     }
-    
-    /* И скрываем текстовое поле ввода */
     #chatSearchInput {
-        display: none;
+        display: none; /* Скрываем поле ввода по умолчанию */
     }
     
-    /* 4. Стили для "активного" режима поиска */
+    /* Когда поиск АКТИВЕН */
+    .chat-top-bar.search-active {
+        /* Растягиваем панель на всю ширину для поля ввода */
+        justify-content: flex-start; 
+    }
+
     .chat-top-bar.search-active #currentChannelName,
-    .chat-top-bar.search-active #togglePinnedBtn,
     .chat-top-bar.search-active .chat-search-toggle {
-        /* Когда поиск активен, скрываем все лишнее */
+        /* Скрываем заголовок и иконку-лупу */
         display: none;
     }
     
     .chat-top-bar.search-active #chatSearchInput {
-        /* И показываем поле ввода, растянув его на всю ширину */
+        /* Показываем поле ввода и растягиваем его */
         display: block;
         width: 100%;
     }
 }
+/* --- КОНЕЦ НОВОГО КОДА --- */
 

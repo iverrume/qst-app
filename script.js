@@ -783,6 +783,24 @@ const ChatModule = (function() {
                                 <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
                                 <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
                             </div>
+                        <div class="chat-top-bar">
+                            <h4 id="currentChannelName" style="margin: 0; flex-grow: 1; text-align: left; color: var(--heading-color);">${_chat('channel_general')}</h4>
+                            <button id="chatSearchToggleBtn" class="chat-search-toggle">🔍</button>
+                            <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
+                        </div>
+                        <div id="tabActionsContainer" class="tab-actions-container hidden"></div>
+                        <div id="messageArea" class="message-area"><div class="empty-state">${_chat('loading_message')}</div></div>
+                        <div class="chat-input-area">
+                            <div id="replyingToPanel" class="replying-to-panel hidden">
+                            </div>
+                            <div class="input-actions-top">
+                                <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}">😊</button>
+                                <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
+                                <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
+                                <!-- Кнопка "Закрепить" ПЕРЕМЕЩЕНА СЮДА -->
+                                <button id="togglePinnedBtn" class="input-action-btn" title="${_chat('pinned_toggle_title')}">📌</button>
+                            </div>
+
                             <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt">
                             <div class="input-wrapper">
                                 <textarea id="chatInput" placeholder="${_chat('chat_input_placeholder')}"></textarea>
