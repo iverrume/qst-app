@@ -7914,8 +7914,20 @@ const mainApp = (function() {
 
                 expandBtn.onclick = function(e) {
                     e.stopPropagation();
+                    
+                    // Переключаем класс 'expanded' на блоке с вопросом
                     const isExpanded = questionEl.classList.toggle('expanded');
+                    
+                    // Меняем текст кнопки
                     this.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
+                    
+                    // Находим блок с ответом ИИ
+                    const outputEl = getEl('aiExplanationOutput');
+                    if (outputEl) {
+                        // Переключаем класс 'collapsed' на блоке с ответом
+                        // Если вопрос развернут (isExpanded = true), то ответ должен быть свернут (.collapsed)
+                        outputEl.classList.toggle('collapsed', isExpanded);
+                    }
                 };
 
 
