@@ -5243,3 +5243,65 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     transform: scale(1.05);
     opacity: 0.9;
 }
+
+/* ======================================================= */
+/* === АДАПТИВНЫЕ СТИЛИ ДЛЯ ВЕРХНЕЙ ПАНЕЛИ ПОИСКА (v2) === */
+/* ======================================================= */
+
+/* 1. Настраиваем заголовок канала, чтобы он мог сжиматься и обрезаться */
+#currentChannelName {
+    flex-shrink: 1; /* Разрешаем сжиматься */
+    min-width: 0; /* Важный трюк, чтобы flexbox мог сжать элемент меньше его содержимого */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 2. Стили по умолчанию (для мобильных) */
+.chat-search-toggle {
+    display: none; /* По умолчанию скрыта, покажем в медиа-запросе */
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+/* 3. Медиа-запрос для мобильных устройств (ширина до 768px) */
+@media (max-width: 768px) {
+    .chat-top-bar {
+        /* Делаем так, чтобы заголовок не занимал все место */
+        justify-content: flex-end;
+    }
+    #currentChannelName {
+        /* Заголовок теперь не растягивается, а занимает место по содержимому */
+        flex-grow: 0;
+    }
+
+    /* Показываем нашу иконку-кнопку */
+    .chat-search-toggle {
+        display: block;
+        margin-left: auto; /* Прижимаем иконку к правому краю, перед полем ввода */
+    }
+    
+    /* И скрываем текстовое поле ввода */
+    #chatSearchInput {
+        display: none;
+    }
+    
+    /* 4. Стили для "активного" режима поиска */
+    .chat-top-bar.search-active #currentChannelName,
+    .chat-top-bar.search-active #togglePinnedBtn,
+    .chat-top-bar.search-active .chat-search-toggle {
+        /* Когда поиск активен, скрываем все лишнее */
+        display: none;
+    }
+    
+    .chat-top-bar.search-active #chatSearchInput {
+        /* И показываем поле ввода, растянув его на всю ширину */
+        display: block;
+        width: 100%;
+    }
+}
+

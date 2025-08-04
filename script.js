@@ -578,6 +578,7 @@ const ChatModule = (function() {
     let authOverlay = null;
     let tabButtons = {};
     let tabCounters = {};
+    let chatSearchToggleBtn = null;
     
 
     // Tabs configuration
@@ -761,6 +762,15 @@ const ChatModule = (function() {
                             <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
                             <button id="togglePinnedBtn" title="${_chat('pinned_toggle_title')}">📌</button>
                         </div>
+                  
+                        <div class="chat-top-bar">
+                            <h4 id="currentChannelName" style="margin: 0; flex-grow: 1; text-align: left; color: var(--heading-color);">${_chat('channel_general')}</h4>
+                            <!-- НОВАЯ КНОПКА-ИКОНКА -->
+                            <button id="chatSearchToggleBtn" class="chat-search-toggle">🔍</button>
+                            <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
+                            <button id="togglePinnedBtn" title="${_chat('pinned_toggle_title')}">📌</button>
+                        </div>
+          
                         <div id="tabActionsContainer" class="tab-actions-container hidden"></div>
                         <div id="messageArea" class="message-area"><div class="empty-state">${_chat('loading_message')}</div></div>
                         <div class="chat-input-area">
@@ -994,6 +1004,7 @@ const ChatModule = (function() {
         // ПРАВИЛЬНО привязываем счетчики для пользователей
         tabCounters['users'] = document.getElementById('usersCount'); // Счетчик для вкладки
         tabCounters['online'] = document.getElementById('onlineCount'); // Счетчик для секции "Онлайн"
+        chatSearchToggleBtn = document.getElementById('chatSearchToggleBtn');
         console.log('DOM элементы гибридного чата инициализированы');
     }
 
@@ -1160,6 +1171,33 @@ const ChatModule = (function() {
         }
        
         console.log('Event listeners настроены');
+
+    // === НАЧАЛО НОВОГО КОДА: ЛОГИКА МОБИЛЬНОГО ПОИСКА ===
+
+        // Клик по иконке "лупы" на мобильных
+        if (chatSearchToggleBtn) {
+            chatSearchToggleBtn.addEventListener('click', () => {
+                const topBar = chatSearchToggleBtn.closest('.chat-top-bar');
+                if (topBar) {
+                    topBar.classList.add('search-active');
+                    // Сразу ставим фокус на поле ввода для удобства
+                    searchInput.focus();
+                }
+            });
+        }
+
+        // Когда пользователь убирает фокус с поля ввода (кликает в другое место)
+        if (searchInput) {
+            searchInput.addEventListener('blur', () => {
+                const topBar = searchInput.closest('.chat-top-bar');
+                // Проверяем, есть ли текст в поле. Если есть, не скрываем.
+                if (topBar && searchInput.value.trim() === '') {
+                    topBar.classList.remove('search-active');
+                }
+            });
+        }
+
+        // === КОНЕЦ НОВОГО КОДА ===
 
         const channelSearchInput = document.getElementById('channelSearchInput');
         if (channelSearchInput) {
