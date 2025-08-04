@@ -5350,39 +5350,27 @@ const mainApp = (function() {
 
 
 
-
     async function createTemporaryDownloadLink(fileName, content, contentType, shareDialogTitlePrefix) {
         try {
-            console.log('Создаем временную ссылку для мобильного устройства (JSON-метод)...');
+            console.log('Создаем временную ссылку для мобильного устройства (v2)...');
             showMobileDownloadStatus('Подготовка файла для скачивания...', 'loading');
 
+            // Создаем уникальное имя файла прямо на клиенте для надежности
             const uniqueFileName = `qstium.com_${new Date().getTime()}_${fileName.replace(/[^a-zA-Zа-яА-Я0-9.\-_]/g, '_')}`;
-            
-            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-            
-            // 1. URL теперь простой, без параметров
-            const url = googleAppScriptUrl;
 
-            // 2. Все данные упаковываем в JSON-объект
-            const payload = {
-                action: 'createTempFile',
-                fileName: uniqueFileName,
-                content: content
-            };
+            // Формируем URL с параметрами
+            const url = `${googleAppScriptUrl}?action=createTempFile&fileName=${encodeURIComponent(uniqueFileName)}`;
 
-            // 3. Отправляем запрос с правильными заголовками и телом
+            // Отправляем содержимое файла как простой текст, чтобы избежать CORS preflight
             const response = await fetch(url, {
                 method: 'POST',
-                mode: 'cors', // Используем 'cors', так как GAS вернет JSON с правильными заголовками
+                mode: 'cors', // Используем 'cors', так как Google Script вернет JSON с правильными заголовками
                 headers: {
-                    // Указываем, что отправляем JSON
-                    'Content-Type': 'application/json',
+                    // Отправляем как обычный текст
+                    'Content-Type': 'text/plain;charset=utf-8',
                 },
-                // Превращаем наш объект в строку
-                body: JSON.stringify(payload) 
+                body: content // Отправляем содержимое файла напрямую
             });
-
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
             if (!response.ok) {
                 throw new Error(`Ошибка сервера: ${response.statusText}`);
@@ -5401,6 +5389,7 @@ const mainApp = (function() {
             showMobileDownloadFallback(fileName, content);
         }
     }
+
 
 
 
