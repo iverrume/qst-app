@@ -7779,28 +7779,38 @@ const mainApp = (function() {
 
 
     function showAIExplanation(question) {
-        currentAIQuestion = question;
-        const questionEl = getEl('aiExplanationQuestion');
-        const outputEl = getEl('aiExplanationOutput');
+            currentAIQuestion = question;
+            const questionEl = getEl('aiExplanationQuestion');
+            const outputEl = getEl('aiExplanationOutput');
 
-        const correctAnswerText = question.options[question.correctAnswerIndex].text;
-        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
-        
-        outputEl.innerHTML = ''; // Очищаем перед показом
+            const correctAnswerText = question.options[question.correctAnswerIndex].text;
+            questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
+            
+            outputEl.innerHTML = ''; // Очищаем старый результат
 
-        // НАХОДИМ ПЕРВУЮ КНОПКУ ("ПРОСТО")
-        const styleButtons = getEl('aiExplanationStyleButtons');
-        const firstButton = styleButtons.querySelector('button[data-style="simple"]');
+            // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
 
-        // ПОКАЗЫВАЕМ МОДАЛЬНОЕ ОКНО
-        ChatModule.showModal('aiExplanationModal');
+            // 1. Находим все кнопки стилей
+            const styleButtonsContainer = getEl('aiExplanationStyleButtons');
+            const allStyleButtons = styleButtonsContainer.querySelectorAll('button');
+            const simpleButton = styleButtonsContainer.querySelector('button[data-style="simple"]');
 
-        // ИМИТИРУЕМ КЛИК НА ПЕРВУЮ КНОПКУ, ЧТОБЫ ЗАПУСТИТЬ ВСЮ ЛОГИКУ ПРАВИЛЬНО
-        // Это автоматически подсветит ее и вызовет fetchAndDisplayExplanation
-        if (firstButton) {
-            firstButton.click();
+            // 2. Снимаем выделение со всех кнопок
+            allStyleButtons.forEach(btn => btn.classList.remove('active'));
+
+            // 3. Явно выделяем кнопку "Просто"
+            if (simpleButton) {
+                simpleButton.classList.add('active');
+            }
+
+            // 4. Показываем модальное окно
+            ChatModule.showModal('aiExplanationModal');
+            
+            // 5. Явно вызываем загрузку для стиля "Просто"
+            fetchAndDisplayExplanation('simple');
+
+            // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
         }
-    }
 
     async function fetchAndDisplayExplanation(style) {
         if (!currentAIQuestion) return;
