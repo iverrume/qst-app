@@ -4343,16 +4343,28 @@ const mainApp = (function() {
             copy_button: "Копировать",
             search_provider_db: "База данных",
             relevance_tag: "Релевантность:",
+            copy_button: "Копировать",
             copy_question_tooltip: "Копировать вопрос",
             favorite_question_tooltip: "Добавить в избранное",
 
             ai_explanation_title: '💡 Объяснение от ИИ',
             ai_explanation_style_label: 'Стиль объяснения:',
             ai_explain_button: '💡 Объяснить',
-            ai_explanation_loading: 'ИИ готовит объяснение...',  
+            ai_explanation_loading: 'ИИ готовит объяснение...',
             ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Пожалуйста, вставьте текст для анализа.',
-            ai_error_generation: 'Произошла ошибка при генерации теста.',          
+            ai_error_generation: 'Произошла ошибка при генерации теста.',
+            ai_question_count_label: '4. Укажите количество вопросов для ИИ:',
+            ai_auto_mode_label: 'Авто',
+            ai_generate_button: '🤖 Сгенерировать тест (ИИ)',
+            ai_style_simple: "Просто",
+            ai_style_scientific: "Научно",
+            ai_style_associative: "Аналогия",
+            ai_style_stepbystep: "Пошагово",
+            ai_style_practical: "Практично",
+            ai_style_visual: "Наглядно",  
+
+
         },
         kz: {
             // Main Screen
@@ -4448,8 +4460,27 @@ const mainApp = (function() {
             copy_button: "Көшіру",
             search_provider_db: "Дерекқор",
             relevance_tag: "Сәйкестілік:",
+            copy_button: "Көшіру", 
             copy_question_tooltip: "Сұрақты көшіру",
             favorite_question_tooltip: "Таңдаулыларға қосу",
+
+
+            ai_explanation_title: '💡 ЖИ түсіндірмесі',
+            ai_explanation_style_label: 'Түсіндіру стилі:',
+            ai_explain_button: '💡 Түсіндіру',
+            ai_explanation_loading: 'ЖИ түсіндірме дайындауда...',
+            ai_generating_button: '🤖 Генерация...',
+            ai_error_text_empty: 'Талдау үшін мәтінді енгізіңіз.',
+            ai_error_generation: 'Тест жасау кезінде қате пайда болды.',
+            ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
+            ai_auto_mode_label: 'Авто',
+            ai_generate_button: '🤖 Тест құру (ЖИ)',
+            ai_style_simple: "Қарапайым",
+            ai_style_scientific: "Ғылыми",
+            ai_style_associative: "Аналогия",
+            ai_style_stepbystep: "Қадаммен",
+            ai_style_practical: "Практикалық",
+            ai_style_visual: "Көрнекі"
         },
         en: {
             // Main Screen
@@ -4545,11 +4576,30 @@ const mainApp = (function() {
             copy_button: "Copy",
             search_provider_db: "Database",
             relevance_tag: "Relevance:",
+            copy_button: "Copy",
             copy_question_tooltip: "Copy question",
             favorite_question_tooltip: "Add to favorites",
             ai_generating_button: '🤖 Generating...',
             ai_error_text_empty: 'Please paste text to analyze.',
             ai_error_generation: 'An error occurred while generating the test.',
+
+
+            ai_explanation_title: '💡 AI Explanation',
+            ai_explanation_style_label: 'Explanation Style:',
+            ai_explain_button: '💡 Explain',
+            ai_explanation_loading: 'AI is preparing an explanation...',
+            ai_generating_button: '🤖 Generating...',
+            ai_error_text_empty: 'Please paste text to analyze.',
+            ai_error_generation: 'An error occurred while generating the test.',
+            ai_question_count_label: '4. Specify the number of questions for the AI:',
+            ai_auto_mode_label: 'Auto',
+            ai_generate_button: '🤖 Generate Test (AI)',
+            ai_style_simple: "Simple",
+            ai_style_scientific: "Scientific",
+            ai_style_associative: "Analogy",
+            ai_style_stepbystep: "Step-by-step",
+            ai_style_practical: "Practical",
+            ai_style_visual: "Visual",
         }
 
 
@@ -4780,6 +4830,7 @@ const mainApp = (function() {
     
     function setupEventListeners() {
         getEl('favoriteQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
+        getEl('copyExplanationBtn')?.addEventListener('click', handleCopyExplanation);
         fileInput.addEventListener('change', handleFileSelect);
         startQuizButton.addEventListener('click', () => applySettingsAndStartQuiz(false, null));
         gradusButton?.addEventListener('click', () => {
@@ -6892,7 +6943,20 @@ const mainApp = (function() {
     }
 
 
-    
+      
+
+    async function handleCopyExplanation() {
+        const outputEl = getEl('aiExplanationOutput');
+        if (!outputEl) return;
+
+        // Используем innerText, чтобы скопировать текст так, как его видит пользователь,
+        // без HTML-тегов, но с правильными переносами строк.
+        const textToCopy = outputEl.innerText;
+
+        if (textToCopy.trim()) {
+            await copyToClipboardMain(textToCopy);
+        }
+    }
 
 
     // --- НОВЫЕ ФУНКЦИИ ДЛЯ ПЕРЕВОДА ЯЗЫКА ---
@@ -7829,14 +7893,22 @@ const mainApp = (function() {
                 })
             });
             const result = await response.json();
+
+
             if (result.success) {
-                // Используем библиотеку, если она доступна, или простой рендеринг
-                if (window.marked) {
-                     outputEl.innerHTML = marked.parse(result.explanation);
-                } else {
-                     outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
-                }
-            } else {
+                            // Проверяем, существует ли функция marked в глобальной области видимости
+                            if (window.marked) {
+                                // Если да, преобразуем Markdown в HTML
+                                outputEl.innerHTML = marked.parse(result.explanation);
+                            } else {
+                                // Если библиотека по какой-то причине не загрузилась,
+                                // используем старый метод с переносами строк
+                                console.warn('Библиотека marked.js не загружена. Отображение без форматирования.');
+                                outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
+                            }
+                        } else {
+
+
                 throw new Error(result.error);
             }
         } catch (error) {

@@ -283,18 +283,26 @@
             <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
             <div class="settings-group" style="border: none; padding: 0; margin-bottom: 15px;">
                 <label data-lang-key="ai_explanation_style_label">Стиль объяснения:</label>
-                <div id="aiExplanationStyleButtons" style="display: flex; gap: 10px; margin-top: 5px;">
-                    <button class="btn-secondary-small active" data-style="simple">Просто</button>
-                    <button class="btn-secondary-small" data-style="scientific">Научно</button>
-                    <button class="btn-secondary-small" data-style="associative">Аналогия</button>
+                <div id="aiExplanationStyleButtons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;">
+                    <button class="btn-secondary-small active" data-style="simple" data-lang-key="ai_style_simple">Просто</button>
+                    <button class="btn-secondary-small" data-style="scientific" data-lang-key="ai_style_scientific">Научно</button>
+                    <button class="btn-secondary-small" data-style="associative" data-lang-key="ai_style_associative">Аналогия</button>
+                    <button class="btn-secondary-small" data-style="stepByStep" data-lang-key="ai_style_stepbystep">Пошагово</button>
+                    <button class="btn-secondary-small" data-style="practical" data-lang-key="ai_style_practical">Практично</button>
+                    <button class="btn-secondary-small" data-style="visual" data-lang-key="ai_style_visual">Наглядно</button>
                 </div>
+
+
             </div>
             <div id="aiExplanationOutput">
                 <!-- Сюда будет вставляться объяснение или спиннер -->
             </div>
-            <div class="modal-buttons" style="justify-content: flex-end; margin-top: 20px;">
-                <button onclick="ChatModule.closeModal('aiExplanationModal')" data-lang-key="auth_close_button">Закрыть</button>
-            </div>
+            <div class="modal-buttons" style="justify-content: space-between; margin-top: 20px;">
+                            <!-- НОВАЯ КНОПКА -->
+                            <button id="copyExplanationBtn" data-lang-key="copy_button">Копировать</button>
+                            
+                            <button onclick="ChatModule.closeModal('aiExplanationModal')" data-lang-key="auth_close_button">Закрыть</button>
+                        </div>
         </div>
     </div>
     <!-- === КОНЕЦ НОВОГО КОДА === -->
@@ -303,6 +311,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <script src="script.js"></script>
 </body>

@@ -4747,4 +4747,73 @@ body.synthwave-mode .google-signin-btn:hover {
     background-color: var(--input-hover-bg-color);
     border-color: var(--input-hover-border-color);
 }
-/* === КОНЕЦ ИЗМЕНЕНИЙ === */
+
+/* ===== ИСПРАВЛЕНИЕ ДЛЯ ДЛИННЫХ ОБЪЯСНЕНИЙ ИИ ===== */
+
+/* 1. Ограничиваем высоту модального окна и делаем его гибким */
+#aiExplanationModal .modal-content {
+    max-height: 85vh; /* Окно не будет выше 85% высоты экрана */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 2. Делаем блок с текстом объяснения прокручиваемым */
+#aiExplanationOutput {
+    overflow-y: auto;  /* Добавляем вертикальный скролл, если нужно */
+    flex-grow: 1;      /* Позволяем этому блоку растягиваться, занимая все свободное место */
+    padding-right: 15px; /* Добавляем отступ справа, чтобы текст не прилипал к скроллбару */
+    margin-right: -10px; /* Немного сдвигаем, чтобы скроллбар был аккуратнее */
+    padding-bottom: 10px; /* Небольшой отступ снизу */
+}
+
+/* ===== СТИЛИ ДЛЯ ОТФОРМАТИРОВАННОГО MARKDOWN ===== */
+#aiExplanationOutput h1,
+#aiExplanationOutput h2,
+#aiExplanationOutput h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: var(--heading-color);
+}
+
+#aiExplanationOutput p {
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+#aiExplanationOutput ul,
+#aiExplanationOutput ol {
+    padding-left: 25px;
+    margin-bottom: 12px;
+}
+
+#aiExplanationOutput li {
+    margin-bottom: 5px;
+}
+
+#aiExplanationOutput strong {
+    color: var(--text-color);
+}
+
+/* ===== СТИЛИ ДЛЯ АКТИВНОЙ КНОПКИ СТИЛЯ ОБЪЯСНЕНИЯ ===== */
+
+#aiExplanationStyleButtons .btn-secondary-small.active {
+    /* Используем цвета основной кнопки приложения для единообразия */
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
+    font-weight: bold; /* Делаем текст жирным для акцента */
+}
+
+/* Убираем эффект затемнения при наведении для уже активной кнопки */
+#aiExplanationStyleButtons .btn-secondary-small.active:hover {
+    background-color: var(--button-primary-bg);
+}
+
+/* ===== СТИЛИ ДЛЯ КНОПКИ КОПИРОВАНИЯ В ОКНЕ ИИ ===== */
+#copyExplanationBtn {
+    background-color: var(--button-success-bg);
+}
+
+#copyExplanationBtn:hover {
+    background-color: var(--button-success-hover-bg);
+}
