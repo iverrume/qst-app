@@ -4789,27 +4789,7 @@ const mainApp = (function() {
             }
         });
 
-
-        // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ИИ ---
-        getEl('runAIGeneratorBtn')?.addEventListener('click', generateTestWithAI);
-
-        // Управление чекбоксом и полем для количества вопросов
-        getEl('aiAutoCount')?.addEventListener('change', (e) => {
-            getEl('aiQuestionCount').disabled = e.target.checked;
-        });
-
-        // Обработчик для кнопок тона в модальном окне объяснения
-        getEl('aiExplanationTones')?.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                const tone = e.target.dataset.tone;
-                // Получаем вопрос и ответ, сохраненные при открытии модалки
-                const question = getEl('aiExplanationModal').dataset.question;
-                const answer = getEl('aiExplanationModal').dataset.answer;
-                if (question && answer) {
-                    getAIExplanation(question, answer, tone);
-                }
-            }
-        });
+        // Внутри функции setupEventListeners()
         parserButton?.addEventListener('click', () => {
             fileUploadArea.classList.add('hidden');
             parserArea.classList.remove('hidden');
@@ -6389,7 +6369,6 @@ const mainApp = (function() {
         const question = questionsForCurrentQuiz[currentQuestionIndex];
         const isCorrect = selectedIndex === question.correctAnswerIndex;
         userAnswers[currentQuestionIndex] = { answered: true, correct: isCorrect, selectedOptionIndex: selectedIndex };
-        
         if (isCorrect) {
             selectedOptionLi.classList.add('correct');
             feedbackAreaEl.textContent = 'Правильно!';
@@ -6405,27 +6384,6 @@ const mainApp = (function() {
                 incorrectlyAnsweredQuestionsData.push(...question.originalRaw, "");
             }
         }
-
-        // --- НАЧАЛО НОВОГО КОДА ---
-        // Создаем и добавляем кнопку "Объясни"
-        const explanationButton = document.createElement('button');
-        explanationButton.textContent = '💡 Объясни';
-        explanationButton.style.marginLeft = '15px';
-        explanationButton.className = 'btn-secondary-small'; // Используем существующий стиль
-        
-        const correctAnswerText = question.options[question.correctAnswerIndex].text;
-        
-        explanationButton.onclick = () => {
-          // Сохраняем данные вопроса на модальном окне для использования кнопками тона
-          const modal = getEl('aiExplanationModal');
-          modal.dataset.question = question.text;
-          modal.dataset.answer = correctAnswerText;
-          getAIExplanation(question.text, correctAnswerText, 'simple');
-        };
-
-        feedbackAreaEl.appendChild(explanationButton);
-        // --- КОНЕЦ НОВОГО КОДА ---
-
         Array.from(answerOptionsEl.children).forEach(li => {
             li.removeEventListener('click', handleAnswerSelect);
             li.classList.add('answered');
@@ -6437,7 +6395,6 @@ const mainApp = (function() {
             setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
         }
     }
-
 
     function handleNextButtonClick() {
         if (currentQuestionIndex < questionsForCurrentQuiz.length - 1) {
@@ -7716,101 +7673,6 @@ const mainApp = (function() {
         parserFileInput.value = ''; // Важно также сбросить выбранный файл!
         parserInput.focus(); // Возвращаем курсор в поле для удобства
         hideAndResetErrorArea();
-    }
-
-
-    /**
-     * Отправляет запрос на генерацию теста с помощью ИИ.
-     */
-    async function generateTestWithAI() {
-        const text = parserInput.value;
-        if (text.trim().length < 50) {
-            alert("Пожалуйста, вставьте в поле для ввода текст объемом не менее 50 символов.");
-            return;
-        }
-
-        const autoMode = getEl('aiAutoCount').checked;
-        const questionCount = autoMode ? 'auto' : getEl('aiQuestionCount').value;
-
-        showGlobalLoader('ИИ генерирует вопросы... Это может занять до минуты.');
-
-        try {
-            const response = await fetch(googleAppScriptUrl, {
-                method: 'POST',
-                mode: 'cors', // Важно для получения ответа
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'generateTest',
-                    text: text,
-                    questionCount: questionCount
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Ошибка сети: ${response.status}`);
-            }
-
-            const result = await response.json();
-
-            if (result.success && result.qst) {
-                parserOutput.value = result.qst.trim();
-                parserOutputArea.classList.remove('hidden');
-                hideAndResetErrorArea();
-                alert('Тест успешно сгенерирован!');
-            } else {
-                throw new Error(result.error || 'Неизвестная ошибка от сервера ИИ.');
-            }
-        } catch (error) {
-            console.error("Ошибка генерации теста ИИ:", error);
-            alert(`Не удалось сгенерировать тест: ${error.message}`);
-        } finally {
-            hideGlobalLoader();
-        }
-    }
-
-    /**
-     * Запрашивает и отображает объяснение для вопроса.
-     */
-    async function getAIExplanation(questionText, answerText, tone = 'simple') {
-        const modal = getEl('aiExplanationModal');
-        const outputEl = getEl('aiExplanationOutput');
-        const toneButtons = getEl('aiExplanationTones').querySelectorAll('button');
-
-        modal.classList.remove('hidden');
-        outputEl.innerHTML = '<div class="loading-spinner" style="margin: 20px auto;"></div>';
-
-        // Обновляем активную кнопку тона
-        toneButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tone === tone);
-        });
-
-        try {
-            const response = await fetch(googleAppScriptUrl, {
-                method: 'POST',
-                mode: 'cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'getExplanation',
-                    question: questionText,
-                    answer: answerText,
-                    tone: tone
-                })
-            });
-
-            if (!response.ok) throw new Error(`Ошибка сети: ${response.status}`);
-
-            const result = await response.json();
-
-            if (result.success && result.explanation) {
-                // Используем .innerText для безопасной вставки текста
-                outputEl.innerText = result.explanation;
-            } else {
-                throw new Error(result.error || 'Неизвестная ошибка от сервера ИИ.');
-            }
-        } catch (error) {
-            console.error("Ошибка получения объяснения:", error);
-            outputEl.innerText = `Не удалось получить объяснение: ${error.message}`;
-        }
     }
 
 

@@ -204,25 +204,9 @@
                         <option value="auto" selected>-- Автоматическое определение --</option>
                     </select>
                 </div>
-                
-                <!-- === НАЧАЛО НОВОГО БЛОКА: ГЕНЕРАТОР ИИ === -->
-                <div class="settings-group" style="border-top: 2px dashed var(--dashed-border-color); padding-top: 20px; margin-top: 20px;">
-                    <label for="aiQuestionCount" style="font-weight: bold;">🤖 2.1. Или сгенерировать вопросы с помощью ИИ:</label>
-                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-                        <input type="number" id="aiQuestionCount" min="1" max="20" value="5" style="width: 80px; text-align: center;">
-                        <div style="flex-grow: 1;">
-                            <input type="checkbox" id="aiAutoCount" style="margin-right: 5px;">
-                            <label for="aiAutoCount">Автоматически</label>
-                        </div>
-                        <button id="runAIGeneratorBtn" style="background-color: var(--button-success-bg);">Сгенерировать</button>
-                    </div>
-                </div>
-                <!-- === КОНЕЦ НОВОГО БЛОКА === -->
-
                 <div class="settings-group" style="text-align: center;">
-                    <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать вручную</button>
+                    <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать</button>
                 </div>
-
                 <div id="parserErrorsArea" class="hidden">
                     <button id="showErrorsBtn">
                         <span data-lang-key="parser_errors_found">⚠️ Ошибки форматирования</span> (<span id="errorCount">0</span>)
@@ -258,11 +242,13 @@
             <p>prod by @iverrum</p>
         </footer>
         
+        <!-- === НАЧАЛО НОВОГО КОДА: ЗВУК УВЕДОМЛЕНИЯ === -->
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
+        <!-- === КОНЕЦ НОВОГО КОДА === -->
 
     </div> 
 
-    <!-- Модальное окно результатов теста -->
+    <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ === -->
     <div id="testResultsModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
             <h3 id="testResultsModalTitle" data-lang-key="results_modal_title">Результаты по тесту</h3>
@@ -274,25 +260,7 @@
             </div>
         </div>
     </div>
-    
-    <!-- === НАЧАЛО НОВОГО БЛОКА: МОДАЛЬНОЕ ОКНО ДЛЯ ИИ === -->
-    <div id="aiExplanationModal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 500px; text-align: left;">
-            <h3 style="text-align: center;">💡 Объяснение</h3>
-            <div id="aiExplanationTones" style="text-align: center; margin-bottom: 15px; display: flex; gap: 5px; justify-content: center;">
-                <button class="btn-secondary-small active" data-tone="simple">Просто</button>
-                <button class="btn-secondary-small" data-tone="scientific">Научно</button>
-                <button class="btn-secondary-small" data-tone="associative">Ассоциации</button>
-            </div>
-            <div id="aiExplanationOutput" style="min-height: 100px; background: var(--input-bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; line-height: 1.6;">
-                <!-- Сюда будет загружаться ответ от ИИ -->
-            </div>
-            <div class="modal-buttons" style="margin-top: 20px;">
-                <button onclick="document.getElementById('aiExplanationModal').classList.add('hidden')">Закрыть</button>
-            </div>
-        </div>
-    </div>
-    <!-- === КОНЕЦ НОВОГО БЛОКА === -->
+        <!-- === КОНЕЦ НОВОГО КОДА === -->
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
