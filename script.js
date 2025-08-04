@@ -7779,25 +7779,27 @@ const mainApp = (function() {
 
 
     function showAIExplanation(question) {
-        currentAIQuestion = question; // Сохраняем вопрос
+        currentAIQuestion = question;
         const questionEl = getEl('aiExplanationQuestion');
         const outputEl = getEl('aiExplanationOutput');
 
-        // Показываем вопрос и правильный ответ
         const correctAnswerText = question.options[question.correctAnswerIndex].text;
         questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
         
-        outputEl.innerHTML = ''; // Очищаем предыдущий результат
+        outputEl.innerHTML = ''; // Очищаем перед показом
 
-        // Активируем первую кнопку стиля и запускаем запрос
+        // НАХОДИМ ПЕРВУЮ КНОПКУ ("ПРОСТО")
         const styleButtons = getEl('aiExplanationStyleButtons');
-        const firstButton = styleButtons.querySelector('button');
-        styleButtons.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-        firstButton.classList.add('active');
+        const firstButton = styleButtons.querySelector('button[data-style="simple"]');
 
+        // ПОКАЗЫВАЕМ МОДАЛЬНОЕ ОКНО
         ChatModule.showModal('aiExplanationModal');
 
-        fetchAndDisplayExplanation(firstButton.dataset.style);
+        // ИМИТИРУЕМ КЛИК НА ПЕРВУЮ КНОПКУ, ЧТОБЫ ЗАПУСТИТЬ ВСЮ ЛОГИКУ ПРАВИЛЬНО
+        // Это автоматически подсветит ее и вызовет fetchAndDisplayExplanation
+        if (firstButton) {
+            firstButton.click();
+        }
     }
 
     async function fetchAndDisplayExplanation(style) {
