@@ -4494,7 +4494,7 @@ const mainApp = (function() {
             ai_style_associative: "Аналогия",
             ai_style_stepbystep: "Қадаммен",
             ai_style_practical: "Практикалық",
-            ai_style_visual: "Көрнекі"
+            ai_style_visual: "Көрнекі",
             ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
         },
         en: {
