@@ -4382,6 +4382,8 @@ const mainApp = (function() {
             exit_modal_text: 'Вы уверены, что хотите выйти из приложения?',
             exit_modal_confirm: 'Выйти',
             exit_modal_cancel: 'Остаться',
+            update_available_text: 'Доступна новая версия!',
+            update_button_text: 'Обновить',
 
         },
         kz: {
@@ -4505,6 +4507,8 @@ const mainApp = (function() {
             exit_modal_text: 'Қосымшадан шыққыңыз келетініне сенімдісіз бе?',
             exit_modal_confirm: 'Шығу',
             exit_modal_cancel: 'Қалу',
+            update_available_text: 'Жаңа нұсқасы қолжетімді!',
+            update_button_text: 'Жаңарту',
         },
         en: {
             // Main Screen
@@ -4631,6 +4635,8 @@ const mainApp = (function() {
             exit_modal_text: 'Are you sure you want to exit the application?',
             exit_modal_confirm: 'Exit',
             exit_modal_cancel: 'Stay',
+            update_available_text: 'A new version is available!',
+            update_button_text: 'Update',
         }
 
 
@@ -4688,6 +4694,7 @@ const mainApp = (function() {
 
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
     let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
+    let updateNotification, updateBtn;
 
 
     // --- State Variables ---
@@ -4828,6 +4835,9 @@ const mainApp = (function() {
         exitConfirmationModal = getEl('exitConfirmationModal');
         confirmExitBtn = getEl('confirmExitBtn');
         cancelExitBtn = getEl('cancelExitBtn');
+        updateNotification = getEl('updateNotification');
+        updateBtn = getEl('updateBtn');
+        initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
         try {
@@ -5869,7 +5879,52 @@ const mainApp = (function() {
         }
     }
 
+    // --- НОВЫЙ КОД ---
+    function initServiceWorkerUpdater() {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => {
+                    // 1. Слушаем событие 'updatefound'
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        if (installingWorker) {
+                            // 2. Ждем, пока новый SW установится
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed') {
+                                    // 3. Если есть активный SW, значит это обновление
+                                    if (navigator.serviceWorker.controller) {
+                                        // Показываем нашу плашку
+                                        showUpdateNotification(installingWorker);
+                                    }
+                                }
+                            };
+                        }
+                    };
+                })
+                .catch(error => {
+                    console.error('Ошибка регистрации Service Worker для обновления:', error);
+                });
 
+            // 4. Слушаем смену контроллера и перезагружаем страницу
+            navigator.serviceWorker.oncontrollerchange = () => {
+                console.log('Контроллер изменился, перезагрузка страницы...');
+                window.location.reload();
+            };
+        }
+    }
+
+    function showUpdateNotification(worker) {
+        if (updateNotification && updateBtn) {
+            updateNotification.classList.remove('hidden');
+            // Привязываем событие клика ТОЛЬКО ОДИН РАЗ
+            updateBtn.onclick = () => {
+                // 5. Отправляем команду новому SW
+                worker.postMessage({ action: 'skipWaiting' });
+                updateNotification.classList.add('hidden');
+            };
+        }
+    }
+    // --- КОНЕЦ НОВОГО КОДА ---
 
     function updateQuickModeToggleVisual() {
         if (quickModeToggle) {
@@ -8123,21 +8178,3 @@ document.addEventListener('DOMContentLoaded', mainApp.init);
 // Expose mainApp to window for ChatModule access
 window.mainApp = mainApp;
 
-// script.js (добавить в конец файла)
-
-// Проверяем, поддерживает ли браузер Service Worker
-if ('serviceWorker' in navigator) {
-  // Регистрируем наш Service Worker. Лучше делать это после полной загрузки страницы,
-  // чтобы не замедлять первоначальное отображение.
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(registration => {
-        // Регистрация прошла успешно
-        console.log('Service Worker зарегистрирован успешно! Область видимости:', registration.scope);
-      })
-      .catch(error => {
-        // Регистрация не удалась
-        console.error('Ошибка регистрации Service Worker:', error);
-      });
-  });
-}

@@ -5200,3 +5200,46 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
 .modal-content-exit .btn-secondary:hover {
     background-color: var(--button-secondary-hover-bg);
 }
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ ПЛАШКИ УВЕДОМЛЕНИЯ ОБ ОБНОВЛЕНИИ === */
+/* ======================================================= */
+
+.update-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    padding: 12px 20px;
+    border-radius: 25px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 9999;
+    font-size: 1em;
+    font-weight: 500;
+    animation: slideUp 0.5s ease-out;
+}
+
+.update-notification.hidden {
+    display: none !important;
+}
+
+.update-notification button {
+    background-color: var(--button-primary-text);
+    color: var(--button-primary-bg);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.update-notification button:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}

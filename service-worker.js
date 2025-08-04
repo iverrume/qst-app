@@ -1,9 +1,10 @@
-// service-worker.js (версия с полным исправлением CORS)
+// service-worker.js
 
-// ВАЖНО: При обновлении основных файлов (css, js) меняйте версию кеша, например, на 'v3'
-const CACHE_NAME = 'qst-app-cache-v204'; // <--- ИЗМЕНЕНИЕ: Версия кеша увеличена
+// ВАЖНО: При каждом обновлении основных файлов (css, js, html) меняйте версию кеша!
+// Например, 'qst-app-cache-v202', 'qst-app-cache-v203' и т.д.
+const CACHE_NAME = 'qst-app-cache-v205';
 
-// Файлы, которые составляют "оболочку" приложения и могут быть закешированы
+// Файлы, которые составляют "оболочку" приложения и будут закешированы
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -16,25 +17,26 @@ const URLS_TO_CACHE = [
 // Событие 'install': кешируем оболочку приложения
 self.addEventListener('install', (event) => {
   console.log('Service Worker: Установка новой версии...');
+  // waitUntil() заставляет браузер ждать, пока кеширование не будет завершено
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Кеширование основных файлов');
+        console.log('Service Worker: Кеширование основных файлов приложения');
         return cache.addAll(URLS_TO_CACHE);
       })
-      .then(() => self.skipWaiting()) // Принудительно активируем новый Service Worker
       .catch(err => {
         console.error('Service Worker: Ошибка при кешировании', err);
       })
   );
 });
 
-// Событие 'activate': удаляем старые кеши
+// Событие 'activate': удаляем старые, ненужные кеши
 self.addEventListener('activate', (event) => {
   console.log('Service Worker: Активация новой версии...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
+        // Проходим по всем кешам и удаляем те, что не совпадают с текущей версией
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
             console.log('Service Worker: Удаление старого кеша', cacheName);
@@ -42,45 +44,48 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => self.clients.claim()) // Захватываем контроль над открытыми страницами
+    }).then(() => {
+      // Захватываем контроль над всеми открытыми страницами, чтобы обновление применилось сразу
+      return self.clients.claim();
+    })
   );
 });
 
-// Событие 'fetch': перехватываем запросы
+// Событие 'fetch': перехватываем сетевые запросы
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // --- НАЧАЛО КЛЮЧЕВОГО ИСПРАВЛЕНИЯ ---
-
-  // 1. Игнорируем не-GET запросы. Мы не вызываем event.respondWith(),
-  //    поэтому браузер обработает их самостоятельно, как будто Service Worker нет.
+  // 1. Игнорируем не-GET запросы (например, POST к API), чтобы они шли напрямую в сеть.
   if (request.method !== 'GET') {
-    // Просто выходим из обработчика, ничего не делая.
     return;
   }
 
-  // 2. Игнорируем запросы к сторонним API (включая Google Scripts).
-  //    Это предотвращает вмешательство в CORS-запросы.
+  // 2. Игнорируем запросы к сторонним API (Google, Firebase), чтобы избежать проблем с CORS.
   if (!request.url.startsWith(self.location.origin)) {
-    // Просто выходим из обработчика.
     return;
   }
 
-  // --- КОНЕЦ КЛЮЧЕВОГО ИСПРАВЛЕНИЯ ---
-
-  // Для всех остальных запросов (GET-запросы к нашему сайту) используем стратегию "Сначала кеш"
+  // Для всех остальных запросов (к нашему сайту) используем стратегию "Сначала кеш, потом сеть".
   event.respondWith(
     caches.match(request)
       .then((cachedResponse) => {
-        // Если ответ есть в кеше, отдаем его
+        // Если ответ найден в кеше, возвращаем его
         if (cachedResponse) {
           return cachedResponse;
         }
-        // Если нет - идем в сеть
-        return fetch(request).then(response => {
-           // (Опционально) Можно добавить логику для кеширования новых ресурсов на лету
-           return response;
-        });
+        // Если в кеше ничего нет, делаем обычный сетевой запрос
+        return fetch(request);
       })
   );
+});
+
+// Событие 'message': слушаем команды от основного приложения (script.js)
+self.addEventListener('message', (event) => {
+  // Проверяем, пришла ли команда на пропуск ожидания
+  if (event.data && event.data.action === 'skipWaiting') {
+    console.log('Service Worker: Получена команда skipWaiting. Активация...');
+    // Эта команда заставляет новый Service Worker немедленно стать активным,
+    // не дожидаясь, пока пользователь закроет все вкладки.
+    self.skipWaiting();
+  }
 });
