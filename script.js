@@ -4180,6 +4180,8 @@ const ChatModule = (function() {
         copyQuestionAsQst,
         voteForFavoriteOption,
         showFileActionsModal, 
+        showModal: showModal, 
+        closeModal: closeModal,
         
         // Getters
         isInitialized: () => isInitialized,
