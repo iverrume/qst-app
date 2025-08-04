@@ -6403,30 +6403,53 @@ const mainApp = (function() {
 
 
 
-    // ЗАМЕНИТЕ ВСЮ ФУНКЦИЮ loadQuestion
+ 
     function loadQuestion(index) {
         if (index < 0 || index >= questionsForCurrentQuiz.length) return;
         currentQuestionIndex = index;
         const item = questionsForCurrentQuiz[index];
 
-        // --- ГЛАВНЫЙ РОУТЕР: ПРОВЕРЯЕМ ТИП ЭЛЕМЕНТА ---
         if (item.type === 'category') {
-            displayCategoryPage(item.text); // Показываем экран категории
+            displayCategoryPage(item.text);
         } else {
-            // Показываем счетчик только для настоящих вопросов
             getEl('score').style.visibility = 'visible';
-
-            // Рассчитываем правильный номер вопроса, игнорируя категории
             const questionNumber = questionsForCurrentQuiz.slice(0, index + 1).filter(q => q.type !== 'category').length;
             currentQuestionNumEl.textContent = questionNumber;
-
-            // Это обычный вопрос, показываем его как раньше
+            
             questionTextEl.innerHTML = renderQuestionTextWithTriggers(item);
             addTriggerClickListeners();
             answerOptionsEl.innerHTML = '';
+            
+            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+
+            // Сначала полностью очищаем область обратной связи
             feedbackAreaEl.textContent = '';
             feedbackAreaEl.className = 'feedback-area';
-            
+
+            const answerState = userAnswers[index];
+
+            // Теперь, если на вопрос уже был дан ответ, восстанавливаем его состояние
+            if (answerState && answerState.answered) {
+                // Восстанавливаем текст "Правильно!"/"Неправильно!"
+                if (answerState.correct) {
+                    feedbackAreaEl.textContent = 'Правильно!';
+                    feedbackAreaEl.className = 'feedback-area correct-feedback';
+                } else {
+                    feedbackAreaEl.textContent = 'Неправильно!';
+                    feedbackAreaEl.className = 'feedback-area incorrect-feedback';
+                }
+
+                // И самое главное: заново создаем и добавляем кнопку "Объяснить"
+                const explainBtn = document.createElement('button');
+                explainBtn.textContent = _('ai_explain_button');
+                explainBtn.className = 'explain-btn';
+                explainBtn.style.marginLeft = '15px';
+                explainBtn.onclick = () => showAIExplanation(item);
+                feedbackAreaEl.appendChild(explainBtn);
+            }
+
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
             copyQuestionBtnQuiz?.classList.remove('hidden');
             getEl('favoriteQuestionBtn')?.classList.remove('hidden');
             webSearchDropdown?.classList.remove('hidden');
@@ -6456,7 +6479,6 @@ const mainApp = (function() {
             }
         }
         
-        // Обновляем общую навигацию для всех типов элементов
         updateNavigationButtons();
         updateQuickNavButtons();
     }
@@ -7858,39 +7880,67 @@ const mainApp = (function() {
     }
 
 
+ 
     function showAIExplanation(question) {
-            currentAIQuestion = question;
-            const questionEl = getEl('aiExplanationQuestion');
-            const outputEl = getEl('aiExplanationOutput');
+        currentAIQuestion = question;
+        const questionEl = getEl('aiExplanationQuestion');
+        const outputEl = getEl('aiExplanationOutput');
 
-            const correctAnswerText = question.options[question.correctAnswerIndex].text;
-            questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
-            
-            outputEl.innerHTML = ''; // Очищаем старый результат
+        const correctAnswerText = question.options[question.correctAnswerIndex].text;
+        // Устанавливаем текст вопроса
+        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
+        
+        // --- НАЧАЛО НОВОЙ ЛОГИКИ СВОРАЧИВАНИЯ ---
 
-            // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+        // Сначала удаляем старую кнопку, если она вдруг осталась
+        const oldBtn = questionEl.querySelector('.expand-question-btn');
+        if (oldBtn) oldBtn.remove();
+        // И убираем классы с прошлого раза
+        questionEl.classList.remove('collapsible', 'expanded');
 
-            // 1. Находим все кнопки стилей
-            const styleButtonsContainer = getEl('aiExplanationStyleButtons');
-            const allStyleButtons = styleButtonsContainer.querySelectorAll('button');
-            const simpleButton = styleButtonsContainer.querySelector('button[data-style="simple"]');
+        const MAX_HEIGHT = 120; // Максимальная высота в пикселях до сворачивания
 
-            // 2. Снимаем выделение со всех кнопок
-            allStyleButtons.forEach(btn => btn.classList.remove('active'));
+        // Используем setTimeout, чтобы браузер успел отрисовать элемент и рассчитать его реальную высоту
+        setTimeout(() => {
+            if (questionEl.scrollHeight > MAX_HEIGHT) {
+                // Если блок слишком высокий, добавляем класс для сворачивания
+                questionEl.classList.add('collapsible');
 
-            // 3. Явно выделяем кнопку "Просто"
-            if (simpleButton) {
-                simpleButton.classList.add('active');
+                // Создаем кнопку "Развернуть"
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-question-btn';
+                expandBtn.textContent = 'Развернуть'; // Начальный текст
+
+                // Добавляем обработчик клика на кнопку
+                expandBtn.onclick = function(e) {
+                    e.stopPropagation(); // Предотвращаем всплытие события
+                    const isExpanded = questionEl.classList.toggle('expanded');
+                    // Меняем текст кнопки в зависимости от состояния
+                    this.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
+                };
+
+                // Добавляем кнопку прямо в блок с вопросом
+                questionEl.appendChild(expandBtn);
             }
+        }, 0); // Нулевая задержка выполнит код сразу после текущего цикла отрисовки
 
-            // 4. Показываем модальное окно
-            ChatModule.showModal('aiExplanationModal');
-            
-            // 5. Явно вызываем загрузку для стиля "Просто"
-            fetchAndDisplayExplanation('simple');
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ СВОРАЧИВАНИЯ ---
+        
+        outputEl.innerHTML = ''; 
 
-            // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
+        const styleButtonsContainer = getEl('aiExplanationStyleButtons');
+        const allStyleButtons = styleButtonsContainer.querySelectorAll('button');
+        const simpleButton = styleButtonsContainer.querySelector('button[data-style="simple"]');
+
+        allStyleButtons.forEach(btn => btn.classList.remove('active'));
+        if (simpleButton) {
+            simpleButton.classList.add('active');
         }
+
+        ChatModule.showModal('aiExplanationModal');
+        fetchAndDisplayExplanation('simple');
+    }
+
 
     async function fetchAndDisplayExplanation(style) {
         if (!currentAIQuestion) return;

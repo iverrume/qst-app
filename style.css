@@ -4906,3 +4906,104 @@ body.synthwave-mode .google-signin-btn:hover {
         font-size: 0.9em;
     }
 }
+
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ СВОРАЧИВАНИЯ ДЛИННЫХ ВОПРОСОВ В ОКНЕ ИИ === */
+/* ======================================================= */
+
+/* 1. Стили для блока вопроса, когда он свернут */
+#aiExplanationQuestion.collapsible {
+    max-height: 120px; /* Ограничиваем высоту свернутого блока */
+    overflow: hidden;
+    position: relative; /* Необходимо для позиционирования градиента */
+    padding-bottom: 25px; /* Оставляем место для кнопки "Развернуть" */
+    transition: max-height 0.3s ease-in-out;
+}
+
+/* 2. Градиент внизу свернутого блока, намекающий на продолжение */
+#aiExplanationQuestion.collapsible::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--input-bg-color));
+    pointer-events: none;
+}
+
+/* 3. Когда блок развернут, убираем ограничение высоты и градиент */
+#aiExplanationQuestion.collapsible.expanded {
+    max-height: 1000px; /* Большая высота для плавной анимации */
+}
+
+#aiExplanationQuestion.collapsible.expanded::after {
+    opacity: 0;
+}
+
+/* 4. Стили для кнопки "Развернуть/Свернуть" */
+.expand-question-btn {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0,0,0,0.05);
+    color: var(--secondary-text-color);
+    border: none;
+    padding: 4px 12px;
+    font-size: 0.8em;
+    border-radius: 12px;
+    cursor: pointer;
+    z-index: 2; /* Чтобы кнопка была над градиентом */
+    transition: background-color 0.2s;
+}
+
+.expand-question-btn:hover {
+    background-color: rgba(0,0,0,0.1);
+}
+
+/* =============================================================== */
+/* === ИСПРАВЛЕНИЕ ЦВЕТА АКТИВНОЙ КНОПКИ В ТЕМНЫХ ТЕМАХ (v2) === */
+/* =============================================================== */
+
+/* Применяем стили к активной кнопке в dark-mode и synthwave-mode */
+body.dark-mode #aiExplanationStyleButtons .btn-secondary-small.active,
+body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active {
+    /* Яркий, контрастный фон для выделения */
+    background-color: #38BDF8; /* Небесно-голубой, как акцент в теме synthwave */
+    
+    /* Темный текст для максимальной читаемости на светлом фоне */
+    color: #0F172A; 
+    
+    /* Убираем рамку, делая ее в цвет фона */
+    border-color: #38BDF8; 
+}
+
+/* Также убедимся, что при наведении на активную кнопку, она не меняет цвет */
+body.dark-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover,
+body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover {
+    background-color: #38BDF8; /* Оставляем тот же цвет */
+}
+
+/* =============================================================== */
+/* === ИСПРАВЛЕНИЕ РАССТОЯНИЯ МЕЖДУ КНОПКАМИ В КОНЦЕ ТЕСТА === */
+/* =============================================================== */
+
+.quiz-footer-controls {
+    /* Превращаем контейнер в гибкий столбец */
+    display: flex;
+    flex-direction: column;
+    
+    /* Выравниваем кнопки по центру горизонтально */
+    align-items: center;
+    
+    /* Добавляем расстояние в 10px между кнопками */
+    gap: 10px;
+}
+
+/* (Опционально, но рекомендуется) Задаем ширину самим кнопкам для лучшего вида */
+.quiz-footer-controls button {
+    width: 80%;
+    max-width: 250px;
+}
