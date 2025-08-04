@@ -7909,7 +7909,6 @@ const mainApp = (function() {
                 // Создаем кнопку "Развернуть"
                 const expandBtn = document.createElement('button');
                 expandBtn.className = 'expand-question-btn';
-                expandBtn.textContent = 'Развернуть'; // Начальный текст
 
 
                 expandBtn.onclick = function(e) {
@@ -7918,8 +7917,6 @@ const mainApp = (function() {
                     // Переключаем класс 'expanded' на блоке с вопросом
                     const isExpanded = questionEl.classList.toggle('expanded');
                     
-                    // Меняем текст кнопки
-                    this.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
                     
                     // Находим блок с ответом ИИ
                     const outputEl = getEl('aiExplanationOutput');
