@@ -7911,13 +7911,26 @@ const mainApp = (function() {
                 expandBtn.className = 'expand-question-btn';
                 expandBtn.textContent = 'Развернуть'; // Начальный текст
 
-                // Добавляем обработчик клика на кнопку
+
+
+                // Добавляем ОБНОВЛЕННЫЙ обработчик клика на кнопку
                 expandBtn.onclick = function(e) {
-                    e.stopPropagation(); // Предотвращаем всплытие события
+                    e.stopPropagation(); 
                     const isExpanded = questionEl.classList.toggle('expanded');
-                    // Меняем текст кнопки в зависимости от состояния
                     this.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
+                    
+                    // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ---
+                    // Находим блок с ответом ИИ
+                    const outputEl = getEl('aiExplanationOutput');
+                    if (outputEl) {
+                        // Если вопрос РАЗВЕРНУТ, запрещаем блоку с ответом расти.
+                        // Если вопрос СВЕРНУТ, разрешаем ему снова занимать все место.
+                        outputEl.style.flexGrow = isExpanded ? '0' : '1';
+                    }
                 };
+
+
+                
 
                 // Добавляем кнопку прямо в блок с вопросом
                 questionEl.appendChild(expandBtn);
