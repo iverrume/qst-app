@@ -293,16 +293,21 @@
     <div id="aiExplanationModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px; text-align: left;">
             <h3 data-lang-key="ai_explanation_title">💡 Объяснение от ИИ</h3>
-            <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
-            <div class="settings-group" style="border: none; padding: 0; margin-bottom: 15px;">
+            <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px;"></div>
+            <div class="settings-group" style="border: none; padding: 0; margin-top: 15px; margin-bottom: 15px;">
                 <label data-lang-key="ai_explanation_style_label">Стиль объяснения:</label>
-                <div id="aiExplanationStyleButtons" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px;">
-                    <button class="btn-secondary-small active" data-style="simple" data-lang-key="ai_style_simple">Просто</button>
-                    <button class="btn-secondary-small" data-style="scientific" data-lang-key="ai_style_scientific">Научно</button>
-                    <button class="btn-secondary-small" data-style="associative" data-lang-key="ai_style_associative">Аналогия</button>
-                    <button class="btn-secondary-small" data-style="stepByStep" data-lang-key="ai_style_stepbystep">Пошагово</button>
-                    <button class="btn-secondary-small" data-style="practical" data-lang-key="ai_style_practical">Практично</button>
-                    <button class="btn-secondary-small" data-style="visual" data-lang-key="ai_style_visual">Наглядно</button>
+
+                
+                <div id="aiExplanationStyleDropdown" class="style-dropdown">
+                    <!-- Это главная кнопка, которая всегда видна -->
+                    <button id="aiExplanationStyleButton" class="style-dropdown-btn">
+                        <span id="aiExplanationStyleText">Просто</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <!-- Это скрытое содержимое списка -->
+                    <div id="aiExplanationStyleContent" class="style-dropdown-content hidden">
+                        <!-- Элементы списка будут сгенерированы JavaScript -->
+                    </div>
                 </div>
 
 

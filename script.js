@@ -4882,14 +4882,43 @@ const mainApp = (function() {
         });
 
 
-        // Внутри setupEventListeners()
-        getEl('aiExplanationStyleButtons').addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                getEl('aiExplanationStyleButtons').querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
-                fetchAndDisplayExplanation(e.target.dataset.style);
+
+
+        // Клик на главную кнопку для открытия/закрытия списка
+        getEl('aiExplanationStyleButton')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            getEl('aiExplanationStyleDropdown').classList.toggle('open');
+            getEl('aiExplanationStyleContent').classList.toggle('hidden');
+        });
+
+        // Клик на один из пунктов в списке
+        getEl('aiExplanationStyleContent')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = e.target.closest('a');
+            if (target && target.dataset.style) {
+                const style = target.dataset.style;
+
+                // Обновляем текст на главной кнопке
+                getEl('aiExplanationStyleText').textContent = target.textContent;
+                
+                // Закрываем список
+                getEl('aiExplanationStyleDropdown').classList.remove('open');
+                getEl('aiExplanationStyleContent').classList.add('hidden');
+
+                // Запрашиваем новое объяснение
+                fetchAndDisplayExplanation(style);
             }
         });
+
+        // Закрываем список при клике в любом другом месте окна
+        window.addEventListener('click', () => {
+            const dropdown = getEl('aiExplanationStyleDropdown');
+            if (dropdown && dropdown.classList.contains('open')) {
+                dropdown.classList.remove('open');
+                getEl('aiExplanationStyleContent').classList.add('hidden');
+            }
+        });
+
 
         // Внутри функции setupEventListeners()
         parserButton?.addEventListener('click', () => {
@@ -7885,69 +7914,55 @@ const mainApp = (function() {
         currentAIQuestion = question;
         const questionEl = getEl('aiExplanationQuestion');
         const outputEl = getEl('aiExplanationOutput');
+        const styleContentEl = getEl('aiExplanationStyleContent'); // Находим контейнер списка
+        const styleTextEl = getEl('aiExplanationStyleText'); // Находим текст на кнопке
 
+        // 1. Очищаем и заново генерируем пункты списка для текущего языка
+        styleContentEl.innerHTML = '';
+        const styles = ['simple', 'scientific', 'associative', 'stepByStep', 'practical', 'visual'];
+        styles.forEach(styleKey => {
+            const link = document.createElement('a');
+            link.href = '#';
+            link.dataset.style = styleKey;
+            link.textContent = _('ai_style_' + styleKey.toLowerCase());
+            if (styleKey === 'simple') {
+                link.classList.add('active'); // Выделяем "Просто" по умолчанию
+            }
+            styleContentEl.appendChild(link);
+        });
+
+        // 2. Сбрасываем текст на главной кнопке
+        styleTextEl.textContent = _('ai_style_simple');
+        
+        // 3. Остальная логика остается прежней
         const correctAnswerText = question.options[question.correctAnswerIndex].text;
-        // Устанавливаем текст вопроса
         questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
         
-        // --- НАЧАЛО НОВОЙ ЛОГИКИ СВОРАЧИВАНИЯ ---
-
-        // Сначала удаляем старую кнопку, если она вдруг осталась
         const oldBtn = questionEl.querySelector('.expand-question-btn');
         if (oldBtn) oldBtn.remove();
-        // И убираем классы с прошлого раза
         questionEl.classList.remove('collapsible', 'expanded');
 
-        const MAX_HEIGHT = 120; // Максимальная высота в пикселях до сворачивания
-
-        // Используем setTimeout, чтобы браузер успел отрисовать элемент и рассчитать его реальную высоту
+        const MAX_HEIGHT = 120;
         setTimeout(() => {
             if (questionEl.scrollHeight > MAX_HEIGHT) {
-                // Если блок слишком высокий, добавляем класс для сворачивания
                 questionEl.classList.add('collapsible');
-
-                // Создаем кнопку "Развернуть"
                 const expandBtn = document.createElement('button');
                 expandBtn.className = 'expand-question-btn';
-
-
+                
                 expandBtn.onclick = function(e) {
                     e.stopPropagation();
-                    
-                    // Переключаем класс 'expanded' на блоке с вопросом
                     const isExpanded = questionEl.classList.toggle('expanded');
-                    
-                    
-                    // Находим блок с ответом ИИ
                     const outputEl = getEl('aiExplanationOutput');
                     if (outputEl) {
-                        // Переключаем класс 'collapsed' на блоке с ответом
-                        // Если вопрос развернут (isExpanded = true), то ответ должен быть свернут (.collapsed)
                         outputEl.classList.toggle('collapsed', isExpanded);
                     }
                 };
-
-
-
-
-                // Добавляем кнопку прямо в блок с вопросом
                 questionEl.appendChild(expandBtn);
             }
-        }, 0); // Нулевая задержка выполнит код сразу после текущего цикла отрисовки
-
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ СВОРАЧИВАНИЯ ---
+        }, 0);
         
-        outputEl.innerHTML = ''; 
-
-        const styleButtonsContainer = getEl('aiExplanationStyleButtons');
-        const allStyleButtons = styleButtonsContainer.querySelectorAll('button');
-        const simpleButton = styleButtonsContainer.querySelector('button[data-style="simple"]');
-
-        allStyleButtons.forEach(btn => btn.classList.remove('active'));
-        if (simpleButton) {
-            simpleButton.classList.add('active');
-        }
-
+        outputEl.innerHTML = '';
+        
         ChatModule.showModal('aiExplanationModal');
         fetchAndDisplayExplanation('simple');
     }
@@ -7955,6 +7970,14 @@ const mainApp = (function() {
 
     async function fetchAndDisplayExplanation(style) {
         if (!currentAIQuestion) return;
+
+        // --- НОВЫЙ КОД ДЛЯ ПОДСВЕТКИ АКТИВНОГО ПУНКТА ---
+        const styleContentEl = getEl('aiExplanationStyleContent');
+        styleContentEl.querySelectorAll('a').forEach(a => a.classList.remove('active'));
+        const activeLink = styleContentEl.querySelector(`a[data-style="${style}"]`);
+        if (activeLink) activeLink.classList.add('active');
+        // --- КОНЕЦ НОВОГО КОДА ---
+            
 
         const outputEl = getEl('aiExplanationOutput');
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;

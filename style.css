@@ -4926,7 +4926,7 @@ body.synthwave-mode .google-signin-btn:hover {
 
 /* 1. Стили для блока вопроса, когда он свернут */
 #aiExplanationQuestion.collapsible {
-    max-height: 90px; /* Ограничиваем высоту свернутого блока */
+    max-height: 50px; /* Ограничиваем высоту свернутого блока */
     overflow: hidden;
     position: relative; /* Необходимо для позиционирования градиента */
     padding-bottom: 25px; /* Оставляем место для кнопки "Развернуть" */
@@ -5049,3 +5049,83 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     width: 80%;
     max-width: 250px;
 }
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ ВЫПАДАЮЩЕГО СПИСКА СТИЛЕЙ ОБЪЯСНЕНИЯ === */
+/* ======================================================= */
+
+/* 1. Главный контейнер */
+.style-dropdown {
+    position: relative; /* Необходимо для позиционирования списка */
+    display: inline-block;
+    width: 100%;
+}
+
+/* 2. Кнопка, которая открывает список */
+.style-dropdown-btn {
+    width: 100%;
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.style-dropdown-btn:hover {
+    border-color: var(--button-primary-bg);
+}
+
+/* 3. Текст внутри главной кнопки */
+#aiExplanationStyleText {
+    font-weight: 500;
+}
+
+/* 4. Стрелочка в кнопке */
+.dropdown-arrow {
+    transition: transform 0.2s;
+}
+/* Поворачиваем стрелочку, когда список открыт */
+.style-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* 5. Сам выпадающий список (скрыт по умолчанию) */
+.style-dropdown-content {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 5px 15px var(--shadow-color);
+    z-index: 20;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+/* 6. Элементы внутри списка */
+.style-dropdown-content a {
+    display: block;
+    padding: 10px 15px;
+    color: var(--text-color);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.style-dropdown-content a:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+/* 7. Стиль для активного (выбранного) элемента в списке */
+.style-dropdown-content a.active {
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    font-weight: bold;
+}
+
