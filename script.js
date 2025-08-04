@@ -3699,7 +3699,18 @@ const ChatModule = (function() {
         try {
             closeModal('fileActionsModal');
             const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
-            const response = await fetch(url);
+            
+            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+            // Мы делаем запрос более явным, добавляя опции.
+            // Это может помочь обойти некоторые блокировщики, которые 
+            // некорректно обрабатывают "простые" запросы.
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',      // Явно указываем режим CORS
+                cache: 'no-cache'  // Запрещаем браузеру использовать старый (возможно, ошибочный) кэш
+            });
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
             const data = await response.json();
             if (!data.success) throw new Error(data.error);
 
