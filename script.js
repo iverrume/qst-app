@@ -5464,8 +5464,12 @@ const mainApp = (function() {
         // Обработчики для кнопок в модальном окне выхода
         cancelExitBtn?.addEventListener('click', hideExitConfirmationModal);
         confirmExitBtn?.addEventListener('click', () => {
-            // history.back() эмулирует настоящее нажатие "назад",
-            // что приведет к закрытию PWA или переходу на предыдущую страницу в браузере.
+            // ШАГ 1: Сначала мы удаляем нашего "стража" (перехватчик),
+            // чтобы он не смог перехватить следующее действие.
+            window.removeEventListener('popstate', handleBackButton);
+            
+            // ШАГ 2: Теперь, когда никто не мешает, мы безопасно выполняем
+            // стандартное действие "назад", которое закроет PWA.
             window.history.back();
         });
 
