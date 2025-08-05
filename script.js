@@ -4529,6 +4529,8 @@ const ChatModule = (function() {
             // Ключевое исправление: Загружаем данные для текущей вкладки КАЖДЫЙ РАЗ при открытии.
             // Это гарантирует, что сообщения отобразятся, даже если они загрузились в фоне.
             loadTabData(currentTab); 
+            if (window.mainApp) window.mainApp.manageBackButtonInterceptor();
+
         },
 
         showTestResults,
@@ -4537,6 +4539,7 @@ const ChatModule = (function() {
             if (chatOverlay) {
                 chatOverlay.classList.add('hidden');
             }
+            if (window.mainApp) window.mainApp.manageBackButtonInterceptor();
         },
         openAuthModal: () => {
             if (authOverlay) {
@@ -5305,16 +5308,19 @@ const mainApp = (function() {
             fileUploadArea.classList.add('hidden');
             gradusFoldersContainer.classList.remove('hidden');
             renderGradusView(GRADUS_ROOT_FOLDER_ID, 'GRADUS', true);
+            manageBackButtonInterceptor();
         });
         backToFileUploadButton?.addEventListener('click', () => {
             gradusFoldersContainer.classList.add('hidden');
             fileUploadArea.classList.remove('hidden');
+            manageBackButtonInterceptor();
         });
         searchButton?.addEventListener('click', performSearch);
         backToSearchButton?.addEventListener('click', () => {
             searchResultsContainer.classList.add('hidden');
             fileUploadArea.classList.remove('hidden');
             searchQueryInput.value = '';
+            manageBackButtonInterceptor();
         });
         searchWebButton?.addEventListener('click', (event) => {
             event.stopPropagation();
@@ -5376,11 +5382,13 @@ const mainApp = (function() {
         parserButton?.addEventListener('click', () => {
             fileUploadArea.classList.add('hidden');
             parserArea.classList.remove('hidden');
+            manageBackButtonInterceptor();
         });
 
         backToMainFromParserBtn?.addEventListener('click', () => {
             parserArea.classList.add('hidden');
             fileUploadArea.classList.remove('hidden');
+            manageBackButtonInterceptor();
         });
 
         parserFileInput?.addEventListener('change', handleParserFileInput);
@@ -5500,18 +5508,39 @@ const mainApp = (function() {
     /**
      * Управляет активацией и деактивацией перехватчика кнопки "Назад".
      */
+    // Найдите эту функцию в mainApp (примерно строка 3496)
     function manageBackButtonInterceptor() {
         // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
         window.removeEventListener('popstate', handleBackButton);
 
-        // Если мы на главном экране - активируем перехватчик
-        if (!fileUploadArea.classList.contains('hidden')) {
+        // --- НАЧАЛО НОВОГО КОДА: УМНАЯ ПРОВЕРКА ---
+
+        // Находим оверлей чата. getEl('chatOverlay') может не сработать, так как он в другом модуле,
+        // поэтому используем document.getElementById для надежности.
+        const chatOverlay = document.getElementById('chatOverlay');
+
+        // Проверяем, является ли главный экран ЕДИНСТВЕННЫМ активным экраном.
+        // Это будет правдой, только если все остальные экраны (включая чат) скрыты.
+        const isMainScreenActive = 
+            !fileUploadArea.classList.contains('hidden') &&
+            quizSetupArea.classList.contains('hidden') &&
+            quizArea.classList.contains('hidden') &&
+            resultsArea.classList.contains('hidden') &&
+            parserArea.classList.contains('hidden') &&
+            gradusFoldersContainer.classList.contains('hidden') &&
+            searchResultsContainer.classList.contains('hidden') &&
+            (chatOverlay && chatOverlay.classList.contains('hidden')); // Самая важная проверка!
+
+        // Добавляем перехватчик, только если главный экран действительно активен и ничего больше не открыто
+        if (isMainScreenActive) {
+            console.log('Перехватчик кнопки "Назад" АКТИВИРОВАН.');
             // Добавляем фиктивное состояние в историю, чтобы было куда "возвращаться"
             history.pushState({ page: 'main' }, "Main Screen", "#main");
             window.addEventListener('popstate', handleBackButton);
+        } else {
+            console.log('Перехватчик кнопки "Назад" ДЕАКТИВИРОВАН.');
         }
-        // Если мы на любом другом экране, обработчик просто не будет добавлен,
-        // и кнопка "Назад" будет работать как обычно (например, в браузере).
+        // --- КОНЕЦ НОВОГО КОДА ---
     }
 
     function showGlobalLoader(message = 'Загрузка...') {
@@ -5547,6 +5576,7 @@ const mainApp = (function() {
 
         fileUploadArea.classList.add('hidden');
         searchResultsContainer.classList.remove('hidden');
+        manageBackButtonInterceptor()
         
         // Эта строка теперь будет работать правильно
         searchResultCardsContainer.innerHTML = `
@@ -6624,6 +6654,7 @@ const mainApp = (function() {
         } else {
             alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
         }
+        manageBackButtonInterceptor();
     }
 
 
@@ -8642,6 +8673,7 @@ const mainApp = (function() {
         handleExplainClickInSearch: handleExplainClickInSearch,
         showGlobalLoader: showGlobalLoader,
         hideGlobalLoader: hideGlobalLoader,
+        manageBackButtonInterceptor: manageBackButtonInterceptor,
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания...');
             console.log('detectMobileDevice():', detectMobileDevice());
