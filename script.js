@@ -5299,7 +5299,7 @@ const mainApp = (function() {
         populateParserPatterns();
         setLanguage(savedLang);
         createVariantFilterCheckboxes();
-        manageBackButtonInterceptor(); 
+        msetTimeout(manageBackButtonInterceptor, 100);
     }
 
 
