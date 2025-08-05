@@ -5,6 +5,8 @@
 const ChatModule = (function() {
     'use strict';
 
+    const getEl = (id) => document.getElementById(id);
+
     // === НАЧАЛО НОВОГО БЛОКА: ПЕРЕВОД ЧАТА ===
     const LANG_PACK_CHAT = {
         ru: {
@@ -179,6 +181,15 @@ const ChatModule = (function() {
             results_table_header_time: "Время",
             results_empty_state: "По этому тесту пока нет результатов.",
             file_actions_modal_title: "Файл:",
+            ai_helper_title: "AI-помощник",
+            ai_summarize_unread: "Что я пропустил?",
+            ai_summarize_all: "Краткая сводка по всему каналу",
+            ai_summarize_from_selection: "Сводка с выбранного сообщения",
+            ai_summary_title_unread: "💡 Кратко о том, что вы пропустили:",
+            ai_summary_title_all: "💡 Общая сводка по каналу:", // Измененный
+            ai_selection_banner_text: "Выберите сообщение, с которого начать сводку", // Новый
+            ai_selection_cancel: "Отмена", // Новый
+            ai_summary_title_selection: "💡 Сводка с выбранного сообщения:", // Новый
 
         },
         kz: {
@@ -350,6 +361,15 @@ const ChatModule = (function() {
             results_table_header_time: "Уақыт",
             results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ.",
             file_actions_modal_title: "Файл:",
+            ai_helper_title: "AI-көмекші",
+            ai_summarize_from_selection: "Таңдалған хабарламадан қорытынды...", // Новый
+            ai_summarize_unread: "Мен не өткізіп алдым?",
+            ai_summarize_all: "Бүкіл арнаның қысқаша түйіндемесі",
+            ai_selection_cancel: "Болдырмау", // Новый
+            ai_summary_title_selection: "💡 Таңдалған хабарламадан бастап түйіндеме:",
+            ai_selection_banner_text: "Қорытындыны бастайтын хабарламаны таңдаңыз",
+            ai_summary_title_unread: "💡 Сіз өткізіп алғандар туралы қысқаша:",
+            ai_summary_title_all: "💡 Арна бойынша жалпы түйіндеме:",
         },
         en: {
             // TABS
@@ -521,6 +541,17 @@ const ChatModule = (function() {
             results_table_header_time: "Time",
             results_empty_state: "There are no results for this test yet.",
             file_actions_modal_title: "File:",
+
+            ai_helper_title: "AI Assistant",
+            ai_summarize_unread: "What did I miss?",
+            ai_summarize_all: "Summarize entire channel",
+            ai_summary_title_unread: "💡 A brief summary of what you missed:",
+            ai_summary_title_all: "💡 General channel summary:",
+
+            ai_summarize_from_selection: "Summarize from selection...", // New
+            ai_selection_banner_text: "Select a message to start the summary from",
+            ai_selection_cancel: "Cancel", // New
+            ai_summary_title_selection: "💡 Summary from selected message:",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -552,6 +583,7 @@ const ChatModule = (function() {
     let originalTitle = document.title;
     let unreadMessageCount = 0; 
     let isPinnedMode = false;
+    let isAiSelectionMode = false;
 
     let messagesListener = null; // Cлушатель для сообщений
     let pmUnreadListener = null; // Слушатель для ЛИЧНЫХ непрочитанных
@@ -579,7 +611,7 @@ const ChatModule = (function() {
     let tabButtons = {};
     let tabCounters = {};
     let chatSearchToggleBtn = null;
-    
+    let lastMessageObserver = null; 
 
     // Tabs configuration
     const TABS = {
@@ -763,6 +795,10 @@ const ChatModule = (function() {
                             <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
                             <!-- Кнопка "Закрепить" ПОЛНОСТЬЮ УДАЛЕНА ОТСЮДА -->
                         </div>
+                        <div id="aiSelectionBanner" class="ai-selection-banner hidden">
+                            <span>${_chat('ai_selection_banner_text')}</span>
+                            <button id="cancelAiSelectionBtn" class="btn-secondary-small">${_chat('ai_selection_cancel')}</button>
+                        </div>
                         <div id="tabActionsContainer" class="tab-actions-container hidden"></div>
                         <div id="messageArea" class="message-area"><div class="empty-state">${_chat('loading_message')}</div></div>
                         <div class="chat-input-area">
@@ -774,8 +810,14 @@ const ChatModule = (function() {
                                 <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}">😊</button>
                                 <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
                                 <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
-                                <!-- Кнопка "Закрепить" ПЕРЕМЕЩЕНА СЮДА -->
                                 <button id="togglePinnedBtn" class="input-action-btn" title="${_chat('pinned_toggle_title')}">📌</button>
+                                <div class="ai-helper-container">
+                                    <button id="aiChatHelperBtn" class="input-action-btn" title="${_chat('ai_helper_title')}">🤖</button>
+                                    <div id="aiChatHelperMenu" class="ai-helper-menu hidden">
+                                        <a href="#" data-action="summarize-from-selection">${_chat('ai_summarize_from_selection')}</a>
+                                        <a href="#" data-action="summarize-all">${_chat('ai_summarize_all')}</a>
+                                    </div>
+                                </div>
                             </div>
                             <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt">
                             <div class="input-wrapper">
@@ -796,6 +838,17 @@ const ChatModule = (function() {
         <div id="editMessageModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_message_title')}</h3><textarea id="editMessageInput" rows="4"></textarea><input type="hidden" id="editMessageIdInput"><div class="modal-buttons"><button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button></div></div>
         <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button><button id="fileActionTestBtn">${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="aiSummaryModal" class="modal-overlay hidden">
+            <div class="modal-content" style="max-width: 600px; text-align: left;">
+                <h3 id="aiSummaryModalTitle">💡 Сводка от ИИ</h3>
+                <div id="aiSummaryOutput" style="max-height: 60vh; overflow-y: auto; line-height: 1.6;">
+                    <!-- Сюда будет вставляться сводка или спиннер -->
+                </div>
+                <div class="modal-buttons" style="margin-top: 20px;">
+                    <button onclick="ChatModule.closeModal('aiSummaryModal')" data-lang-key="auth_close_button">Закрыть</button>
+                </div>
+            </div>
+        </div>
         `;
 
         document.body.insertAdjacentHTML('beforeend', chatHTML);
@@ -973,6 +1026,39 @@ const ChatModule = (function() {
             }
         }
 
+
+        // === НАЧАЛО НОВОГО КОДА: Перевод AI-помощника и его модального окна ===
+        const aiHelperBtn = getEl('aiChatHelperBtn');
+        if (aiHelperBtn) {
+            aiHelperBtn.title = _chat('ai_helper_title');
+        }
+
+        const aiHelperMenu = getEl('aiChatHelperMenu');
+        if (aiHelperMenu) {
+            const summarizeSelectionLink = aiHelperMenu.querySelector('[data-action="summarize-from-selection"]');
+            if (summarizeSelectionLink) summarizeSelectionLink.textContent = _chat('ai_summarize_from_selection');
+
+            const summarizeAllLink = aiHelperMenu.querySelector('[data-action="summarize-all"]');
+            if (summarizeAllLink) summarizeAllLink.textContent = _chat('ai_summarize_all');
+        }
+        
+        const aiSelectionBanner = getEl('aiSelectionBanner');
+        if (aiSelectionBanner) {
+            const bannerText = aiSelectionBanner.querySelector('span');
+            if (bannerText) bannerText.textContent = _chat('ai_selection_banner_text');
+            
+            const cancelBtn = aiSelectionBanner.querySelector('#cancelAiSelectionBtn');
+            if (cancelBtn) cancelBtn.textContent = _chat('ai_selection_cancel');
+        }
+        
+        const aiSummaryModal = getEl('aiSummaryModal');
+        if (aiSummaryModal) {
+            const closeBtn = aiSummaryModal.querySelector('button[onclick*="closeModal"]');
+            if (closeBtn) closeBtn.textContent = _chat('auth_close_button');
+        }
+
+
+
     }
 
 
@@ -1122,9 +1208,45 @@ const ChatModule = (function() {
         });
 
 
+        // Добавляем обработчик для кнопки "Отмена" на плашке
+        getEl('cancelAiSelectionBtn')?.addEventListener('click', cancelAiSummarySelection);
+
+        // Используем делегирование событий для клика по сообщению в режиме выбора
+        messageArea.addEventListener('click', handleAiMessageSelection);
 
 
 
+        const aiHelperBtn = getEl('aiChatHelperBtn');
+        const aiHelperMenu = getEl('aiChatHelperMenu');
+
+        if (aiHelperBtn && aiHelperMenu) {
+            aiHelperBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                aiHelperMenu.classList.toggle('hidden');
+            });
+
+            aiHelperMenu.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('a');
+                if (target && target.dataset.action) {
+                    const action = target.dataset.action;
+                    aiHelperMenu.classList.add('hidden');
+                    
+                    if (action === 'summarize-from-selection') {
+                        startAiSummarySelection(); // Запускаем режим выбора
+                    } else if (action === 'summarize-all') {
+                        getAIChatSummary(action);  // Вызываем сводку по всем
+                    }
+                }
+            });
+
+            // Скрываем меню при клике в любом другом месте
+            window.addEventListener('click', () => {
+                if (!aiHelperMenu.classList.contains('hidden')) {
+                    aiHelperMenu.classList.add('hidden');
+                }
+            });
+        }
 
 
 
@@ -1456,7 +1578,7 @@ const ChatModule = (function() {
 
         // Если мы переключились на вкладку сообщений, сбрасываем счетчик для ТЕКУЩЕГО канала
         if (tabId === 'messages') {
-            updateUnreadCount(currentChannel, 0, true); // <-- СБРАСЫВАЕМ СЧЕТЧИК ЗДЕСЬ
+
         }
 
         document.querySelectorAll('.tab-item').forEach(tab => tab.classList.remove('active'));
@@ -1648,23 +1770,51 @@ const ChatModule = (function() {
         const messagesToDisplay = isPinnedMode ? allMessages.filter(msg => msg.isPinned) : allMessages;
 
         if (messagesToDisplay.length === 0) {
-            // ...
+            const emptyStateKey = isPinnedMode ? 'pinned_messages_empty' : 'messages_empty';
+            messageArea.innerHTML = `<div class="empty-state">${_chat(emptyStateKey)}</div>`;
             return;
         }
+        
         messagesToDisplay.forEach(message => messageArea.appendChild(createMessageElement(message)));
         
-        // --- НОВЫЙ КОД ДЛЯ МГНОВЕННОЙ ПРОКРУТКИ ---
-        // 1. Временно отключаем плавную анимацию
+        // Мгновенная прокрутка вниз
         messageArea.style.scrollBehavior = 'auto';
-        // 2. Мгновенно прокручиваем вниз
         scrollToBottom();
-        // 3. С небольшой задержкой возвращаем плавную прокрутку для будущих действий
-        setTimeout(() => {
-            messageArea.style.scrollBehavior = 'smooth';
-        }, 100);
-        // --- КОНЕЦ НОВОГО КОДА ---
-    } 
+        setTimeout(() => { messageArea.style.scrollBehavior = 'smooth'; }, 100);
 
+        // --- НАЧАЛО НОВОЙ "УМНОЙ" ЛОГИКИ ---
+
+        // 1. Если старый "наблюдатель" еще работает, отключаем его
+        if (lastMessageObserver) {
+            lastMessageObserver.disconnect();
+        }
+
+        // 2. Находим самое последнее сообщение в чате
+        const lastMessageElement = messageArea.lastElementChild;
+
+        // 3. Проверяем, есть ли вообще что наблюдать и есть ли непрочитанные
+        const unreadCountForChannel = unreadCounts.get(currentChannel) || 0;
+        if (lastMessageElement && unreadCountForChannel > 0) {
+            
+            // 4. Создаем нового "наблюдателя"
+            lastMessageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    // 5. Если последнее сообщение ПОЯВИЛОСЬ НА ЭКРАНЕ...
+                    if (entry.isIntersecting) {
+                        // ...обнуляем счетчик...
+                        updateUnreadCount(currentChannel, 0, true);
+                        console.log(`Счетчик для канала ${currentChannel} обнулен, т.к. пользователь увидел последнее сообщение.`);
+                        
+                        // ...и отключаем наблюдателя, его работа сделана.
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 0.8 }); // Сработает, когда 80% сообщения видно
+
+            // 6. Говорим наблюдателю начать следить за последним сообщением
+            lastMessageObserver.observe(lastMessageElement);
+        }
+    }
     
     function loadQuestions() {
         if (!db || !currentUser) return;
@@ -2331,6 +2481,7 @@ const ChatModule = (function() {
                 }
 
                 await db.collection('messages').add(message);
+                updateUnreadCount(currentChannel, 0, true);
                 chatInput.value = '';
                 chatInput.style.height = 'auto';
                 cancelReply();
@@ -3094,9 +3245,8 @@ const ChatModule = (function() {
    
  
     function switchToChannel(channelId, channelName, type = 'public') {
-        // Действие №1: Всегда обнуляем счетчик для канала, на который кликнули.
-        // Это гарантирует, что счетчик исчезнет немедленно.
-        updateUnreadCount(channelId, 0, true);
+
+        if (lastMessageObserver) lastMessageObserver.disconnect();
 
         // Действие №2: Обновляем заголовок с названием канала
         const channelNameEl = document.getElementById('currentChannelName');
@@ -4118,6 +4268,160 @@ const ChatModule = (function() {
         }
     }
 
+    function showAISummaryModal(title, content) {
+        getEl('aiSummaryModalTitle').textContent = title;
+        const outputEl = getEl('aiSummaryOutput');
+
+        // Используем библиотеку marked для красивого форматирования
+        if (window.marked) {
+            outputEl.innerHTML = marked.parse(content);
+        } else {
+            outputEl.textContent = content;
+        }
+        
+        showModal('aiSummaryModal');
+    }
+
+    function formatMessagesForAI(messages) {
+        // Превращаем массив объектов сообщений в простой текстовый формат
+        return messages.map(msg => {
+            const author = msg.authorName || 'Пользователь';
+            const text = msg.text || '';
+            // Пропускаем системные сообщения и ссылки на вопросы
+            if (msg.type === 'question_link' || msg.type === 'file_share') return '';
+            return `${author}: ${text}`;
+        }).filter(Boolean).join('\n'); // Убираем пустые строки и соединяем
+    }
+
+    async function getAIChatSummary(summaryType, providedMessages = null) {
+        let messagesToProcess = [];
+
+        // Сценарий 1: Нам предоставили конкретный срез сообщений (из режима выбора)
+        if (providedMessages) {
+            messagesToProcess = providedMessages;
+        } 
+        // Сценарий 2: Нам нужно взять все сообщения из текущего канала
+        else { 
+            if (allMessages.length === 0) {
+                alert("В этом канале еще нет сообщений для анализа.");
+                return;
+            }
+            messagesToProcess = allMessages;
+        }
+
+        // Превращаем массив объектов в единый текст для отправки ИИ
+        const messagesText = formatMessagesForAI(messagesToProcess);
+        if (!messagesText) {
+            alert("Нет подходящих сообщений для анализа (возможно, все были системными или ссылками).");
+            return;
+        }
+        
+        // Показываем индикатор загрузки, чтобы пользователь знал, что процесс идет
+        mainApp.showGlobalLoader('ИИ анализирует переписку...');
+
+        try {
+            // Отправляем запрос на наш серверный скрипт
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'getChatSummary',
+                    messagesText: messagesText,
+                    // Отправляем тип сводки, чтобы ИИ знал, какой промпт использовать
+                    summaryType: summaryType.replace('summarize-', ''),
+                    targetLanguage: currentChatLang
+                })
+            });
+
+            const result = await response.json();
+
+            // Если все прошло успешно и ИИ вернул результат
+            if (result.success && result.summary) {
+                // Определяем правильный заголовок для модального окна
+                let titleKey;
+                if (summaryType === 'summarize-all') {
+                    titleKey = 'ai_summary_title_all';
+                } else { // Для 'summarize-from-selection'
+                    titleKey = 'ai_summary_title_selection';
+                }
+                
+                // Показываем модальное окно с готовой сводкой
+                showAISummaryModal(_chat(titleKey), result.summary);
+            } else {
+                // Если сервер вернул ошибку, показываем ее
+                throw new Error(result.error || 'Не удалось получить сводку от ИИ.');
+            }
+
+        } catch (error) {
+            // В случае любой другой ошибки (например, проблемы с сетью)
+            console.error("Ошибка при получении сводки от ИИ:", error);
+            alert(error.message);
+        } finally {
+            // В любом случае (успех или ошибка) убираем индикатор загрузки
+            mainApp.hideGlobalLoader();
+        }
+    }
+
+
+    function startAiSummarySelection() {
+        if (allMessages.length === 0) {
+            alert("В этом канале еще нет сообщений для выбора.");
+            return;
+        }
+        isAiSelectionMode = true;
+        getEl('aiSelectionBanner').classList.remove('hidden');
+        getEl('messageArea').classList.add('selection-mode');
+        
+        // --- НАЧАЛО НОВОГО КОДА: "Умная" отмотка назад ---
+        // Вычисляем, на сколько нужно прокрутить вверх (на 80% высоты видимого окна)
+        const scrollUpAmount = messageArea.clientHeight * 0.8;
+        
+        // Вычисляем новую позицию скролла
+        let targetScrollTop = messageArea.scrollTop - scrollUpAmount;
+        
+        // Убеждаемся, что мы не ушли в отрицательные значения
+        if (targetScrollTop < 0) {
+            targetScrollTop = 0;
+        }
+
+        // Плавно прокручиваем к новой позиции
+        messageArea.scrollTo({
+            top: targetScrollTop,
+            behavior: 'smooth'
+        });
+        // --- КОНЕЦ НОВОГО КОДА ---
+    }
+
+    function cancelAiSummarySelection() {
+        isAiSelectionMode = false;
+        getEl('aiSelectionBanner').classList.add('hidden');
+        getEl('messageArea').classList.remove('selection-mode');
+    }
+
+    function handleAiMessageSelection(event) {
+        // Функция сработает только если мы в режиме выбора
+        if (!isAiSelectionMode) return;
+
+        const messageElement = event.target.closest('.message');
+        if (!messageElement) return;
+
+        const messageId = messageElement.id.replace('message-', '');
+        
+        // Находим индекс выбранного сообщения в нашем массиве
+        const startIndex = allMessages.findIndex(msg => msg.id === messageId);
+
+        if (startIndex > -1) {
+            // "Отрезаем" все сообщения, начиная с выбранного
+            const messagesToProcess = allMessages.slice(startIndex);
+            // Вызываем нашу основную функцию, но уже с подготовленным срезом
+            getAIChatSummary('selection', messagesToProcess);
+        } else {
+            alert("Не удалось найти выбранное сообщение. Попробуйте еще раз.");
+        }
+
+        // Вне зависимости от результата, выходим из режима выбора
+        cancelAiSummarySelection();
+    }
 
 
     // ========== PUBLIC METHODS ==========
@@ -4164,7 +4468,7 @@ const ChatModule = (function() {
             }
         },
         
-        // === НАЧАЛО НОВОГО МЕТОДА ===
+
         /**
          * Устанавливает язык для модуля чата и немедленно обновляет его UI,
          * даже если он скрыт.
@@ -4182,10 +4486,10 @@ const ChatModule = (function() {
                 if (chatOverlay && !chatOverlay.classList.contains('hidden') && currentTab === 'messages') {
                     displayMessages();
                 }
-                // === КОНЕЦ НОВОГО КОДА ===
+                // 
             }
         },
-        // === КОНЕЦ НОВОГО МЕТОДА ===
+
 
 
 

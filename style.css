@@ -5348,3 +5348,90 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
 .question-text-detail {
     margin-bottom: 0; 
 }
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ AI-ПОМОЩНИКА В ЧАТЕ === */
+/* ======================================================= */
+
+/* Контейнер для кнопки и меню, чтобы меню позиционировалось относительно него */
+.ai-helper-container {
+    position: relative;
+}
+
+/* Выпадающее меню */
+.ai-helper-menu {
+    position: absolute;
+    bottom: calc(100% + 10px); /* Появляется над кнопкой */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px; /* Фиксированная ширина */
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    z-index: 100;
+    overflow: hidden;
+    animation: fadeIn 0.2s;
+}
+
+.ai-helper-menu a {
+    display: block;
+    padding: 12px 15px;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.95em;
+    transition: background-color 0.2s;
+}
+
+.ai-helper-menu a:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+.ai-helper-menu a:not(:last-child) {
+    border-bottom: 1px solid var(--dashed-border-color);
+}
+
+/* Стили для вывода результата в модальном окне */
+#aiSummaryOutput h4 {
+    margin-top: 15px;
+    color: var(--heading-color);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 5px;
+}
+#aiSummaryOutput ul {
+    padding-left: 20px;
+}
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ РЕЖИМА ВЫБОРА СООБЩЕНИЯ (AI) === */
+/* ======================================================= */
+
+/* Стиль для плашки-уведомления */
+.ai-selection-banner {
+    padding: 10px 15px;
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    flex-shrink: 0;
+    animation: fadeIn 0.3s;
+}
+
+.ai-selection-banner button {
+    background-color: rgba(255,255,255,0.2);
+    color: white;
+}
+
+/* Когда режим выбора активен, меняем вид сообщений */
+.message-area.selection-mode .message {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 2px dashed transparent;
+}
+
+.message-area.selection-mode .message:hover {
+    transform: scale(1.02);
+    box-shadow: 0 5px 20px var(--shadow-color);
+    border-color: var(--button-primary-bg);
+}
