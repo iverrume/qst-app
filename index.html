@@ -339,19 +339,7 @@
                         </div>
         </div>
     </div>
-    <!-- === КОНЕЦ НОВОГО КОДА === -->
-        <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ ВЫХОДА === -->
-    <div id="exitConfirmationModal" class="modal-overlay-exit hidden">
-        <div class="modal-content-exit">
-            <h3 data-lang-key="exit_modal_title">Подтверждение</h3>
-            <p data-lang-key="exit_modal_text">Вы уверены, что хотите выйти из приложения?</p>
-            <div class="modal-buttons">
-                <button id="confirmExitBtn" class="btn-danger" data-lang-key="exit_modal_confirm">Выйти</button>
-                <button id="cancelExitBtn" class="btn-secondary" data-lang-key="exit_modal_cancel">Остаться</button>
-            </div>
-        </div>
-    </div>
-    <!-- === КОНЕЦ НОВОГО КОДА === -->
+
     
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -359,6 +347,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
-    <script src="script.js"></script>
+    <script src="script.js"></script>    
+    <!-- === НАЧАЛО НОВОГО КОДА: УВЕДОМЛЕНИЕ О ВЫХОДЕ === -->
+    <div id="exitToast" class="exit-toast hidden" data-lang-key="exit_toast_text">
+        Нажмите еще раз для выхода
+    </div>
+    <!-- === КОНЕЦ НОВОГО КОДА === -->
+
+
 </body>
 </html>

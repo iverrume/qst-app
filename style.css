@@ -5455,3 +5455,34 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     color: var(--button-primary-bg);
     text-decoration: underline;
 }
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ УВЕДОМЛЕНИЯ О ВЫХОДЕ ("TOAST") === */
+/* ======================================================= */
+
+.exit-toast {
+    position: fixed;
+    bottom: 30px; /* Отступ от нижнего края */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    z-index: 10000; /* Поверх всего */
+    font-size: 0.9em;
+    font-weight: 500;
+    pointer-events: none; /* Чтобы нельзя было кликнуть */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out, bottom 0.3s ease-in-out;
+}
+
+.exit-toast.show {
+    opacity: 1;
+    bottom: 50px; /* Слегка всплывает */
+}
+
+.exit-toast.hidden {
+    display: block !important; /* Важно, чтобы анимация затухания работала */
+    opacity: 0;
+}

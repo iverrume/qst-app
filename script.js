@@ -4681,10 +4681,13 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91g
 const mainApp = (function() {
     'use strict';
 
+    let backButtonPressedOnce = false;
+
 // --- СЛОВАРЬ ПЕРЕВОДОВ ---
     const LANG_PACK = {
         ru: {
             // Главный экран
+            exit_toast_text: 'Нажмите еще раз для выхода',
             continue_later_button: 'Продолжить позже',
             continue_sessions: 'Продолжить:',
             answered_of: 'Отвечено',
@@ -4809,6 +4812,7 @@ const mainApp = (function() {
 
         },
         kz: {
+            exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
             // Main Screen
             continue_later_button: 'Кейінірек жалғастыру',
             continue_sessions: 'Жалғастыру:',
@@ -4935,6 +4939,7 @@ const mainApp = (function() {
         },
         en: {
             // Main Screen
+            exit_toast_text: 'Press back again to exit',
             continue_later_button: 'Continue Later',
             continue_sessions: 'Continue:',
             answered_of: 'Answered',
@@ -5469,54 +5474,53 @@ const mainApp = (function() {
         });
 
         confirmExitBtn?.addEventListener('click', () => {
-            
+
             window.location.href = 'about:blank';
         });
 
 
     }
 
-    /**
-     * Показывает модальное окно подтверждения выхода.
-     */
-    function showExitConfirmationModal() {
-        if (exitConfirmationModal) {
-            exitConfirmationModal.classList.remove('hidden');
-        }
-    }
 
-    /**
-     * Скрывает модальное окно подтверждения выхода.
-     */
-    function hideExitConfirmationModal() {
-        if (exitConfirmationModal) {
-            exitConfirmationModal.classList.add('hidden');
-        }
-    }
 
     function handleBackButton(event) {
-        // --- НАЧАЛО НОВОГО КОДА ---
-        // ПРИОРИТЕТ №1: Проверяем, открыт ли оверлей чата
         const chatOverlay = document.getElementById('chatOverlay');
         if (chatOverlay && !chatOverlay.classList.contains('hidden')) {
-            event.preventDefault(); // Предотвращаем стандартное действие (выход)
-            ChatModule.closeChatModal(); // Просто закрываем чат
-            return; // Завершаем выполнение функции
+            event.preventDefault();
+            ChatModule.closeChatModal();
+            return;
         }
-        // --- КОНЕЦ НОВОГО КОДА ---
 
-        // Проверяем, что мы находимся именно на главном экране
         if (!fileUploadArea.classList.contains('hidden')) {
-            event.preventDefault(); // Предотвращаем стандартное действие (выход)
-            showExitConfirmationModal(); // Показываем наше красивое окно
-            
-            // ВАЖНО: Сразу же возвращаем наше состояние в историю, чтобы "отменить"
-            // действие кнопки "Назад" и остаться на странице.
+            event.preventDefault();
+
+            if (backButtonPressedOnce) {
+                // Это второе нажатие - закрываем приложение
+                // Для PWA самый надежный способ - попытаться использовать navigator.app.exitApp
+                if (navigator.app && navigator.app.exitApp) {
+                    navigator.app.exitApp();
+                } else {
+                    // Если API недоступно, просто позволяем браузеру сделать "назад",
+                    // что в большинстве случаев закроет PWA.
+                    window.removeEventListener('popstate', handleBackButton);
+                    history.back();
+                }
+                return;
+            }
+
+            // Это первое нажатие
+            backButtonPressedOnce = true;
+            showExitToast();
+
+            // Сбрасываем флаг через 2 секунды
+            setTimeout(() => {
+                backButtonPressedOnce = false;
+            }, 2000);
+
+            // "Отменяем" нажатие кнопки "назад"
             history.pushState({ page: 'app' }, "QSTiUM", "#app");
+
         } else {
-            // Если открыт любой другой экран (настройки, тест, результаты),
-            // то кнопка "назад" вернет на главный экран.
-            // Это стандартное поведение, которое мы сохраняем.
             resetQuizForNewFile();
         }
     }
@@ -7752,6 +7756,20 @@ const mainApp = (function() {
     copyToClipboardMain(cleanText); 
 }
 
+    function showExitToast() {
+        const toast = getEl('exitToast');
+        if (!toast) return;
+
+        // Обновляем текст на случай смены языка
+        toast.textContent = _('exit_toast_text');
+
+        toast.classList.remove('hidden');
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 1700); // Скрываем чуть раньше, чем сбрасывается флаг
+    }
 
     
     function escape(str) {
