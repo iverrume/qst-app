@@ -5146,6 +5146,7 @@ const mainApp = (function() {
     let currentQuizContext = null;
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
+    let isExitConfirmed = false;
 
     // --- Constants ---
 
@@ -5462,11 +5463,19 @@ const mainApp = (function() {
 
 
         // Обработчики для кнопок в модальном окне выхода
-        cancelExitBtn?.addEventListener('click', hideExitConfirmationModal);
+        cancelExitBtn?.addEventListener('click', () => {
+            isExitConfirmed = false;
+            hideExitConfirmationModal();
+        });
+
         confirmExitBtn?.addEventListener('click', () => {
-            // history.back() эмулирует настоящее нажатие "назад",
-            // что приведет к закрытию PWA или переходу на предыдущую страницу в браузере.
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            // 1. Удаляем наш перехватчик, чтобы он не сработал снова
+            window.removeEventListener('popstate', handleBackButton);
+            // 2. Теперь вызов history.back() будет обработан браузером как обычно,
+            // что приведет к закрытию PWA.
             window.history.back();
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         });
 
 
@@ -5490,10 +5499,17 @@ const mainApp = (function() {
         }
     }
 
-    /**
-     * Обработчик события popstate, который перехватывает нажатие кнопки "Назад".
-     */
     function handleBackButton(event) {
+        // --- НАЧАЛО НОВОГО КОДА ---
+        // ПРИОРИТЕТ №1: Проверяем, открыт ли оверлей чата
+        const chatOverlay = document.getElementById('chatOverlay');
+        if (chatOverlay && !chatOverlay.classList.contains('hidden')) {
+            event.preventDefault(); // Предотвращаем стандартное действие (выход)
+            ChatModule.closeChatModal(); // Просто закрываем чат
+            return; // Завершаем выполнение функции
+        }
+        // --- КОНЕЦ НОВОГО КОДА ---
+
         // Проверяем, что мы находимся именно на главном экране
         if (!fileUploadArea.classList.contains('hidden')) {
             event.preventDefault(); // Предотвращаем стандартное действие (выход)
@@ -5501,47 +5517,15 @@ const mainApp = (function() {
             
             // ВАЖНО: Сразу же возвращаем наше состояние в историю, чтобы "отменить"
             // действие кнопки "Назад" и остаться на странице.
-            history.pushState({ page: 'main' }, "Main Screen", "#main");
-        }
-    }
-
-    /**
-     * Управляет активацией и деактивацией перехватчика кнопки "Назад".
-     */
-    // Найдите эту функцию в mainApp (примерно строка 3496)
-    function manageBackButtonInterceptor() {
-        // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
-        window.removeEventListener('popstate', handleBackButton);
-
-        // --- НАЧАЛО НОВОГО КОДА: УМНАЯ ПРОВЕРКА ---
-
-        // Находим оверлей чата. getEl('chatOverlay') может не сработать, так как он в другом модуле,
-        // поэтому используем document.getElementById для надежности.
-        const chatOverlay = document.getElementById('chatOverlay');
-
-        // Проверяем, является ли главный экран ЕДИНСТВЕННЫМ активным экраном.
-        // Это будет правдой, только если все остальные экраны (включая чат) скрыты.
-        const isMainScreenActive = 
-            !fileUploadArea.classList.contains('hidden') &&
-            quizSetupArea.classList.contains('hidden') &&
-            quizArea.classList.contains('hidden') &&
-            resultsArea.classList.contains('hidden') &&
-            parserArea.classList.contains('hidden') &&
-            gradusFoldersContainer.classList.contains('hidden') &&
-            searchResultsContainer.classList.contains('hidden') &&
-            (chatOverlay && chatOverlay.classList.contains('hidden')); // Самая важная проверка!
-
-        // Добавляем перехватчик, только если главный экран действительно активен и ничего больше не открыто
-        if (isMainScreenActive) {
-            console.log('Перехватчик кнопки "Назад" АКТИВИРОВАН.');
-            // Добавляем фиктивное состояние в историю, чтобы было куда "возвращаться"
-            history.pushState({ page: 'main' }, "Main Screen", "#main");
-            window.addEventListener('popstate', handleBackButton);
+            history.pushState({ page: 'app' }, "QSTiUM", "#app");
         } else {
-            console.log('Перехватчик кнопки "Назад" ДЕАКТИВИРОВАН.');
+            // Если открыт любой другой экран (настройки, тест, результаты),
+            // то кнопка "назад" вернет на главный экран.
+            // Это стандартное поведение, которое мы сохраняем.
+            resetQuizForNewFile();
         }
-        // --- КОНЕЦ НОВОГО КОДА ---
     }
+
 
     function showGlobalLoader(message = 'Загрузка...') {
         // Проверяем, есть ли уже лоадер, чтобы не создавать дубликаты
@@ -8607,7 +8591,8 @@ const mainApp = (function() {
                     action: 'getExplanation',
                     question_text: currentAIQuestion.text,
                     correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
-                    style: style
+                    style: style,
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
                 })
             });
             const result = await response.json();
@@ -8658,7 +8643,34 @@ const mainApp = (function() {
         }
     }
 
+    function manageBackButtonInterceptor() {
+        // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
+        window.removeEventListener('popstate', handleBackButton);
 
+        // --- ОБНОВЛЕННАЯ ЛОГИКА ПРОВЕРКИ ---
+        const chatOverlay = document.getElementById('chatOverlay');
+
+        // Проверяем, активен ли ЛЮБОЙ из основных экранов приложения
+        const isAppScreenActive = 
+            !fileUploadArea.classList.contains('hidden') ||
+            !quizSetupArea.classList.contains('hidden') ||
+            !quizArea.classList.contains('hidden') ||
+            !resultsArea.classList.contains('hidden') ||
+            !parserArea.classList.contains('hidden') ||
+            !gradusFoldersContainer.classList.contains('hidden') ||
+            !searchResultsContainer.classList.contains('hidden') ||
+            (chatOverlay && !chatOverlay.classList.contains('hidden'));
+
+        // Добавляем перехватчик, если пользователь находится внутри нашего приложения
+        if (isAppScreenActive) {
+            console.log('Перехватчик кнопки "Назад" АКТИВИРОВАН.');
+            // Добавляем универсальное состояние в историю
+            history.pushState({ page: 'app' }, "QSTiUM", "#app");
+            window.addEventListener('popstate', handleBackButton);
+        } else {
+            console.log('Перехватчик кнопки "Назад" ДЕАКТИВИРОВАН.');
+        }
+    }
 
 
     // --- Public methods exposed from mainApp ---
