@@ -30,6 +30,11 @@ const ChatModule = (function() {
             auth_close_button: "Закрыть",
             auth_or_divider: "или",
             auth_google_signin: "Войти через Google",
+            auth_forgot_password: "Забыли пароль?",
+            forgot_password_modal_title: "Сброс пароля",
+            forgot_password_modal_text: "Введите ваш email. Мы отправим вам ссылку для сброса пароля.",
+            forgot_password_email_placeholder: "Ваш Email",
+            forgot_password_send_button: "Отправить",
             // Main Chat
             chat_header_title: "💬 Чат",
             guest_user: "Гость",
@@ -190,6 +195,8 @@ const ChatModule = (function() {
             ai_selection_banner_text: "Выберите сообщение, с которого начать сводку", // Новый
             ai_selection_cancel: "Отмена", // Новый
             ai_summary_title_selection: "💡 Сводка с выбранного сообщения:", // Новый
+            password_reset_email_sent: "Письмо для сброса пароля отправлено! Пожалуйста, проверьте вашу почту (включая папку 'Спам').",
+            error_user_not_found_for_reset: "Пользователь с таким email не найден.",
 
         },
         kz: {
@@ -213,6 +220,11 @@ const ChatModule = (function() {
             auth_close_button: "Жабу",
             auth_or_divider: "немесе",
             auth_google_signin: "Google арқылы кіру",
+            auth_forgot_password: "Құпия сөзді ұмыттыңыз ба?",
+            forgot_password_modal_title: "Құпия сөзді қалпына келтіру",
+            forgot_password_modal_text: "Email мекенжайыңызды енгізіңіз. Біз сізге құпия сөзді қалпына келтіру сілтемесін жібереміз.",
+            forgot_password_email_placeholder: "Сіздің Email",
+            forgot_password_send_button: "Жіберу",
             // Main Chat
             chat_header_title: "💬 Чат",
             guest_user: "Қонақ",
@@ -370,6 +382,8 @@ const ChatModule = (function() {
             ai_selection_banner_text: "Қорытындыны бастайтын хабарламаны таңдаңыз",
             ai_summary_title_unread: "💡 Сіз өткізіп алғандар туралы қысқаша:",
             ai_summary_title_all: "💡 Арна бойынша жалпы түйіндеме:",
+            password_reset_email_sent: "Құпия сөзді қалпына келтіру хаты жіберілді! Поштаңызды тексеріңіз ('Спам' қалтасын қоса).",
+            error_user_not_found_for_reset: "Бұл email-мен пайдаланушы табылмады.",
         },
         en: {
             // TABS
@@ -392,6 +406,11 @@ const ChatModule = (function() {
             auth_close_button: "Close",
             auth_or_divider: "or",
             auth_google_signin: "Sign in with Google",
+            auth_forgot_password: "Forgot password?",
+            forgot_password_modal_title: "Reset Password",
+            forgot_password_modal_text: "Enter your email. We'll send you a link to reset your password.",
+            forgot_password_email_placeholder: "Your Email",
+            forgot_password_send_button: "Send",
             // Main Chat
             chat_header_title: "💬 Chat",
             guest_user: "Guest",
@@ -552,6 +571,8 @@ const ChatModule = (function() {
             ai_selection_banner_text: "Select a message to start the summary from",
             ai_selection_cancel: "Cancel", // New
             ai_summary_title_selection: "💡 Summary from selected message:",
+            password_reset_email_sent: "Password reset email sent! Please check your inbox (including the spam folder).",
+            error_user_not_found_for_reset: "User with this email not found.",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -697,13 +718,14 @@ const ChatModule = (function() {
                 <div class="auth-tabs">
                     <button class="auth-tab active" data-tab="login">${_chat('auth_login_tab')}</button>
                     <button class="auth-tab" data-tab="register">${_chat('auth_register_tab')}</button>
-                </div>
+                </div>           
                 <form class="auth-form active" id="loginForm">
                     <input type="text" class="auth-input" id="loginUsername" placeholder="${_chat('auth_login_placeholder')}" required>
                     <div class="password-wrapper">
                         <input type="password" class="auth-input" id="loginPassword" placeholder="${_chat('auth_password_placeholder')}" required>
                         <span class="toggle-password">👁️</span>
                     </div>
+                    <a href="#" id="forgotPasswordLink" class="forgot-password-link">${_chat('auth_forgot_password')}</a>
                     <button type="submit" class="auth-btn">${_chat('auth_login_button')}</button>
                 </form>
                 <form class="auth-form" id="registerForm">
@@ -838,6 +860,7 @@ const ChatModule = (function() {
         <div id="editMessageModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_message_title')}</h3><textarea id="editMessageInput" rows="4"></textarea><input type="hidden" id="editMessageIdInput"><div class="modal-buttons"><button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button></div></div>
         <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button><button id="fileActionTestBtn">${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+
         <div id="aiSummaryModal" class="modal-overlay hidden">
             <div class="modal-content" style="max-width: 600px; text-align: left;">
                 <h3 id="aiSummaryModalTitle">💡 Сводка от ИИ</h3>
@@ -846,6 +869,18 @@ const ChatModule = (function() {
                 </div>
                 <div class="modal-buttons" style="margin-top: 20px;">
                     <button onclick="ChatModule.closeModal('aiSummaryModal')" data-lang-key="auth_close_button">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="forgotPasswordModal" class="modal-overlay hidden">  <!-- <== ТЕПЕРЬ ЭТОТ БЛОК НАХОДИТСЯ НА ПРАВИЛЬНОМ УРОВНЕ -->
+            <div class="modal-content">
+                <h3 data-lang-key="forgot_password_modal_title">${_chat('forgot_password_modal_title')}</h3>
+                <p style="margin-bottom: 20px;" data-lang-key="forgot_password_modal_text">${_chat('forgot_password_modal_text')}</p>
+                <input type="email" id="resetEmailInput" class="auth-input" placeholder="${_chat('forgot_password_email_placeholder')}" required />
+                <div class="modal-buttons">
+                    <button onclick="ChatModule.handlePasswordReset()" data-lang-key="forgot_password_send_button">${_chat('forgot_password_send_button')}</button>
+                    <button onclick="ChatModule.closeModal('forgotPasswordModal')" data-lang-key="modal_cancel_button">${_chat('modal_cancel_button')}</button>
                 </div>
             </div>
         </div>
@@ -915,8 +950,19 @@ const ChatModule = (function() {
         document.getElementById('registerPassword').placeholder = _chat('auth_register_password_placeholder');
         document.getElementById('registerPasswordConfirm').placeholder = _chat('auth_register_confirm_placeholder');
         document.querySelector('#registerForm button').textContent = _chat('auth_register_button');
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-        // Обновляем текст кнопки Google Sign-In, сохраняя иконку
+        const forgotLink = getEl('forgotPasswordLink');
+        if (forgotLink) forgotLink.textContent = _chat('auth_forgot_password');
+        
+        const forgotModal = getEl('forgotPasswordModal');
+        if (forgotModal) {
+            forgotModal.querySelector('[data-lang-key="forgot_password_modal_title"]').textContent = _chat('forgot_password_modal_title');
+            forgotModal.querySelector('[data-lang-key="forgot_password_modal_text"]').textContent = _chat('forgot_password_modal_text');
+            forgotModal.querySelector('#resetEmailInput').placeholder = _chat('forgot_password_email_placeholder');
+            forgotModal.querySelector('[data-lang-key="forgot_password_send_button"]').textContent = _chat('forgot_password_send_button');
+            forgotModal.querySelector('[data-lang-key="modal_cancel_button"]').textContent = _chat('modal_cancel_button');
+        }
+
+
         const googleBtn = document.getElementById('googleSignInBtn');
         if (googleBtn) {
             googleBtn.innerHTML = `
@@ -924,7 +970,7 @@ const ChatModule = (function() {
                 ${_chat('auth_google_signin')}
             `;
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         document.getElementById('authCloseButton').textContent = _chat('auth_close_button');
 
         // --- Основное окно чата ---
@@ -1015,7 +1061,6 @@ const ChatModule = (function() {
             if (closeButton) closeButton.textContent = _chat('auth_close_button');
         }
 
-        // --- НОВЫЙ БЛОК: Перевод модального окна объяснений ИИ ---
         const aiModal = document.getElementById('aiExplanationModal');
         if (aiModal) {
             // Находим кнопку "Закрыть" внутри этого модального окна.
@@ -1027,7 +1072,7 @@ const ChatModule = (function() {
         }
 
 
-        // === НАЧАЛО НОВОГО КОДА: Перевод AI-помощника и его модального окна ===
+        // Перевод AI-помощника и его модального окна ===
         const aiHelperBtn = getEl('aiChatHelperBtn');
         if (aiHelperBtn) {
             aiHelperBtn.title = _chat('ai_helper_title');
@@ -1158,6 +1203,11 @@ const ChatModule = (function() {
         document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
         document.getElementById('registerForm')?.addEventListener('submit', handleRegister);
         document.getElementById('googleSignInBtn')?.addEventListener('click', signInWithGoogle);
+        document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
+            e.preventDefault(); // Отменяем стандартное поведение ссылки
+            showModal('forgotPasswordModal');
+        });
+
 
         if (chatInput) {
             chatInput.addEventListener('keydown', (e) => {
@@ -4424,6 +4474,37 @@ const ChatModule = (function() {
     }
 
 
+    async function handlePasswordReset() {
+        if (!auth) {
+            showError(_chat('auth_system_unavailable'));
+            return;
+        }
+
+        const emailInput = getEl('resetEmailInput');
+        const email = emailInput.value.trim();
+
+        if (!email) {
+            showError(_chat('fill_all_fields'));
+            return;
+        }
+
+        try {
+            await auth.sendPasswordResetEmail(email);
+            closeModal('forgotPasswordModal');
+            emailInput.value = ''; // Очищаем поле после отправки
+            alert(_chat('password_reset_email_sent'));
+        } catch (error) {
+            console.error("Ошибка сброса пароля:", error);
+            if (error.code === 'auth/user-not-found') {
+                showError(_chat('error_user_not_found_for_reset'));
+            } else {
+                showError(getErrorMessage(error.code));
+            }
+        }
+    }
+
+
+
     // ========== PUBLIC METHODS ==========
     return {
         init,
@@ -4530,6 +4611,7 @@ const ChatModule = (function() {
         voteForFavoriteOption,
         showFileActionsModal, 
         showModal: showModal, 
+        handlePasswordReset,
         closeModal: closeModal,
         
         // Getters

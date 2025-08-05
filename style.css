@@ -5435,3 +5435,23 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     box-shadow: 0 5px 20px var(--shadow-color);
     border-color: var(--button-primary-bg);
 }
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ ССЫЛКИ "ЗАБЫЛИ ПАРОЛЬ" === */
+/* ======================================================= */
+
+.forgot-password-link {
+    display: block; /* Чтобы занимала всю ширину и можно было выровнять текст */
+    text-align: right; /* Выравниваем по правому краю */
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+    text-decoration: none;
+    margin-top: -10px; /* Небольшой отрицательный отступ, чтобы придвинуть к полю пароля */
+    margin-bottom: 15px;
+    transition: color 0.2s;
+}
+
+.forgot-password-link:hover {
+    color: var(--button-primary-bg);
+    text-decoration: underline;
+}
