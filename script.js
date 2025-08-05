@@ -5469,13 +5469,8 @@ const mainApp = (function() {
         });
 
         confirmExitBtn?.addEventListener('click', () => {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            // 1. Удаляем наш перехватчик, чтобы он не сработал снова
-            window.removeEventListener('popstate', handleBackButton);
-            // 2. Теперь вызов history.back() будет обработан браузером как обычно,
-            // что приведет к закрытию PWA.
-            window.history.back();
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+            
+            window.location.href = 'about:blank';
         });
 
 
