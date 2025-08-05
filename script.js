@@ -5210,16 +5210,18 @@ const mainApp = (function() {
         if (!resultText) return;
 
         const cardContentHTML = parseAndRenderQuestionBlock(resultText);
+        // Мы используем одинарные кавычки для атрибута onclick и добавляем
+        // результат экранированной строки. Это самый надежный способ.
+        const escapedResultText = escape(resultText);
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
         searchResultCardsContainer.innerHTML = `
             <div class="result-card">
                 <div class="result-card-header">
                     <span class="provider-tag">🗄️ ${_('search_provider_db')}</span>
                     <div class="result-card-actions">
                         <span class="relevance-tag">${_('relevance_tag')} ${100 - index}%</span>
-                        <button class="copy-search-result-btn" title="${_('copy_question_tooltip')}" onclick="window.mainApp.handleCopyClickInSearch(event, \`${escape(resultText)}\`)">📋</button>
-                        <button class="favorite-search-result-btn" title="${_('favorite_question_tooltip')}" onclick="window.mainApp.handleFavoriteClickInSearch(event, \`${escape(resultText)}\`)">⭐</button>
+                        <button class="copy-search-result-btn" title="${_('copy_question_tooltip')}" onclick='window.mainApp.handleCopyClickInSearch(event, "${escapedResultText}")'>📋</button>
+                        <button class="favorite-search-result-btn" title="${_('favorite_question_tooltip')}" onclick='window.mainApp.handleFavoriteClickInSearch(event, "${escapedResultText}")'>⭐</button>
                     </div>
                 </div>
                 <div class="result-card-content">
@@ -5227,6 +5229,9 @@ const mainApp = (function() {
                 </div>
             </div>
         `;
+
+
+
 
         resultCounterEl.textContent = `${index + 1} / ${searchResultsData.length}`;
         prevResultBtn.disabled = (index === 0);
@@ -5237,6 +5242,9 @@ const mainApp = (function() {
 
     function parseAndRenderQuestionBlock(blockText) {
         if (!blockText) return '<div class="question-text-detail">Нет данных.</div>';
+
+        // РЕШЕНИЕ: Регулярное выражение для удаления всех ненужных тегов
+        const tagRemovalRegex = /<\/?(question|variant|вопрос|вариант|qst)>/gi;
 
         const correctedText = blockText.replace(/\\n/g, '\n');
         const lines = correctedText.split('\n').filter(line => line.trim() !== '');
@@ -5253,10 +5261,12 @@ const mainApp = (function() {
                 let icon = trimmedLine.startsWith('+') || trimmedLine.startsWith('=') ? '✓' : '✗';
                 if (icon === '✓') className += ' correct';
                 
-                const answerText = trimmedLine.substring(1).trim();
+                // Очищаем текст ответа от тегов
+                const answerText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
                 optionsHTML.push(`<div class="${className}">${icon} ${escapeHTML(answerText)}</div>`);
             } else if (!foundOptions) {
-                const cleanLine = trimmedLine.startsWith('?') ? trimmedLine.substring(1).trim() : trimmedLine;
+                // Очищаем текст вопроса от тегов
+                const cleanLine = (trimmedLine.startsWith('?') ? trimmedLine.substring(1).trim() : trimmedLine).replace(tagRemovalRegex, '').trim();
                 questionContentLines.push(escapeHTML(cleanLine));
             }
         });
@@ -5266,6 +5276,8 @@ const mainApp = (function() {
         
         return questionHTML + optionsContainerHTML;
     }
+
+
 
     function handleWebSearch(event) {
         event.preventDefault();
@@ -6230,89 +6242,100 @@ const mainApp = (function() {
 
 
 
-
     function parseQstContent(content) {
-        let parsedQs = [];
-        const lines = content.split(/\r?\n/);
-        let currentQuestionData = null;
+        let parsedItems = [];
+        const lines = content.replace(/\r\n/g, '\n').split('\n');
+        
+        let currentQuestion = null;
+        // Эвристика: считаем, что вопрос закончился, если у него уже есть 4+ варианта и встречается новый "+"
+        const MIN_OPTIONS_BEFORE_SPLIT = 4; 
+        // Храним несколько последних текстовых строк как кандидатов на текст вопроса
+        let lastTextLines = []; 
+
+        const saveCurrentQuestion = () => {
+            if (currentQuestion && currentQuestion.options.length > 0 && currentQuestion.correctAnswerIndex > -1) {
+                // Финальная очистка текста вопроса от всех тегов
+                currentQuestion.text = currentQuestion.text
+                    .replace(/<\/?(question|вопрос|qst)>/gi, '')
+                    .trim();
+                // Убираем возможную нумерацию в начале (например, "1. ", "2) ")
+                currentQuestion.text = currentQuestion.text.replace(/^\s*\d+[\.\)]\s*/, '');
+
+                if (currentQuestion.text) { // Сохраняем, только если есть текст вопроса
+                    parsedItems.push(currentQuestion);
+                }
+            }
+            currentQuestion = null;
+        };
+
         for (const line of lines) {
             const trimmedLine = line.trim();
+            const tagRemovalRegex = /<\/?(variant|вариант)>/gi;
 
-            // --- НАЧАЛО НОВОГО КОДА ---
-            // ПРОВЕРКА НА КАТЕГОРИЮ
+            if (!trimmedLine) continue; // Пропускаем пустые строки
+
             if (trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#')) {
-                // Если мы нашли категорию, сначала сохраняем предыдущий вопрос, если он был
-                if (currentQuestionData && currentQuestionData.options.length > 0) {
-                    parsedQs.push(currentQuestionData);
-                    currentQuestionData = null;
-                }
-                // Извлекаем название категории
+                saveCurrentQuestion();
                 const categoryName = trimmedLine.slice(3, -3).trim();
-                // Добавляем специальный объект с типом 'category'
-                parsedQs.push({ text: categoryName, type: 'category' });
-                // Переходим к следующей строке
-                continue;
-            }           
-            if (trimmedLine === '') {
-                if (currentQuestionData && currentQuestionData.options.length > 0) {
-                    parsedQs.push(currentQuestionData);
-                    currentQuestionData = null;
-                }
+                parsedItems.push({ text: categoryName, type: 'category' });
+                lastTextLines = [];
                 continue;
             }
+
             if (trimmedLine.startsWith('?')) {
-                if (currentQuestionData && currentQuestionData.options.length > 0) {
-                    parsedQs.push(currentQuestionData);
+                saveCurrentQuestion();
+                currentQuestion = {
+                    text: trimmedLine.substring(1).trim(),
+                    options: [],
+                    correctAnswerIndex: -1,
+                    originalRaw: [line]
+                };
+                lastTextLines = []; // Сбрасываем кандидатов
+            } else if (trimmedLine.startsWith('+')) {
+                // ЭВРИСТИКА: Если у текущего вопроса уже есть правильный ответ и достаточно вариантов,
+                // то это, скорее всего, начало нового "склеенного" вопроса.
+                if (currentQuestion && currentQuestion.correctAnswerIndex > -1 && currentQuestion.options.length >= MIN_OPTIONS_BEFORE_SPLIT) {
+                    saveCurrentQuestion();
                 }
-                let questionTextWithTildes = trimmedLine.substring(1).trim();
-                let cleanText = "";
-                let tempTriggeredIndices = [];
-                let wordIndexInCleanText = 0;
-                const parts = questionTextWithTildes.split('~');
-                for (let i = 0; i < parts.length; i++) {
-                    const part = parts[i];
-                    if (i % 2 === 1) {
-                        if (part.length > 0) {
-                            cleanText += part;
-                            const wordTokens = tokenizeText(part);
-                            for (const wt of wordTokens) {
-                                if (/\S/.test(wt) && !/^[.,;:!?()"“”«»-]+$/.test(wt)) {
-                                    tempTriggeredIndices.push(wordIndexInCleanText);
-                                    wordIndexInCleanText++;
-                                }
-                            }
-                        }
-                    } else {
-                        if (part.length > 0) {
-                            cleanText += part;
-                            const normalTokens = tokenizeText(part);
-                            for (const nt of normalTokens) {
-                                if (/\S/.test(nt) && !/^[.,;:!?()"“”«»-]+$/.test(nt)) {
-                                    wordIndexInCleanText++;
-                                }
-                            }
-                        }
-                    }
+
+                if (!currentQuestion) {
+                    // Если вопроса нет, создаем его из последних текстовых строк.
+                    currentQuestion = {
+                        text: lastTextLines.join(' ').trim(),
+                        options: [],
+                        correctAnswerIndex: -1,
+                        originalRaw: [...lastTextLines, line]
+                    };
                 }
-                currentQuestionData = { text: cleanText, options: [], correctAnswerIndex: -1, originalRaw: [line], triggeredWordIndices: [...new Set(tempTriggeredIndices)] };
-            } else if ((trimmedLine.startsWith('+') || trimmedLine.startsWith('-')) && currentQuestionData) {
-                const isCorrect = trimmedLine.startsWith('+');
-                const optionText = trimmedLine.substring(1).trim();
-                currentQuestionData.options.push({ text: optionText, isCorrect: isCorrect });
-                if (isCorrect && currentQuestionData.correctAnswerIndex === -1) {
-                    currentQuestionData.correctAnswerIndex = currentQuestionData.options.length - 1;
+                
+                const optionText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
+                currentQuestion.options.push({ text: optionText, isCorrect: true });
+                // Перезаписываем индекс правильного ответа, если их несколько
+                currentQuestion.correctAnswerIndex = currentQuestion.options.length - 1;
+                lastTextLines = []; // Вариант ответа не может быть текстом вопроса
+            
+            } else if (trimmedLine.startsWith('-')) {
+                if (currentQuestion) {
+                    const optionText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
+                    currentQuestion.options.push({ text: optionText, isCorrect: false });
+                    currentQuestion.originalRaw.push(line);
+                    lastTextLines = []; // Вариант ответа не может быть текстом вопроса
                 }
-                currentQuestionData.originalRaw.push(line);
-            } else if (currentQuestionData && !trimmedLine.startsWith('?')) {
-                currentQuestionData.text += " " + trimmedLine;
-                currentQuestionData.originalRaw.push(line);
+            } else if (trimmedLine.length > 0) {
+                // Если это не команда, то это либо продолжение текста вопроса, либо сам текст вопроса
+                if (currentQuestion) {
+                    currentQuestion.text += ' ' + trimmedLine;
+                    currentQuestion.originalRaw.push(line);
+                }
+                // В любом случае, запоминаем эту строку как потенциальный заголовок следующего вопроса
+                lastTextLines.push(trimmedLine);
+                if(lastTextLines.length > 3) lastTextLines.shift(); // Храним не больше 3-х последних строк
             }
         }
-        if (currentQuestionData && currentQuestionData.options.length > 0) {
-            parsedQs.push(currentQuestionData);
-        }
-        // Фильтруем, пропуская категории и проверяя только настоящие вопросы
-        return parsedQs.filter(q => q.type === 'category' || (q.options && q.options.some(opt => opt.isCorrect) && q.options.length > 1));
+        
+        saveCurrentQuestion(); // Сохраняем самый последний вопрос в файле
+
+        return parsedItems;
     }
 
 
@@ -7336,7 +7359,15 @@ const mainApp = (function() {
     
     function escape(str) {
         if (!str) return '';
-        return str.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/{/g, '\\{').replace(/}/g, '\\}');
+        // Эта версия корректно экранирует все символы,
+        // которые могут сломать JavaScript-строку, включая переносы строк.
+        return str
+            .replace(/\\/g, '\\\\')  // 1. Сначала сами обратные слеши
+            .replace(/`/g, '\\`')   // 2. Затем обратные кавычки для шаблонных строк
+            .replace(/'/g, "\\'")   // 3. Одинарные кавычки
+            .replace(/"/g, '\\"')   // 4. Двойные кавычки
+            .replace(/\n/g, '\\n')  // 5. Переносы строк
+            .replace(/\r/g, '\\r'); // 6. Возврат каретки
     }
 
     function escapeHTML(str) {
