@@ -8655,34 +8655,12 @@ const mainApp = (function() {
             alert("Не удалось распознать структуру вопроса для объяснения.");
         }
     }
-
+    
     function manageBackButtonInterceptor() {
-        // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
-        window.removeEventListener('popstate', handleBackButton);
-
-        // --- ОБНОВЛЕННАЯ ЛОГИКА ПРОВЕРКИ ---
-        const chatOverlay = document.getElementById('chatOverlay');
-
-        // Проверяем, активен ли ЛЮБОЙ из основных экранов приложения
-        const isAppScreenActive = 
-            !fileUploadArea.classList.contains('hidden') ||
-            !quizSetupArea.classList.contains('hidden') ||
-            !quizArea.classList.contains('hidden') ||
-            !resultsArea.classList.contains('hidden') ||
-            !parserArea.classList.contains('hidden') ||
-            !gradusFoldersContainer.classList.contains('hidden') ||
-            !searchResultsContainer.classList.contains('hidden') ||
-            (chatOverlay && !chatOverlay.classList.contains('hidden'));
-
-        // Добавляем перехватчик, если пользователь находится внутри нашего приложения
-        if (isAppScreenActive) {
-            console.log('Перехватчик кнопки "Назад" АКТИВИРОВАН.');
-            // Добавляем универсальное состояние в историю
-            history.pushState({ page: 'app' }, "QSTiUM", "#app");
-            window.addEventListener('popstate', handleBackButton);
-        } else {
-            console.log('Перехватчик кнопки "Назад" ДЕАКТИВИРОВАН.');
-        }
+        // Код остается тот же самый
+        history.pushState(null, '', location.href);
+        window.addEventListener('popstate', handleBackButton);
+        console.log('Ловушка для кнопки "Назад" активирована.');
     }
 
 
