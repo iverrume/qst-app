@@ -5311,3 +5311,40 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     color: var(--button-primary-text);
     border-color: var(--button-primary-bg);
 }
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ КНОПКИ "ОБЪЯСНИТЬ" В РЕЗУЛЬТАТАХ ПОИСКА === */
+/* ======================================================= */
+
+.explain-search-result-btn {
+    background: none;
+    border: none;
+    font-size: 1.6em; /* Такой же размер, как у других иконок */
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    padding: 0 5px;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.explain-search-result-btn:hover {
+    color: #8e44ad; /* Красивый фиолетовый цвет для "мудрости" ИИ */
+    transform: scale(1.2);
+}
+
+
+/* ======================================================= */
+/* === ИСПРАВЛЕНИЕ ВЕРСТКИ КАРТОЧКИ РЕЗУЛЬТАТОВ ПОИСКА === */
+/* ======================================================= */
+.result-card-content {
+    display: flex; /* Явно указываем, что это flex-контейнер */
+    flex-direction: column; /* Заставляем дочерние элементы (вопрос и ответы) располагаться друг под другом */
+}
+
+/* 
+   Убираем лишний отступ у текста вопроса, так как теперь у нас
+   есть flex-контейнер, который может управлять отступами сам.
+*/
+.question-text-detail {
+    margin-bottom: 0; 
+}

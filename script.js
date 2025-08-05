@@ -4416,6 +4416,7 @@ const mainApp = (function() {
             exit_modal_cancel: 'Остаться',
             update_available_text: 'Доступна новая версия!',
             update_button_text: 'Обновить',
+            ai_explain_button_title: 'Объяснить с помощью ИИ',
 
         },
         kz: {
@@ -4541,6 +4542,7 @@ const mainApp = (function() {
             exit_modal_cancel: 'Қалу',
             update_available_text: 'Жаңа нұсқасы қолжетімді!',
             update_button_text: 'Жаңарту',
+            ai_explain_button_title: 'ЖИ арқылы түсіндіру',
         },
         en: {
             // Main Screen
@@ -4669,6 +4671,7 @@ const mainApp = (function() {
             exit_modal_cancel: 'Stay',
             update_available_text: 'A new version is available!',
             update_button_text: 'Update',
+            ai_explain_button_title: 'Explain with AI',
         }
 
 
@@ -5212,7 +5215,7 @@ const mainApp = (function() {
         const cardContentHTML = parseAndRenderQuestionBlock(resultText);
         // Мы используем одинарные кавычки для атрибута onclick и добавляем
         // результат экранированной строки. Это самый надежный способ.
-        const escapedResultText = escape(resultText);
+       const escapedResultText = escape(resultText);
 
         searchResultCardsContainer.innerHTML = `
             <div class="result-card">
@@ -5220,18 +5223,16 @@ const mainApp = (function() {
                     <span class="provider-tag">🗄️ ${_('search_provider_db')}</span>
                     <div class="result-card-actions">
                         <span class="relevance-tag">${_('relevance_tag')} ${100 - index}%</span>
+                        <button class="explain-search-result-btn" title="${_('ai_explain_button_title')}" onclick='window.mainApp.handleExplainClickInSearch(event, "${escapedResultText}")'>💡</button>
                         <button class="copy-search-result-btn" title="${_('copy_question_tooltip')}" onclick='window.mainApp.handleCopyClickInSearch(event, "${escapedResultText}")'>📋</button>
                         <button class="favorite-search-result-btn" title="${_('favorite_question_tooltip')}" onclick='window.mainApp.handleFavoriteClickInSearch(event, "${escapedResultText}")'>⭐</button>
                     </div>
-                </div>
+                </div> <!--  <<<<<====== ВОТ ОН, НЕДОСТАЮЩИЙ ЗАКРЫВАЮЩИЙ ТЕГ! -->
                 <div class="result-card-content">
                     ${cardContentHTML}
                 </div>
             </div>
         `;
-
-
-
 
         resultCounterEl.textContent = `${index + 1} / ${searchResultsData.length}`;
         prevResultBtn.disabled = (index === 0);
@@ -8218,6 +8219,31 @@ const mainApp = (function() {
 
 
 
+    function handleExplainClickInSearch(event, rawQuestionText) {
+        event.stopPropagation(); // Предотвращаем срабатывание других кликов
+
+        // Используем наш мощный парсер, чтобы превратить строку в объект
+        // parseQstContent возвращает массив, поэтому берем первый элемент
+        const parsedQuestions = parseQstContent(rawQuestionText);
+
+        if (parsedQuestions && parsedQuestions.length > 0) {
+            const questionObject = parsedQuestions[0];
+            
+            // Проверяем, что парсинг прошел успешно и у нас есть все данные
+            if (questionObject && questionObject.text && questionObject.options) {
+                // Вызываем уже существующую функцию для показа модального окна
+                showAIExplanation(questionObject);
+            } else {
+                alert("Не удалось полностью обработать вопрос для объяснения.");
+            }
+        } else {
+            alert("Не удалось распознать структуру вопроса для объяснения.");
+        }
+    }
+
+
+
+
     // --- Public methods exposed from mainApp ---
     return {
         init: initializeApp,
@@ -8227,6 +8253,7 @@ const mainApp = (function() {
         downloadOrShareFile: downloadOrShareFile,
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,
         handleCopyClickInSearch: handleCopyClickInSearch,
+        handleExplainClickInSearch: handleExplainClickInSearch,
         showGlobalLoader: showGlobalLoader,
         hideGlobalLoader: hideGlobalLoader,
         testMobileDownload: () => {
