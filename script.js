@@ -5146,6 +5146,7 @@ const mainApp = (function() {
     let currentQuizContext = null;
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
+    let isExitConfirmed = false;
 
     // --- Constants ---
 
@@ -5463,14 +5464,13 @@ const mainApp = (function() {
 
         // Обработчики для кнопок в модальном окне выхода
         cancelExitBtn?.addEventListener('click', () => {
+            isExitConfirmed = false;
             hideExitConfirmationModal();
         });
 
         confirmExitBtn?.addEventListener('click', () => {
-            // Эта команда напрямую сообщает браузеру/системе
-            // о намерении закрыть текущее окно.
-            // Для установленного PWA это приведет к закрытию приложения.
-            window.close();
+            isExitConfirmed = true;
+            window.history.back();
         });
 
 
@@ -5499,7 +5499,8 @@ const mainApp = (function() {
      * Обработчик события popstate, который перехватывает нажатие кнопки "Назад".
      */
     function handleBackButton(event) {
-        
+        if (isExitConfirmed) {
+            return;
         }
 
         // Проверяем, что мы находимся именно на главном экране
