@@ -7335,7 +7335,7 @@ const mainApp = (function() {
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
         
-        const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer];
+        const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea];
         screensToHide.forEach(el => el?.classList.add('hidden'));
         fileUploadArea?.classList.remove('hidden');
         
