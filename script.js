@@ -8607,7 +8607,8 @@ const mainApp = (function() {
                     action: 'getExplanation',
                     question_text: currentAIQuestion.text,
                     correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
-                    style: style
+                    style: style,
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
                 })
             });
             const result = await response.json();
