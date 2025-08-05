@@ -5514,43 +5514,7 @@ const mainApp = (function() {
         }
     }
 
-    /**
-     * Управляет активацией и деактивацией перехватчика кнопки "Назад".
-     */
-    // Найдите эту функцию в mainApp (примерно строка 3496)
-    function manageBackButtonInterceptor() {
-        // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
-        window.removeEventListener('popstate', handleBackButton);
 
-        // --- НАЧАЛО НОВОГО КОДА: УМНАЯ ПРОВЕРКА ---
-
-        // Находим оверлей чата. getEl('chatOverlay') может не сработать, так как он в другом модуле,
-        // поэтому используем document.getElementById для надежности.
-        const chatOverlay = document.getElementById('chatOverlay');
-
-        // Проверяем, является ли главный экран ЕДИНСТВЕННЫМ активным экраном.
-        // Это будет правдой, только если все остальные экраны (включая чат) скрыты.
-        const isMainScreenActive = 
-            !fileUploadArea.classList.contains('hidden') &&
-            quizSetupArea.classList.contains('hidden') &&
-            quizArea.classList.contains('hidden') &&
-            resultsArea.classList.contains('hidden') &&
-            parserArea.classList.contains('hidden') &&
-            gradusFoldersContainer.classList.contains('hidden') &&
-            searchResultsContainer.classList.contains('hidden') &&
-            (chatOverlay && chatOverlay.classList.contains('hidden')); // Самая важная проверка!
-
-        // Добавляем перехватчик, только если главный экран действительно активен и ничего больше не открыто
-        if (isMainScreenActive) {
-            console.log('Перехватчик кнопки "Назад" АКТИВИРОВАН.');
-            // Добавляем фиктивное состояние в историю, чтобы было куда "возвращаться"
-            history.pushState({ page: 'main' }, "Main Screen", "#main");
-            window.addEventListener('popstate', handleBackButton);
-        } else {
-            console.log('Перехватчик кнопки "Назад" ДЕАКТИВИРОВАН.');
-        }
-        // --- КОНЕЦ НОВОГО КОДА ---
-    }
 
     function showGlobalLoader(message = 'Загрузка...') {
         // Проверяем, есть ли уже лоадер, чтобы не создавать дубликаты
@@ -8668,7 +8632,31 @@ const mainApp = (function() {
         }
     }
 
+    // === ВСТАВЬТЕ ВАШУ ФУНКЦИЮ СЮДА ===
+    function manageBackButtonInterceptor() {
+        // Сначала всегда удаляем старый обработчик, чтобы избежать дублирования
+        window.removeEventListener('popstate', handleBackButton);
 
+        const chatOverlay = document.getElementById('chatOverlay');
+
+        const isMainScreenActive = 
+            !fileUploadArea.classList.contains('hidden') &&
+            quizSetupArea.classList.contains('hidden') &&
+            quizArea.classList.contains('hidden') &&
+            resultsArea.classList.contains('hidden') &&
+            parserArea.classList.contains('hidden') &&
+            gradusFoldersContainer.classList.contains('hidden') &&
+            searchResultsContainer.classList.contains('hidden') &&
+            (chatOverlay && chatOverlay.classList.contains('hidden'));
+
+        if (isMainScreenActive) {
+            console.log('Перехватчик кнопки "Назад" АКТИВИРОВАН.');
+            history.pushState({ page: 'main' }, "Main Screen", "#main");
+            window.addEventListener('popstate', handleBackButton);
+        } else {
+            console.log('Перехватчик кнопки "Назад" ДЕАКТИВИРОВАН.');
+        }
+    }
 
 
     // --- Public methods exposed from mainApp ---
