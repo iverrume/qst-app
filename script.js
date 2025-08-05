@@ -5146,7 +5146,6 @@ const mainApp = (function() {
     let currentQuizContext = null;
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
-    let isExitConfirmed = false;
 
     // --- Constants ---
 
@@ -5464,13 +5463,14 @@ const mainApp = (function() {
 
         // Обработчики для кнопок в модальном окне выхода
         cancelExitBtn?.addEventListener('click', () => {
-            isExitConfirmed = false; // Сбрасываем флаг, если пользователь передумал
             hideExitConfirmationModal();
         });
 
         confirmExitBtn?.addEventListener('click', () => {
-            isExitConfirmed = true; // Устанавливаем флаг "пропуска", разрешая выход
-            window.history.back();  // Инициируем выход
+            // Эта команда напрямую сообщает браузеру/системе
+            // о намерении закрыть текущее окно.
+            // Для установленного PWA это приведет к закрытию приложения.
+            window.close();
         });
 
 
@@ -5499,13 +5499,8 @@ const mainApp = (function() {
      * Обработчик события popstate, который перехватывает нажатие кнопки "Назад".
      */
     function handleBackButton(event) {
-        // === НАЧАЛО НОВОГО КОДА ===
-        // ПРОВЕРКА ФЛАГА: Если выход был подтвержден,
-        // мы ничего не делаем и позволяем браузеру выполнить действие "назад".
-        if (isExitConfirmed) {
-            return; 
+        
         }
-        // === КОНЕЦ НОВОГО КОДА ===
 
         // Проверяем, что мы находимся именно на главном экране
         if (!fileUploadArea.classList.contains('hidden')) {
