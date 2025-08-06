@@ -199,7 +199,7 @@ const ChatModule = (function() {
             error_user_not_found_for_reset: "Пользователь с таким email не найден.",
 
         },
-        kz: {
+        kk: {
             // TABS
             tab_messages: "Хабарламалар",
             tab_questions: "Сұрақтар",
@@ -4771,6 +4771,7 @@ const mainApp = (function() {
             theme_button_title: 'Сменить тему',
             language_toggle_title: 'Сменить язык',
             favorite_button_title: 'Добавить в избранное',
+            translate_question_title: 'Перевести текущий вопрос',
             // Сообщения (ДОБАВЛЕНО)
             search_query_too_short: 'Поисковый запрос должен содержать минимум 3 символа.',
             file_empty_or_invalid_part1: 'Файл "',
@@ -4811,7 +4812,7 @@ const mainApp = (function() {
             ai_explain_button_title: 'Объяснить с помощью ИИ',
 
         },
-        kz: {
+        kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
             // Main Screen
             continue_later_button: 'Кейінірек жалғастыру',
@@ -4897,6 +4898,7 @@ const mainApp = (function() {
             theme_button_title: 'Тақырыпты өзгерту',
             language_toggle_title: 'Тілді өзгерту',
             favorite_button_title: 'Таңдаулыларға қосу',
+            translate_question_title: 'Ағымдағы сұрақты аудару',
             // Messages
             search_query_too_short: 'Іздеу сұранысы кемінде 3 таңбадан тұруы керек.',
             file_empty_or_invalid_part1: '"',
@@ -5023,6 +5025,7 @@ const mainApp = (function() {
             theme_button_title: 'Change Theme',
             language_toggle_title: 'Change Language',
             favorite_button_title: 'Add to Favorites',
+            translate_question_title: 'Translate current question',
             // Messages (ПОЛНОСТЬЮ ПЕРЕВЕДЕНО)
             search_query_too_short: 'Search query must contain at least 3 characters.',
             file_empty_or_invalid_part1: 'File "',
@@ -5123,7 +5126,7 @@ const mainApp = (function() {
 
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
     let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
-    let updateNotification, updateBtn;
+    let updateNotification, updateBtn, translateQuestionBtn;
 
 
     // --- State Variables ---
@@ -5152,6 +5155,8 @@ const mainApp = (function() {
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
     let isExitConfirmed = false;
+    let isTranslateModeEnabled = localStorage.getItem('isTranslateModeEnabled') === 'true'; 
+    
 
     // --- Constants ---
 
@@ -5267,6 +5272,7 @@ const mainApp = (function() {
         cancelExitBtn = getEl('cancelExitBtn');
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
+        translateQuestionBtn = getEl('translateQuestionBtn');
         initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
@@ -5308,6 +5314,7 @@ const mainApp = (function() {
     
     function setupEventListeners() {
         getEl('favoriteQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
+        translateQuestionBtn?.addEventListener('click', toggleTranslateMode);
         getEl('copyExplanationBtn')?.addEventListener('click', handleCopyExplanation);
         fileInput.addEventListener('change', handleFileSelect);
         startQuizButton.addEventListener('click', () => applySettingsAndStartQuiz(false, null));
@@ -5440,7 +5447,11 @@ const mainApp = (function() {
             if (currentResultIndex > 0) {
                 currentResultIndex--;
                 displaySingleResult(currentResultIndex);
+                if (isTranslateModeEnabled && !quizArea.classList.contains('hidden') && questionsForCurrentQuiz.length > 0) {
+    loadQuestion(currentQuestionIndex);
+}
             }
+
         });
         nextResultBtn?.addEventListener('click', () => {
             if (currentResultIndex < searchResultsData.length - 1) {
@@ -6934,6 +6945,7 @@ const mainApp = (function() {
         continueLaterButton?.classList.remove('hidden');
         copyQuestionBtnQuiz?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+        translateQuestionBtn?.classList.remove('hidden');
         languageToggle?.classList.add('hidden');
         quickModeToggle?.classList.remove('hidden');
         triggerWordToggle?.classList.remove('hidden');
@@ -7038,77 +7050,73 @@ const mainApp = (function() {
         feedbackAreaEl.className = 'feedback-area';
         copyQuestionBtnQuiz?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        translateQuestionBtn?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
     }
 
 
 
- 
     function loadQuestion(index) {
         if (index < 0 || index >= questionsForCurrentQuiz.length) return;
         currentQuestionIndex = index;
         const item = questionsForCurrentQuiz[index];
 
+        // Если это страница категории, отображаем ее и выходим.
         if (item.type === 'category') {
             displayCategoryPage(item.text);
+            updateNavigationButtons();
+            updateQuickNavButtons();
+            // Прячем кнопки, которые не нужны для категории
+            copyQuestionBtnQuiz?.classList.add('hidden');
+            getEl('favoriteQuestionBtn')?.classList.add('hidden');
+            translateQuestionBtn?.classList.add('hidden');
+            webSearchDropdown?.classList.add('hidden');
+            return;
+        }
+
+        // --- НАЧАЛО НОВОЙ, УЛУЧШЕННОЙ ЛОГИКИ ---
+
+        // ШАГ 1: ВСЕГДА настраиваем общий интерфейс для вопроса
+        getEl('score').style.visibility = 'visible';
+        const questionNumber = questionsForCurrentQuiz.slice(0, index + 1).filter(q => q.type !== 'category').length;
+        currentQuestionNumEl.textContent = questionNumber;
+        
+        // Делаем все нужные кнопки видимыми
+        copyQuestionBtnQuiz?.classList.remove('hidden');
+        getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+        translateQuestionBtn?.classList.remove('hidden');
+        webSearchDropdown?.classList.remove('hidden');
+        updateTranslateModeToggleVisual();
+
+        // ИСПРАВЛЕНИЕ: Очищаем ОБА динамических блока в самом начале.
+        // Это гарантирует, что не будет дубликатов ни при каких условиях.
+        questionTextEl.innerHTML = '';
+        answerOptionsEl.innerHTML = '';
+        feedbackAreaEl.textContent = '';
+        feedbackAreaEl.className = 'feedback-area';
+
+        // ШАГ 2: Решаем, КАК отобразить вопрос (переведенный или оригинальный)
+        if (isTranslateModeEnabled) {
+            displayTranslatedQuestion(item);
         } else {
-            getEl('score').style.visibility = 'visible';
-            const questionNumber = questionsForCurrentQuiz.slice(0, index + 1).filter(q => q.type !== 'category').length;
-            currentQuestionNumEl.textContent = questionNumber;
-            
+            // Отображаем оригинальный вопрос
             questionTextEl.innerHTML = renderQuestionTextWithTriggers(item);
             addTriggerClickListeners();
-            answerOptionsEl.innerHTML = '';
             
-            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-
-            // Сначала полностью очищаем область обратной связи
-            feedbackAreaEl.textContent = '';
-            feedbackAreaEl.className = 'feedback-area';
-
-            const answerState = userAnswers[index];
-
-            // Теперь, если на вопрос уже был дан ответ, восстанавливаем его состояние
-            if (answerState && answerState.answered) {
-                // Восстанавливаем текст "Правильно!"/"Неправильно!"
-                if (answerState.correct) {
-                    feedbackAreaEl.textContent = 'Правильно!';
-                    feedbackAreaEl.className = 'feedback-area correct-feedback';
-                } else {
-                    feedbackAreaEl.textContent = 'Неправильно!';
-                    feedbackAreaEl.className = 'feedback-area incorrect-feedback';
-                }
-
-                // И самое главное: заново создаем и добавляем кнопку "Объяснить"
-                const explainBtn = document.createElement('button');
-                explainBtn.textContent = _('ai_explain_button');
-                explainBtn.className = 'explain-btn';
-                explainBtn.style.marginLeft = '15px';
-                explainBtn.onclick = () => showAIExplanation(item);
-                feedbackAreaEl.appendChild(explainBtn);
-            }
-
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
-            copyQuestionBtnQuiz?.classList.remove('hidden');
-            getEl('favoriteQuestionBtn')?.classList.remove('hidden');
-            webSearchDropdown?.classList.remove('hidden');
-            
-            if (!item.options) {
-                console.error("У вопроса отсутствуют опции:", item);
-                answerOptionsEl.innerHTML = "<li>Ошибка: варианты ответов не найдены.</li>";
-            } else {
+            // Отображаем варианты ответов для оригинала
+            if (item.options) {
                  item.options.forEach((option, i) => {
                     const li = document.createElement('li');
                     li.textContent = option.text;
                     li.dataset.index = i;
                     
-                    if (userAnswers[index] && userAnswers[index].answered) {
+                    const answerState = userAnswers[index];
+                    if (answerState && answerState.answered) {
                         li.classList.add('answered');
-                        if (i === userAnswers[index].selectedOptionIndex) {
-                            li.classList.add(userAnswers[index].correct ? 'correct' : 'incorrect');
+                        if (i === answerState.selectedOptionIndex) {
+                            li.classList.add(answerState.correct ? 'correct' : 'incorrect');
                         }
-                        if (!userAnswers[index].correct && i === item.correctAnswerIndex) {
+                        if (!answerState.correct && i === item.correctAnswerIndex) {
                             li.classList.add('actual-correct');
                         }
                     } else {
@@ -7118,10 +7126,31 @@ const mainApp = (function() {
                 });
             }
         }
-        
+
+        // ШАГ 3: Восстанавливаем обратную связь, если ответ уже был дан
+        const answerState = userAnswers[index];
+        if (answerState && answerState.answered) {
+            if (answerState.correct) {
+                feedbackAreaEl.textContent = 'Правильно!';
+                feedbackAreaEl.className = 'feedback-area correct-feedback';
+            } else {
+                feedbackAreaEl.textContent = 'Неправильно!';
+                feedbackAreaEl.className = 'feedback-area incorrect-feedback';
+            }
+
+            const explainBtn = document.createElement('button');
+            explainBtn.textContent = _('ai_explain_button');
+            explainBtn.className = 'explain-btn';
+            explainBtn.style.marginLeft = '15px';
+            explainBtn.onclick = () => showAIExplanation(item);
+            feedbackAreaEl.appendChild(explainBtn);
+        }
+
+        // ШАГ 4: Обновляем кнопки навигации
         updateNavigationButtons();
         updateQuickNavButtons();
     }
+
 
 
 
@@ -7369,6 +7398,7 @@ const mainApp = (function() {
         finishTestButton?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        translateQuestionBtn?.classList.add('hidden');
         languageToggle?.classList.remove('hidden');
         quickModeToggle?.classList.add('hidden');
         triggerWordToggle?.classList.add('hidden');
@@ -7673,12 +7703,16 @@ const mainApp = (function() {
         getEl('languageToggle').title = translations.language_toggle_title;
         getEl('favoriteQuestionBtn').title = translations.favorite_button_title;
         
-        // НОВАЯ ЛОГИКА ДЛЯ ТЕКСТА КНОПКИ
-        const langs = ['ru', 'en', 'kz'];
-        // Текст, который будет показан на кнопке, когда активен соответствующий язык
-        const displayLangs = ['En', 'Қаз', 'Ру'];
+
+        // НОВАЯ ЛОГИКА ДЛЯ ТЕКСТА КНОПКИ (ИСПРАВЛЕНА)
+        const langs = ['ru', 'en', 'kk']; // Используем правильный код 'kk'
+        // Текст, который будет ПОКАЗАН на кнопке для переключения НА следующий язык
+        const displayLangsForNext = ['Ру', 'En', 'Қаз'];  
         const currentIndex = langs.indexOf(lang);
-        languageToggle.textContent = displayLangs[currentIndex];
+        const nextIndex = (currentIndex + 1) % langs.length; // Находим индекс СЛЕДУЮЩЕГО языка
+        languageToggle.textContent = displayLangsForNext[nextIndex]; // Показываем текст для СЛЕДУЮЩЕГО языка
+
+
 
         // === НАЧАЛО НОВОГО КОДА: Мгновенный перевод результатов поиска ===
         // Проверяем, активен ли экран результатов поиска и есть ли что перерисовывать
@@ -7697,9 +7731,9 @@ const mainApp = (function() {
 
     function toggleLanguage() {
         const currentLang = localStorage.getItem('appLanguage') || 'ru';
-        const langs = ['ru', 'en', 'kz']; // Массив доступных языков
+        // ИСПРАВЛЕНИЕ: Заменяем 'kz' на 'kk'
+        const langs = ['ru', 'en', 'kk']; 
         const currentIndex = langs.indexOf(currentLang);
-        // Вычисляем следующий язык, зацикливая массив
         const nextIndex = (currentIndex + 1) % langs.length;
         const newLang = langs[nextIndex];
         setLanguage(newLang);
@@ -8718,7 +8752,152 @@ const mainApp = (function() {
 
 
 
+    // Expose mainApp to window for ChatModule access
+    // =================================================================
+    // ====      НОВЫЕ ФУНКЦИИ ДЛЯ ПЕРЕВОДА ВОПРОСА (v1.0)        ====
+    // =================================================================
 
+    /**
+     * Переключает режим перевода, сохраняет состояние и обновляет интерфейс.
+     */
+    function toggleTranslateMode() {
+        isTranslateModeEnabled = !isTranslateModeEnabled;
+        localStorage.setItem('isTranslateModeEnabled', isTranslateModeEnabled);
+        updateTranslateModeToggleVisual();
+        // Немедленно перезагружаем текущий вопрос, чтобы применить/отменить перевод
+        if (!quizArea.classList.contains('hidden') && questionsForCurrentQuiz.length > 0) {
+            loadQuestion(currentQuestionIndex);
+        }
+    }
+
+    /**
+     * Обновляет внешний вид кнопки-переключателя перевода.
+     */
+    function updateTranslateModeToggleVisual() {
+        if (translateQuestionBtn) {
+            translateQuestionBtn.classList.toggle('active', isTranslateModeEnabled);
+        }
+    }
+
+    /**
+     * Отправляет запрос на сервер для перевода объекта вопроса.
+     * @param {object} questionObject - Исходный объект вопроса.
+     * @param {string} targetLang - Код целевого языка ('ru', 'en', 'kz').
+     * @returns {Promise<object|null>} - Промис с переведенным объектом вопроса или null в случае ошибки.
+     */
+    async function getTranslatedQuestion(questionObject, targetLang) {
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'translateQuestion',
+                    questionObject: questionObject,
+                    targetLang: targetLang
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.translatedQuestion;
+            } else {
+                console.error('Ошибка перевода на сервере:', result.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('Сетевая ошибка при переводе:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Применяет умную анимацию "печатания" к элементу с динамической скоростью
+     * и автоматической очисткой стилей после завершения.
+     * @param {HTMLElement} element - Элемент, в котором будет анимация (например, div или li).
+     * @param {string} text - Текст для "печатания".
+     */
+    function applyTypingAnimation(element, text) {
+        // 1. Очищаем элемент от предыдущего содержимого.
+        element.innerHTML = ''; 
+
+        // 2. Создаем span, который будет содержать анимированный текст.
+        // Это необходимо, чтобы анимация перезапускалась каждый раз.
+        const span = document.createElement('span');
+        span.textContent = text;
+
+        // 3. Динамически рассчитываем скорость анимации.
+        const typingSpeedMsPerChar = 30; // 30 миллисекунд на символ. Можете изменить для скорости.
+        let duration = (text.length * typingSpeedMsPerChar) / 1000;
+        // Ограничиваем длительность, чтобы избежать слишком медленной или быстрой анимации.
+        duration = Math.max(0.5, Math.min(duration, 2.5)); // Анимация будет от 0.5 до 2.5 секунд.
+
+        // 4. Передаем рассчитанные параметры в CSS через переменные.
+        span.style.setProperty('--typing-duration', `${duration}s`);
+        span.style.setProperty('--typing-steps', text.length);
+        
+        // 5. Добавляем класс, который запускает анимацию.
+        span.classList.add('typing-animation');
+        element.appendChild(span);
+
+        // 6. Устанавливаем "слушатель", который сработает ОДИН РАЗ, когда анимация закончится.
+        span.addEventListener('animationend', () => {
+            // 7. Делаем "уборку":
+            //    - Убираем класс анимации, чтобы остановить мигание курсора.
+            span.classList.remove('typing-animation');
+            //    - Убираем сам курсор (правую рамку).
+            span.style.borderRight = 'none';
+            //    - Возвращаем нормальный перенос строк, чтобы текст мог занимать несколько строк.
+            span.style.whiteSpace = 'pre-wrap';
+        }, { once: true }); // { once: true } гарантирует, что обработчик сработает только один раз и удалится.
+    }
+
+    /**
+     * Отображает переведенный вопрос с анимацией.
+     * @param {object} originalQuestion - Исходный (непереведенный) объект вопроса.
+     */
+    async function displayTranslatedQuestion(originalQuestion) {
+        // 1. Показываем состояние загрузки
+        questionTextEl.innerHTML = 'Перевод...';
+        answerOptionsEl.innerHTML = '';
+
+        const targetLang = localStorage.getItem('appLanguage') || 'ru';
+        
+        // 2. Получаем перевод
+        const translatedQuestion = await getTranslatedQuestion(originalQuestion, targetLang);
+
+        // 3. Если перевод не удался, показываем оригинал
+        if (!translatedQuestion) {
+            alert("Не удалось перевести вопрос. Будет показан оригинал.");
+            loadQuestion(currentQuestionIndex); // Вызываем обычную загрузку
+            return;
+        }
+
+        // 4. Применяем анимацию к тексту вопроса
+        applyTypingAnimation(questionTextEl, translatedQuestion.text);
+
+        // 5. Постепенно "печатаем" варианты ответов с небольшой задержкой
+        translatedQuestion.options.forEach((option, i) => {
+            const li = document.createElement('li');
+            li.dataset.index = i;
+            answerOptionsEl.appendChild(li);
+
+            // Запускаем анимацию для каждого варианта с небольшой задержкой
+            setTimeout(() => {
+                applyTypingAnimation(li, option.text);
+                // Восстанавливаем классы и обработчики, как в оригинальной функции loadQuestion
+                const answerState = userAnswers[currentQuestionIndex];
+                if (answerState && answerState.answered) {
+                    li.classList.add('answered');
+                    if (i === answerState.selectedOptionIndex) {
+                        li.classList.add(answerState.correct ? 'correct' : 'incorrect');
+                    }
+                    if (!answerState.correct && i === translatedQuestion.correctAnswerIndex) {
+                        li.classList.add('actual-correct');
+                    }
+                } else {
+                    li.addEventListener('click', handleAnswerSelect);
+                }
+            }, i * 200); // Задержка 200мс между появлением каждого варианта
+        });
+    }
 
 
 
@@ -8745,6 +8924,10 @@ const mainApp = (function() {
 })();
 
 document.addEventListener('DOMContentLoaded', mainApp.init);
-// Expose mainApp to window for ChatModule access
+
+
+
+
+
 window.mainApp = mainApp;
 
