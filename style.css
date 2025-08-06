@@ -5489,29 +5489,3 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     opacity: 0;
 }
 
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ АНИМАЦИИ ПЕРЕВОДА (ЭФФЕКТ ПЕЧАТИ) v2 === */
-/* ======================================================= */
-
-.typing-animation {
-    display: inline-block; 
-    overflow: hidden; 
-    white-space: nowrap; /* Включаем режим одной строки ТОЛЬКО на время анимации */
-    border-right: 2px solid var(--text-color); 
-    /* Используем CSS-переменные, которые будем задавать из JS */
-    animation: 
-        typing var(--typing-duration, 1s) steps(var(--typing-steps, 20), end),
-        blink-caret .75s step-end infinite;
-}
-
-/* Анимация печатания: изменяем ширину от 0 до 100% */
-@keyframes typing {
-    from { width: 0 }
-    to { width: 100% }
-}
-
-/* Анимация мигания курсора: показываем/скрываем правую рамку */
-@keyframes blink-caret {
-    from, to { border-color: transparent }
-    50% { border-color: var(--text-color); }
-}

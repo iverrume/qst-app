@@ -5156,6 +5156,8 @@ const mainApp = (function() {
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
     let isExitConfirmed = false;
     let isTranslateModeEnabled = localStorage.getItem('isTranslateModeEnabled') === 'true'; 
+    let currentQuizTranslations = new Map(); // Для кэша в текущей сессии
+    let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
     
 
     // --- Constants ---
@@ -6623,6 +6625,28 @@ const mainApp = (function() {
 
     function processFile(fileName, fileContent, quizContext = null) {
         originalFileNameForReview = fileName;
+
+        // --- НАЧАЛО НОВОЙ ЛОГИКИ КЭШИРОВАНИЯ ---
+        // Создаем уникальный ключ для файла, используя имя и длину контента (как простую версию)
+        currentFileCacheKey = `translation_cache_${fileName}_${fileContent.length}`;
+        
+        // Пытаемся загрузить сохраненные переводы для этого файла
+        const storedTranslations = localStorage.getItem(currentFileCacheKey);
+        if (storedTranslations) {
+            try {
+                // Преобразуем сохраненную строку обратно в Map
+                currentQuizTranslations = new Map(JSON.parse(storedTranslations));
+                console.log(`Загружен кэш переводов для файла "${fileName}" (${currentQuizTranslations.size} записей).`);
+            } catch (e) {
+                console.error("Ошибка парсинга кэша переводов:", e);
+                currentQuizTranslations = new Map();
+            }
+        } else {
+            // Если кэша нет, начинаем с чистого листа
+            currentQuizTranslations = new Map();
+        }
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ КЭШИРОВАНИЯ ---
+
         allParsedQuestions = parseQstContent(fileContent);
         currentQuizContext = quizContext; // Сохраняем контекст для дальнейшего использования
 
@@ -7074,8 +7098,6 @@ const mainApp = (function() {
             return;
         }
 
-        // --- НАЧАЛО НОВОЙ, УЛУЧШЕННОЙ ЛОГИКИ ---
-
         // ШАГ 1: ВСЕГДА настраиваем общий интерфейс для вопроса
         getEl('score').style.visibility = 'visible';
         const questionNumber = questionsForCurrentQuiz.slice(0, index + 1).filter(q => q.type !== 'category').length;
@@ -7088,8 +7110,7 @@ const mainApp = (function() {
         webSearchDropdown?.classList.remove('hidden');
         updateTranslateModeToggleVisual();
 
-        // ИСПРАВЛЕНИЕ: Очищаем ОБА динамических блока в самом начале.
-        // Это гарантирует, что не будет дубликатов ни при каких условиях.
+        // Очищаем ОБА динамических блока в самом начале.
         questionTextEl.innerHTML = '';
         answerOptionsEl.innerHTML = '';
         feedbackAreaEl.textContent = '';
@@ -7099,32 +7120,8 @@ const mainApp = (function() {
         if (isTranslateModeEnabled) {
             displayTranslatedQuestion(item);
         } else {
-            // Отображаем оригинальный вопрос
-            questionTextEl.innerHTML = renderQuestionTextWithTriggers(item);
-            addTriggerClickListeners();
-            
-            // Отображаем варианты ответов для оригинала
-            if (item.options) {
-                 item.options.forEach((option, i) => {
-                    const li = document.createElement('li');
-                    li.textContent = option.text;
-                    li.dataset.index = i;
-                    
-                    const answerState = userAnswers[index];
-                    if (answerState && answerState.answered) {
-                        li.classList.add('answered');
-                        if (i === answerState.selectedOptionIndex) {
-                            li.classList.add(answerState.correct ? 'correct' : 'incorrect');
-                        }
-                        if (!answerState.correct && i === item.correctAnswerIndex) {
-                            li.classList.add('actual-correct');
-                        }
-                    } else {
-                        li.addEventListener('click', handleAnswerSelect);
-                    }
-                    answerOptionsEl.appendChild(li);
-                });
-            }
+            // Отображаем оригинальный вопрос (используем новую функцию без анимации)
+            displayQuestionContent(item, false);
         }
 
         // ШАГ 3: Восстанавливаем обратную связь, если ответ уже был дан
@@ -7150,7 +7147,6 @@ const mainApp = (function() {
         updateNavigationButtons();
         updateQuickNavButtons();
     }
-
 
 
 
@@ -7384,6 +7380,10 @@ const mainApp = (function() {
         originalFileNameForReview = '';
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
+
+        // Очищаем переменные кэша
+        currentQuizTranslations.clear();
+        currentFileCacheKey = null;
         
         const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea];
         screensToHide.forEach(el => el?.classList.add('hidden'));
@@ -8807,97 +8807,303 @@ const mainApp = (function() {
             return null;
         }
     }
+    /**
+     * Получает перевод из кэша или запрашивает с сервера, если его там нет.
+     * @param {object} questionObject - Исходный объект вопроса.
+     * @param {number} originalIndex - Уникальный индекс вопроса в исходном файле.
+     * @returns {Promise<{question: object, fromCache: boolean}|null>} - Объект с результатом или null.
+     */
+    async function getCachedOrFetchTranslation(questionObject, originalIndex) {
+        // 1. Проверяем кэш текущей сессии. Это самый быстрый способ.
+        if (currentQuizTranslations.has(originalIndex)) {
+            return { question: currentQuizTranslations.get(originalIndex), fromCache: true };
+        }
+
+        // 2. Если в кэше нет, запрашиваем перевод с сервера.
+        const targetLang = localStorage.getItem('appLanguage') || 'ru';
+        const translatedQuestion = await getTranslatedQuestion(questionObject, targetLang);
+
+        // 3. Если перевод успешен, сохраняем его ВЕЗДЕ.
+        if (translatedQuestion) {
+            // Сохраняем в кэш сессии
+            currentQuizTranslations.set(originalIndex, translatedQuestion);
+
+            // Сохраняем в постоянный кэш localStorage
+            if (currentFileCacheKey) {
+                try {
+                    const serializedCache = JSON.stringify(Array.from(currentQuizTranslations.entries()));
+                    localStorage.setItem(currentFileCacheKey, serializedCache);
+                } catch (e) {
+                    console.error("Ошибка сохранения кэша в localStorage (возможно, нет места):", e);
+                }
+            }
+            return { question: translatedQuestion, fromCache: false }; // fromCache: false означает, что нужна анимация
+        }
+
+        // 4. Если перевод не удался, возвращаем null.
+        return null;
+    }
+
+
+
+
+
+
+
+
+
+
+
 
     /**
-     * Применяет умную анимацию "печатания" к элементу с динамической скоростью
-     * и автоматической очисткой стилей после завершения.
-     * @param {HTMLElement} element - Элемент, в котором будет анимация (например, div или li).
-     * @param {string} text - Текст для "печатания".
+     * Копирует критически важные CSS-стили из исходного элемента в зеркальный
      */
-    function applyTypingAnimation(element, text) {
-        // 1. Очищаем элемент от предыдущего содержимого.
-        element.innerHTML = ''; 
-
-        // 2. Создаем span, который будет содержать анимированный текст.
-        // Это необходимо, чтобы анимация перезапускалась каждый раз.
-        const span = document.createElement('span');
-        span.textContent = text;
-
-        // 3. Динамически рассчитываем скорость анимации.
-        const typingSpeedMsPerChar = 30; // 30 миллисекунд на символ. Можете изменить для скорости.
-        let duration = (text.length * typingSpeedMsPerChar) / 1000;
-        // Ограничиваем длительность, чтобы избежать слишком медленной или быстрой анимации.
-        duration = Math.max(0.5, Math.min(duration, 2.5)); // Анимация будет от 0.5 до 2.5 секунд.
-
-        // 4. Передаем рассчитанные параметры в CSS через переменные.
-        span.style.setProperty('--typing-duration', `${duration}s`);
-        span.style.setProperty('--typing-steps', text.length);
+    function copyRelevantStyles(sourceElement, targetElement) {
+        const computedStyle = window.getComputedStyle(sourceElement);
+        const relevantStyles = [
+            'width', 'font-family', 'font-size', 'font-weight', 'font-style',
+            'line-height', 'letter-spacing', 'word-spacing', 'text-transform',
+            'padding-left', 'padding-right', 'padding-top', 'padding-bottom',
+            'border-left-width', 'border-right-width', 'box-sizing',
+            'word-break', 'overflow-wrap', 'hyphens'
+        ];
         
-        // 5. Добавляем класс, который запускает анимацию.
-        span.classList.add('typing-animation');
-        element.appendChild(span);
-
-        // 6. Устанавливаем "слушатель", который сработает ОДИН РАЗ, когда анимация закончится.
-        span.addEventListener('animationend', () => {
-            // 7. Делаем "уборку":
-            //    - Убираем класс анимации, чтобы остановить мигание курсора.
-            span.classList.remove('typing-animation');
-            //    - Убираем сам курсор (правую рамку).
-            span.style.borderRight = 'none';
-            //    - Возвращаем нормальный перенос строк, чтобы текст мог занимать несколько строк.
-            span.style.whiteSpace = 'pre-wrap';
-        }, { once: true }); // { once: true } гарантирует, что обработчик сработает только один раз и удалится.
+        relevantStyles.forEach(style => {
+            targetElement.style[style] = computedStyle[style];
+        });
     }
 
     /**
-     * Отображает переведенный вопрос с анимацией.
+     * Определяет визуальные строки текста, анализируя изменения высоты элемента
+     */
+    function getVisualLines(text, referenceElement) {
+        if (!text.trim()) return [''];
+        
+        // Создаем зеркальный невидимый элемент
+        const mirror = document.createElement('div');
+        mirror.style.position = 'absolute';
+        mirror.style.visibility = 'hidden';
+        mirror.style.top = '-9999px';
+        mirror.style.left = '-9999px';
+        mirror.style.whiteSpace = 'normal';
+        mirror.style.wordWrap = 'break-word';
+        
+        // Копируем стили
+        copyRelevantStyles(referenceElement, mirror);
+        
+        document.body.appendChild(mirror);
+        
+        const words = text.split(/(\s+)/); // Сохраняем пробелы
+        const lines = [];
+        let currentLine = '';
+        let lastHeight = 0;
+        
+        try {
+            for (let i = 0; i < words.length; i++) {
+                const testText = currentLine + words[i];
+                mirror.textContent = testText;
+                const currentHeight = mirror.offsetHeight;
+                
+                // Если высота увеличилась, значит произошел перенос строки
+                if (lastHeight > 0 && currentHeight > lastHeight) {
+                    // Добавляем предыдущую строку в массив (без текущего слова)
+                    lines.push(currentLine.trim());
+                    currentLine = words[i];
+                } else {
+                    currentLine = testText;
+                }
+                
+                lastHeight = currentHeight;
+            }
+            
+            // Добавляем последнюю строку
+            if (currentLine.trim()) {
+                lines.push(currentLine.trim());
+            }
+            
+            return lines.length > 0 ? lines : [''];
+        } finally {
+            document.body.removeChild(mirror);
+        }
+    }
+
+    /**
+     * Анимирует одну строку с эффектом курсора
+     */
+    async function animateSingleLine(element, startText, endText) {
+        const cursor = '▌';
+        const charDelay = 30;
+        const totalSteps = Math.max(startText.length, endText.length);
+
+        for (let i = 0; i <= totalSteps; i++) {
+            const newPart = endText.substring(0, i);
+            const oldPart = startText.substring(i);
+            element.textContent = newPart + cursor + oldPart;
+            await new Promise(resolve => setTimeout(resolve, charDelay));
+        }
+        element.textContent = endText;
+    }
+
+    /**
+     * Основная "умная" функция анимации трансформации многострочного текста
+     */
+    async function animateTextTransformation(element, startText, endText) {
+        // Фаза измерения: определяем визуальные строки
+        const startLines = getVisualLines(startText, element);
+        const endLines = getVisualLines(endText, element);
+        
+        // Определяем максимальное количество строк для анимации
+        const maxLines = Math.max(startLines.length, endLines.length);
+        
+        // Фаза подготовки: создаем div для каждой строки
+        const originalContent = element.innerHTML;
+        element.innerHTML = '';
+        
+        const lineDivs = [];
+        for (let i = 0; i < maxLines; i++) {
+            const lineDiv = document.createElement('div');
+            lineDiv.style.minHeight = '1em'; // Предотвращаем схлопывание пустых строк
+            element.appendChild(lineDiv);
+            lineDivs.push(lineDiv);
+        }
+        
+        try {
+            // Фаза параллельной анимации: запускаем анимацию всех строк одновременно
+            const animations = [];
+            
+            for (let i = 0; i < maxLines; i++) {
+                const startLine = startLines[i] || '';
+                const endLine = endLines[i] || '';
+                
+                animations.push(
+                    animateSingleLine(lineDivs[i], startLine, endLine)
+                );
+            }
+            
+            // Ждем завершения всех анимаций
+            await Promise.all(animations);
+            
+        } finally {
+            // Фаза очистки: восстанавливаем оригинальную структуру
+            element.innerHTML = '';
+            element.textContent = endText;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Главная функция, которая управляет отображением переведенного вопроса.
+     * Реализует эффект "превращения" оригинального текста в переведенный.
      * @param {object} originalQuestion - Исходный (непереведенный) объект вопроса.
      */
     async function displayTranslatedQuestion(originalQuestion) {
-        // 1. Показываем состояние загрузки
-        questionTextEl.innerHTML = 'Перевод...';
+        const isCached = currentQuizTranslations.has(originalQuestion.originalIndex);
+
+        if (isCached) {
+            const translatedQuestion = currentQuizTranslations.get(originalQuestion.originalIndex);
+            displayQuestionContent(translatedQuestion, false);
+        } else {
+            // --- НАЧАЛО НОВОЙ ЛОГИКИ АНИМАЦИИ ---
+
+            // 1. Отображаем оригинальный контент
+            displayQuestionContent(originalQuestion, false);
+
+            // 2. Получаем перевод
+            const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex);
+
+            if (result && !result.fromCache) {
+                const translatedQuestion = result.question;
+                
+                const allAnimations = [];
+                
+                // Анимируем текст вопроса с новым многострочным эффектом
+                allAnimations.push(
+                    animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
+                );
+
+                // Одновременно анимируем все варианты ответов (каждый как одну строку)
+                const optionElements = answerOptionsEl.querySelectorAll('li');
+                for (let i = 0; i < optionElements.length; i++) {
+                    const li = optionElements[i];
+                    const originalOptionText = originalQuestion.options[i]?.text || '';
+                    const translatedOptionText = translatedQuestion.options[i]?.text || '';
+                    
+                    if (originalOptionText || translatedOptionText) {
+                        // Добавляем небольшую задержку для эффекта "лесенки"
+                        allAnimations.push(
+                            new Promise(resolve => {
+                                setTimeout(async () => {
+                                    // Используем новую, простую функцию для одиночных строк
+                                    await animateSingleLine(li, originalOptionText, translatedOptionText);
+                                    resolve();
+                                }, i * 100); 
+                            })
+                        );
+                    }
+                }
+                
+                // Ждем завершения всех анимаций
+                await Promise.all(allAnimations);
+                
+            } else if (!result) {
+                alert("Не удалось перевести вопрос. Будет показан оригинал.");
+            }
+        }
+    }
+
+    /**
+     * МГНОВЕННО отображает текст вопроса и вариантов без анимации.
+     * @param {object} question - Объект вопроса для отображения.
+     * @param {boolean} animate - Этот параметр больше не используется, но оставлен для совместимости.
+     */
+    function displayQuestionContent(question, animate) {
+        questionTextEl.innerHTML = '';
         answerOptionsEl.innerHTML = '';
 
-        const targetLang = localStorage.getItem('appLanguage') || 'ru';
-        
-        // 2. Получаем перевод
-        const translatedQuestion = await getTranslatedQuestion(originalQuestion, targetLang);
+        questionTextEl.textContent = question.text;
 
-        // 3. Если перевод не удался, показываем оригинал
-        if (!translatedQuestion) {
-            alert("Не удалось перевести вопрос. Будет показан оригинал.");
-            loadQuestion(currentQuestionIndex); // Вызываем обычную загрузку
-            return;
-        }
-
-        // 4. Применяем анимацию к тексту вопроса
-        applyTypingAnimation(questionTextEl, translatedQuestion.text);
-
-        // 5. Постепенно "печатаем" варианты ответов с небольшой задержкой
-        translatedQuestion.options.forEach((option, i) => {
-            const li = document.createElement('li');
-            li.dataset.index = i;
-            answerOptionsEl.appendChild(li);
-
-            // Запускаем анимацию для каждого варианта с небольшой задержкой
-            setTimeout(() => {
-                applyTypingAnimation(li, option.text);
-                // Восстанавливаем классы и обработчики, как в оригинальной функции loadQuestion
+        if (question.options) {
+            question.options.forEach((option, i) => {
+                const li = document.createElement('li');
+                li.dataset.index = i;
+                li.textContent = option.text;
+                answerOptionsEl.appendChild(li);
+                
                 const answerState = userAnswers[currentQuestionIndex];
                 if (answerState && answerState.answered) {
                     li.classList.add('answered');
                     if (i === answerState.selectedOptionIndex) {
                         li.classList.add(answerState.correct ? 'correct' : 'incorrect');
                     }
-                    if (!answerState.correct && i === translatedQuestion.correctAnswerIndex) {
+                    if (!answerState.correct && i === question.correctAnswerIndex) {
                         li.classList.add('actual-correct');
                     }
                 } else {
                     li.addEventListener('click', handleAnswerSelect);
                 }
-            }, i * 200); // Задержка 200мс между появлением каждого варианта
-        });
+            });
+        }
     }
+
+
+
+
+
+
+
+
+
+
 
 
 
