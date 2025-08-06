@@ -3742,12 +3742,20 @@ button[onclick*="copyToClipboard"].copied:after {
 
 
 @media (max-width: 768px) {
-    .header-buttons {
-        /* Уменьшаем расстояние между кнопками */
-        gap: 5px;
+    /* --- НАЧАЛО ИСПРАВЛЕНИЙ --- */
+
+    /* 1. Уменьшаем отступ у заголовка, чтобы дать больше места кнопкам */
+    .header-controls h1 {
+        margin-right: 5px;
     }
 
-    /* Применяем ОДИНАКОВЫЕ стили ко ВСЕМ кнопкам в панели */
+    /* 2. Запрещаем кнопкам переноситься и уменьшаем отступы между ними */
+    .header-buttons {
+        gap: 4px; /* Делаем отступ еще меньше */
+        flex-wrap: nowrap; /* Гарантирует, что кнопки останутся в одном ряду */
+    }
+
+    /* 3. Уменьшаем размер ВСЕХ кнопок в панели */
     #searchWebButton,
     #themeToggle,
     #quickModeToggle,
@@ -3756,14 +3764,12 @@ button[onclick*="copyToClipboard"].copied:after {
     #languageToggle,
     #chatToggle,
     #favoriteQuestionBtn,
-    #translateQuestionBtn { /* <-- ВОТ ОНО, ГЛАВНОЕ ДОБАВЛЕНИЕ */
-        /* Уменьшаем внутренние отступы (делаем кнопку компактнее) */
-        padding: 5px 8px;
-        /* Немного уменьшаем размер самой иконки (был 1.3em) */
-        font-size: 1.2em;
+    #translateQuestionBtn {
+        padding: 4px 6px; /* Делаем кнопки еще компактнее */
+        font-size: 1.1em;   /* Уменьшаем иконки */
     }
+    /* --- КОНЕЦ ИСПРАВЛЕНИЙ --- */
 }
-
 
 
 
@@ -5505,15 +5511,15 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
 
 /* 2. Сама анимация с "бегущими точками" */
 @keyframes translating-dots {
-  0% { content: '|अA'; }
-  33% { content: 'अ|A'; }
-  66% { content: 'अA|'; }
-  100% { content: 'अA'; }
+  0% { content: '|अа'; }
+  33% { content: 'अ|а'; }
+  66% { content: 'अа|'; }
+  100% { content: 'अа'; }
 }
 
 /* 3. Стиль, который применяется к кнопке во время перевода */
 #translateQuestionBtn.translating::after {
-    content: 'अA.'; /* Начальное состояние текста */
+    content: 'अа.'; /* Начальное состояние текста */
     position: absolute;
     top: 0;
     left: 0;
