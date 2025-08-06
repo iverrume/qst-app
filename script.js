@@ -8675,7 +8675,7 @@ const mainApp = (function() {
                 // Убедитесь, что сообщение пришло именно от вашего расширения.
                 // ID расширения можно найти на странице chrome://extensions
                 // ЗАМЕНИТЕ 'ID_ВАШЕГО_РАСШИРЕНИЯ' НА НАСТОЯЩИЙ ID ПОСЛЕ ЗАГРУЗКИ
-                const EXPECTED_SENDER_ID = 'nheplgdeaomgdkggbidlkbkplapenbke'; // Например: 'abcdefghijklmnopabcdefghijklmnop'
+                //const EXPECTED_SENDER_ID = 'nheplgdeaomgdkggbidlkbkplapenbke'; // Например: 'abcdefghijklmnopabcdefghijklmnop'
 
                 // В режиме разработки ID может меняться, поэтому можно временно закомментировать проверку
                 // if (sender.id !== EXPECTED_SENDER_ID) {
