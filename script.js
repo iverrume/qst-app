@@ -5118,12 +5118,24 @@ const mainApp = (function() {
 
 
 
+
+
     function _(key) {
         const currentLang = localStorage.getItem('appLanguage') || 'ru';
         return LANG_PACK[currentLang][key] || key;
     }
 
     const getEl = (id) => document.getElementById(id);
+
+    /**
+     * Создает уникальный ключ для кэша, комбинируя индекс вопроса и код языка.
+     * @param {number} originalIndex - Уникальный индекс вопроса.
+     * @param {string} lang - Код языка (например, 'ru', 'en').
+     * @returns {string} - Комбинированный ключ (например, '15_en').
+     */
+    function getCacheKey(originalIndex, lang) {
+        return `${originalIndex}_${lang}`;
+    }
 
 
     // --- Firebase & Auth ---
@@ -6675,39 +6687,42 @@ const mainApp = (function() {
     }
 
 
+     
+
     function processFile(fileName, fileContent, quizContext = null) {
         originalFileNameForReview = fileName;
-
-        // --- НАЧАЛО НОВОЙ ЛОГИКИ КЭШИРОВАНИЯ ---
-        // Создаем уникальный ключ для файла, используя имя и длину контента (как простую версию)
         currentFileCacheKey = `translation_cache_${fileName}_${fileContent.length}`;
         
         // Пытаемся загрузить сохраненные переводы для этого файла
         const storedTranslations = localStorage.getItem(currentFileCacheKey);
         if (storedTranslations) {
             try {
-                // Преобразуем сохраненную строку обратно в Map
-                currentQuizTranslations = new Map(JSON.parse(storedTranslations));
-                console.log(`Загружен кэш переводов для файла "${fileName}" (${currentQuizTranslations.size} записей).`);
+                // ИЗМЕНЕНИЕ: Добавлена проверка формата.
+                // Старый кэш был просто массивом. Новый - массив массивов.
+                const parsedData = JSON.parse(storedTranslations);
+                if (Array.isArray(parsedData) && (parsedData.length === 0 || Array.isArray(parsedData[0]))) {
+                    currentQuizTranslations = new Map(parsedData);
+                    console.log(`Загружен кэш переводов для файла "${fileName}" (${currentQuizTranslations.size} записей).`);
+                } else {
+                    // Если формат старый, просто начинаем с чистого листа.
+                    console.log("Обнаружен старый формат кэша. Создается новый.");
+                    currentQuizTranslations = new Map();
+                }
             } catch (e) {
                 console.error("Ошибка парсинга кэша переводов:", e);
                 currentQuizTranslations = new Map();
             }
         } else {
-            // Если кэша нет, начинаем с чистого листа
             currentQuizTranslations = new Map();
         }
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ КЭШИРОВАНИЯ ---
 
         allParsedQuestions = parseQstContent(fileContent);
-        currentQuizContext = quizContext; // Сохраняем контекст для дальнейшего использования
-
+        currentQuizContext = quizContext; 
         hideGlobalLoader();
 
         if (allParsedQuestions.length > 0) {
             saveRecentFile(fileName, fileContent);
             
-            // Показываем экран настроек
             fileUploadArea.classList.add('hidden');
             searchResultsContainer.classList.add('hidden');
             quizSetupArea.classList.remove('hidden');
@@ -6719,29 +6734,22 @@ const mainApp = (function() {
             questionRangeEndInput.max = questionCount;
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
 
-            // --- НАЧАЛО НОВОЙ ЛОГИКИ: Блокировка/разблокировка настроек ---
-            // Если это "официальный" тест
             if (quizContext && !quizContext.isPractice) {
-                // Выставляем нужные настройки и блокируем их
                 shuffleQuestionsCheckbox.checked = true;
                 shuffleAnswersCheckbox.checked = true;
                 readingModeCheckbox.checked = false;
-                
                 shuffleQuestionsCheckbox.disabled = true;
                 shuffleAnswersCheckbox.disabled = true;
                 readingModeCheckbox.disabled = true;
                 questionRangeStartInput.disabled = true;
                 questionRangeEndInput.disabled = true;
             } else {
-                // Для всех остальных случаев (пробный тест, обычный файл) - всё разблокировано
                 shuffleQuestionsCheckbox.disabled = false;
                 shuffleAnswersCheckbox.disabled = false;
                 readingModeCheckbox.disabled = false;
                 questionRangeStartInput.disabled = false;
                 questionRangeEndInput.disabled = false;
             }
-            // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
-
         } else {
             alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
         }
@@ -8909,26 +8917,35 @@ const mainApp = (function() {
             return null;
         }
     }
+
+
+
+
+
     /**
      * Получает перевод из кэша или запрашивает с сервера, если его там нет.
+     * Теперь работает с ключами, зависящими от языка.
      * @param {object} questionObject - Исходный объект вопроса.
      * @param {number} originalIndex - Уникальный индекс вопроса в исходном файле.
+     * @param {string} targetLang - Целевой язык перевода.
      * @returns {Promise<{question: object, fromCache: boolean}|null>} - Объект с результатом или null.
      */
-    async function getCachedOrFetchTranslation(questionObject, originalIndex) {
-        // 1. Проверяем кэш текущей сессии. Это самый быстрый способ.
-        if (currentQuizTranslations.has(originalIndex)) {
-            return { question: currentQuizTranslations.get(originalIndex), fromCache: true };
+    async function getCachedOrFetchTranslation(questionObject, originalIndex, targetLang) {
+        // ИЗМЕНЕНИЕ: Используем новый, комбинированный ключ.
+        const cacheKey = getCacheKey(originalIndex, targetLang);
+
+        // 1. Проверяем кэш сессии по новому ключу.
+        if (currentQuizTranslations.has(cacheKey)) {
+            return { question: currentQuizTranslations.get(cacheKey), fromCache: true };
         }
 
         // 2. Если в кэше нет, запрашиваем перевод с сервера.
-        const targetLang = localStorage.getItem('appLanguage') || 'ru';
         const translatedQuestion = await getTranslatedQuestion(questionObject, targetLang);
 
         // 3. Если перевод успешен, сохраняем его ВЕЗДЕ.
         if (translatedQuestion) {
-            // Сохраняем в кэш сессии
-            currentQuizTranslations.set(originalIndex, translatedQuestion);
+            // ИЗМЕНЕНИЕ: Сохраняем в кэш сессии с новым ключом.
+            currentQuizTranslations.set(cacheKey, translatedQuestion);
 
             // Сохраняем в постоянный кэш localStorage
             if (currentFileCacheKey) {
@@ -8939,17 +8956,12 @@ const mainApp = (function() {
                     console.error("Ошибка сохранения кэша в localStorage (возможно, нет места):", e);
                 }
             }
-            return { question: translatedQuestion, fromCache: false }; // fromCache: false означает, что нужна анимация
+            return { question: translatedQuestion, fromCache: false };
         }
 
         // 4. Если перевод не удался, возвращаем null.
         return null;
     }
-
-
-
-
-
 
 
 
@@ -9104,50 +9116,42 @@ const mainApp = (function() {
 
     /**
      * Главная функция, которая управляет отображением переведенного вопроса.
-     * Реализует эффект "превращения" оригинального текста в переведенный.
      * @param {object} originalQuestion - Исходный (непереведенный) объект вопроса.
      */
     async function displayTranslatedQuestion(originalQuestion) {
-        // --- ИСПРАВЛЕНИЕ 1 (Часть 1): Запоминаем индекс вопроса на момент отправки запроса
         const indexAtRequestTime = currentQuestionIndex;
+        
+        // ИЗМЕНЕНИЕ: Определяем целевой язык в самом начале.
+        const targetLang = localStorage.getItem('appLanguage') || 'ru';
+        const cacheKey = getCacheKey(originalQuestion.originalIndex, targetLang);
 
-        const isCached = currentQuizTranslations.has(originalQuestion.originalIndex);
+        // ИЗМЕНЕНИЕ: Проверяем наличие кэша для КОНКРЕТНОГО ЯЗЫКА.
+        const isCachedForThisLang = currentQuizTranslations.has(cacheKey);
 
-        if (isCached) {
-            // Если перевод уже есть в кэше, просто отображаем его без анимаций
-            const translatedQuestion = currentQuizTranslations.get(originalQuestion.originalIndex);
+        if (isCachedForThisLang) {
+            // Если перевод для нужного языка уже есть, просто отображаем его.
+            const translatedQuestion = currentQuizTranslations.get(cacheKey);
             displayQuestionContent(translatedQuestion, false);
         } else {
-            // Если перевода нет, начинаем процесс с анимацией
-            
-            // 1. Сначала мгновенно отображаем оригинальный контент
+            // Если перевода для этого языка нет, начинаем процесс с анимацией.
             displayQuestionContent(originalQuestion, false);
-
-            // --- ИСПРАВЛЕНИЕ 2 (Часть 1): Запускаем анимацию на кнопке
             translateQuestionBtn?.classList.add('translating');
             
             try {
-                // 2. Запрашиваем перевод с сервера (или из localStorage)
-                const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex);
+                // ИЗМЕНЕНИЕ: Передаем целевой язык в функцию.
+                const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex, targetLang);
 
-                // --- ИСПРАВЛЕНИЕ 1 (Часть 2): Проверяем, не переключил ли пользователь вопрос
                 if (indexAtRequestTime !== currentQuestionIndex) {
-                    console.log('Перевод для предыдущего вопроса отменен, так как пользователь перешел дальше.');
-                    return; // Просто выходим, оставляя новый вопрос нетронутым
+                    console.log('Перевод для предыдущего вопроса отменен.');
+                    return;
                 }
                 
-                // 3. Если перевод пришел и он не из кэша сессии, анимируем текст
                 if (result && !result.fromCache) {
                     const translatedQuestion = result.question;
-                    
                     const allAnimations = [];
                     
-                    // Анимируем текст вопроса
-                    allAnimations.push(
-                        animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
-                    );
+                    allAnimations.push(animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text));
 
-                    // Одновременно анимируем варианты ответов
                     const optionElements = answerOptionsEl.querySelectorAll('li');
                     for (let i = 0; i < optionElements.length; i++) {
                         const li = optionElements[i];
@@ -9169,17 +9173,13 @@ const mainApp = (function() {
                     await Promise.all(allAnimations);
                     
                 } else if (!result) {
-                    // Если перевод не удался, сообщаем об этом
                     alert("Не удалось перевести вопрос. Будет показан оригинал.");
                 }
-
             } finally {
-                // --- ИСПРАВЛЕНИЕ 2 (Часть 2): В любом случае убираем анимацию с кнопки
                 translateQuestionBtn?.classList.remove('translating');
             }
         }
     }
-
 
 
 

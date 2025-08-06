@@ -78,7 +78,7 @@ body.dark-mode {
     --shadow-hover-color: rgba(0,0,0,0.3);
     /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
     --timer-text-color: #87ceeb; /* Небесно-голубой для таймера */
-    --quick-nav-current-bg: #4f5b66; /* Выбранный вопрос в навигации */
+    --quick-nav-current-bg: #263542; /* Выбранный вопрос в навигации */
     /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --quick-nav-current-text: #f0f0f0;
     --theme-toggle-border: #555;
