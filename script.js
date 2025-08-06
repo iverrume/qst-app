@@ -4674,6 +4674,21 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91g
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ============================================
 // ОСНОВНОЙ СКРИПТ ПРИЛОЖЕНИЯ
 // ============================================    
@@ -4683,6 +4698,18 @@ const mainApp = (function() {
 
     let backButtonPressedOnce = false;
 
+    // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+
+    // 1. Создаём единый объект для языков, доступный для всего модуля.
+    const SUPPORTED_LANGS = {
+        ru: 'Ру',
+        en: 'En',
+        kk: 'Қаз'
+    };
+    // Создаём единый массив для порядка переключения.
+    const LANG_CYCLE = ['ru', 'en', 'kk'];
+
+    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 // --- СЛОВАРЬ ПЕРЕВОДОВ ---
     const LANG_PACK = {
         ru: {
@@ -7710,28 +7737,43 @@ const mainApp = (function() {
 
  
 
+    /**
+     * Устанавливает язык для всего приложения и обновляет интерфейс.
+     * @param {string} lang - Код языка для установки ('ru', 'en', 'kk').
+     */
     function setLanguage(lang) {
-        // Сохраняем выбор пользователя
+        // 1. Сохраняем выбор пользователя в localStorage для будущих сессий.
         localStorage.setItem('appLanguage', lang);
         
-        // Вызываем переводчик чата
-        ChatModule.setLanguage(lang);
+        // 2. Вызываем метод setLanguage из модуля чата, чтобы он тоже обновился.
+        // Добавлена проверка на случай, если модуль чата не инициализирован.
+        if (window.ChatModule) {
+            ChatModule.setLanguage(lang);
+        }
 
+        // 3. Получаем соответствующий пакет переводов для основного интерфейса.
         const translations = LANG_PACK[lang];
+        if (!translations) {
+            console.error(`Пакет переводов для языка "${lang}" не найден.`);
+            return;
+        }
 
-        // Обновляем текст на всех элементах с атрибутом data-lang-key
+        // 4. Обновляем текст на всех элементах с атрибутом data-lang-key.
+        // Это основной механизм перевода статических элементов интерфейса.
         document.querySelectorAll('[data-lang-key]').forEach(el => {
             const key = el.dataset.langKey;
             if (translations[key]) {
+                // Устанавливаем текст для плейсхолдеров или для содержимого элемента.
                 if (el.placeholder) {
                     el.placeholder = translations[key];
                 } else {
+                    // Используем innerHTML, так как в некоторых переводах могут быть теги (например, <span>)
                     el.innerHTML = translations[key];
                 }
             }
         });
         
-        // Обновляем title у кнопок
+        // 5. Обновляем всплывающие подсказки (атрибут title) у кнопок в шапке.
         getEl('copyQuestionBtnQuiz').title = translations.copy_question_title;
         getEl('searchWebButton').title = translations.search_web_title;
         getEl('chatToggle').title = translations.chat_button_title;
@@ -7740,40 +7782,38 @@ const mainApp = (function() {
         getEl('themeToggle').title = translations.theme_button_title;
         getEl('languageToggle').title = translations.language_toggle_title;
         getEl('favoriteQuestionBtn').title = translations.favorite_button_title;
+        getEl('translateQuestionBtn').title = translations.translate_question_title;
         
+        // 6. Обновляем текст на самой кнопке переключения языка.
+        // ИСПОЛЬЗУЕМ ЦЕНТРАЛИЗОВАННЫЕ КОНСТАНТЫ ВМЕСТО ЛОКАЛЬНЫХ МАССИВОВ.
+        const currentIndex = LANG_CYCLE.indexOf(lang);
+        const nextIndex = (currentIndex + 1) % LANG_CYCLE.length;
+        const nextLangCode = LANG_CYCLE[nextIndex];
+        languageToggle.textContent = SUPPORTED_LANGS[nextLangCode];
 
-        // НОВАЯ ЛОГИКА ДЛЯ ТЕКСТА КНОПКИ (ИСПРАВЛЕНА)
-        const langs = ['ru', 'en', 'kk']; // Используем правильный код 'kk'
-        // Текст, который будет ПОКАЗАН на кнопке для переключения НА следующий язык
-        const displayLangsForNext = ['Ру', 'En', 'Қаз'];  
-        const currentIndex = langs.indexOf(lang);
-        const nextIndex = (currentIndex + 1) % langs.length; // Находим индекс СЛЕДУЮЩЕГО языка
-        languageToggle.textContent = displayLangsForNext[nextIndex]; // Показываем текст для СЛЕДУЮЩЕГО языка
-
-
-
-        // === НАЧАЛО НОВОГО КОДА: Мгновенный перевод результатов поиска ===
-        // Проверяем, активен ли экран результатов поиска и есть ли что перерисовывать
+        // 7. Если открыт экран результатов поиска, перерисовываем его, чтобы применился новый язык.
         if (searchResultsContainer && !searchResultsContainer.classList.contains('hidden') && searchResultsData.length > 0) {
-            console.log('Перерисовываем результаты поиска для нового языка...');
-            // Вызываем функцию, которая заново отрисует текущую карточку с результатами,
-            // используя уже обновленный словарь LANG_PACK.
+            console.log('Перерисовка результатов поиска для нового языка...');
             displaySingleResult(currentResultIndex);
         }
-        // === КОНЕЦ НОВОГО КОДА ===
         
+        // 8. Перезагружаем сохраненные сессии, чтобы их описания тоже перевелись.
         loadSavedSession();
+        
+        // 9. Обновляем текст на кнопках скачивания перевода, если они видимы.
+        updateDownloadButtonsText();
     }
 
 
 
     function toggleLanguage() {
         const currentLang = localStorage.getItem('appLanguage') || 'ru';
-        // ИСПРАВЛЕНИЕ: Заменяем 'kz' на 'kk'
-        const langs = ['ru', 'en', 'kk']; 
-        const currentIndex = langs.indexOf(currentLang);
-        const nextIndex = (currentIndex + 1) % langs.length;
-        const newLang = langs[nextIndex];
+        
+        // 2. Используем единый массив LANG_CYCLE
+        const currentIndex = LANG_CYCLE.indexOf(currentLang);
+        const nextIndex = (currentIndex + 1) % LANG_CYCLE.length;
+        const newLang = LANG_CYCLE[nextIndex];
+        
         setLanguage(newLang);
     }
 
