@@ -4572,9 +4572,10 @@ body.claude-mode .message.mine.pinned .message-content {
     background-color: var(--button-secondary-hover-bg);
 }
 
-/* === НАЧАЛО НОВОГО КОДА === */
-/* Стили для кнопки "Скачать перевод" */
-#downloadTranslatedQuizButton {
+/* === НАЧАЛО ИЗМЕНЕНИЙ === */
+/* Стили для кнопок скачивания перевода */
+#downloadTranslatedTxtButton,
+#downloadTranslatedQstButton {
     background-color: var(--button-secondary-bg);
     color: var(--button-secondary-text);
     border: 1px solid var(--button-secondary-border);
@@ -4583,10 +4584,14 @@ body.claude-mode .message.mine.pinned .message-content {
     display: inline-block;
 }
 
-#downloadTranslatedQuizButton:hover {
+#downloadTranslatedTxtButton:hover,
+#downloadTranslatedQstButton:hover {
     background-color: var(--button-secondary-hover-bg);
 }
-/* === КОНЕЦ НОВОГО КОДА === */
+/* === КОНЕЦ ИЗМЕНЕНИЙ === */
+
+
+
 #continueLaterButton:hover {
     background-color: var(--button-secondary-hover-bg);
 }

@@ -4810,7 +4810,8 @@ const mainApp = (function() {
             update_available_text: 'Доступна новая версия!',
             update_button_text: 'Обновить',
             ai_explain_button_title: 'Объяснить с помощью ИИ',
-            download_translated_quiz_button: 'Скачать перевод ({lang})',
+            download_translated_txt_button: 'Скачать перевод ({lang})(txt)',
+            download_translated_qst_button: 'Скачать перевод ({lang})(qst)',
             no_translations_to_download: 'Нет доступных переводов для скачивания.',
             error_creating_translation_file: 'Не удалось создать файл перевода.'
 
@@ -4941,7 +4942,8 @@ const mainApp = (function() {
             update_available_text: 'Жаңа нұсқасы қолжетімді!',
             update_button_text: 'Жаңарту',
             ai_explain_button_title: 'ЖИ арқылы түсіндіру',
-            download_translated_quiz_button: 'Аударманы жүктеу ({lang})',
+            download_translated_txt_button: 'Аударманы жүктеу ({lang})(txt)',
+            download_translated_qst_button: 'Аударманы жүктеу ({lang})(qst)',
             no_translations_to_download: 'Жүктеу үшін қолжетімді аудармалар жоқ.',
             error_creating_translation_file: 'Аударма файлын құру мүмкін болмады.'
         },
@@ -5077,6 +5079,10 @@ const mainApp = (function() {
             ai_explain_button_title: 'Explain with AI',
             download_translated_quiz_button: 'Download translation ({lang})',
             no_translations_to_download: 'No available translations to download.',
+            error_creating_translation_file: 'Failed to create translation file.',
+            download_translated_txt_button: 'Download translation ({lang})(txt)',
+            download_translated_qst_button: 'Download translation ({lang})(qst)',
+            no_translations_to_download: 'No available translations to download.',
             error_creating_translation_file: 'Failed to create translation file.'
         }
 
@@ -5136,7 +5142,7 @@ const mainApp = (function() {
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
     let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
     let updateNotification, updateBtn, translateQuestionBtn;
-    let downloadTranslatedQuizButton;
+    let downloadTranslatedTxtButton, downloadTranslatedQstButton;
 
 
     // --- State Variables ---
@@ -5284,8 +5290,11 @@ const mainApp = (function() {
         cancelExitBtn = getEl('cancelExitBtn');
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
+
         translateQuestionBtn = getEl('translateQuestionBtn');
-        downloadTranslatedQuizButton = getEl('downloadTranslatedQuizButton');
+        downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
+        downloadTranslatedQstButton = getEl('downloadTranslatedQstButton');
+
         initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
@@ -5503,7 +5512,10 @@ const mainApp = (function() {
             window.location.href = 'about:blank';
         });
 
-        downloadTranslatedQuizButton?.addEventListener('click', handleDownloadTranslatedQuiz);
+        // === НАЧАЛО ИЗМЕНЕНИЙ ===
+        downloadTranslatedTxtButton?.addEventListener('click', handleDownloadTranslatedTxt);
+        downloadTranslatedQstButton?.addEventListener('click', handleDownloadTranslatedQst);
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
 
     }
@@ -6984,8 +6996,11 @@ const mainApp = (function() {
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         translateQuestionBtn?.classList.remove('hidden');
         languageToggle?.classList.add('hidden');
-        downloadTranslatedQuizButton?.classList.remove('hidden');
-        updateDownloadButtonText();
+        downloadTranslatedTxtButton?.classList.remove('hidden');
+        downloadTranslatedQstButton?.classList.remove('hidden');
+        // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+        updateDownloadButtonsText(); // <-- Теперь правильно: updateDownloadButtonsText
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
         quickModeToggle?.classList.remove('hidden');
         triggerWordToggle?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
@@ -7298,7 +7313,8 @@ const mainApp = (function() {
         resultsArea.classList.remove('hidden');
         webSearchDropdown?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
-        downloadTranslatedQuizButton?.classList.add('hidden');
+        downloadTranslatedTxtButton?.classList.add('hidden');
+        downloadTranslatedQstButton?.classList.add('hidden');
         copyQuestionBtnQuiz?.classList.add('hidden');
         
         finalCorrectEl.textContent = score;
@@ -7419,7 +7435,8 @@ const mainApp = (function() {
         webSearchDropdown?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
         translateQuestionBtn?.classList.add('hidden');
-        downloadTranslatedQuizButton?.classList.add('hidden');
+        downloadTranslatedTxtButton?.classList.add('hidden');
+        downloadTranslatedQstButton?.classList.add('hidden');
         languageToggle?.classList.remove('hidden');
         quickModeToggle?.classList.add('hidden');
         triggerWordToggle?.classList.add('hidden');
@@ -9168,14 +9185,18 @@ const mainApp = (function() {
 
 
     // === НАЧАЛО НОВОГО КОДА ===
-    function updateDownloadButtonText() {
-        if (!downloadTranslatedQuizButton) return;
+    function updateDownloadButtonsText() {
+        if (!downloadTranslatedTxtButton || !downloadTranslatedQstButton) return;
         const lang = localStorage.getItem('appLanguage') || 'ru';
-        let text = _('download_translated_quiz_button').replace('{lang}', lang);
-        downloadTranslatedQuizButton.textContent = text;
+        
+        let textTxt = _('download_translated_txt_button').replace('{lang}', lang);
+        downloadTranslatedTxtButton.textContent = textTxt;
+
+        let textQst = _('download_translated_qst_button').replace('{lang}', lang);
+        downloadTranslatedQstButton.textContent = textQst;
     }
 
-    async function handleDownloadTranslatedQuiz() {
+    async function handleDownloadTranslatedTxt() {
         if (!isTranslateModeEnabled || currentQuizTranslations.size === 0) {
             alert(_('no_translations_to_download'));
             return;
@@ -9210,16 +9231,43 @@ const mainApp = (function() {
     }
     // === КОНЕЦ НОВОГО КОДА ===
 
-    // --- Public methods exposed from mainApp ---
-    return {
-//...
 
+    async function handleDownloadTranslatedQst() {
+        if (!isTranslateModeEnabled || currentQuizTranslations.size === 0) {
+            alert(_('no_translations_to_download'));
+            return;
+        }
 
+        let fileContent = '';
+        questionsForCurrentQuiz.forEach(q => {
+            if (q.type === 'category') {
+                fileContent += `#_#${q.text}#_#\n\n`;
+                return;
+            }
+            
+            const translatedQuestion = currentQuizTranslations.get(q.originalIndex);
+            const questionToUse = translatedQuestion || q;
 
+            fileContent += `? ${questionToUse.text}\n`;
+            questionToUse.options.forEach(opt => {
+                const prefix = opt.isCorrect ? '+' : '-';
+                fileContent += `${prefix} ${opt.text}\n`;
+            });
+            fileContent += '\n';
+        });
 
+        if (!fileContent.trim()) {
+            alert(_('error_creating_translation_file'));
+            return;
+        }
 
+        const lang = localStorage.getItem('appLanguage') || 'ru';
+        const baseFileName = originalFileNameForReview ? originalFileNameForReview.replace(/\.(qst|txt)$/i, '') : 'quiz';
+        const fileName = `${lang}_${baseFileName}.qst`;
 
-
+        await downloadOrShareFile(fileName, fileContent, 'text/plain;charset=utf-8', 'Переведенный тест (QST)');
+    }
+    // === КОНЕЦ НОВОГО КОДА ===
 
     // --- Public methods exposed from mainApp ---
     return {
