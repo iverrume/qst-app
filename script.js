@@ -8669,38 +8669,31 @@ const mainApp = (function() {
 
     function setupExtensionListener() {
         // Проверяем, запущено ли приложение в контексте расширения Chrome
-        if (window.chrome && chrome.runtime && chrome.runtime.onMessage) {
-            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-                // ВАЖНАЯ ПРОВЕРКА БЕЗОПАСНОСТИ!
-                // Убедитесь, что сообщение пришло именно от вашего расширения.
-                // ID расширения можно найти на странице chrome://extensions
-                // ЗАМЕНИТЕ 'ID_ВАШЕГО_РАСШИРЕНИЯ' НА НАСТОЯЩИЙ ID ПОСЛЕ ЗАГРУЗКИ
-                //const EXPECTED_SENDER_ID = 'nheplgdeaomgdkggbidlkbkplapenbke'; // Например: 'abcdefghijklmnopabcdefghijklmnop'
+        // === НАЧАЛО НОВОГО КОДА ===
+        window.addEventListener("message", (event) => {
+            // Принимаем сообщения только от самого себя (от нашего content script)
+            if (event.source !== window || !event.data) {
+                return;
+            }
 
-                // В режиме разработки ID может меняться, поэтому можно временно закомментировать проверку
-                // if (sender.id !== EXPECTED_SENDER_ID) {
-                //     console.warn("Получено сообщение от неизвестного источника:", sender.id);
-                //     return;
-                // }
-
-                if (message.type === 'QSTIUM_EXECUTE_SEARCH') {
-                    console.log('Получена команда поиска от расширения:', message.text);
-                    
-                    const searchInput = getEl('searchQueryInput');
-                    const searchButton = getEl('searchButton');
-                    
+            // Проверяем, что у сообщения наш уникальный тип
+            if (event.data.type && (event.data.type === "FROM_QSTIUM_EXTENSION")) {
+                 console.log('Сайт QSTiUM получил команду поиска от расширения:', event.data.text);
+                 
+                 const searchInput = getEl('searchQueryInput');
+                 const searchButton = getEl('searchButton');
+                 
+                 if(searchInput && searchButton) {
                     // Вставляем текст в поле
-                    searchInput.value = message.text;
+                    searchInput.value = event.data.text;
                     
                     // Имитируем клик по кнопке поиска
                     searchButton.click();
-                    
-                    // Отправляем ответ расширению, что все прошло успешно
-                    sendResponse({ status: "success", message: "Поиск запущен" });
-                }
-            });
-            console.log("Слушатель сообщений от расширения QSTiUM Helper активен.");
-        }
+                 }
+            }
+        }, false);
+        // === КОНЕЦ НОВОГО КОДА ===
+        console.log("Слушатель сообщений от расширения QSTiUM Helper активен.");
     }
 
 
