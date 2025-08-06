@@ -5637,6 +5637,26 @@ const mainApp = (function() {
         resultCounterEl.textContent = `${index + 1} / ${searchResultsData.length}`;
         prevResultBtn.disabled = (index === 0);
         nextResultBtn.disabled = (index >= searchResultsData.length - 1);
+        // === НАЧАЛО НОВОГО КОДА ===
+        // После того, как мы отобразили результат, ищем правильный ответ
+        const resultCard = searchResultCardsContainer.querySelector('.result-card');
+        if (resultCard) {
+            // Ищем элемент с классом 'correct'
+            const correctAnswerEl = resultCard.querySelector('.answer-option.correct');
+            if (correctAnswerEl) {
+                // Извлекаем чистый текст ответа, убирая галочку "✓" в начале
+                const answerText = correctAnswerEl.textContent.replace(/^✓\s*/, '').trim();
+                
+                console.log(`QSTiUM.com: Найден правильный ответ: "${answerText}". Отправляю в расширение.`);
+                
+                // Отправляем сообщение нашему content.js, который крутится на этой же странице
+                window.postMessage({
+                    type: "TO_QSTIUM_EXTENSION", // Новый тип сообщения
+                    answer: answerText
+                }, "*");
+            }
+        }
+        // === КОНЕЦ НОВОГО КОДА ===
     }
 
 
