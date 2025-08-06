@@ -3743,11 +3743,11 @@ button[onclick*="copyToClipboard"].copied:after {
 
 @media (max-width: 768px) {
     .header-buttons {
-        /* Уменьшаем расстояние между кнопками с 10px до 4px */
-        gap: 6px;
+        /* Уменьшаем расстояние между кнопками */
+        gap: 5px;
     }
 
-    /* Применяем стили ко всем кнопкам в панели */
+    /* Применяем ОДИНАКОВЫЕ стили ко ВСЕМ кнопкам в панели */
     #searchWebButton,
     #themeToggle,
     #quickModeToggle,
@@ -3755,13 +3755,17 @@ button[onclick*="copyToClipboard"].copied:after {
     #triggerWordToggle,
     #languageToggle,
     #chatToggle,
-    #favoriteQuestionBtn {
-        /* Уменьшаем внутренние отступы (делаем кнопку уже) */
-        padding: 5px 6px;
+    #favoriteQuestionBtn,
+    #translateQuestionBtn { /* <-- ВОТ ОНО, ГЛАВНОЕ ДОБАВЛЕНИЕ */
+        /* Уменьшаем внутренние отступы (делаем кнопку компактнее) */
+        padding: 5px 8px;
         /* Немного уменьшаем размер самой иконки (был 1.3em) */
-        font-size: 1.1em;
+        font-size: 1.2em;
     }
 }
+
+
+
 
 /* --- НАЧАЛО НОВЫХ СТИЛЕЙ: Файлы в чате --- */
 
@@ -5489,3 +5493,38 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     opacity: 0;
 }
 
+/* ======================================================= */
+/* ===         АНИМАЦИЯ КНОПКИ ПЕРЕВОДА              === */
+/* ======================================================= */
+
+/* 1. Готовим кнопку к анимации */
+#translateQuestionBtn {
+    position: relative; /* Необходимо для позиционирования псевдо-элемента */
+    overflow: hidden;   /* Скрывает все, что выходит за пределы кнопки */
+}
+
+/* 2. Сама анимация с "бегущими точками" */
+@keyframes translating-dots {
+  0% { content: '|अA'; }
+  33% { content: 'अ|A'; }
+  66% { content: 'अA|'; }
+  100% { content: 'अA'; }
+}
+
+/* 3. Стиль, который применяется к кнопке во время перевода */
+#translateQuestionBtn.translating::after {
+    content: 'अA.'; /* Начальное состояние текста */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Используем цвет фона активной кнопки для консистентности */
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Запускаем нашу анимацию */
+    animation: translating-dots 1.5s infinite step-end;
+}

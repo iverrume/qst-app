@@ -7381,6 +7381,10 @@ const mainApp = (function() {
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
 
+        isTranslateModeEnabled = false;
+        localStorage.setItem('isTranslateModeEnabled', 'false');
+        updateTranslateModeToggleVisual();
+
         // Очищаем переменные кэша
         currentQuizTranslations.clear();
         currentFileCacheKey = null;
@@ -8931,8 +8935,8 @@ const mainApp = (function() {
      * Анимирует одну строку с эффектом курсора
      */
     async function animateSingleLine(element, startText, endText) {
-        const cursor = '▌';
-        const charDelay = 30;
+        const cursor = '|';
+        const charDelay = 7;
         const totalSteps = Math.max(startText.length, endText.length);
 
         for (let i = 0; i <= totalSteps; i++) {
@@ -9000,66 +9004,88 @@ const mainApp = (function() {
 
 
 
-
     /**
      * Главная функция, которая управляет отображением переведенного вопроса.
      * Реализует эффект "превращения" оригинального текста в переведенный.
      * @param {object} originalQuestion - Исходный (непереведенный) объект вопроса.
      */
     async function displayTranslatedQuestion(originalQuestion) {
+        // --- ИСПРАВЛЕНИЕ 1 (Часть 1): Запоминаем индекс вопроса на момент отправки запроса
+        const indexAtRequestTime = currentQuestionIndex;
+
         const isCached = currentQuizTranslations.has(originalQuestion.originalIndex);
 
         if (isCached) {
+            // Если перевод уже есть в кэше, просто отображаем его без анимаций
             const translatedQuestion = currentQuizTranslations.get(originalQuestion.originalIndex);
             displayQuestionContent(translatedQuestion, false);
         } else {
-            // --- НАЧАЛО НОВОЙ ЛОГИКИ АНИМАЦИИ ---
-
-            // 1. Отображаем оригинальный контент
+            // Если перевода нет, начинаем процесс с анимацией
+            
+            // 1. Сначала мгновенно отображаем оригинальный контент
             displayQuestionContent(originalQuestion, false);
 
-            // 2. Получаем перевод
-            const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex);
+            // --- ИСПРАВЛЕНИЕ 2 (Часть 1): Запускаем анимацию на кнопке
+            translateQuestionBtn?.classList.add('translating');
+            
+            try {
+                // 2. Запрашиваем перевод с сервера (или из localStorage)
+                const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex);
 
-            if (result && !result.fromCache) {
-                const translatedQuestion = result.question;
-                
-                const allAnimations = [];
-                
-                // Анимируем текст вопроса с новым многострочным эффектом
-                allAnimations.push(
-                    animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
-                );
-
-                // Одновременно анимируем все варианты ответов (каждый как одну строку)
-                const optionElements = answerOptionsEl.querySelectorAll('li');
-                for (let i = 0; i < optionElements.length; i++) {
-                    const li = optionElements[i];
-                    const originalOptionText = originalQuestion.options[i]?.text || '';
-                    const translatedOptionText = translatedQuestion.options[i]?.text || '';
-                    
-                    if (originalOptionText || translatedOptionText) {
-                        // Добавляем небольшую задержку для эффекта "лесенки"
-                        allAnimations.push(
-                            new Promise(resolve => {
-                                setTimeout(async () => {
-                                    // Используем новую, простую функцию для одиночных строк
-                                    await animateSingleLine(li, originalOptionText, translatedOptionText);
-                                    resolve();
-                                }, i * 100); 
-                            })
-                        );
-                    }
+                // --- ИСПРАВЛЕНИЕ 1 (Часть 2): Проверяем, не переключил ли пользователь вопрос
+                if (indexAtRequestTime !== currentQuestionIndex) {
+                    console.log('Перевод для предыдущего вопроса отменен, так как пользователь перешел дальше.');
+                    return; // Просто выходим, оставляя новый вопрос нетронутым
                 }
                 
-                // Ждем завершения всех анимаций
-                await Promise.all(allAnimations);
-                
-            } else if (!result) {
-                alert("Не удалось перевести вопрос. Будет показан оригинал.");
+                // 3. Если перевод пришел и он не из кэша сессии, анимируем текст
+                if (result && !result.fromCache) {
+                    const translatedQuestion = result.question;
+                    
+                    const allAnimations = [];
+                    
+                    // Анимируем текст вопроса
+                    allAnimations.push(
+                        animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
+                    );
+
+                    // Одновременно анимируем варианты ответов
+                    const optionElements = answerOptionsEl.querySelectorAll('li');
+                    for (let i = 0; i < optionElements.length; i++) {
+                        const li = optionElements[i];
+                        const originalOptionText = originalQuestion.options[i]?.text || '';
+                        const translatedOptionText = translatedQuestion.options[i]?.text || '';
+                        
+                        if (originalOptionText || translatedOptionText) {
+                            allAnimations.push(
+                                new Promise(resolve => {
+                                    setTimeout(async () => {
+                                        await animateSingleLine(li, originalOptionText, translatedOptionText);
+                                        resolve();
+                                    }, i * 100); 
+                                })
+                            );
+                        }
+                    }
+                    
+                    await Promise.all(allAnimations);
+                    
+                } else if (!result) {
+                    // Если перевод не удался, сообщаем об этом
+                    alert("Не удалось перевести вопрос. Будет показан оригинал.");
+                }
+
+            } finally {
+                // --- ИСПРАВЛЕНИЕ 2 (Часть 2): В любом случае убираем анимацию с кнопки
+                translateQuestionBtn?.classList.remove('translating');
             }
         }
     }
+
+
+
+
+
 
     /**
      * МГНОВЕННО отображает текст вопроса и вариантов без анимации.
