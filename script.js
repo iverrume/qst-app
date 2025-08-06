@@ -5300,6 +5300,7 @@ const mainApp = (function() {
         setLanguage(savedLang);
         createVariantFilterCheckboxes();
         manageBackButtonInterceptor();
+        setupExtensionListener();
     }
 
 
@@ -8664,6 +8665,50 @@ const mainApp = (function() {
     }
 
 
+
+
+    function setupExtensionListener() {
+        // Проверяем, запущено ли приложение в контексте расширения Chrome
+        if (window.chrome && chrome.runtime && chrome.runtime.onMessage) {
+            chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+                // ВАЖНАЯ ПРОВЕРКА БЕЗОПАСНОСТИ!
+                // Убедитесь, что сообщение пришло именно от вашего расширения.
+                // ID расширения можно найти на странице chrome://extensions
+                // ЗАМЕНИТЕ 'ID_ВАШЕГО_РАСШИРЕНИЯ' НА НАСТОЯЩИЙ ID ПОСЛЕ ЗАГРУЗКИ
+                const EXPECTED_SENDER_ID = 'nheplgdeaomgdkggbidlkbkplapenbke'; // Например: 'abcdefghijklmnopabcdefghijklmnop'
+
+                // В режиме разработки ID может меняться, поэтому можно временно закомментировать проверку
+                // if (sender.id !== EXPECTED_SENDER_ID) {
+                //     console.warn("Получено сообщение от неизвестного источника:", sender.id);
+                //     return;
+                // }
+
+                if (message.type === 'QSTIUM_EXECUTE_SEARCH') {
+                    console.log('Получена команда поиска от расширения:', message.text);
+                    
+                    const searchInput = getEl('searchQueryInput');
+                    const searchButton = getEl('searchButton');
+                    
+                    // Вставляем текст в поле
+                    searchInput.value = message.text;
+                    
+                    // Имитируем клик по кнопке поиска
+                    searchButton.click();
+                    
+                    // Отправляем ответ расширению, что все прошло успешно
+                    sendResponse({ status: "success", message: "Поиск запущен" });
+                }
+            });
+            console.log("Слушатель сообщений от расширения QSTiUM Helper активен.");
+        }
+    }
+
+
+
+
+
+
+
     // --- Public methods exposed from mainApp ---
     return {
         init: initializeApp,
@@ -8677,6 +8722,7 @@ const mainApp = (function() {
         showGlobalLoader: showGlobalLoader,
         hideGlobalLoader: hideGlobalLoader,
         manageBackButtonInterceptor: manageBackButtonInterceptor,
+        setupExtensionListener: setupExtensionListener,
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания...');
             console.log('detectMobileDevice():', detectMobileDevice());
