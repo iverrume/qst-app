@@ -4557,7 +4557,36 @@ body.claude-mode .message.mine.pinned .message-content {
     display: inline-block;
     margin-right: 10px; /* Отступ от кнопки "Завершить" */
 }
+/* Стили для кнопки "Продолжить позже" */
+#continueLaterButton {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border: 1px solid var(--button-secondary-border);
+    padding: 10px 25px;
+    width: auto;
+    display: inline-block;
+    margin-right: 10px; /* Отступ от кнопки "Завершить" */
+}
 
+#continueLaterButton:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+
+/* === НАЧАЛО НОВОГО КОДА === */
+/* Стили для кнопки "Скачать перевод" */
+#downloadTranslatedQuizButton {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border: 1px solid var(--button-secondary-border);
+    padding: 10px 25px;
+    width: auto;
+    display: inline-block;
+}
+
+#downloadTranslatedQuizButton:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+/* === КОНЕЦ НОВОГО КОДА === */
 #continueLaterButton:hover {
     background-color: var(--button-secondary-hover-bg);
 }

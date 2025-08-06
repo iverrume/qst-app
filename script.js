@@ -4810,6 +4810,9 @@ const mainApp = (function() {
             update_available_text: 'Доступна новая версия!',
             update_button_text: 'Обновить',
             ai_explain_button_title: 'Объяснить с помощью ИИ',
+            download_translated_quiz_button: 'Скачать перевод ({lang})',
+            no_translations_to_download: 'Нет доступных переводов для скачивания.',
+            error_creating_translation_file: 'Не удалось создать файл перевода.'
 
         },
         kk: {
@@ -4938,6 +4941,9 @@ const mainApp = (function() {
             update_available_text: 'Жаңа нұсқасы қолжетімді!',
             update_button_text: 'Жаңарту',
             ai_explain_button_title: 'ЖИ арқылы түсіндіру',
+            download_translated_quiz_button: 'Аударманы жүктеу ({lang})',
+            no_translations_to_download: 'Жүктеу үшін қолжетімді аудармалар жоқ.',
+            error_creating_translation_file: 'Аударма файлын құру мүмкін болмады.'
         },
         en: {
             // Main Screen
@@ -5069,6 +5075,9 @@ const mainApp = (function() {
             update_available_text: 'A new version is available!',
             update_button_text: 'Update',
             ai_explain_button_title: 'Explain with AI',
+            download_translated_quiz_button: 'Download translation ({lang})',
+            no_translations_to_download: 'No available translations to download.',
+            error_creating_translation_file: 'Failed to create translation file.'
         }
 
 
@@ -5127,6 +5136,7 @@ const mainApp = (function() {
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
     let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
     let updateNotification, updateBtn, translateQuestionBtn;
+    let downloadTranslatedQuizButton;
 
 
     // --- State Variables ---
@@ -5275,6 +5285,7 @@ const mainApp = (function() {
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
         translateQuestionBtn = getEl('translateQuestionBtn');
+        downloadTranslatedQuizButton = getEl('downloadTranslatedQuizButton');
         initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
@@ -5491,6 +5502,8 @@ const mainApp = (function() {
 
             window.location.href = 'about:blank';
         });
+
+        downloadTranslatedQuizButton?.addEventListener('click', handleDownloadTranslatedQuiz);
 
 
     }
@@ -6971,6 +6984,8 @@ const mainApp = (function() {
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         translateQuestionBtn?.classList.remove('hidden');
         languageToggle?.classList.add('hidden');
+        downloadTranslatedQuizButton?.classList.remove('hidden');
+        updateDownloadButtonText();
         quickModeToggle?.classList.remove('hidden');
         triggerWordToggle?.classList.remove('hidden');
         loadQuestion(currentQuestionIndex);
@@ -7283,6 +7298,7 @@ const mainApp = (function() {
         resultsArea.classList.remove('hidden');
         webSearchDropdown?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
+        downloadTranslatedQuizButton?.classList.add('hidden');
         copyQuestionBtnQuiz?.classList.add('hidden');
         
         finalCorrectEl.textContent = score;
@@ -7403,6 +7419,7 @@ const mainApp = (function() {
         webSearchDropdown?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
         translateQuestionBtn?.classList.add('hidden');
+        downloadTranslatedQuizButton?.classList.add('hidden');
         languageToggle?.classList.remove('hidden');
         quickModeToggle?.classList.add('hidden');
         triggerWordToggle?.classList.add('hidden');
@@ -8585,33 +8602,54 @@ const mainApp = (function() {
 
  
     function showAIExplanation(question) {
+        // Запоминаем ОРИГИНАЛЬНЫЙ вопрос для отправки в ИИ. Это не меняется.
         currentAIQuestion = question;
+        
         const questionEl = getEl('aiExplanationQuestion');
         const outputEl = getEl('aiExplanationOutput');
-        const styleContentEl = getEl('aiExplanationStyleContent'); // Находим контейнер списка
-        const styleTextEl = getEl('aiExplanationStyleText'); // Находим текст на кнопке
+        const styleContentEl = getEl('aiExplanationStyleContent');
+        const styleTextEl = getEl('aiExplanationStyleText');
 
-        // 1. Очищаем и заново генерируем пункты списка для текущего языка
+        // 1. Код для генерации стилей
         styleContentEl.innerHTML = '';
         const styles = ['simple', 'scientific', 'associative', 'stepByStep', 'practical', 'visual'];
         styles.forEach(styleKey => {
             const link = document.createElement('a');
             link.href = '#';
             link.dataset.style = styleKey;
+            
+            // --- ИСПРАВЛЕНИЕ: Добавлен пропущенный "+" ---
             link.textContent = _('ai_style_' + styleKey.toLowerCase());
+            
             if (styleKey === 'simple') {
-                link.classList.add('active'); // Выделяем "Просто" по умолчанию
+                link.classList.add('active');
             }
             styleContentEl.appendChild(link);
         });
-
-        // 2. Сбрасываем текст на главной кнопке
         styleTextEl.textContent = _('ai_style_simple');
-        
-        // 3. Остальная логика остается прежней
-        const correctAnswerText = question.options[question.correctAnswerIndex].text;
-        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(question.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(correctAnswerText)}`;
-        
+
+        // 2. Определяем, какой текст ПОКАЗЫВАТЬ пользователю
+        let displayQuestionText = question.text;
+        let displayCorrectAnswerText = question.options[question.correctAnswerIndex].text;
+
+        // Проверяем, включен ли режим перевода И есть ли готовый перевод в кэше
+        if (isTranslateModeEnabled && currentQuizTranslations.has(question.originalIndex)) {
+            const translatedQuestion = currentQuizTranslations.get(question.originalIndex);
+            
+            // Если да, используем переведенный текст для отображения
+            displayQuestionText = translatedQuestion.text;
+            // Индекс правильного ответа совпадает, поэтому просто берем текст из переведенного объекта
+            displayCorrectAnswerText = translatedQuestion.options[translatedQuestion.correctAnswerIndex].text;
+            
+            console.log("В модальном окне ИИ отображается перевод.");
+        } else {
+            console.log("В модальном окне ИИ отображается оригинал.");
+        }
+
+        // 3. Заполняем HTML, используя переменные с нужным текстом (оригинальным или переведенным)
+        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(displayQuestionText)}<br><strong>Правильный ответ:</strong> ${escapeHTML(displayCorrectAnswerText)}`;
+
+        // 4. Остальной код функции для сворачивания и показа модального окна
         const oldBtn = questionEl.querySelector('.expand-question-btn');
         if (oldBtn) oldBtn.remove();
         questionEl.classList.remove('collapsible', 'expanded');
@@ -8638,8 +8676,11 @@ const mainApp = (function() {
         outputEl.innerHTML = '';
         
         ChatModule.showModal('aiExplanationModal');
+        // Эта функция по-прежнему будет использовать `currentAIQuestion`, который содержит ОРИГИНАЛ
         fetchAndDisplayExplanation('simple');
     }
+
+
 
 
     async function fetchAndDisplayExplanation(style) {
@@ -9125,6 +9166,53 @@ const mainApp = (function() {
 
 
 
+
+    // === НАЧАЛО НОВОГО КОДА ===
+    function updateDownloadButtonText() {
+        if (!downloadTranslatedQuizButton) return;
+        const lang = localStorage.getItem('appLanguage') || 'ru';
+        let text = _('download_translated_quiz_button').replace('{lang}', lang);
+        downloadTranslatedQuizButton.textContent = text;
+    }
+
+    async function handleDownloadTranslatedQuiz() {
+        if (!isTranslateModeEnabled || currentQuizTranslations.size === 0) {
+            alert(_('no_translations_to_download'));
+            return;
+        }
+
+        let fileContent = '';
+        questionsForCurrentQuiz.forEach(q => {
+            if (q.type === 'category') {
+                fileContent += `--- ${q.text} ---\n\n`;
+                return;
+            }
+            
+            const translatedQuestion = currentQuizTranslations.get(q.originalIndex);
+            const questionToUse = translatedQuestion || q;
+            
+            const correctAnswer = questionToUse.options.find(opt => opt.isCorrect);
+
+            fileContent += `Вопрос: ${questionToUse.text}\n`;
+            fileContent += `Правильный ответ: ${correctAnswer ? correctAnswer.text : 'N/A'}\n\n`;
+        });
+
+        if (!fileContent.trim()) {
+            alert(_('error_creating_translation_file'));
+            return;
+        }
+
+        const lang = localStorage.getItem('appLanguage') || 'ru';
+        const baseFileName = originalFileNameForReview ? originalFileNameForReview.replace(/\.(qst|txt)$/i, '') : 'quiz';
+        const fileName = `${lang}_${baseFileName}.txt`;
+
+        await downloadOrShareFile(fileName, fileContent, 'text/plain;charset=utf-8', 'Переведенный тест');
+    }
+    // === КОНЕЦ НОВОГО КОДА ===
+
+    // --- Public methods exposed from mainApp ---
+    return {
+//...
 
 
 
