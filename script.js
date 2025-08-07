@@ -9348,30 +9348,26 @@ const mainApp = (function() {
 
     /**
      * МГНОВЕННО отображает текст вопроса и вариантов без анимации.
-     * ТЕПЕРЬ эта функция также отвечает за рендеринг триггер-слов.
+     * ВЕРСИЯ 2.0: Всегда отображает подсветку триггеров,
+     * но делает слова кликабельными только при активном режиме.
      * @param {object} question - Объект вопроса для отображения.
      */
     function displayQuestionContent(question) {
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-
         // 1. Очищаем старое содержимое, как и раньше.
         questionTextEl.innerHTML = '';
         answerOptionsEl.innerHTML = '';
 
-        // 2. Проверяем, включен ли режим триггер-слов.
+        // 2. ВСЕГДА используем функцию, которая создает HTML с подсветкой.
+        // Это гарантирует, что если у вопроса есть отмеченные слова, они будут красными.
+        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+
+        // 3. А вот КЛИКАБЕЛЬНОСТЬ добавляем, только если режим триггеров активен.
+        // Это разделяет визуальное отображение и интерактивность.
         if (triggerWordModeEnabled) {
-            // Если режим ВКЛЮЧЕН, используем сложную функцию,
-            // которая обернёт каждое слово в <span>.
-            questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
-            
-            // СРАЗУ ЖЕ после создания <span>, навешиваем на них обработчики кликов.
             addTriggerClickListeners();
-        } else {
-            // Если режим ВЫКЛЮЧЕН, используем простой и быстрый .textContent.
-            questionTextEl.textContent = question.text;
         }
 
-        // 3. Код для отображения вариантов ответов остаётся без изменений.
+        // 4. Код для отображения вариантов ответов остаётся без изменений.
         if (question.options) {
             question.options.forEach((option, i) => {
                 const li = document.createElement('li');
@@ -9393,8 +9389,6 @@ const mainApp = (function() {
                 }
             });
         }
-
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
 
 
@@ -9414,25 +9408,71 @@ const mainApp = (function() {
         downloadTranslatedQstButton.textContent = textQst;
     }
 
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ-ПОМОЩНИК
+     * Восстанавливает текстовую строку вопроса, вставляя маркеры (~) для триггер-слов.
+     * @param {object} questionObject - Объект вопроса, который может содержать triggeredWordIndices.
+     * @returns {string} - Текст вопроса, готовый для записи в .qst файл.
+     */
+    function reconstructTextWithTriggers(questionObject) {
+        // Если у вопроса нет текста или нет отмеченных слов, просто возвращаем исходный текст.
+        if (!questionObject.text || !questionObject.triggeredWordIndices || questionObject.triggeredWordIndices.length === 0) {
+            return questionObject.text;
+        }
+
+        const tokens = tokenizeText(questionObject.text);
+        let reconstructedText = '';
+        let wordIdx = 0;
+
+        tokens.forEach(token => {
+            const isWord = /\S/.test(token) && !/^[.,;:!?()"“”«»-]+$/.test(token);
+            if (isWord) {
+                // Проверяем, является ли текущее слово триггером
+                if (questionObject.triggeredWordIndices.includes(wordIdx)) {
+                    reconstructedText += `~${token}~`; // Оборачиваем в маркеры
+                } else {
+                    reconstructedText += token;
+                }
+                wordIdx++;
+            } else {
+                // Это пунктуация или пробел, просто добавляем
+                reconstructedText += token;
+            }
+        });
+
+        return reconstructedText.trim();
+    }
+
+
+ 
+
     async function handleDownloadTranslatedTxt() {
         if (!isTranslateModeEnabled || currentQuizTranslations.size === 0) {
             alert(_('no_translations_to_download'));
             return;
         }
 
+        const lang = localStorage.getItem('appLanguage') || 'ru';
         let fileContent = '';
+
         questionsForCurrentQuiz.forEach(q => {
             if (q.type === 'category') {
                 fileContent += `--- ${q.text} ---\n\n`;
                 return;
             }
             
-            const translatedQuestion = currentQuizTranslations.get(q.originalIndex);
+            const cacheKey = getCacheKey(q.originalIndex, lang);
+            const translatedQuestion = currentQuizTranslations.get(cacheKey);
             const questionToUse = translatedQuestion || q;
             
             const correctAnswer = questionToUse.options.find(opt => opt.isCorrect);
 
-            fileContent += `Вопрос: ${questionToUse.text}\n`;
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию для текста вопроса ---
+            const questionTextForFile = reconstructTextWithTriggers(questionToUse);
+
+            fileContent += `Вопрос: ${questionTextForFile}\n`;
             fileContent += `Правильный ответ: ${correctAnswer ? correctAnswer.text : 'N/A'}\n\n`;
         });
 
@@ -9441,13 +9481,12 @@ const mainApp = (function() {
             return;
         }
 
-        const lang = localStorage.getItem('appLanguage') || 'ru';
         const baseFileName = originalFileNameForReview ? originalFileNameForReview.replace(/\.(qst|txt)$/i, '') : 'quiz';
         const fileName = `${lang}_${baseFileName}.txt`;
 
         await downloadOrShareFile(fileName, fileContent, 'text/plain;charset=utf-8', 'Переведенный тест');
     }
-    // === КОНЕЦ НОВОГО КОДА ===
+
 
 
     async function handleDownloadTranslatedQst() {
@@ -9455,37 +9494,44 @@ const mainApp = (function() {
             alert(_('no_translations_to_download'));
             return;
         }
-
+        
+        const lang = localStorage.getItem('appLanguage') || 'ru';
         let fileContent = '';
+
         questionsForCurrentQuiz.forEach(q => {
             if (q.type === 'category') {
                 fileContent += `#_#${q.text}#_#\n\n`;
                 return;
             }
             
-            const translatedQuestion = currentQuizTranslations.get(q.originalIndex);
+            const cacheKey = getCacheKey(q.originalIndex, lang);
+            const translatedQuestion = currentQuizTranslations.get(cacheKey);
             const questionToUse = translatedQuestion || q;
 
-            fileContent += `? ${questionToUse.text}\n`;
+            // --- ИЗМЕНЕНИЕ: Используем новую функцию для текста вопроса ---
+            const questionTextForFile = reconstructTextWithTriggers(questionToUse);
+
+            fileContent += `? ${questionTextForFile}\n`;
             questionToUse.options.forEach(opt => {
                 const prefix = opt.isCorrect ? '+' : '-';
                 fileContent += `${prefix} ${opt.text}\n`;
             });
             fileContent += '\n';
         });
-
+        
         if (!fileContent.trim()) {
             alert(_('error_creating_translation_file'));
             return;
         }
 
-        const lang = localStorage.getItem('appLanguage') || 'ru';
         const baseFileName = originalFileNameForReview ? originalFileNameForReview.replace(/\.(qst|txt)$/i, '') : 'quiz';
         const fileName = `${lang}_${baseFileName}.qst`;
 
         await downloadOrShareFile(fileName, fileContent, 'text/plain;charset=utf-8', 'Переведенный тест (QST)');
     }
-    // === КОНЕЦ НОВОГО КОДА ===
+
+
+
 
     // --- Public methods exposed from mainApp ---
     return {
