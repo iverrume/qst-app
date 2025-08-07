@@ -3851,6 +3851,11 @@ button[onclick*="copyToClipboard"].copied:after {
     padding-bottom: 12px;
 }
 
+
+
+
+
+
 #fileActionDownloadBtn {
     background-color: var(--button-secondary-bg);
 }
@@ -3859,11 +3864,16 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 #fileActionTestBtn {
-    background-color: var(--button-primary-bg);
+    background-color: var(--button-success-bg);
 }
 #fileActionTestBtn:hover {
     background-color: var(--button-primary-hover-bg);
 }
+
+
+
+
+
 
 /* --- КОНЕЦ НОВЫХ СТИЛЕЙ --- */
 
@@ -4681,11 +4691,11 @@ body.synthwave-mode ::-webkit-scrollbar-thumb:hover {
 
 /* Кнопка "Пробный тест" в модальном окне */
 #fileActionPracticeTestBtn {
-  background-color: var(--button-success-bg);
-  color: white;
+  background-color: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
 }
 #fileActionPracticeTestBtn:hover {
-  background-color: var(--button-success-hover-bg);
+  background-color: var(--button-secondary-hover-bg);
 }
 
 /* Таблица результатов */
@@ -5579,4 +5589,19 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
 
 .message-content.translating {
     animation: pulse-translate 1.5s infinite;
+}
+
+
+/* ВСТАВЬТЕ ЭТОТ КОД В КОНЕЦ ФАЙЛА style.css */
+
+/* ======================================================= */
+/* ===  ШИРОКОЕ ОКНО ИИ ДЛЯ ПК ВЕРСИИ (v4.0)           === */
+/* ======================================================= */
+
+/* Применяем стили только на экранах шире 768px (планшеты и ПК) */
+@media (min-width: 769px) {
+    #aiExplanationModal .modal-content {
+        max-width: 700px; /* Устанавливаем ширину, как у основного контейнера */
+        width: 90%;       /* Занимает 90% ширины, но не более 700px */
+    }
 }

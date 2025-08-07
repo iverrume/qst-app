@@ -178,7 +178,7 @@ const ChatModule = (function() {
             testing_channel_option: "Канал для тестирования (с записью результатов)",
             results_button: "📊 Результаты",
             practice_test_button: "⚡️ Пробный тест",
-            official_test_button: "🏆 Пройти тест (с записью)",
+            official_test_button: "🏆 Пройти тест",
             results_modal_title: "Результаты по тесту",
             results_table_header_num: "#",
             results_table_header_user: "Пользователь",
@@ -369,7 +369,7 @@ const ChatModule = (function() {
             testing_channel_option: "Тестілеу арнасы (нәтижелерді жазумен)",
             results_button: "📊 Нәтижелер",
             practice_test_button: "⚡️ Сынақ тесті",
-            official_test_button: "🏆 Тестті өту (жазбамен)",
+            official_test_button: "🏆 Тестті өту",
             results_modal_title: "Тест нәтижелері",
             results_table_header_num: "#",
             results_table_header_user: "Пайдаланушы",
@@ -560,7 +560,7 @@ const ChatModule = (function() {
             testing_channel_option: "Testing channel (with result tracking)",
             results_button: "📊 Results",
             practice_test_button: "⚡️ Practice Test",
-            official_test_button: "🏆 Take Official Test (Tracked)",
+            official_test_button: "🏆 Take Test",
             results_modal_title: "Test Results",
             results_table_header_num: "#",
             results_table_header_user: "User",
@@ -3909,46 +3909,61 @@ const ChatModule = (function() {
         await db.collection('messages').add(message);
     }
 
+
+// script.js
+
     function showFileActionsModal(fileId, fileName, isTestingChannel = false) {
         document.getElementById('fileActionsModalTitle').textContent = `${_chat('file_actions_modal_title')} ${decodeURIComponent(fileName)}`;
 
         const downloadBtn = document.getElementById('fileActionDownloadBtn');
         const testBtn = document.getElementById('fileActionTestBtn');
         const modalButtonsContainer = testBtn.parentElement;
+        const closeBtn = modalButtonsContainer.querySelector('button[onclick*="closeModal"]');
 
-        // Удаляем кнопку пробного теста, если она была добавлена ранее
+        // Удаляем динамически созданную кнопку, если она осталась с прошлого раза
         const oldPracticeBtn = document.getElementById('fileActionPracticeTestBtn');
         if (oldPracticeBtn) {
             oldPracticeBtn.remove();
         }
 
-        // Переименовываем и переназначаем кнопки в зависимости от типа канала
+        // Сбрасываем порядок кнопок по умолчанию (на случай если он был изменен)
+        modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
+        modalButtonsContainer.insertBefore(testBtn, closeBtn);
+
+
         if (isTestingChannel) {
-            // Создаем кнопку "Пробный тест"
+            // --- НОВАЯ ЛОГИКА ДЛЯ КАНАЛОВ ТЕСТИРОВАНИЯ ---
+            
+            // 1. Создаем кнопку "Пробный тест"
             const practiceTestBtn = document.createElement('button');
             practiceTestBtn.id = 'fileActionPracticeTestBtn';
             practiceTestBtn.textContent = _chat('practice_test_button');
-            // Пробный тест не сохраняет результаты
             practiceTestBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
-            
-            // Вставляем ее перед основной кнопкой "Пройти тест"
-            modalButtonsContainer.insertBefore(practiceTestBtn, testBtn);
-            
-            // Переименовываем основную кнопку и задаем ей правильное действие
-            testBtn.textContent = _chat('official_test_button');
+
+            // 2. Настраиваем кнопку "Пройти тест" (основная)
+            testBtn.textContent = _chat('official_test_button'); // Используем новый ключ без скобок
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: false });
 
+            // 3. Устанавливаем ПРАВИЛЬНЫЙ ПОРЯДОК:
+            // Вставляем "Пройти тест" перед кнопкой "Отмена"
+            modalButtonsContainer.insertBefore(testBtn, closeBtn); 
+            // Вставляем "Пробный тест" после "Пройти тест"
+            modalButtonsContainer.insertBefore(practiceTestBtn, closeBtn);
+            // Вставляем "Скачать" после "Пробного теста"
+            modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
+
         } else {
-            // Для обычных каналов все как раньше
-            testBtn.textContent = _chat('file_actions_test');
-            testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true }); // Обычный тест - это "пробный"
+            // --- ЛОГИКА ДЛЯ ОБЫЧНЫХ КАНАЛОВ ---
+            testBtn.textContent = _chat('practice_test_button'); // В обычном канале есть только пробный тест
+            testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
         }
         
-        // Скачивание работает одинаково
         downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
         
         showModal('fileActionsModal');
     }
+
+
 
     async function downloadSharedFile(fileId, fileName) {
         try {
