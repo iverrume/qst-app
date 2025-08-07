@@ -197,6 +197,10 @@ const ChatModule = (function() {
             ai_summary_title_selection: "💡 Сводка с выбранного сообщения:", // Новый
             password_reset_email_sent: "Письмо для сброса пароля отправлено! Пожалуйста, проверьте вашу почту (включая папку 'Спам').",
             error_user_not_found_for_reset: "Пользователь с таким email не найден.",
+            ai_analyzing_chat: 'ИИ анализирует переписку...',
+            chat_translate_button_title_on: "Показать оригинал",
+            chat_translate_button_title_off: "Перевести чат",
+            chat_translation_failed: "Ошибка перевода",
 
         },
         kk: {
@@ -384,6 +388,10 @@ const ChatModule = (function() {
             ai_summary_title_all: "💡 Арна бойынша жалпы түйіндеме:",
             password_reset_email_sent: "Құпия сөзді қалпына келтіру хаты жіберілді! Поштаңызды тексеріңіз ('Спам' қалтасын қоса).",
             error_user_not_found_for_reset: "Бұл email-мен пайдаланушы табылмады.",
+            ai_analyzing_chat: 'ЖИ хат алмасуды талдауда...',
+            chat_translate_button_title_on: "Түпнұсқаны көрсету",
+            chat_translate_button_title_off: "Чатты аудару",
+            chat_translation_failed: "Аудару қатесі",
         },
         en: {
             // TABS
@@ -573,6 +581,10 @@ const ChatModule = (function() {
             ai_summary_title_selection: "💡 Summary from selected message:",
             password_reset_email_sent: "Password reset email sent! Please check your inbox (including the spam folder).",
             error_user_not_found_for_reset: "User with this email not found.",
+            ai_analyzing_chat: 'AI is analyzing the chat...',
+            chat_translate_button_title_on: "Show Original",
+            chat_translate_button_title_off: "Translate Chat",
+            chat_translation_failed: "Translation failed",
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -605,6 +617,8 @@ const ChatModule = (function() {
     let unreadMessageCount = 0; 
     let isPinnedMode = false;
     let isAiSelectionMode = false;
+    let isChatTranslateModeEnabled = false; // Состояние режима перевода
+    let chatTranslations = new Map(); // Кэш для уже переведенных сообщений
 
     let messagesListener = null; // Cлушатель для сообщений
     let pmUnreadListener = null; // Слушатель для ЛИЧНЫХ непрочитанных
@@ -642,6 +656,16 @@ const ChatModule = (function() {
         users: { langKey: 'tab_users', icon: '👥' }
     };
 
+    /**
+     * НОВАЯ ФУНКЦИЯ-ПОМОЩНИК (ВНУТРИ CHATMODULE)
+     * Создает уникальный ключ для кэша сообщений чата, комбинируя ID и язык.
+     * @param {string} messageId - ID сообщения.
+     * @param {string} lang - Код языка (например, 'ru', 'en').
+     * @returns {string} - Комбинированный ключ (например, 'xyz-123_en').
+     */
+    function getChatCacheKey(messageId, lang) {
+        return `${messageId}_${lang}`;
+    }
 
     // --- НАЧАЛО НОВОГО КОДА: Вставляем функции сюда ---
     function debounce(func, wait) {
@@ -828,14 +852,20 @@ const ChatModule = (function() {
                                 <div class="reply-info"><span>${_chat('reply_panel_title')}</span><p id="replyingToText"></p></div>
                                 <button onclick="ChatModule.cancelReply()" class="cancel-reply-btn">×</button>
                             </div>
+
+
                             <div class="input-actions-top">
                                 <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}">😊</button>
                                 <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
                                 <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
                                 <button id="togglePinnedBtn" class="input-action-btn" title="${_chat('pinned_toggle_title')}">📌</button>
+                                <button id="chatTranslateBtn" class="input-action-btn" title="Перевести чат">अ|а</button>
                                 <div class="ai-helper-container">
                                     <button id="aiChatHelperBtn" class="input-action-btn" title="${_chat('ai_helper_title')}">🤖</button>
                                     <div id="aiChatHelperMenu" class="ai-helper-menu hidden">
+
+
+
                                         <a href="#" data-action="summarize-from-selection">${_chat('ai_summarize_from_selection')}</a>
                                         <a href="#" data-action="summarize-all">${_chat('ai_summarize_all')}</a>
                                     </div>
@@ -1263,8 +1293,7 @@ const ChatModule = (function() {
 
         // Используем делегирование событий для клика по сообщению в режиме выбора
         messageArea.addEventListener('click', handleAiMessageSelection);
-
-
+        getEl('chatTranslateBtn')?.addEventListener('click', toggleChatTranslation);
 
         const aiHelperBtn = getEl('aiChatHelperBtn');
         const aiHelperMenu = getEl('aiChatHelperMenu');
@@ -1955,69 +1984,70 @@ const ChatModule = (function() {
     }
 
 
+
+
+    /**
+     * Создает DOM-элемент для одного сообщения со всей логикой.
+     * ВЕРСИЯ 2.1: Добавлена очистка текста от лишних пробелов (.trim()).
+     * @param {object} message - Объект сообщения из базы данных Firebase.
+     * @returns {HTMLElement} - Готовый для вставки в DOM элемент сообщения.
+     */
     function createMessageElement(message) {
         const messageEl = document.createElement('div');
-        const timestamp = message.createdAt;
-
-        const displayTime = formatSmartTimestamp(timestamp);
-
-        const fullTimeTitle = timestamp?.toDate()?.toLocaleString(currentChatLang, {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        }) || '';
         messageEl.id = `message-${message.id}`;
         messageEl.className = `message ${message.authorId === currentUser?.uid ? 'mine' : 'other'}`;
         if (message.isPinned) messageEl.classList.add('pinned');
+        
+        const timestamp = message.createdAt;
+        const displayTime = formatSmartTimestamp(timestamp);
+        const fullTimeTitle = timestamp?.toDate?.().toLocaleString(currentChatLang, {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'}) || '';
         let replyHTML = '';
         if (message.replyTo) {
             replyHTML = `<div class="reply-context" onclick="ChatModule.scrollToMessage('${message.replyTo.messageId}')"><div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div><div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div></div>`;
         }
-
-        let contentHTML = '';
-        if (message.type === 'file_share') {
-        messageEl.classList.add('file-share-bubble');
-        const qCount = message.fileInfo.questions;
-        const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
         
-        // --- НАЧАЛО НОВОГО КОДА ---
-        // Проверяем, является ли текущий канал тестовым
-        const currentChannelData = channels.find(c => c.id === currentChannel);
-        const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
-
-        let resultsButtonHTML = '';
-
-        if (isTestingChannel) {
-            resultsButtonHTML = `
-                <div class="test-results-action">
-                    <button class="results-btn" onclick="ChatModule.showTestResults('${message.fileInfo.id}', '${message.channelId}')">
-                        ${_chat('results_button')}
-                    </button>
-                </div>
-            `;
-        }
-
-        contentHTML = `
-        <div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}', ${isTestingChannel})">
-            <div class="file-share-icon">📄</div>
-            <div class="file-share-details">
-                <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
-                <div class="file-share-info">${qCount} ${qText}</div>
-            </div>
-            <div class="file-share-arrow">→</div>
-        </div>
-        ${resultsButtonHTML}`; // Добавляем кнопку результатов
-
-        } else if (message.type === 'question_link') {
-            messageEl.classList.add('question-link-bubble');
-            contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
+        let contentHTML = '';
+        
+        if (message.type === 'file_share' || message.type === 'question_link') {
+            if (message.type === 'file_share') {
+                 messageEl.classList.add('file-share-bubble');
+                const qCount = message.fileInfo.questions;
+                const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
+                const currentChannelData = channels.find(c => c.id === currentChannel);
+                const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
+                const resultsButtonHTML = isTestingChannel 
+                    ? `<div class="test-results-action"><button class="results-btn" onclick="ChatModule.showTestResults('${message.fileInfo.id}', '${message.channelId}')">${_chat('results_button')}</button></div>` 
+                    : '';
+                contentHTML = `<div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}', ${isTestingChannel})"><div class="file-share-icon">📄</div><div class="file-share-details"><div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div><div class="file-share-info">${qCount} ${qText}</div></div><div class="file-share-arrow">→</div></div>${resultsButtonHTML}`;
+            } else {
+                 messageEl.classList.add('question-link-bubble');
+                contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
+            }
         } else {
+            let messageText = message.text || '';
+            let translatingClass = '';
+
+            if (isChatTranslateModeEnabled && message.text) {
+                const lang = localStorage.getItem('appLanguage') || 'ru';
+                const cacheKey = getChatCacheKey(message.id, lang);
+
+                if (chatTranslations.has(cacheKey)) {
+                    messageText = chatTranslations.get(cacheKey);
+                } else {
+                    fetchAndCacheTranslation(message);
+                    translatingClass = 'translating';
+                }
+            }
+            
             const editedIndicator = message.editedAt ? `<span class="edited-indicator">(изм.)</span>` : '';
-            const pinnedIcon = message.isPinned ? '<span class="pinned-icon" title="Закрепленное сообщение">📌</span>' : '';
-            contentHTML = `<div class="message-content">${pinnedIcon} ${escapeHTML(message.text || '')} ${editedIndicator}</div>`;
+            const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закрепленное сообщение">📌</span>` : '';
+            
+            // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            // Применяем .trim() к финальному тексту перед тем, как его экранировать и отобразить.
+            contentHTML = `<div class="message-content ${translatingClass}">${pinnedIcon} ${escapeHTML(messageText.trim())} ${editedIndicator}</div>`;
+            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         }
+        
         let reactionsHTML = '<div class="reactions-container">';
         if (message.reactions) {
             Object.entries(message.reactions).forEach(([emoji, userIds]) => {
@@ -2028,59 +2058,36 @@ const ChatModule = (function() {
             });
         }
         reactionsHTML += '</div>';
-        let actionsHTML = `
-            <button title="Ответить" onclick="ChatModule.startReply('${message.id}', '${escape(message.authorName)}', '${escape(message.text)}')">↩️</button>
-            <button title="Добавить реакцию" onclick="ChatModule.showReactionPicker('${message.id}', this)">😊</button>
-            <button title="${message.isPinned ? 'Открепить' : 'Закрепить'}" onclick="ChatModule.togglePinMessage('${message.id}')">📌</button>
-        `;
-
+        let actionsHTML = `<button title="Ответить" onclick="ChatModule.startReply('${message.id}', '${escape(message.authorName)}', '${escape(message.text)}')">↩️</button><button title="Добавить реакцию" onclick="ChatModule.showReactionPicker('${message.id}', this)">😊</button><button title="${message.isPinned ? 'Открепить' : 'Закрепить'}" onclick="ChatModule.togglePinMessage('${message.id}')">📌</button>`;
         if (message.authorId === currentUser?.uid && message.type !== 'question_link') {
             actionsHTML += `<button class="edit-message-btn" title="Редактировать" data-message-id="${message.id}">✏️</button>`;
             actionsHTML += `<button title="Удалить" onclick="ChatModule.deleteMessage('${message.id}')">🗑️</button>`;
         }
-        
         messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || _chat('anonymous_user')}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
-        
-        const MAX_HEIGHT = 250; // Высота в пикселях, после которой сообщение сворачивается
         const contentEl = messageEl.querySelector('.message-content');
-
-        // Проверяем, что это текстовое сообщение, и даем браузеру мгновение на расчет высоты
         if (contentEl) {
-            // Использование setTimeout(..., 0) - это надежный способ убедиться,
-            // что браузер успел отрисовать элемент и правильно рассчитать его scrollHeight.
             setTimeout(() => {
+                const MAX_HEIGHT = 250;
                 if (contentEl.scrollHeight > MAX_HEIGHT) {
                     contentEl.classList.add('collapsible');
-
                     const expandBtn = document.createElement('button');
                     expandBtn.className = 'expand-message-btn';
                     expandBtn.textContent = _chat('expand_message');
-
                     expandBtn.onclick = function() {
                         const isExpanded = contentEl.classList.toggle('expanded');
-                        // Меняем текст кнопки в зависимости от состояния
                         this.textContent = isExpanded ? _chat('collapse_message') : _chat('expand_message');
                     };
-
-                    // Добавляем кнопку после блока с сообщением, внутри основного элемента
                     messageEl.appendChild(expandBtn);
                 }
-            }, 0); 
+            }, 0);
         }
-
-        // Находим только что созданную кнопку редактирования внутри элемента сообщения
         const editBtn = messageEl.querySelector('.edit-message-btn');
         if (editBtn) {
-            // Это самый надежный способ передать текст:
-            // мы присваиваем его свойству DOM-элемента, а не в HTML-атрибут.
-            // Это полностью решает проблему с лимитами и экранированием.
             editBtn.dataset.rawText = message.text; 
         }
-
+        
         return messageEl;
     }
-
-
 
 
     // --- Функции для управления профилем ---
@@ -4090,6 +4097,81 @@ const ChatModule = (function() {
 
         displayMessages();
     }
+
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Переключает режим перевода чата и перерисовывает сообщения.
+     */
+    function toggleChatTranslation() {
+        isChatTranslateModeEnabled = !isChatTranslateModeEnabled;
+        const toggleBtn = getEl('chatTranslateBtn');
+        if (toggleBtn) {
+            toggleBtn.classList.toggle('active', isChatTranslateModeEnabled);
+            toggleBtn.title = isChatTranslateModeEnabled 
+                ? _chat('chat_translate_button_title_on') 
+                : _chat('chat_translate_button_title_off');
+        }
+        // Принудительно перерисовываем все видимые сообщения
+        displayMessages();
+    }
+
+
+    async function fetchAndCacheTranslation(message) {
+        if (!message.text || !message.text.trim()) return;
+
+        const lang = localStorage.getItem('appLanguage') || 'ru';
+        
+        // ИСПОЛЬЗУЕМ НОВУЮ ВНУТРЕННЮЮ ФУНКЦИЮ
+        const cacheKey = getChatCacheKey(message.id, lang);
+        
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'translateText',
+                    text: message.text,
+                    targetLang: lang
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                // Сохраняем в кэш с правильным ключом
+                chatTranslations.set(cacheKey, result.translatedText);
+                
+                const messageEl = getEl(`message-${message.id}`);
+                const contentEl = messageEl?.querySelector('.message-content');
+                if (contentEl) {
+                    // 1. Сначала убираем класс "моргания".
+                    // Это остановит анимацию "Я работаю..."
+                    contentEl.classList.remove('translating');
+
+                    // 2. Вызываем "умную" анимацию трансформации текста из mainApp.
+                    //    Это запустит анимацию "Вот результат!".
+                    //    message.text - это оригинальный текст.
+                    //    result.translatedText - это текст, полученный от сервера.
+                    await window.mainApp.animateTextTransformation(contentEl, message.text, result.translatedText);
+                }
+            } else {
+                throw new Error(result.error);
+            }
+
+        } catch (error) {
+            console.error(`Ошибка перевода сообщения ${message.id}:`, error);
+            chatTranslations.set(cacheKey, _chat('chat_translation_failed'));
+            const messageEl = getEl(`message-${message.id}`);
+            const contentEl = messageEl?.querySelector('.message-content');
+            if (contentEl) {
+                contentEl.textContent = _chat('chat_translation_failed');
+                contentEl.classList.add('translation-error');
+                contentEl.classList.remove('translating');
+            }
+        }
+    }
+
+
     
     // === НАЧАЛО НОВЫХ ФУНКЦИЙ ДЛЯ КНОПОК ===
     
@@ -4367,7 +4449,7 @@ const ChatModule = (function() {
         }
         
         // Показываем индикатор загрузки, чтобы пользователь знал, что процесс идет
-        mainApp.showGlobalLoader('ИИ анализирует переписку...');
+        mainApp.showGlobalLoader(_chat('ai_analyzing_chat'));
 
         try {
             // Отправляем запрос на наш серверный скрипт
@@ -9547,6 +9629,7 @@ const mainApp = (function() {
         hideGlobalLoader: hideGlobalLoader,
         manageBackButtonInterceptor: manageBackButtonInterceptor,
         setupExtensionListener: setupExtensionListener,
+        animateTextTransformation: animateTextTransformation,
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания...');
             console.log('detectMobileDevice():', detectMobileDevice());

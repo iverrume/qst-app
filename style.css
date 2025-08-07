@@ -295,14 +295,16 @@ body {
 
 #quickModeToggle.active,
 #translateQuestionBtn.active,
-#triggerWordToggle.active {
+#triggerWordToggle.active,
+#chatTranslateBtn.active { /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
     background-color: var(--button-primary-bg);
     color: var(--button-primary-text);
     border-color: var(--button-primary-bg);
 }
 
 body.dark-mode #quickModeToggle.active,
-body.dark-mode #triggerWordToggle.active {
+body.dark-mode #triggerWordToggle.active,
+body.dark-mode #chatTranslateBtn.active { /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
     background-color: var(--button-primary-hover-bg);
 }
 
@@ -1573,13 +1575,13 @@ body.dark-mode {
 }
 
 .message.mine {
-    margin-left: auto;
-    align-self: flex-end;
+    /* Эта команда выравнивает сам элемент по правому краю контейнера */
+    align-self: flex-end; 
 }
 
 .message.other {
-    margin-right: auto;
-    align-self: flex-start;
+    /* Эта команда выравнивает сам элемент по левому краю контейнера */
+    align-self: flex-start; 
 }
 
 .message-header {
@@ -5567,4 +5569,17 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     justify-content: center;
     /* Запускаем нашу анимацию */
     animation: translating-dots 1.5s infinite step-end;
+}
+
+
+/* style.css (добавить в конец) */
+
+@keyframes pulse-translate {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.message-content.translating {
+    animation: pulse-translate 1.5s infinite;
 }
