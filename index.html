@@ -311,7 +311,17 @@
     <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО ОБЪЯСНЕНИЙ === -->
     <div id="aiExplanationModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px; text-align: left;">
-            <h3 data-lang-key="ai_explanation_title">💡 Объяснение от ИИ</h3>
+            
+            <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
+            <div class="parser-label-container" style="margin-bottom: 10px;">
+                <h3 data-lang-key="ai_explanation_title">💡 Объяснение от ИИ</h3>
+                <button id="aiExplanationTranslateBtn" class="btn-secondary-small hidden" data-lang-key="ai_toggle_translation_button">
+                    Оригинал/Перевод
+                </button>
+            </div>
+
+
+
             <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
             <div class="settings-group" style="border: none; padding: 0; margin-bottom: 15px;">
                 <label data-lang-key="ai_explanation_style_label">Стиль объяснения:</label>

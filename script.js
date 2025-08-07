@@ -4840,7 +4840,8 @@ const mainApp = (function() {
             download_translated_txt_button: 'Скачать перевод ({lang})(txt)',
             download_translated_qst_button: 'Скачать перевод ({lang})(qst)',
             no_translations_to_download: 'Нет доступных переводов для скачивания.',
-            error_creating_translation_file: 'Не удалось создать файл перевода.'
+            error_creating_translation_file: 'Не удалось создать файл перевода.',
+            ai_toggle_translation_button: 'Показать оригинал',
 
         },
         kk: {
@@ -4972,7 +4973,8 @@ const mainApp = (function() {
             download_translated_txt_button: 'Аударманы жүктеу ({lang})(txt)',
             download_translated_qst_button: 'Аударманы жүктеу ({lang})(qst)',
             no_translations_to_download: 'Жүктеу үшін қолжетімді аудармалар жоқ.',
-            error_creating_translation_file: 'Аударма файлын құру мүмкін болмады.'
+            error_creating_translation_file: 'Аударма файлын құру мүмкін болмады.',
+            ai_toggle_translation_button: 'Түпнұсқаны көрсету',
         },
         en: {
             // Main Screen
@@ -5110,7 +5112,8 @@ const mainApp = (function() {
             download_translated_txt_button: 'Download translation ({lang})(txt)',
             download_translated_qst_button: 'Download translation ({lang})(qst)',
             no_translations_to_download: 'No available translations to download.',
-            error_creating_translation_file: 'Failed to create translation file.'
+            error_creating_translation_file: 'Failed to create translation file.',
+            ai_toggle_translation_button: 'Show Original',
         }
 
 
@@ -5209,6 +5212,8 @@ const mainApp = (function() {
     let currentQuizContext = null;
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
+    let currentAITranslation = null; // НОВАЯ: для хранения перевода в модальном окне
+    let isAIModalShowingTranslation = false; // НОВАЯ: состояние отображения в модальном окне
     let isExitConfirmed = false;
     let isTranslateModeEnabled = localStorage.getItem('isTranslateModeEnabled') === 'true'; 
     let currentQuizTranslations = new Map(); // Для кэша в текущей сессии
@@ -5374,6 +5379,7 @@ const mainApp = (function() {
 
     
     function setupEventListeners() {
+
         getEl('favoriteQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
         translateQuestionBtn?.addEventListener('click', toggleTranslateMode);
         getEl('copyExplanationBtn')?.addEventListener('click', handleCopyExplanation);
@@ -5414,7 +5420,7 @@ const mainApp = (function() {
             aiQuestionCount.disabled = aiAutoCount.checked;
         });
 
-
+        getEl('aiExplanationTranslateBtn')?.addEventListener('click', handleAITranslateToggle);
 
 
         // Клик на главную кнопку для открытия/закрытия списка
@@ -6528,29 +6534,67 @@ const mainApp = (function() {
         return html;
     }
 
+
+
+
     function handleWordTriggerClick(event) {
         if (!triggerWordModeEnabled) return;
         const clickedElement = event.target.closest('.triggerable-word, .triggered-word');
         if (!clickedElement || !clickedElement.dataset.hasOwnProperty('wordIndex')) return;
+        
         event.stopPropagation();
         event.preventDefault();
-        const wordIndex = parseInt(clickedElement.dataset.wordIndex);
-        const currentQuestion = questionsForCurrentQuiz[currentQuestionIndex];
-        if (!currentQuestion.triggeredWordIndices) {
-            currentQuestion.triggeredWordIndices = [];
-        }
-        const indexInArray = currentQuestion.triggeredWordIndices.indexOf(wordIndex);
-        if (indexInArray > -1) {
-            currentQuestion.triggeredWordIndices.splice(indexInArray, 1);
+
+        const wordIndex = parseInt(clickedElement.dataset.wordIndex, 10);
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Логика выбора правильного объекта для модификации ---
+
+        let questionObjectToModify; // Эта переменная будет хранить либо оригинал, либо перевод
+
+        // 1. Определяем, с каким объектом мы сейчас работаем
+        if (isTranslateModeEnabled) {
+            // Если включен перевод, наша цель - объект перевода в кэше
+            const lang = localStorage.getItem('appLanguage') || 'ru';
+            const originalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
+            const cacheKey = getCacheKey(originalQuestion.originalIndex, lang);
+            
+            // Если перевод есть в кэше, он становится нашей целью
+            if (currentQuizTranslations.has(cacheKey)) {
+                questionObjectToModify = currentQuizTranslations.get(cacheKey);
+            } else {
+                // Если перевода почему-то нет, на всякий случай работаем с оригиналом
+                questionObjectToModify = questionsForCurrentQuiz[currentQuestionIndex];
+            }
         } else {
-            currentQuestion.triggeredWordIndices.push(wordIndex);
-            if (!triggerWordsUsedInQuiz && currentQuestion.triggeredWordIndices.length > 0) {
+            // Если перевод выключен, наша цель - это оригинальный вопрос
+            questionObjectToModify = questionsForCurrentQuiz[currentQuestionIndex];
+        }
+
+        // 2. Модифицируем массив triggeredWordIndices ТОЛЬКО у целевого объекта
+        if (!questionObjectToModify.triggeredWordIndices) {
+            questionObjectToModify.triggeredWordIndices = [];
+        }
+
+        const indexInArray = questionObjectToModify.triggeredWordIndices.indexOf(wordIndex);
+        if (indexInArray > -1) {
+            questionObjectToModify.triggeredWordIndices.splice(indexInArray, 1);
+        } else {
+            questionObjectToModify.triggeredWordIndices.push(wordIndex);
+            // Глобальный флаг, что триггеры использовались, ставим в любом случае
+            if (!triggerWordsUsedInQuiz && questionObjectToModify.triggeredWordIndices.length > 0) {
                 triggerWordsUsedInQuiz = true;
             }
         }
-        questionTextEl.innerHTML = renderQuestionTextWithTriggers(currentQuestion);
+
+        // 3. Перерисовываем текст, используя тот же самый модифицированный объект
+        questionTextEl.innerHTML = renderQuestionTextWithTriggers(questionObjectToModify);
+
+        // 4. Заново навешиваем обработчики кликов на новые <span>
         addTriggerClickListeners();
+        
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
+
 
     function addTriggerClickListeners() {
         if (triggerWordModeEnabled) {
@@ -8665,86 +8709,203 @@ const mainApp = (function() {
     }
 
 
- 
-    function showAIExplanation(question) {
-        // Запоминаем ОРИГИНАЛЬНЫЙ вопрос для отправки в ИИ. Это не меняется.
-        currentAIQuestion = question;
+
+    /**
+     * НОВАЯ ФУНКЦИЯ-ПОМОЩНИК
+     * Проверяет высоту блока с вопросом в модальном окне ИИ и добавляет/убирает
+     * кнопку "свернуть/развернуть", если это необходимо.
+     * @param {HTMLElement} questionElement - DOM-элемент блока с вопросом (#aiExplanationQuestion).
+     */
+    function setupAIQuestionCollapser(questionElement) {
+        if (!questionElement) return;
+
+        // Сначала всегда убираем старую кнопку и классы, чтобы начать с чистого листа
+        const oldBtn = questionElement.querySelector('.expand-question-btn');
+        if (oldBtn) oldBtn.remove();
+        questionElement.classList.remove('collapsible', 'expanded');
         
-        const questionEl = getEl('aiExplanationQuestion');
+        // Даем браузеру мгновение на перерисовку после изменения innerHTML
+        setTimeout(() => {
+            const MAX_HEIGHT = 120; // Максимальная высота
+            // Проверяем, превышает ли реальная высота текста максимальную
+            if (questionElement.scrollHeight > MAX_HEIGHT) {
+                questionElement.classList.add('collapsible');
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'expand-question-btn';
+                
+                // Обработчик клика
+                expandBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    questionElement.classList.toggle('expanded');
+                    const outputEl = getEl('aiExplanationOutput');
+                    if (outputEl) {
+                        outputEl.classList.toggle('collapsed', questionElement.classList.contains('expanded'));
+                    }
+                };
+                questionElement.appendChild(expandBtn);
+            }
+        }, 0); // setTimeout с 0 задержкой - это стандартный трюк для ожидания рендеринга
+    }
+
+
+ 
+    // script.js (ЗАМЕНИТЬ СТАРУЮ ФУНКЦИЮ)
+
+    /**
+     * Открывает модальное окно объяснения от ИИ.
+     * ВЕРСИЯ 2.2: ВОССТАНОВЛЕНА генерация списка стилей.
+     * @param {object} question - Исходный (непереведенный) объект вопроса.
+     */
+    async function showAIExplanation(question) {
+        // 1. Сбрасываем и инициализируем состояния, как и раньше
+        currentAIQuestion = question;
+        currentAITranslation = null;
+        isAIModalShowingTranslation = false;
+        
         const outputEl = getEl('aiExplanationOutput');
+        const toggleBtn = getEl('aiExplanationTranslateBtn');
+        const questionEl = getEl('aiExplanationQuestion');
+        
+        toggleBtn.classList.add('hidden');
+        outputEl.innerHTML = '';
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+        
+        // 2. ВОССТАНАВЛИВАЕМ КОД ГЕНЕРАЦИИ СПИСКА СТИЛЕЙ
         const styleContentEl = getEl('aiExplanationStyleContent');
         const styleTextEl = getEl('aiExplanationStyleText');
-
-        // 1. Код для генерации стилей
-        styleContentEl.innerHTML = '';
+        styleContentEl.innerHTML = ''; // Очищаем старые ссылки
+        
+        // Определяем список доступных стилей
         const styles = ['simple', 'scientific', 'associative', 'stepByStep', 'practical', 'visual'];
+        
         styles.forEach(styleKey => {
             const link = document.createElement('a');
             link.href = '#';
             link.dataset.style = styleKey;
-            
-            // --- ИСПРАВЛЕНИЕ: Добавлен пропущенный "+" ---
+            // Берём перевод из LANG_PACK
             link.textContent = _('ai_style_' + styleKey.toLowerCase());
             
+            // По умолчанию делаем стиль "Просто" активным
             if (styleKey === 'simple') {
                 link.classList.add('active');
             }
             styleContentEl.appendChild(link);
         });
+        // Устанавливаем текст по умолчанию на главной кнопке
         styleTextEl.textContent = _('ai_style_simple');
 
-        // 2. Определяем, какой текст ПОКАЗЫВАТЬ пользователю
-        let displayQuestionText = question.text;
-        let displayCorrectAnswerText = question.options[question.correctAnswerIndex].text;
+        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
-        // Проверяем, включен ли режим перевода И есть ли готовый перевод в кэше
-        if (isTranslateModeEnabled && currentQuizTranslations.has(question.originalIndex)) {
-            const translatedQuestion = currentQuizTranslations.get(question.originalIndex);
-            
-            // Если да, используем переведенный текст для отображения
-            displayQuestionText = translatedQuestion.text;
-            // Индекс правильного ответа совпадает, поэтому просто берем текст из переведенного объекта
-            displayCorrectAnswerText = translatedQuestion.options[translatedQuestion.correctAnswerIndex].text;
-            
-            console.log("В модальном окне ИИ отображается перевод.");
-        } else {
-            console.log("В модальном окне ИИ отображается оригинал.");
-        }
+        showGlobalLoader('Подготовка окна объяснения...');
 
-        // 3. Заполняем HTML, используя переменные с нужным текстом (оригинальным или переведенным)
-        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(displayQuestionText)}<br><strong>Правильный ответ:</strong> ${escapeHTML(displayCorrectAnswerText)}`;
-
-        // 4. Остальной код функции для сворачивания и показа модального окна
-        const oldBtn = questionEl.querySelector('.expand-question-btn');
-        if (oldBtn) oldBtn.remove();
-        questionEl.classList.remove('collapsible', 'expanded');
-
-        const MAX_HEIGHT = 120;
-        setTimeout(() => {
-            if (questionEl.scrollHeight > MAX_HEIGHT) {
-                questionEl.classList.add('collapsible');
-                const expandBtn = document.createElement('button');
-                expandBtn.className = 'expand-question-btn';
+        try {
+            // 3. Остальная логика функции остается без изменений
+            if (isTranslateModeEnabled) {
+                const lang = localStorage.getItem('appLanguage') || 'ru';
+                const translationResult = await getCachedOrFetchTranslation(question, question.originalIndex, lang);
                 
-                expandBtn.onclick = function(e) {
-                    e.stopPropagation();
-                    const isExpanded = questionEl.classList.toggle('expanded');
-                    const outputEl = getEl('aiExplanationOutput');
-                    if (outputEl) {
-                        outputEl.classList.toggle('collapsed', isExpanded);
-                    }
-                };
-                questionEl.appendChild(expandBtn);
+                if (translationResult) {
+                    currentAITranslation = translationResult.question;
+                    isAIModalShowingTranslation = true;
+                    toggleBtn.classList.remove('hidden');
+                }
+            } else {
+                 const currentLang = localStorage.getItem('appLanguage') || 'ru';
+                 const isKazakh = /[әіңғүұқөһ]/i.test(question.text);
+                 if ((currentLang === 'ru' && isKazakh) || (currentLang === 'kk' && !isKazakh) || currentLang === 'en') {
+                     toggleBtn.classList.remove('hidden');
+                 }
             }
-        }, 0);
-        
-        outputEl.innerHTML = '';
-        
-        ChatModule.showModal('aiExplanationModal');
-        // Эта функция по-прежнему будет использовать `currentAIQuestion`, который содержит ОРИГИНАЛ
-        fetchAndDisplayExplanation('simple');
+            
+            updateAIModalQuestionText();
+            
+            ChatModule.showModal('aiExplanationModal');
+            
+            fetchAndDisplayExplanation('simple');
+
+        } catch (error) {
+            console.error("Ошибка при подготовке окна объяснения:", error);
+            alert("Не удалось подготовить окно объяснения.");
+        } finally {
+            hideGlobalLoader();
+        }
     }
 
+
+
+
+ 
+    // script.js (ЗАМЕНИТЬ СТАРУЮ ФУНКЦИЮ)
+
+    /**
+     * Обновляет текст вопроса/ответа в модальном окне ИИ.
+     * ТЕПЕРЬ также вызывает логику для кнопки сворачивания.
+     */
+    function updateAIModalQuestionText() {
+        const questionEl = getEl('aiExplanationQuestion');
+        const toggleBtn = getEl('aiExplanationTranslateBtn');
+        if (!questionEl || !toggleBtn) return;
+
+        let questionToDisplay;
+        const currentLang = localStorage.getItem('appLanguage') || 'ru';
+        
+        if (isAIModalShowingTranslation && currentAITranslation) {
+            questionToDisplay = currentAITranslation;
+            // Умное обновление текста кнопки
+            toggleBtn.textContent = _('ai_toggle_translation_button').replace(/Показать |Show /g, 'Показать ').replace('перевод', 'оригинал').replace('Translation', 'Original').replace('Аударма', 'Түпнұсқа');
+        } else {
+            questionToDisplay = currentAIQuestion;
+            toggleBtn.textContent = _('ai_toggle_translation_button');
+        }
+
+        if (!questionToDisplay) return;
+
+        // 1. Обновляем HTML-содержимое
+        questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(questionToDisplay.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(questionToDisplay.options[questionToDisplay.correctAnswerIndex].text)}`;
+        
+        // 2. СРАЗУ ЖЕ ПОСЛЕ ОБНОВЛЕНИЯ вызываем нашу новую функцию-помощник!
+        setupAIQuestionCollapser(questionEl);
+    }
+
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Обрабатывает клик по кнопке переключения языка в модальном окне ИИ.
+     */
+    async function handleAITranslateToggle() {
+        const toggleBtn = getEl('aiExplanationTranslateBtn');
+        if (!toggleBtn) return;
+
+        // Если мы хотим показать перевод, но он еще не загружен
+        if (!isAIModalShowingTranslation && !currentAITranslation) {
+            const lang = localStorage.getItem('appLanguage') || 'ru';
+            toggleBtn.disabled = true;
+            toggleBtn.textContent = '...'; // Индикатор загрузки
+
+            // Загружаем перевод
+            const translationResult = await getCachedOrFetchTranslation(currentAIQuestion, currentAIQuestion.originalIndex, lang);
+            
+            toggleBtn.disabled = false;
+            
+            if (translationResult) {
+                currentAITranslation = translationResult.question;
+                isAIModalShowingTranslation = true;
+            } else {
+                alert("Не удалось получить перевод.");
+                // Если ошибка, остаемся на оригинале
+                isAIModalShowingTranslation = false;
+            }
+        } else {
+            // Если перевод уже загружен, просто переключаем флаг
+            isAIModalShowingTranslation = !isAIModalShowingTranslation;
+        }
+        
+        // Перерисовываем текст вопроса/ответа в модальном окне
+        updateAIModalQuestionText();
+    }
 
 
 
@@ -9187,15 +9348,30 @@ const mainApp = (function() {
 
     /**
      * МГНОВЕННО отображает текст вопроса и вариантов без анимации.
+     * ТЕПЕРЬ эта функция также отвечает за рендеринг триггер-слов.
      * @param {object} question - Объект вопроса для отображения.
-     * @param {boolean} animate - Этот параметр больше не используется, но оставлен для совместимости.
      */
-    function displayQuestionContent(question, animate) {
+    function displayQuestionContent(question) {
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+
+        // 1. Очищаем старое содержимое, как и раньше.
         questionTextEl.innerHTML = '';
         answerOptionsEl.innerHTML = '';
 
-        questionTextEl.textContent = question.text;
+        // 2. Проверяем, включен ли режим триггер-слов.
+        if (triggerWordModeEnabled) {
+            // Если режим ВКЛЮЧЕН, используем сложную функцию,
+            // которая обернёт каждое слово в <span>.
+            questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+            
+            // СРАЗУ ЖЕ после создания <span>, навешиваем на них обработчики кликов.
+            addTriggerClickListeners();
+        } else {
+            // Если режим ВЫКЛЮЧЕН, используем простой и быстрый .textContent.
+            questionTextEl.textContent = question.text;
+        }
 
+        // 3. Код для отображения вариантов ответов остаётся без изменений.
         if (question.options) {
             question.options.forEach((option, i) => {
                 const li = document.createElement('li');
@@ -9217,6 +9393,8 @@ const mainApp = (function() {
                 }
             });
         }
+
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
 
 
