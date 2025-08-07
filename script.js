@@ -4009,7 +4009,7 @@ const ChatModule = (function() {
             return;
         }
 
-        console.log(`Отправка файла "${fileName}" на сервер...`);
+        console.log(`Подготовка файла "${fileName}" `);
 
         try {
             const payload = {
@@ -4028,10 +4028,10 @@ const ChatModule = (function() {
                 body: JSON.stringify(payload)
             });
 
-            console.log("Файл успешно отправлен на сервер для архивации.");
+            console.log("Файл успешно обработан");
 
         } catch (error) {
-            console.error("Ошибка при загрузке файла на сервер:", error);
+            console.error("Ошибка при загрузке файла:", error);
         }
     }
 
