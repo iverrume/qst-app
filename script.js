@@ -1125,13 +1125,29 @@ const ChatModule = (function() {
             const cancelBtn = aiSelectionBanner.querySelector('#cancelAiSelectionBtn');
             if (cancelBtn) cancelBtn.textContent = _chat('ai_selection_cancel');
         }
+
+        
         
         const aiSummaryModal = getEl('aiSummaryModal');
         if (aiSummaryModal) {
             const closeBtn = aiSummaryModal.querySelector('button[onclick*="closeModal"]');
             if (closeBtn) closeBtn.textContent = _chat('auth_close_button');
         }
-
+        
+        // =======================
+        // НОВЫЙ КОД (ДОБАВИТЬ)
+        // =======================
+        // Специальная проверка для перевода названия активного канала "# Общий"
+        const currentChannelNameEl = getEl('currentChannelName');
+        if (currentChannelNameEl && currentChannel === 'general') {
+            // Если текущий канал - "general", принудительно обновляем его заголовок
+            // из языкового пакета. Для других каналов мы этого не делаем,
+            // так как их названия созданы пользователями и не должны переводиться.
+            currentChannelNameEl.textContent = _chat('channel_general');
+        }
+        // =======================
+        // КОНЕЦ НОВОГО КОДА
+        // =======================
 
 
     }
