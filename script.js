@@ -8088,6 +8088,68 @@ const mainApp = (function() {
 
     const PARSER_PATTERNS = [
 
+
+        {
+            id: 'structured_test_format',
+            name: "Структурированный тест (1. Вопрос, А) Ответ+)",
+            // Детектор: Ищет строки, начинающиеся с "цифра." или "цифра)" И строки,
+            // начинающиеся с "буква." или "буква)". Это делает его очень точным.
+            detector: (text) => /^\s*\d+[\.\)]/m.test(text) && /^\s*[a-zA-Zа-яА-Я][\.\)]/m.test(text),
+            processor: (text) => {
+                const questions = [];
+                let currentQuestion = null;
+                const lines = text.split(/\r?\n/);
+
+                const questionStartRegex = /^\s*\d+[\.\)]\s*/;
+                const optionMarkerRegex = /^\s*[a-zA-Zа-яА-Я][\.\)]\s*/;
+
+                const saveCurrentQuestion = () => {
+                    if (currentQuestion && currentQuestion.correctAnswer && currentQuestion.options.length > 0) {
+                        currentQuestion.text = currentQuestion.text.trim();
+                        questions.push(currentQuestion);
+                    }
+                };
+
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    if (!trimmedLine) continue;
+
+                    // ПРОВЕРКА №1: Это начало нового вопроса? (Высший приоритет)
+                    if (questionStartRegex.test(trimmedLine)) {
+                        saveCurrentQuestion(); // Сохраняем предыдущий, если он был
+                        currentQuestion = {
+                            text: trimmedLine.replace(questionStartRegex, ''),
+                            options: [],
+                            correctAnswer: null
+                        };
+                    } 
+                    // ПРОВЕРКА №2: Если это не новый вопрос, но мы уже собираем какой-то...
+                    else if (currentQuestion) {
+                        // ПРОВЕРКА №2а: Это вариант ответа?
+                        if (optionMarkerRegex.test(trimmedLine)) {
+                            const optionText = trimmedLine.replace(optionMarkerRegex, '');
+                            const isCorrect = optionText.includes('+');
+                            const cleanOptionText = optionText.replace(/\+/g, '').trim();
+
+                            currentQuestion.options.push(cleanOptionText);
+                            if (isCorrect) {
+                                currentQuestion.correctAnswer = cleanOptionText;
+                            }
+                        } 
+                        // ПРОВЕРКА №2б: Если не вариант ответа, значит это продолжение текста вопроса.
+                        else {
+                            currentQuestion.text += ' ' + trimmedLine;
+                        }
+                    }
+                }
+
+                saveCurrentQuestion(); // Сохраняем самый последний вопрос
+
+                return questions;
+            }
+        },
+
+
         {
             id: 'plus_at_end_generic', // ИЗМЕНЕНИЕ: Новое, более общее имя
             name: "Ответ с '+' в конце строки",
