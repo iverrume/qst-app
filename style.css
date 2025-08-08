@@ -5858,3 +5858,50 @@ body.dark-mode .explain-flashcard-btn:hover {
     color: var(--feedback-incorrect-text);
     border-bottom-color: var(--feedback-incorrect-border);
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ AI-АНАЛИТИКИ ОШИБОК          === */
+/* ======================================================= */
+
+#aiAnalysisArea {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px dashed var(--dashed-border-color);
+    width: 100%;
+}
+
+#aiAnalysisBtn {
+    width: 100%;
+    background: linear-gradient(135deg, #6c5ce7, #8e44ad); /* Фиолетовый градиент */
+    color: white;
+    font-size: 1.05em;
+    font-weight: 500;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+}
+
+#aiAnalysisBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+}
+
+.ai-analysis-result {
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: left;
+    line-height: 1.6;
+    animation: fadeIn 0.5s;
+}
+
+.ai-analysis-result h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--heading-color);
+}
+
+.ai-analysis-result ul {
+    padding-left: 20px;
+}

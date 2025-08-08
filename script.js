@@ -4940,7 +4940,7 @@ const mainApp = (function() {
             questions_label_for_range: 'вопросов',
             shuffle_questions: 'Перемешать вопросы',
             shuffle_answers: 'Перемешать ответы',
-            feedback_mode: 'Режим обратной связи (сохранить ошибки)',
+            feedback_mode: 'Режим обратной связи (🤖ИИ анализ + пройти неверные)',
             reading_mode: 'Режим чтения (первый вариант верный)',
             start_quiz_button: 'Начать тест',
             generate_cheat_sheet_button: 'Создать шпору',
@@ -5098,7 +5098,7 @@ const mainApp = (function() {
             questions_label_for_range: 'сұрақ',
             shuffle_questions: 'Сұрақтарды араластыру',
             shuffle_answers: 'Жауаптарды араластыру',
-            feedback_mode: 'Кері байланыс режимі (қателерді сақтау)',
+            feedback_mode: 'Кері байланыс режимі (🤖ЖИ талдауы + қателермен жұмыс)',
             reading_mode: 'Оқу режимі (бірінші жауап дұрыс)',
             start_quiz_button: 'Тестті бастау',
             generate_cheat_sheet_button: 'Шпаргалка жасау',
@@ -5256,7 +5256,7 @@ const mainApp = (function() {
             questions_label_for_range: 'questions',
             shuffle_questions: 'Shuffle questions',
             shuffle_answers: 'Shuffle answers',
-            feedback_mode: 'Feedback mode (save mistakes)',
+            feedback_mode: 'Feedback Mode (🤖AI analysis + review incorrect answers)',
             reading_mode: 'Reading mode (first option is correct)',
             start_quiz_button: 'Start Quiz',
             generate_cheat_sheet_button: 'Generate Cheat Sheet',
@@ -5469,6 +5469,7 @@ const mainApp = (function() {
     let triggerWordModeEnabled = false;
     let triggerWordsUsedInQuiz = false;
     let incorrectlyAnsweredQuestionsData = [];
+    let currentQuizErrorData = [];
     let timerInterval = null;
     let timeLeftInSeconds = 0;
     const MAX_RECENT_FILES = 20;
@@ -5715,7 +5716,7 @@ const mainApp = (function() {
         getEl('aiExplanationTranslateBtn')?.addEventListener('click', handleAITranslateToggle);
         flashcardsModeCheckbox?.addEventListener('change', handleFlashcardsModeChange);
 
-
+        getEl('aiAnalysisBtn')?.addEventListener('click', requestErrorAnalysis);
         // Клик на главную кнопку для открытия/закрытия списка
         getEl('aiExplanationStyleButton')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -7799,6 +7800,16 @@ const mainApp = (function() {
             // Если включен режим обратной связи, сохраняем данные об ошибке
             if (quizSettings.feedbackMode) {
                 incorrectlyAnsweredQuestionsData.push(...question.originalRaw, "");
+
+                // === НАЧАЛО НОВОГО КОДА ===
+                // Собираем детальную информацию для ИИ-анализа
+                const errorDetails = {
+                  questionText: question.text,
+                  correctAnswer: question.options[question.correctAnswerIndex].text,
+                  userAnswer: question.options[selectedIndex].text
+                };
+                currentQuizErrorData.push(errorDetails);
+                // === КОНЕЦ НОВОГО КОДА ===
             }
         }
 
@@ -7960,9 +7971,11 @@ const mainApp = (function() {
             if (quizSettings.feedbackMode && incorrectlyAnsweredQuestionsData.length > 0) {
                 feedbackDownloadArea.classList.remove('hidden');
                 errorReviewArea.classList.remove('hidden');
+                getEl('aiAnalysisArea').classList.remove('hidden');
             } else {
                 feedbackDownloadArea.classList.add('hidden');
                 errorReviewArea.classList.add('hidden');
+                getEl('aiAnalysisArea').classList.add('hidden');
             }
         }
         // --- КОНЕЦ ИЗМЕНЕНИЙ ---
@@ -8045,6 +8058,7 @@ const mainApp = (function() {
         score = 0;
         userAnswers = [];
         incorrectlyAnsweredQuestionsData = [];
+        currentQuizErrorData = [];
         originalFileNameForReview = '';
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
@@ -10400,6 +10414,64 @@ const mainApp = (function() {
                 startQuizButton.textContent = _('start_quiz_button');
             }
         }
+
+
+
+ 
+
+    async function requestErrorAnalysis() {
+        if (currentQuizErrorData.length === 0) {
+            alert("Нет данных об ошибках для анализа.");
+            return;
+        }
+
+        const analysisBtn = getEl('aiAnalysisBtn');
+        const resultContainer = getEl('aiAnalysisResult');
+        const originalBtnText = analysisBtn.textContent;
+
+        analysisBtn.disabled = true;
+        analysisBtn.textContent = 'ИИ анализирует... 🧠';
+        resultContainer.classList.add('hidden');
+        resultContainer.innerHTML = '';
+
+        try {
+            // === НАЧАЛО ИЗМЕНЕНИЙ ===
+            // 1. Получаем текущего пользователя из ChatModule
+            const currentUser = ChatModule.getCurrentUser();
+
+            // 2. Определяем имя для анализа. Если пользователь не вошел, используем специальный маркер 'guest'.
+            const userNameForAnalysis = currentUser ? currentUser.displayName : 'guest';
+            // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'getErrorAnalysis',
+                    errors: currentQuizErrorData,
+                    userName: userNameForAnalysis, // <--- 3. ДОБАВЛЯЕМ НОВОЕ ПОЛЕ В ЗАПРОС
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.analysis) {
+                resultContainer.innerHTML = marked.parse(result.analysis);
+                resultContainer.classList.remove('hidden');
+            } else {
+                throw new Error(result.error || 'Не удалось получить анализ от ИИ.');
+            }
+
+        } catch (error) {
+            console.error("Ошибка при запросе анализа ошибок:", error);
+            resultContainer.innerHTML = `<p style="color: var(--feedback-incorrect-text);">Произошла ошибка: ${error.message}</p>`;
+            resultContainer.classList.remove('hidden');
+        } finally {
+            analysisBtn.disabled = false;
+            analysisBtn.textContent = originalBtnText;
+        }
+    }
+
 
 
     // --- Public methods exposed from mainApp ---
