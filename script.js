@@ -5043,6 +5043,19 @@ const mainApp = (function() {
             ai_error_server_generation: 'Ошибка генерации теста: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
             ai_char_limit_exceeded: 'Лимит символов превышен ({current}/{max})',
 
+            tab_converter: "Конвертер из текста",
+            tab_ai_generator: "ИИ-генератор по теме",
+            ai_from_text_title: "🤖 Создать тест из вашего текста (ИИ)",
+            ai_generate_from_text_button: "Сгенерировать тест из текста",
+            ai_topic_description: "ИИ самостоятельно создаст тест на основе указанной темы, используя свои знания.",
+            ai_topic_label: "1. Введите тему для генерации теста:",
+            ai_topic_placeholder: "Пример: История Древнего Рима в период Республики, 15 вопросов, 4 варианта ответа, с категориями по войнам...",
+            ai_topic_question_count_label: "2. Количество вопросов (если не указано в теме):",
+            ai_topic_answer_count_label: "3. Количество вариантов ответа (если не указано в теме):",
+            ai_generate_from_topic_button: "🤖 Создать тест по теме (ИИ)",
+            ai_thinking_topic: "ИИ-генератор размышляет над вашей темой...",
+            ai_topic_auto_category_label: "4. Автоматически создавать категории"
+
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -5187,6 +5200,19 @@ const mainApp = (function() {
             ai_error_generation: 'Тест жасау кезінде қате пайда болды.',
             ai_error_server_generation: 'Тест жасау қатесі: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
             ai_char_limit_exceeded: 'Таңба шегінен асып кетті ({current}/{max})',
+
+            tab_converter: "Мәтіннен түрлендіргіш",
+            tab_ai_generator: "Тақырып бойынша ЖИ-генератор",
+            ai_from_text_title: "🤖 Мәтініңізден тест жасау (ЖИ)",
+            ai_generate_from_text_button: "Мәтіннен тест жасау",
+            ai_topic_description: "ЖИ өз білімін пайдалана отырып, көрсетілген тақырып негізінде тестті өз бетінше жасайды.",
+            ai_topic_label: "1. Тест жасау үшін тақырыпты енгізіңіз:",
+            ai_topic_placeholder: "Мысалы: Республика кезеңіндегі Ежелгі Рим тарихы, 15 сұрақ, 4 жауап нұсқасы, соғыстар бойынша санаттармен...",
+            ai_topic_question_count_label: "2. Сұрақтар саны (егер тақырыпта көрсетілмесе):",
+            ai_topic_answer_count_label: "3. Жауап нұсқаларының саны (егер тақырыпта көрсетілмесе):",
+            ai_generate_from_topic_button: "🤖 Тақырып бойынша тест жасау (ЖИ)",
+            ai_thinking_topic: "ЖИ-генератор сіздің тақырыбыңызды ойластыруда...",
+            ai_topic_auto_category_label: "4. Санаттарды автоматты түрде жасау"
 
         },
         en: {
@@ -5340,6 +5366,19 @@ const mainApp = (function() {
             ai_error_server_generation: 'Test generation failed: A temporary server error occurred. Please try again later.',
             ai_char_limit_exceeded: 'Character limit exceeded ({current}/{max})',
 
+            tab_converter: "Converter from Text",
+            tab_ai_generator: "AI Generator by Topic",
+            ai_from_text_title: "🤖 Create Test from Your Text (AI)",
+            ai_generate_from_text_button: "Generate Test from Text",
+            ai_topic_description: "The AI will independently create a test based on the specified topic using its knowledge.",
+            ai_topic_label: "1. Enter a topic to generate a test:",
+            ai_topic_placeholder: "Example: History of Ancient Rome during the Republic, 15 questions, 4 answer choices, with categories by wars...",
+            ai_topic_question_count_label: "2. Number of questions (if not specified in the topic):",
+            ai_topic_answer_count_label: "3. Number of answer choices (if not specified in the topic):",
+            ai_generate_from_topic_button: "🤖 Create Test by Topic (AI)",
+            ai_thinking_topic: "AI generator is thinking about your topic...",
+            ai_topic_auto_category_label: "4. Automatically create categories"
+
         }
 
 
@@ -5406,6 +5445,10 @@ const mainApp = (function() {
         prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList;
+
+    let converterTabBtn, aiGeneratorTabBtn, converterContent, aiGeneratorContent, 
+        aiTopicInput, generateTestFromTopicBtn, aiTopicQuestionCount, aiTopicAnswerCount;
+    let aiTopicAutoCategory;
 
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
     let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
@@ -5569,6 +5612,15 @@ const mainApp = (function() {
         translateQuestionBtn = getEl('translateQuestionBtn');
         downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
         downloadTranslatedQstButton = getEl('downloadTranslatedQstButton');
+        converterTabBtn = getEl('converterTabBtn');
+        aiGeneratorTabBtn = getEl('aiGeneratorTabBtn');
+        converterContent = getEl('converterContent');
+        aiGeneratorContent = getEl('aiGeneratorContent');
+        aiTopicInput = getEl('aiTopicInput');
+        generateTestFromTopicBtn = getEl('generateTestFromTopicBtn');
+        aiTopicQuestionCount = getEl('aiTopicQuestionCount');
+        aiTopicAnswerCount = getEl('aiTopicAnswerCount');
+        aiTopicAutoCategory = getEl('aiTopicAutoCategory');
 
         initServiceWorkerUpdater();
 
@@ -5646,8 +5698,15 @@ const mainApp = (function() {
             }
         });
 
+        // ===== НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ВКЛАДОК ПАРСЕРА =====
+        converterTabBtn?.addEventListener('click', () => switchParserTab('converter'));
+        aiGeneratorTabBtn?.addEventListener('click', () => switchParserTab('aiGenerator'));
+
+        // Обработчик для НОВОЙ кнопки генерации по теме
+        generateTestFromTopicBtn?.addEventListener('click', handleAIGenerationFromTopicRequest);
 
         generateTestFromTextBtn?.addEventListener('click', handleAIGenerationRequest);
+
         aiAutoCount?.addEventListener('change', () => {
             aiQuestionCount.disabled = aiAutoCount.checked;
         });
@@ -9322,6 +9381,107 @@ const mainApp = (function() {
             hideGlobalLoader();
         }
     }
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Переключает активную вкладку в разделе парсера.
+     * @param {string} tabId - ID вкладки ('converter' или 'aiGenerator').
+     */
+    function switchParserTab(tabId) {
+        // Скрываем все вкладки
+        converterContent.classList.remove('active');
+        aiGeneratorContent.classList.remove('active');
+
+        // Убираем активное состояние у всех кнопок
+        converterTabBtn.classList.remove('active');
+        aiGeneratorTabBtn.classList.remove('active');
+
+        // Показываем нужную вкладку и делаем активной ее кнопку
+        if (tabId === 'converter') {
+            converterContent.classList.add('active');
+            converterTabBtn.classList.add('active');
+        } else if (tabId === 'aiGenerator') {
+            aiGeneratorContent.classList.add('active');
+            aiGeneratorTabBtn.classList.add('active');
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Обрабатывает запрос на генерацию теста по ТЕМЕ.
+     */
+    async function handleAIGenerationFromTopicRequest() {
+        const topic = aiTopicInput.value.trim();
+        if (!topic) {
+            alert("Пожалуйста, введите тему для генерации теста."); // TODO: Перевести
+            return;
+        }
+
+        if (!checkAndConfirmOverwrite(parserOutput)) {
+            return;
+        }
+
+        const originalButtonHTML = generateTestFromTopicBtn.innerHTML;
+        generateTestFromTopicBtn.disabled = true;
+        generateTestFromTopicBtn.innerHTML = `<span>${_('ai_generating_button')}</span>`;
+        showGlobalLoader(_('ai_thinking_topic'));
+
+        const questionCount = aiTopicQuestionCount.value;
+        const answerCount = aiTopicAnswerCount.value;
+
+        try {
+            // <<<--- ВОТ ОНО, ИСПРАВЛЕНИЕ
+            const autoCategorize = aiTopicAutoCategory.checked;
+
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'generateTestFromTopic',
+                    topic: topic,
+                    count: questionCount,
+                    answerCount: answerCount,
+                    autoCategorize: autoCategorize, // <<<--- ТЕПЕРЬ ЭТА ПЕРЕМЕННАЯ СУЩЕСТВУЕТ
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.qst) {
+                parserOutput.value = result.qst;
+                parserOutputArea.classList.remove('hidden');
+                parserOutputArea.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                throw new Error(result.error || _('ai_error_generation'));
+            }
+        } catch (error) {
+            console.error("Ошибка генерации теста по теме:", error);
+            
+            // --- УЛУЧШЕННАЯ ОБРАБОТКА ОШИБОК ---
+            let userFriendlyError;
+
+            // Если в тексте ошибки есть намек на внутреннюю ошибку сервера (как на вашем скриншоте)
+            if (error.message.includes("INTERNAL") || error.message.includes("HTTP 500")) {
+                // Показываем специальное сообщение для серверных проблем
+                userFriendlyError = _('ai_error_server_generation');
+            } else {
+                // В остальных случаях показываем общее сообщение об ошибке
+                userFriendlyError = _('ai_error_generation');
+            }
+
+            // Показываем пользователю понятное и переведенное сообщение
+            alert(userFriendlyError);
+            // --- КОНЕЦ УЛУЧШЕНИЙ ---
+
+        } finally {
+            generateTestFromTopicBtn.disabled = false;
+            generateTestFromTopicBtn.innerHTML = originalButtonHTML;
+            hideGlobalLoader();
+        }
+    }
+
+
 
 
 

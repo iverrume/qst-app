@@ -5790,3 +5790,47 @@ body.dark-mode .explain-flashcard-btn:hover {
 .pulse-active {
     animation: pulse 2s infinite;
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ВКЛАДОК В ПАРСЕРЕ             === */
+/* ======================================================= */
+
+.parser-tabs {
+    display: flex;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.parser-tab {
+    flex: 1; /* Равномерно распределяет ширину */
+    padding: 12px 15px;
+    border: none;
+    border-bottom: 3px solid transparent; /* "Невидимая" полоска снизу */
+    background-color: transparent;
+    color: var(--secondary-text-color);
+    font-size: 1.05em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    margin-bottom: -2px; /* Приподнимает кнопки, чтобы их нижняя рамка слилась с общей */
+}
+
+.parser-tab:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+.parser-tab.active {
+    color: var(--button-primary-bg);
+    border-bottom-color: var(--button-primary-bg); /* Показываем цветную полоску */
+    font-weight: 600;
+}
+
+.parser-tab-content {
+    display: none; /* Все вкладки по умолчанию скрыты */
+    animation: fadeIn 0.4s; /* Плавное появление */
+}
+
+.parser-tab-content.active {
+    display: block; /* Показываем только активную */
+}
