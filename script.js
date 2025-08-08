@@ -3954,7 +3954,8 @@ const ChatModule = (function() {
 
         } else {
             // --- ЛОГИКА ДЛЯ ОБЫЧНЫХ КАНАЛОВ ---
-            testBtn.textContent = _chat('practice_test_button'); // В обычном канале есть только пробный тест
+            // ИЗМЕНЕНИЕ: Используем более общий ключ 'file_actions_test' вместо 'practice_test_button'
+            testBtn.textContent = _chat('file_actions_test'); 
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
         }
         
@@ -4927,8 +4928,9 @@ const mainApp = (function() {
 
             ai_explanation_title: '💡 Объяснение от ИИ',
             ai_explanation_style_label: 'Стиль объяснения:',
-            ai_explain_button: '💡 Объяснить',
+            ai_explain_button: 'Объяснить',
             ai_explanation_loading: 'ИИ готовит объяснение...',
+
             ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Пожалуйста, вставьте текст для анализа.',
             ai_error_generation: 'Произошла ошибка при генерации теста.',
@@ -4954,7 +4956,15 @@ const mainApp = (function() {
             download_translated_qst_button: 'Скачать перевод ({lang})(qst)',
             no_translations_to_download: 'Нет доступных переводов для скачивания.',
             error_creating_translation_file: 'Не удалось создать файл перевода.',
-            ai_toggle_translation_button: 'Показать оригинал',
+            ai_show_original_button: 'Показать оригинал',
+            ai_show_translation_button: 'Показать перевод',
+            flashcards_mode: 'Режим карточек (вопрос/ответ)',
+            start_flashcards_button: 'Начать изучение',
+            flashcard_category_label: 'Следующий раздел:',
+            results_flashcards_viewed: 'Просмотрено карточек',
+            session_cards_viewed: 'Просмотрено',
+            ai_error_generic: 'Не удалось сгенерировать объяснение. Попробуйте, пожалуйста, еще раз.',
+            ai_error_server: 'Не удалось сгенерировать объяснение: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
 
         },
         kk: {
@@ -5060,7 +5070,7 @@ const mainApp = (function() {
 
             ai_explanation_title: '💡 ЖИ түсіндірмесі',
             ai_explanation_style_label: 'Түсіндіру стилі:',
-            ai_explain_button: '💡 Түсіндіру',
+            ai_explain_button: 'Түсіндіру',
             ai_explanation_loading: 'ЖИ түсіндірме дайындауда...',
             ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Талдау үшін мәтінді енгізіңіз.',
@@ -5087,7 +5097,15 @@ const mainApp = (function() {
             download_translated_qst_button: 'Аударманы жүктеу ({lang})(qst)',
             no_translations_to_download: 'Жүктеу үшін қолжетімді аудармалар жоқ.',
             error_creating_translation_file: 'Аударма файлын құру мүмкін болмады.',
-            ai_toggle_translation_button: 'Түпнұсқаны көрсету',
+            ai_show_original_button: 'Түпнұсқаны көрсету',
+            ai_show_translation_button: 'Аударманы көрсету',
+            flashcards_mode: 'Карточкалар режимі (сұрақ/жауап)',
+            start_flashcards_button: 'Оқуды бастау',
+            flashcard_category_label: 'Келесі бөлім:',
+            results_flashcards_viewed: 'Қаралған карточкалар',
+            session_cards_viewed: 'Қаралды',
+            ai_error_generic: 'Түсіндірмені жасау мүмкін болмады. Қайталап көріңіз.',
+            ai_error_server: 'Түсіндірмені жасау мүмкін болмады: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
         },
         en: {
             // Main Screen
@@ -5195,7 +5213,7 @@ const mainApp = (function() {
 
             ai_explanation_title: '💡 AI Explanation',
             ai_explanation_style_label: 'Explanation Style:',
-            ai_explain_button: '💡 Explain',
+            ai_explain_button: 'Explain',
             ai_explanation_loading: 'AI is preparing an explanation...',
             ai_generating_button: '🤖 Generating...',
             ai_error_text_empty: 'Please paste text to analyze.',
@@ -5226,7 +5244,15 @@ const mainApp = (function() {
             download_translated_qst_button: 'Download translation ({lang})(qst)',
             no_translations_to_download: 'No available translations to download.',
             error_creating_translation_file: 'Failed to create translation file.',
-            ai_toggle_translation_button: 'Show Original',
+            ai_show_original_button: 'Show Original',
+            ai_show_translation_button: 'Show Translation',
+            flashcards_mode: 'Flashcards mode (question/answer)',
+            start_flashcards_button: 'Start Learning',
+            flashcard_category_label: 'Next Section:',
+            results_flashcards_viewed: 'Cards Viewed',
+            session_cards_viewed: 'Viewed',
+            ai_error_generic: 'Failed to generate explanation. Please try again.',
+            ai_error_server: 'Failed to generate explanation: A temporary server error occurred. Please try again later.',
         }
 
 
@@ -5298,6 +5324,7 @@ const mainApp = (function() {
     let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
     let updateNotification, updateBtn, translateQuestionBtn;
     let downloadTranslatedTxtButton, downloadTranslatedQstButton;
+    let flashcardsModeCheckbox;
 
 
     // --- State Variables ---
@@ -5314,7 +5341,7 @@ const mainApp = (function() {
     let incorrectlyAnsweredQuestionsData = [];
     let timerInterval = null;
     let timeLeftInSeconds = 0;
-    const MAX_RECENT_FILES = 5;
+    const MAX_RECENT_FILES = 20;
     const RECENT_FILES_STORAGE_KEY = 'recentQstFilesData';
     const SAVED_SESSIONS_STORAGE_KEY = 'savedQuizSessions'; 
     let originalFileNameForReview = '';
@@ -5331,6 +5358,7 @@ const mainApp = (function() {
     let isTranslateModeEnabled = localStorage.getItem('isTranslateModeEnabled') === 'true'; 
     let currentQuizTranslations = new Map(); // Для кэша в текущей сессии
     let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
+
     
 
     // --- Constants ---
@@ -5447,6 +5475,7 @@ const mainApp = (function() {
         cancelExitBtn = getEl('cancelExitBtn');
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
+        flashcardsModeCheckbox = getEl('flashcardsMode');
 
         translateQuestionBtn = getEl('translateQuestionBtn');
         downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
@@ -5534,6 +5563,7 @@ const mainApp = (function() {
         });
 
         getEl('aiExplanationTranslateBtn')?.addEventListener('click', handleAITranslateToggle);
+        flashcardsModeCheckbox?.addEventListener('change', handleFlashcardsModeChange);
 
 
         // Клик на главную кнопку для открытия/закрытия списка
@@ -7074,6 +7104,7 @@ const mainApp = (function() {
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
             quizSettings.feedbackMode = feedbackModeCheckbox.checked;
             quizSettings.readingMode = readingModeCheckbox.checked;
+            quizSettings.flashcardsMode = flashcardsModeCheckbox.checked;
             
             const totalQuestionsCount = allParsedQuestions.filter(q => q.type !== 'category').length;
             
@@ -7159,6 +7190,10 @@ const mainApp = (function() {
             return;
         }
 
+        // Добавляем уникальный индекс внутри текущего теста для каждого вопроса
+        questionsForCurrentQuiz.forEach((q, index) => {
+            q.originalIndexInQuiz = index;
+        });
         quizSetupArea.classList.add('hidden');
         cheatSheetResultArea.classList.add('hidden');
         gradusFoldersContainer.classList.add('hidden');
@@ -7171,7 +7206,7 @@ const mainApp = (function() {
 
 
     function startQuiz(quizContext = null) {
-        currentQuizContext = quizContext; // Сохраняем контекст для всего теста
+        currentQuizContext = quizContext;
         quizStartTime = new Date().getTime();
         currentQuestionIndex = 0;
         score = 0;
@@ -7181,24 +7216,49 @@ const mainApp = (function() {
         updateScoreDisplay();
         setupTimer();
         generateQuickNav();
-        webSearchDropdown?.classList.remove('hidden');
+
+        // --- НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ ОТОБРАЖЕНИЯ КНОПОК ---
+
+        // 1. Сначала настраиваем кнопки, которые видны в ЛЮБОМ режиме теста
         finishTestButton?.classList.remove('hidden');
         continueLaterButton?.classList.remove('hidden');
-        copyQuestionBtnQuiz?.classList.remove('hidden');
-        getEl('favoriteQuestionBtn')?.classList.remove('hidden');
-        translateQuestionBtn?.classList.remove('hidden');
-        languageToggle?.classList.add('hidden');
-        downloadTranslatedTxtButton?.classList.remove('hidden');
-        downloadTranslatedQstButton?.classList.remove('hidden');
-        // === НАЧАЛО ИСПРАВЛЕНИЯ ===
-        updateDownloadButtonsText(); // <-- Теперь правильно: updateDownloadButtonsText
-        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
-        quickModeToggle?.classList.remove('hidden');
-        triggerWordToggle?.classList.remove('hidden');
+        languageToggle?.classList.add('hidden'); // Кнопка смены языка приложения всегда скрыта во время теста
+
+        // 2. Теперь, в зависимости от режима, настраиваем уникальные для него кнопки
+        if (quizSettings.flashcardsMode) {
+            // РЕЖИМ КАРТОЧЕК
+            // Показываем:
+            translateQuestionBtn?.classList.remove('hidden');
+            // Скрываем:
+            webSearchDropdown?.classList.add('hidden');
+            copyQuestionBtnQuiz?.classList.add('hidden');
+            getEl('favoriteQuestionBtn')?.classList.add('hidden');
+            quickModeToggle?.classList.add('hidden');
+            triggerWordToggle?.classList.add('hidden');
+            downloadTranslatedTxtButton?.classList.add('hidden'); // <-- Важное исправление
+            downloadTranslatedQstButton?.classList.add('hidden'); // <-- Важное исправление
+        } else {
+            // ОБЫЧНЫЙ РЕЖИМ ТЕСТА
+            // Показываем:
+            webSearchDropdown?.classList.remove('hidden');
+            copyQuestionBtnQuiz?.classList.remove('hidden');
+            getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+            quickModeToggle?.classList.remove('hidden');
+            triggerWordToggle?.classList.remove('hidden');
+            translateQuestionBtn?.classList.remove('hidden');
+            downloadTranslatedTxtButton?.classList.remove('hidden'); // <-- Важное исправление
+            downloadTranslatedQstButton?.classList.remove('hidden'); // <-- Важное исправление
+        }
+
+        // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ---
+
+        // Вызываем эти функции в самом конце, чтобы они применились к видимым кнопкам
+        updateDownloadButtonsText();
+        updateTranslateModeToggleVisual();
+
         loadQuestion(currentQuestionIndex);
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
-
 
 
     function setupTimer() {
@@ -7269,10 +7329,23 @@ const mainApp = (function() {
         buttons.forEach((btn) => {
             const btnIndex = parseInt(btn.dataset.questionIndex);
             btn.classList.remove('current', 'answered', 'correct', 'incorrect');
-            if (btnIndex === currentQuestionIndex) btn.classList.add('current');
+            if (btnIndex === currentQuestionIndex) {
+                btn.classList.add('current');
+            }
+            
             const answerState = userAnswers[btnIndex];
             if (answerState && answerState.answered) {
-                btn.classList.add('answered', answerState.correct ? 'correct' : 'incorrect');
+                btn.classList.add('answered');
+                
+                // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем проверку режима ---
+                if (quizSettings.flashcardsMode) {
+                    // Для карточек "просмотрено" всегда означает "выполнено" (зеленый)
+                    btn.classList.add('correct');
+                } else {
+                    // Для обычных тестов оставляем старую логику
+                    btn.classList.add(answerState.correct ? 'correct' : 'incorrect');
+                }
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
         });
     }
@@ -7282,14 +7355,17 @@ const mainApp = (function() {
     function displayCategoryPage(categoryName) {
         // Показываем основной контейнер вопроса
         questionContainer.classList.remove('hidden');
-        // Очищаем и форматируем текст
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+        // Очищаем и форматируем текст, используя систему переводов
         questionTextEl.innerHTML = `
             <div class="quiz-category-screen">
-                <span>Раздел:</span>
+                <span>${_('flashcard_category_label')}</span>
                 <h2>${escapeHTML(categoryName)}</h2>
             </div>
         `;
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         getEl('score').style.visibility = 'hidden';
+
         // Прячем ненужные элементы
         answerOptionsEl.innerHTML = '';
         feedbackAreaEl.textContent = '';
@@ -7307,47 +7383,188 @@ const mainApp = (function() {
         currentQuestionIndex = index;
         const item = questionsForCurrentQuiz[index];
 
-        // Если это страница категории, отображаем ее и выходим.
-        if (item.type === 'category') {
-            displayCategoryPage(item.text);
-            updateNavigationButtons();
-            updateQuickNavButtons();
-            // Прячем кнопки, которые не нужны для категории
-            copyQuestionBtnQuiz?.classList.add('hidden');
-            getEl('favoriteQuestionBtn')?.classList.add('hidden');
-            translateQuestionBtn?.classList.add('hidden');
-            webSearchDropdown?.classList.add('hidden');
-            return;
+        // Обновляем общие элементы UI, которые нужны для всех режимов
+        updateNavigationButtons();
+        updateQuickNavButtons();
+        getEl('score').style.visibility = 'hidden';
+        feedbackAreaEl.innerHTML = '';
+        answerOptionsEl.innerHTML = ''; // Полностью очищаем область ответов
+        questionTextEl.innerHTML = ''; // и область вопроса
+
+        // Главное ветвление логики
+        if (quizSettings.flashcardsMode) {
+            // Если включен режим карточек...
+            if (item.type === 'category') {
+                // ...и это категория, показываем ее как карточку-разделитель
+                displayCategoryAsCard(item);
+            } else {
+                // ...а если это вопрос, показываем как обычную флеш-карту
+                displayFlashcard(item);
+            }
+        } else {
+            // Если включен обычный режим теста...
+            if (item.type === 'category') {
+                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+                // ...и это категория, показываем ее как страницу-заставку, передавая ТОЛЬКО ТЕКСТ
+                displayCategoryPage(item.text);
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            } else {
+                // ...а если это вопрос, показываем как стандартный тест
+                displayQuestionAsTest(item);
+            }
+        }
+    }
+
+
+
+
+
+
+
+    async function displayFlashcard(question) {
+        // Устанавливаем правильную видимость кнопок в шапке
+        webSearchDropdown?.classList.add('hidden');
+        copyQuestionBtnQuiz?.classList.add('hidden');
+        getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        quickModeToggle?.classList.add('hidden');
+        triggerWordToggle?.classList.add('hidden');
+        translateQuestionBtn?.classList.remove('hidden');
+
+        // Очистка и запоминание индекса
+        questionTextEl.innerHTML = '';
+        answerOptionsEl.innerHTML = '';
+        const indexAtRequestTime = question.originalIndexInQuiz;
+
+        const originalCorrectAnswerText = question.options[question.correctAnswerIndex].text;
+        const cardHTML = `
+            <div class="flashcard-viewport">
+                <div class="flashcard" id="currentFlashcard">
+                    <div class="flashcard-face flashcard-front">
+                        <div class="flashcard-text-content" id="flashcardFrontText">${escapeHTML(question.text)}</div>
+                    </div>
+                    <div class="flashcard-face flashcard-back" id="flashcardBack">
+                        <div class="flashcard-answer-text">
+                            <div class="flashcard-text-content" id="flashcardBackText">${escapeHTML(originalCorrectAnswerText)}</div>
+                        </div>
+                        <button id="explainFlashcardBtn" class="explain-flashcard-btn">💡 ${_('ai_explain_button')}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        answerOptionsEl.innerHTML = cardHTML;
+
+        // Получаем ссылки на элементы для анимации и изменения размера
+        const cardElement = getEl('currentFlashcard');
+        const frontFace = getEl('flashcardFront');
+        const backFace = getEl('flashcardBack');
+        const frontFaceTextContainer = getEl('flashcardFrontText');
+        const backFaceTextContainer = getEl('flashcardBackText');
+
+        // Привязываем событие к кнопке "Объяснить"
+        const explainBtn = getEl('explainFlashcardBtn');
+        if (explainBtn) {
+            explainBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                showAIExplanation(question); 
+            });
+        }
+        
+        // Вспомогательная функция для изменения высоты
+        const resizeCard = () => {
+            if (!cardElement || !frontFace || !backFace) return;
+            requestAnimationFrame(() => {
+                const frontHeight = frontFace.scrollHeight;
+                const backHeight = backFace.scrollHeight;
+                const maxHeight = Math.max(frontHeight, backHeight);
+                cardElement.style.height = `${maxHeight + 40}px`;
+            });
+        };
+
+        // Логика перевода
+        if (isTranslateModeEnabled) {
+            resizeCard();
+            translateQuestionBtn?.classList.add('translating');
+            const lang = localStorage.getItem('appLanguage') || 'ru';
+            
+            const translationResult = await getCachedOrFetchTranslation(question, question.originalIndex, lang);
+            
+            if (currentQuestionIndex !== indexAtRequestTime) {
+                translateQuestionBtn?.classList.remove('translating');
+                return;
+            }
+            translateQuestionBtn?.classList.remove('translating');
+
+            if (translationResult) {
+                const translatedQuestion = translationResult.question;
+                const translatedCorrectAnswerText = translatedQuestion.options[translatedQuestion.correctAnswerIndex].text;
+
+                if (!translationResult.fromCache) {
+                    // Анимируем, используя правильные элементы
+                    await Promise.all([
+                        animateTextTransformation(frontFaceTextContainer, question.text, translatedQuestion.text),
+                        animateTextTransformation(backFaceTextContainer, originalCorrectAnswerText, translatedCorrectAnswerText)
+                    ]);
+                } else {
+                    // Если из кеша - обновляем текст мгновенно
+                    frontFaceTextContainer.textContent = translatedQuestion.text;
+                    backFaceTextContainer.textContent = translatedCorrectAnswerText;
+                }
+                
+                resizeCard(); // Обновляем размер в любом случае
+            } else {
+                alert("Не удалось перевести карточку. Будет показан оригинал.");
+            }
+        } else {
+            resizeCard();
         }
 
-        // ШАГ 1: ВСЕГДА настраиваем общий интерфейс для вопроса
+
+
+
+        // Привязываем обработчик для переворота карточки
+        if (cardElement) {
+            cardElement.addEventListener('click', (e) => {
+                e.currentTarget.classList.toggle('is-flipped');
+                // --- НАЧАЛО ИЗМЕНЕНИЙ: Отмечаем карточку как просмотренную ---
+                // Делаем это только один раз при первом перевороте
+                if (!userAnswers[currentQuestionIndex].answered) {
+                    userAnswers[currentQuestionIndex].answered = true;
+                }
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            });
+        }
+    }
+
+
+
+
+
+    /**
+     * Отображает текущий элемент как стандартный вопрос теста.
+     * (Это, по сути, код из вашей старой функции loadQuestion)
+     * @param {object} question - Объект вопроса.
+     */
+    function displayQuestionAsTest(question) {
+        // Показываем нужные элементы
+        feedbackAreaEl.className = 'feedback-area';
         getEl('score').style.visibility = 'visible';
-        const questionNumber = questionsForCurrentQuiz.slice(0, index + 1).filter(q => q.type !== 'category').length;
-        currentQuestionNumEl.textContent = questionNumber;
-        
-        // Делаем все нужные кнопки видимыми
         copyQuestionBtnQuiz?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         translateQuestionBtn?.classList.remove('hidden');
         webSearchDropdown?.classList.remove('hidden');
-        updateTranslateModeToggleVisual();
+        
+        const questionNumber = questionsForCurrentQuiz.slice(0, currentQuestionIndex + 1).filter(q => q.type !== 'category').length;
+        currentQuestionNumEl.textContent = questionNumber;
 
-        // Очищаем ОБА динамических блока в самом начале.
-        questionTextEl.innerHTML = '';
-        answerOptionsEl.innerHTML = '';
-        feedbackAreaEl.textContent = '';
-        feedbackAreaEl.className = 'feedback-area';
-
-        // ШАГ 2: Решаем, КАК отобразить вопрос (переведенный или оригинальный)
+        // Логика отображения (перевод или оригинал)
         if (isTranslateModeEnabled) {
-            displayTranslatedQuestion(item);
+            displayTranslatedQuestion(question);
         } else {
-            // Отображаем оригинальный вопрос (используем новую функцию без анимации)
-            displayQuestionContent(item, false);
+            displayQuestionContent(question, false);
         }
 
-        // ШАГ 3: Восстанавливаем обратную связь, если ответ уже был дан
-        const answerState = userAnswers[index];
+        // Восстановление состояния ответа (если уже отвечали)
+        const answerState = userAnswers[currentQuestionIndex];
         if (answerState && answerState.answered) {
             if (answerState.correct) {
                 feedbackAreaEl.textContent = 'Правильно!';
@@ -7356,20 +7573,45 @@ const mainApp = (function() {
                 feedbackAreaEl.textContent = 'Неправильно!';
                 feedbackAreaEl.className = 'feedback-area incorrect-feedback';
             }
-
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
-            explainBtn.className = 'explain-btn';
-            explainBtn.style.marginLeft = '15px';
-            explainBtn.onclick = () => showAIExplanation(item);
+            explainBtn.onclick = () => showAIExplanation(question);
             feedbackAreaEl.appendChild(explainBtn);
         }
-
-        // ШАГ 4: Обновляем кнопки навигации
-        updateNavigationButtons();
-        updateQuickNavButtons();
     }
 
+
+    /**
+     * Отображает категорию в виде специальной непереворачиваемой карточки.
+     * @param {object} category - Объект категории.
+     */
+    function displayCategoryAsCard(category) {
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Устанавливаем правильную видимость кнопок в шапке ---
+        webSearchDropdown?.classList.add('hidden');
+        copyQuestionBtnQuiz?.classList.add('hidden');
+        getEl('favoriteQuestionBtn')?.classList.add('hidden');
+        quickModeToggle?.classList.add('hidden');
+        triggerWordToggle?.classList.add('hidden');
+        // Убеждаемся, что кнопка перевода ТОЧНО видна
+        translateQuestionBtn?.classList.remove('hidden');
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+        // Создаем HTML-структуру, имитирующую карточку, но без 3D-эффектов
+        const cardHTML = `
+            <div class="flashcard-viewport">
+                <div class="flashcard" style="cursor: default;">
+                    <div class="flashcard-face flashcard-category">
+                        <div>
+                            <span class="flashcard-category-label">${_('flashcard_category_label')}</span>
+                            <h2 class="flashcard-category-title">${escapeHTML(category.text)}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        // Вставляем эту карточку в область ответов
+        answerOptionsEl.innerHTML = cardHTML;
+    }
 
 
 
@@ -7448,6 +7690,7 @@ const mainApp = (function() {
         nextButton.classList.toggle('finish-test', isLastQuestion);
     }
 
+
     async function showResults() {
         localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -7509,19 +7752,35 @@ const mainApp = (function() {
         downloadTranslatedQstButton?.classList.add('hidden');
         copyQuestionBtnQuiz?.classList.add('hidden');
         
-        finalCorrectEl.textContent = score;
         const questionsInThisQuiz = questionsForCurrentQuiz.filter(q => q.type !== 'category');
-        finalTotalEl.textContent = questionsInThisQuiz.length;
-        const percentage = questionsInThisQuiz.length > 0 ? ((score / questionsInThisQuiz.length) * 100).toFixed(1) : 0;
-        finalPercentageEl.textContent = percentage;
+        const finalTotalContainer = finalTotalEl.parentElement; // <p> с общим количеством
+        const finalPercentageContainer = finalPercentageEl.parentElement; // <p> с точностью
 
-        if (quizSettings.feedbackMode && incorrectlyAnsweredQuestionsData.length > 0) {
-            feedbackDownloadArea.classList.remove('hidden');
-            errorReviewArea.classList.remove('hidden');
-        } else {
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Логика для разных режимов ---
+        if (quizSettings.flashcardsMode) {
+            // РЕЖИМ КАРТОЧЕК
+            const cardsViewed = userAnswers.filter(a => a && a.answered).length;
+            finalTotalContainer.innerHTML = `<span data-lang-key="results_flashcards_viewed">${_('results_flashcards_viewed')}:</span> ${cardsViewed} <span data-lang-key="of_label">${_('of_label')}</span> ${questionsInThisQuiz.length}.`;
+            finalPercentageContainer.classList.add('hidden'); // Скрываем точность
+            // Скрываем кнопки работы над ошибками, они не нужны для карточек
             feedbackDownloadArea.classList.add('hidden');
             errorReviewArea.classList.add('hidden');
+        } else {
+            // ОБЫЧНЫЙ РЕЖИМ ТЕСТА
+            finalTotalContainer.innerHTML = `<span data-lang-key="your_result">${_('your_result')}:</span> <span id="finalCorrect">${score}</span> <span data-lang-key="of_label">${_('of_label')}</span> <span id="finalTotal">${questionsInThisQuiz.length}</span>.`;
+            const percentage = questionsInThisQuiz.length > 0 ? ((score / questionsInThisQuiz.length) * 100).toFixed(1) : 0;
+            finalPercentageEl.textContent = percentage;
+            finalPercentageContainer.classList.remove('hidden'); // Показываем точность
+
+            if (quizSettings.feedbackMode && incorrectlyAnsweredQuestionsData.length > 0) {
+                feedbackDownloadArea.classList.remove('hidden');
+                errorReviewArea.classList.remove('hidden');
+            } else {
+                feedbackDownloadArea.classList.add('hidden');
+                errorReviewArea.classList.add('hidden');
+            }
         }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         if (triggerWordsUsedInQuiz) {
             triggeredQuizDownloadArea.classList.remove('hidden');
@@ -7703,7 +7962,6 @@ const mainApp = (function() {
 
 
 
-
     function loadSavedSession() {
         const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
         const sessions = savedSessionsJSON ? JSON.parse(savedSessionsJSON) : [];
@@ -7727,12 +7985,23 @@ const mainApp = (function() {
                 timeInfo = `<div class="saved-session-time">${_('time_left')}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>`;
             }
 
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: Определяем правильный текст для прогресса ---
+            let progressLabel = '';
+            if (sessionData.quizSettings && sessionData.quizSettings.flashcardsMode) {
+                // Если это сессия карточек
+                progressLabel = `${_('session_cards_viewed')} ${answeredQuestions} ${_('from')} ${totalQuestions}`;
+            } else {
+                // Если это обычный тест
+                progressLabel = `${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}`;
+            }
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
             // ВАЖНО: Добавляем data-filename к кнопкам!
             allCardsHTML += `
                 <div class="saved-session-card">
                     <div class="saved-session-name">${sessionData.originalFileNameForReview || 'Сохраненный тест'}</div>
                     <div class="saved-session-progress-info">
-                        <span>${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}</span>
+                        <span>${progressLabel}</span>
                         ${timeInfo}
                     </div>
                     <div class="progress-bar">
@@ -7753,6 +8022,8 @@ const mainApp = (function() {
         savedSessionList.removeEventListener('click', handleSessionCardClick); // Сначала удаляем старый, чтобы не было дублей
         savedSessionList.addEventListener('click', handleSessionCardClick);
     }
+
+
 
     // Это новая функция-обработчик для кнопок в карточках
     function handleSessionCardClick(event) {
@@ -8985,13 +9256,24 @@ const mainApp = (function() {
                     isAIModalShowingTranslation = true;
                     toggleBtn.classList.remove('hidden');
                 }
+
+
+
+
             } else {
-                 const currentLang = localStorage.getItem('appLanguage') || 'ru';
-                 const isKazakh = /[әіңғүұқөһ]/i.test(question.text);
-                 if ((currentLang === 'ru' && isKazakh) || (currentLang === 'kk' && !isKazakh) || currentLang === 'en') {
-                     toggleBtn.classList.remove('hidden');
-                 }
+                // --- НАЧАЛО ИЗМЕНЕНИЙ: Упрощенная логика ---
+                const appLang = localStorage.getItem('appLanguage') || 'ru';
+                const questionLang = detectLanguage(question.text);
+
+                // Показываем кнопку, если язык вопроса не совпадает с языком приложения
+                if (appLang !== questionLang) {
+                    toggleBtn.classList.remove('hidden');
+                }
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
+
+
+
             
             updateAIModalQuestionText();
             
@@ -9010,39 +9292,36 @@ const mainApp = (function() {
 
 
 
- 
-    // script.js (ЗАМЕНИТЬ СТАРУЮ ФУНКЦИЮ)
 
-    /**
-     * Обновляет текст вопроса/ответа в модальном окне ИИ.
-     * ТЕПЕРЬ также вызывает логику для кнопки сворачивания.
-     */
     function updateAIModalQuestionText() {
         const questionEl = getEl('aiExplanationQuestion');
         const toggleBtn = getEl('aiExplanationTranslateBtn');
         if (!questionEl || !toggleBtn) return;
 
         let questionToDisplay;
-        const currentLang = localStorage.getItem('appLanguage') || 'ru';
-        
+
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Новая, надежная логика ---
         if (isAIModalShowingTranslation && currentAITranslation) {
+            // Если сейчас показан ПЕРЕВОД
             questionToDisplay = currentAITranslation;
-            // Умное обновление текста кнопки
-            toggleBtn.textContent = _('ai_toggle_translation_button').replace(/Показать |Show /g, 'Показать ').replace('перевод', 'оригинал').replace('Translation', 'Original').replace('Аударма', 'Түпнұсқа');
+            // то кнопка должна предлагать показать ОРИГИНАЛ
+            toggleBtn.textContent = _('ai_show_original_button');
         } else {
+            // Если сейчас показан ОРИГИНАЛ
             questionToDisplay = currentAIQuestion;
-            toggleBtn.textContent = _('ai_toggle_translation_button');
+            // то кнопка должна предлагать показать ПЕРЕВОД
+            toggleBtn.textContent = _('ai_show_translation_button');
         }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         if (!questionToDisplay) return;
 
-        // 1. Обновляем HTML-содержимое
+        // Обновляем HTML-содержимое
         questionEl.innerHTML = `<strong>Вопрос:</strong> ${escapeHTML(questionToDisplay.text)}<br><strong>Правильный ответ:</strong> ${escapeHTML(questionToDisplay.options[questionToDisplay.correctAnswerIndex].text)}`;
         
-        // 2. СРАЗУ ЖЕ ПОСЛЕ ОБНОВЛЕНИЯ вызываем нашу новую функцию-помощник!
+        // СРАЗУ ЖЕ ПОСЛЕ ОБНОВЛЕНИЯ вызываем нашу новую функцию-помощник!
         setupAIQuestionCollapser(questionEl);
     }
-
 
 
 
@@ -9124,15 +9403,25 @@ const mainApp = (function() {
                                 outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
                             }
                         } else {
-
-
                 throw new Error(result.error);
             }
         } catch (error) {
-            outputEl.innerHTML = `<p style="color: var(--feedback-incorrect-text);">${error.message}</p>`;
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: Используем систему переводов ---
+            let userFriendlyError;
+            
+            // Проверяем, содержит ли сообщение об ошибке текст про внутреннюю ошибку сервера
+            if (error.message.includes("INTERNAL") || error.message.includes("HTTP 500")) {
+                // Берем текст для серверной ошибки из LANG_PACK
+                userFriendlyError = _('ai_error_server');
+            } else {
+                // Берем общий текст ошибки из LANG_PACK
+                userFriendlyError = _('ai_error_generic');
+            }
+
+            outputEl.innerHTML = `<p style="color: var(--feedback-incorrect-text);">${userFriendlyError}</p>`;
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         }
     }
-
 
 
     function handleExplainClickInSearch(event, rawQuestionText) {
@@ -9444,7 +9733,17 @@ const mainApp = (function() {
 
 
 
-
+    /**
+     * Определяет язык текста по наличию специфичных символов.
+     * @param {string} text - Текст для анализа.
+     * @returns {string} - Код языка ('kk', 'en', 'ru').
+     */
+    function detectLanguage(text) {
+        if (/[әіңғүұқөһ]/i.test(text)) return 'kk';
+        // Проверяем на латиницу, но исключаем одиночные символы или технические слова
+        if (/[a-z]/i.test(text) && !/[а-я]/i.test(text)) return 'en';
+        return 'ru';
+    }
 
 
 
@@ -9706,6 +10005,26 @@ const mainApp = (function() {
     }
 
 
+     function handleFlashcardsModeChange() {
+            const isChecked = flashcardsModeCheckbox.checked;
+
+            // Блокируем/разблокируем связанные опции
+            shuffleAnswersCheckbox.disabled = isChecked;
+            readingModeCheckbox.disabled = isChecked;
+            feedbackModeCheckbox.disabled = isChecked;
+
+            if (isChecked) {
+                // Сбрасываем несовместимые опции
+                shuffleAnswersCheckbox.checked = false;
+                readingModeCheckbox.checked = false;
+                feedbackModeCheckbox.checked = false;
+                // Меняем текст кнопки
+                startQuizButton.textContent = _('start_flashcards_button');
+            } else {
+                // Возвращаем текст кнопки по умолчанию
+                startQuizButton.textContent = _('start_quiz_button');
+            }
+        }
 
 
     // --- Public methods exposed from mainApp ---

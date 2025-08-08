@@ -141,6 +141,10 @@
                     <input type="checkbox" id="readingMode">
                     <label for="readingMode" data-lang-key="reading_mode">Режим чтения (первый вариант верный)</label>
                 </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="flashcardsMode">
+                    <label for="flashcardsMode" data-lang-key="flashcards_mode">Режим карточек (вопрос/ответ)</label>
+                </div>
                 <button id="startQuizButton" data-lang-key="start_quiz_button">Начать тест</button>
                 <button id="generateCheatSheetButton" style="margin-top: 10px;" data-lang-key="generate_cheat_sheet_button">Создать шпору</button>
                 <button id="chooseAnotherFileButton" style="margin-top: 10px;" data-lang-key="choose_another_file_button">Выбрать другой файл</button>
@@ -335,7 +339,12 @@
                     </button>
                     <!-- Это скрытое содержимое списка -->
                     <div id="aiExplanationStyleContent" class="style-dropdown-content hidden">
-                        <!-- Элементы списка будут сгенерированы JavaScript -->
+                        <a href="#" data-style="simple" data-lang-key="ai_style_simple">Просто</a>
+                        <a href="#" data-style="scientific" data-lang-key="ai_style_scientific">Научно</a>
+                        <a href="#" data-style="associative" data-lang-key="ai_style_associative">Аналогия</a>
+                        <a href="#" data-style="stepbystep" data-lang-key="ai_style_stepbystep">Пошагово</a>
+                        <a href="#" data-style="practical" data-lang-key="ai_style_practical">Практично</a>
+                        <a href="#" data-style="visual" data-lang-key="ai_style_visual">Наглядно</a>
                     </div>
                 </div>
 
@@ -370,3 +379,5 @@
 
 </body>
 </html>
+
+

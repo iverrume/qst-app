@@ -2,7 +2,7 @@
 
 // ВАЖНО: При каждом обновлении основных файлов (css, js, html) меняйте версию кеша!
 // Например, 'qst-app-cache-v202', 'qst-app-cache-v203' и т.д.
-const CACHE_NAME = 'qst-app-cache-v252';
+const CACHE_NAME = 'qst-app-cache-v253';
 
 // Файлы, которые составляют "оболочку" приложения и будут закешированы
 const URLS_TO_CACHE = [

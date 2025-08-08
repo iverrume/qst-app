@@ -4890,16 +4890,20 @@ body.synthwave-mode .google-signin-btn:hover {
     background-color: var(--button-success-hover-bg);
 }
 
+
+
 /* ===== СТИЛИ ДЛЯ АНИМАЦИИ ПЕЧАТАНИЯ ===== */
 
 /* Контейнер, чтобы отцентрировать анимацию */
 .typing-loader-container {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start; /* <<< ИСПРАВЛЕНО: Выравниваем по левому краю */
     align-items: center;
     min-height: 100px; /* Даем немного пространства */
     width: 100%;
 }
+
+
 
 /* Сам элемент с текстом и анимацией */
 .typing-loader {
@@ -5604,4 +5608,185 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
         max-width: 700px; /* Устанавливаем ширину, как у основного контейнера */
         width: 90%;       /* Занимает 90% ширины, но не более 700px */
     }
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕЖИМА ФЛЕШ-КАРТОЧЕК          === */
+/* ======================================================= */
+
+/* Контейнер, создающий 3D-пространство */
+.flashcard-viewport {
+    perspective: 1000px;
+    padding: 20px 0;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Сама карточка, которая будет вращаться */
+.flashcard {
+    width: 100%;
+    /* === ИЗМЕНЕНИЕ: Заменяем height на min-height === */
+    min-height: 250px; /* Устанавливаем минимальную высоту */
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+
+
+
+/* Общие стили для обеих сторон карточки */
+.flashcard-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: flex-start; /* <<< ИСПРАВЛЕНО: Текст всегда начинается сверху */
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px var(--shadow-light-color);
+    border: 1px solid var(--border-color);
+    font-size: 1.2em;
+    line-height: 1.5;
+    overflow-y: auto;
+}
+
+
+
+
+/* Передняя сторона (вопрос) */
+.flashcard-front {
+    background-color: var(--container-bg-color);
+}
+
+/* Задняя сторона (ответ) */
+.flashcard-back {
+    background-color: var(--feedback-correct-bg);
+    color: var(--feedback-correct-text);
+    transform: rotateY(180deg); /* Изначально повернута от нас */
+}
+
+/* Класс, который мы будем добавлять для "переворота" */
+.flashcard.is-flipped {
+    transform: rotateY(180deg);
+}
+
+/* Контейнер для кнопок навигации под карточкой */
+.flashcard-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+
+/* Улучшенный базовый стиль для карточки-категории */
+.flashcard-category {
+    background-color: var(--input-bg-color); /* Используем нейтральный фон полей ввода */
+    color: var(--heading-color);             /* Текст будет того же цвета, что и заголовки */
+    cursor: default;
+    flex-direction: column;
+    border: 2px solid var(--border-color); /* Делаем рамку чуть заметнее */
+}
+
+/* === КОНЕЦ ЗАМЕНЫ === */
+
+.flashcard-category-label {
+    font-size: 0.8em;
+    opacity: 0.8;
+    margin-bottom: 8px;
+    font-weight: normal;
+}
+
+.flashcard-category-title {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* ======================================================= */
+/* ===    УЛУЧШЕНИЕ КАРТОЧКИ-КАТЕГОРИИ ДЛЯ ТЕМ         === */
+/* ======================================================= */
+
+/* Особый стиль для темы "Глубокая ночь" (Synthwave) */
+body.synthwave-mode .flashcard-category {
+    /* Делаем фон почти прозрачным с легким оттенком акцентного цвета */
+    background-color: rgba(56, 189, 248, 0.05); 
+    
+    /* Рамка будет яркой, в цвет "неоновых" заголовков */
+    border-color: var(--accent); 
+    
+    /* Добавляем легкое внешнее свечение, чтобы усилить эффект неона */
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); 
+}
+
+/* style.css (добавить в конец файла) */
+
+/* === СТИЛИ ДЛЯ КНОПКИ "ОБЪЯСНИТЬ" НА КАРТОЧКЕ === */
+
+/* Делаем заднюю сторону карточки гибким контейнером-колонкой */
+.flashcard-back {
+    flex-direction: column;
+    justify-content: space-between; /* Расталкивает текст и кнопку по краям */
+    padding: 20px 20px 15px 20px; /* Уменьшаем нижний отступ */
+}
+
+/* Контейнер для текста ответа, чтобы он занимал основное место */
+.flashcard-answer-text {
+    flex-grow: 1; /* Позволяет тексту занять все доступное пространство */
+    display: flex;
+    align-items: center; /* Центрирует текст по вертикали внутри его блока */
+    justify-content: center;
+    width: 100%;
+}
+
+/* Стили для самой кнопки */
+.explain-flashcard-btn {
+    background-color: rgba(0, 0, 0, 0.05); /* Полупрозрачный фон */
+    color: var(--feedback-correct-text);
+    border: 1px solid var(--feedback-correct-text);
+    opacity: 0.8;
+    padding: 6px 15px;
+    font-size: 0.8em;
+    font-weight: bold;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-top: 15px; /* Отступ от текста ответа */
+    flex-shrink: 0; /* Запрещаем кнопке сжиматься */
+    transition: all 0.2s ease;
+}
+
+.explain-flashcard-btn:hover {
+    opacity: 1;
+    transform: scale(1.05);
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Адаптация для темной темы */
+body.dark-mode .explain-flashcard-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--feedback-correct-text);
+}
+body.dark-mode .explain-flashcard-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* style.css (добавить в конец файла) */
+
+/* === ИСПРАВЛЕНИЕ АНИМАЦИИ В КАРТОЧКАХ === */
+
+/* 
+ * Этот контейнер будет вести себя как обычный текстовый блок,
+ * позволяя функции анимации правильно измерять переносы строк.
+ * Flex-контейнер (.flashcard-face) будет центрировать его.
+*/
+.flashcard-text-content {
+    width: 100%;
+    text-align: center; /* Центрируем текст внутри самого блока */
 }
