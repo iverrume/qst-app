@@ -7891,10 +7891,22 @@ const mainApp = (function() {
     }
 
 
+
     async function showResults() {
         localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
+
+        // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+        // 1. Находим блок с результатом анализа ИИ.
+        const aiAnalysisResult = getEl('aiAnalysisResult');
+        // 2. Очищаем его содержимое и скрываем.
+        //    Это решает исходную проблему с "зависшим" текстом.
+        if (aiAnalysisResult) {
+            aiAnalysisResult.innerHTML = '';
+            aiAnalysisResult.classList.add('hidden');
+        }
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
         // Проверяем, был ли это официальный тест, который нужно сохранить
         if (currentQuizContext && !currentQuizContext.isPractice && currentUser) {
@@ -7965,6 +7977,7 @@ const mainApp = (function() {
             // Скрываем кнопки работы над ошибками, они не нужны для карточек
             feedbackDownloadArea.classList.add('hidden');
             errorReviewArea.classList.add('hidden');
+            getEl('aiAnalysisArea').classList.add('hidden');
         } else {
             // ОБЫЧНЫЙ РЕЖИМ ТЕСТА
             finalTotalContainer.innerHTML = `<span data-lang-key="your_result">${_('your_result')}:</span> <span id="finalCorrect">${score}</span> <span data-lang-key="of_label">${_('of_label')}</span> <span id="finalTotal">${questionsInThisQuiz.length}</span>.`;
@@ -7990,6 +8003,7 @@ const mainApp = (function() {
             triggeredQuizDownloadArea.classList.add('hidden');
         }
     }
+
 
 
     function startErrorReviewQuiz() {
@@ -8044,9 +8058,12 @@ const mainApp = (function() {
         correctAnswersCountEl.textContent = score;
     }
 
+
+
     function resetQuizForNewFile(clearInput = true) {
         // Если мы сбрасываем тест, потому что начинаем новый,
         // а не потому что сохранили старый, то удаляем сохранение.
+        quizSettings = { timeLimit: 0, shuffleQuestions: false, shuffleAnswers: false, questionRangeStart: 1, questionRangeEnd: 0, feedbackMode: false, readingMode: false, flashcardsMode: false };
         quizStartTime = 0;
         if (clearInput) {
              localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
@@ -8065,21 +8082,12 @@ const mainApp = (function() {
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
 
-        // === НАЧАЛО НОВОГО КОДА, КОТОРЫЙ НУЖНО ДОБАВИТЬ ===
-        
-        // Прячем и очищаем контейнер с результатами анализа ИИ
-        const aiAnalysisResultDiv = getEl('aiAnalysisResult');
-        if (aiAnalysisResultDiv) {
-            aiAnalysisResultDiv.innerHTML = ''; // Очищаем старый текст анализа
-            aiAnalysisResultDiv.classList.add('hidden'); // Скрываем его
+        // Правильный сброс аналитики ИИ (оставляем)
+        const aiAnalysisResult = getEl('aiAnalysisResult');
+        if (aiAnalysisResult) {
+            aiAnalysisResult.innerHTML = ''; 
+            aiAnalysisResult.classList.add('hidden');
         }
-        // Также убедимся, что вся область анализа скрыта
-        const aiAnalysisAreaDiv = getEl('aiAnalysisArea');
-        if (aiAnalysisAreaDiv) {
-            aiAnalysisAreaDiv.classList.add('hidden');
-        }
-
-        // === КОНЕЦ НОВОГО КОДА ===
 
         isTranslateModeEnabled = false;
         localStorage.setItem('isTranslateModeEnabled', 'false');
@@ -8095,8 +8103,13 @@ const mainApp = (function() {
         
         timerDisplayEl?.classList.add('hidden');
         quickNavPanel?.classList.add('hidden');
-        feedbackDownloadArea?.classList.add('hidden');
-        errorReviewArea?.classList.add('hidden');
+        
+        // === УДАЛЕНО ===
+        // feedbackDownloadArea?.classList.add('hidden');
+        // errorReviewArea?.classList.add('hidden');
+        // Эти две строки были причиной проблемы, так как они скрывали кнопки напрямую.
+        // Теперь видимость этих кнопок будет управляться ИСКЛЮЧИТЕЛЬНО функцией showResults().
+        
         copyQuestionBtnQuiz?.classList.add('hidden');
         triggeredQuizDownloadArea?.classList.add('hidden');
         finishTestButton?.classList.add('hidden');
@@ -8122,6 +8135,8 @@ const mainApp = (function() {
         loadSavedSession();
         manageBackButtonInterceptor();
     }
+
+
 
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
