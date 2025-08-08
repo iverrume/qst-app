@@ -10449,6 +10449,7 @@ const mainApp = (function() {
         }
 
 
+    // Внутри модуля mainApp в файле script.js
 
     async function requestErrorAnalysis() {
         if (currentQuizErrorData.length === 0) {
@@ -10460,18 +10461,26 @@ const mainApp = (function() {
         const resultContainer = getEl('aiAnalysisResult');
         const originalBtnText = analysisBtn.textContent;
 
-        // Показываем состояние загрузки
         analysisBtn.disabled = true;
         analysisBtn.textContent = 'ИИ анализирует... 🧠';
         resultContainer.classList.add('hidden');
         resultContainer.innerHTML = '';
 
         try {
+            // === НАЧАЛО ИЗМЕНЕНИЙ ===
+            // 1. Получаем текущего пользователя из ChatModule
+            const currentUser = ChatModule.getCurrentUser();
+
+            // 2. Определяем имя для анализа. Если пользователь не вошел, используем специальный маркер 'guest'.
+            const userNameForAnalysis = currentUser ? currentUser.displayName : 'guest';
+            // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify({
                     action: 'getErrorAnalysis',
                     errors: currentQuizErrorData,
+                    userName: userNameForAnalysis, // <--- 3. ДОБАВЛЯЕМ НОВОЕ ПОЛЕ В ЗАПРОС
                     targetLanguage: localStorage.getItem('appLanguage') || 'ru'
                 })
             });
@@ -10479,7 +10488,6 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success && result.analysis) {
-                // Используем marked.js для красивого форматирования
                 resultContainer.innerHTML = marked.parse(result.analysis);
                 resultContainer.classList.remove('hidden');
             } else {
@@ -10491,7 +10499,6 @@ const mainApp = (function() {
             resultContainer.innerHTML = `<p style="color: var(--feedback-incorrect-text);">Произошла ошибка: ${error.message}</p>`;
             resultContainer.classList.remove('hidden');
         } finally {
-            // Возвращаем кнопку в исходное состояние
             analysisBtn.disabled = false;
             analysisBtn.textContent = originalBtnText;
         }
