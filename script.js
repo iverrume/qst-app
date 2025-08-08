@@ -8049,8 +8049,6 @@ const mainApp = (function() {
         }
         window.removeEventListener('beforeunload', handleBeforeUnload);
 
-
-
         if (timerInterval) clearInterval(timerInterval);
         allParsedQuestions = [];
         questionsForCurrentQuiz = [];
@@ -8062,6 +8060,22 @@ const mainApp = (function() {
         originalFileNameForReview = '';
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
+
+        // === НАЧАЛО НОВОГО КОДА, КОТОРЫЙ НУЖНО ДОБАВИТЬ ===
+        
+        // Прячем и очищаем контейнер с результатами анализа ИИ
+        const aiAnalysisResultDiv = getEl('aiAnalysisResult');
+        if (aiAnalysisResultDiv) {
+            aiAnalysisResultDiv.innerHTML = ''; // Очищаем старый текст анализа
+            aiAnalysisResultDiv.classList.add('hidden'); // Скрываем его
+        }
+        // Также убедимся, что вся область анализа скрыта
+        const aiAnalysisAreaDiv = getEl('aiAnalysisArea');
+        if (aiAnalysisAreaDiv) {
+            aiAnalysisAreaDiv.classList.add('hidden');
+        }
+
+        // === КОНЕЦ НОВОГО КОДА ===
 
         isTranslateModeEnabled = false;
         localStorage.setItem('isTranslateModeEnabled', 'false');
@@ -10417,8 +10431,6 @@ const mainApp = (function() {
 
 
 
- 
-
     async function requestErrorAnalysis() {
         if (currentQuizErrorData.length === 0) {
             alert("Нет данных об ошибках для анализа.");
@@ -10429,26 +10441,18 @@ const mainApp = (function() {
         const resultContainer = getEl('aiAnalysisResult');
         const originalBtnText = analysisBtn.textContent;
 
+        // Показываем состояние загрузки
         analysisBtn.disabled = true;
         analysisBtn.textContent = 'ИИ анализирует... 🧠';
         resultContainer.classList.add('hidden');
         resultContainer.innerHTML = '';
 
         try {
-            // === НАЧАЛО ИЗМЕНЕНИЙ ===
-            // 1. Получаем текущего пользователя из ChatModule
-            const currentUser = ChatModule.getCurrentUser();
-
-            // 2. Определяем имя для анализа. Если пользователь не вошел, используем специальный маркер 'guest'.
-            const userNameForAnalysis = currentUser ? currentUser.displayName : 'guest';
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
-
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify({
                     action: 'getErrorAnalysis',
                     errors: currentQuizErrorData,
-                    userName: userNameForAnalysis, // <--- 3. ДОБАВЛЯЕМ НОВОЕ ПОЛЕ В ЗАПРОС
                     targetLanguage: localStorage.getItem('appLanguage') || 'ru'
                 })
             });
@@ -10456,6 +10460,7 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success && result.analysis) {
+                // Используем marked.js для красивого форматирования
                 resultContainer.innerHTML = marked.parse(result.analysis);
                 resultContainer.classList.remove('hidden');
             } else {
@@ -10467,6 +10472,7 @@ const mainApp = (function() {
             resultContainer.innerHTML = `<p style="color: var(--feedback-incorrect-text);">Произошла ошибка: ${error.message}</p>`;
             resultContainer.classList.remove('hidden');
         } finally {
+            // Возвращаем кнопку в исходное состояние
             analysisBtn.disabled = false;
             analysisBtn.textContent = originalBtnText;
         }
