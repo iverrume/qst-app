@@ -5487,6 +5487,7 @@ const mainApp = (function() {
     let isExitConfirmed = false;
     let isTranslateModeEnabled = localStorage.getItem('isTranslateModeEnabled') === 'true'; 
     let currentQuizTranslations = new Map(); // Для кэша в текущей сессии
+    let currentAIUserIncorrectAnswer = null;
     let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
     const AI_INPUT_CHAR_LIMIT = 14000; // Безопасный лимит символов для ИИ
 
@@ -5735,6 +5736,8 @@ const mainApp = (function() {
                 // Закрываем список
                 getEl('aiExplanationStyleDropdown').classList.remove('open');
                 getEl('aiExplanationStyleContent').classList.add('hidden');
+
+                fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
 
                 // Запрашиваем новое объяснение
                 fetchAndDisplayExplanation(style);
@@ -9565,6 +9568,7 @@ const mainApp = (function() {
      */
     async function showAIExplanation(question, userIncorrectAnswerText = null) { // <<<--- Добавлен второй параметр
         currentAIQuestion = question;
+        currentAIUserIncorrectAnswer = userIncorrectAnswerText;
         currentAITranslation = null;
         isAIModalShowingTranslation = false;
         
