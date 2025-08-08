@@ -7766,12 +7766,19 @@ const mainApp = (function() {
 
 
     function handleAnswerSelect(event) {
+        // 1. Проверяем, не был ли уже дан ответ на этот вопрос
         if (userAnswers[currentQuestionIndex].answered) return;
+
+        // 2. Получаем данные о клике и текущем вопросе
         const selectedOptionLi = event.target;
         const selectedIndex = parseInt(selectedOptionLi.dataset.index);
         const question = questionsForCurrentQuiz[currentQuestionIndex];
         const isCorrect = selectedIndex === question.correctAnswerIndex;
+
+        // 3. Сохраняем результат ответа пользователя
         userAnswers[currentQuestionIndex] = { answered: true, correct: isCorrect, selectedOptionIndex: selectedIndex };
+
+        // 4. Обновляем интерфейс в зависимости от правильности ответа
         if (isCorrect) {
             selectedOptionLi.classList.add('correct');
             feedbackAreaEl.textContent = 'Правильно!';
@@ -7781,36 +7788,61 @@ const mainApp = (function() {
             selectedOptionLi.classList.add('incorrect');
             feedbackAreaEl.textContent = 'Неправильно!';
             feedbackAreaEl.className = 'feedback-area incorrect-feedback';
+            
+            // Подсвечиваем правильный ответ
             const correctLi = answerOptionsEl.querySelector(`li[data-index="${question.correctAnswerIndex}"]`);
             if (correctLi) correctLi.classList.add('actual-correct');
+            
+            // Если включен режим обратной связи, сохраняем данные об ошибке
             if (quizSettings.feedbackMode) {
                 incorrectlyAnsweredQuestionsData.push(...question.originalRaw, "");
             }
         }
+
+        // 5. Блокируем все варианты ответа, чтобы предотвратить повторный клик
         Array.from(answerOptionsEl.children).forEach(li => {
             li.removeEventListener('click', handleAnswerSelect);
             li.classList.add('answered');
         });
 
-
-        // Очищаем предыдущую кнопку, если она была
+        // 6. === УМНАЯ ЛОГИКА СОЗДАНИЯ КНОПКИ "ОБЪЯСНИТЬ" ===
+        // Сначала удаляем старую кнопку, если она вдруг осталась
         const existingBtn = feedbackAreaEl.querySelector('.explain-btn');
         if (existingBtn) existingBtn.remove();
 
-        // Создаем и добавляем новую кнопку
+        // Создаем новую кнопку
         const explainBtn = document.createElement('button');
         explainBtn.textContent = _('ai_explain_button');
-        explainBtn.className = 'explain-btn'; // Можно добавить стили
+        explainBtn.className = 'explain-btn';
         explainBtn.style.marginLeft = '15px';
-        explainBtn.onclick = () => showAIExplanation(question); // `question` уже доступен в этой функции
+
+        // Определяем, что будет делать кнопка при клике
+        if (isCorrect) {
+            // Если ответ ПРАВИЛЬНЫЙ, передаем только объект вопроса
+            explainBtn.onclick = () => showAIExplanation(question);
+        } else {
+            // Если ответ НЕПРАВИЛЬНЫЙ, передаем и вопрос, и текст ошибки
+            const incorrectAnswerText = question.options[selectedIndex].text;
+            explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText);
+        }
+        
+        // Добавляем созданную кнопку в область обратной связи
         feedbackAreaEl.appendChild(explainBtn);
+        // === КОНЕЦ УМНОЙ ЛОГИКИ ===
+
+        // 7. Обновляем все остальные элементы интерфейса
         updateScoreDisplay();
         updateNavigationButtons();
         updateQuickNavButtons();
+        
+        // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
         if (quickModeEnabled) {
             setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
         }
     }
+
+
+
 
     function handleNextButtonClick() {
         if (currentQuestionIndex < questionsForCurrentQuiz.length - 1) {
@@ -9531,8 +9563,7 @@ const mainApp = (function() {
      * ВЕРСИЯ 2.2: ВОССТАНОВЛЕНА генерация списка стилей.
      * @param {object} question - Исходный (непереведенный) объект вопроса.
      */
-    async function showAIExplanation(question) {
-        // 1. Сбрасываем и инициализируем состояния, как и раньше
+    async function showAIExplanation(question, userIncorrectAnswerText = null) { // <<<--- Добавлен второй параметр
         currentAIQuestion = question;
         currentAITranslation = null;
         isAIModalShowingTranslation = false;
@@ -9544,38 +9575,28 @@ const mainApp = (function() {
         toggleBtn.classList.add('hidden');
         outputEl.innerHTML = '';
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
-        
-        // 2. ВОССТАНАВЛИВАЕМ КОД ГЕНЕРАЦИИ СПИСКА СТИЛЕЙ
         const styleContentEl = getEl('aiExplanationStyleContent');
         const styleTextEl = getEl('aiExplanationStyleText');
-        styleContentEl.innerHTML = ''; // Очищаем старые ссылки
+        styleContentEl.innerHTML = ''; 
         
-        // Определяем список доступных стилей
         const styles = ['simple', 'scientific', 'associative', 'stepByStep', 'practical', 'visual'];
         
         styles.forEach(styleKey => {
             const link = document.createElement('a');
             link.href = '#';
             link.dataset.style = styleKey;
-            // Берём перевод из LANG_PACK
             link.textContent = _('ai_style_' + styleKey.toLowerCase());
             
-            // По умолчанию делаем стиль "Просто" активным
             if (styleKey === 'simple') {
                 link.classList.add('active');
             }
             styleContentEl.appendChild(link);
         });
-        // Устанавливаем текст по умолчанию на главной кнопке
         styleTextEl.textContent = _('ai_style_simple');
-
-        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
         showGlobalLoader('Подготовка окна объяснения...');
 
         try {
-            // 3. Остальная логика функции остается без изменений
             if (isTranslateModeEnabled) {
                 const lang = localStorage.getItem('appLanguage') || 'ru';
                 const translationResult = await getCachedOrFetchTranslation(question, question.originalIndex, lang);
@@ -9585,30 +9606,20 @@ const mainApp = (function() {
                     isAIModalShowingTranslation = true;
                     toggleBtn.classList.remove('hidden');
                 }
-
-
-
-
             } else {
-                // --- НАЧАЛО ИЗМЕНЕНИЙ: Упрощенная логика ---
                 const appLang = localStorage.getItem('appLanguage') || 'ru';
                 const questionLang = detectLanguage(question.text);
 
-                // Показываем кнопку, если язык вопроса не совпадает с языком приложения
                 if (appLang !== questionLang) {
                     toggleBtn.classList.remove('hidden');
                 }
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
-
-
-
             
             updateAIModalQuestionText();
-            
             ChatModule.showModal('aiExplanationModal');
             
-            fetchAndDisplayExplanation('simple');
+            // Передаем неверный ответ дальше
+            fetchAndDisplayExplanation('simple', userIncorrectAnswerText);
 
         } catch (error) {
             console.error("Ошибка при подготовке окна объяснения:", error);
@@ -9692,63 +9703,57 @@ const mainApp = (function() {
 
 
 
-    async function fetchAndDisplayExplanation(style) {
+    async function fetchAndDisplayExplanation(style, userIncorrectAnswerText = null) { // <<<--- Добавлен второй параметр
         if (!currentAIQuestion) return;
 
-        // --- НОВЫЙ КОД ДЛЯ ПОДСВЕТКИ АКТИВНОГО ПУНКТА ---
         const styleContentEl = getEl('aiExplanationStyleContent');
         styleContentEl.querySelectorAll('a').forEach(a => a.classList.remove('active'));
         const activeLink = styleContentEl.querySelector(`a[data-style="${style}"]`);
         if (activeLink) activeLink.classList.add('active');
-        // --- КОНЕЦ НОВОГО КОДА ---
             
-
         const outputEl = getEl('aiExplanationOutput');
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
 
         try {
+            // --- НОВЫЙ ОБЪЕКТ ДЛЯ ОТПРАВКИ ---
+            const payload = {
+                action: 'getExplanation',
+                question_text: currentAIQuestion.text,
+                correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
+                style: style,
+                targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+            };
+
+            // Если неверный ответ был передан, добавляем его в payload
+            if (userIncorrectAnswerText) {
+                payload.user_incorrect_answer_text = userIncorrectAnswerText;
+            }
+            // ---------------------------------
+
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                body: JSON.stringify({
-                    action: 'getExplanation',
-                    question_text: currentAIQuestion.text,
-                    correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
-                    style: style,
-                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
-                })
+                body: JSON.stringify(payload) // Отправляем новый объект
             });
             const result = await response.json();
 
-
             if (result.success) {
-                            // Проверяем, существует ли функция marked в глобальной области видимости
-                            if (window.marked) {
-                                // Если да, преобразуем Markdown в HTML
-                                outputEl.innerHTML = marked.parse(result.explanation);
-                            } else {
-                                // Если библиотека по какой-то причине не загрузилась,
-                                // используем старый метод с переносами строк
-                                console.warn('Библиотека marked.js не загружена. Отображение без форматирования.');
-                                outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
-                            }
-                        } else {
+                if (window.marked) {
+                    outputEl.innerHTML = marked.parse(result.explanation);
+                } else {
+                    console.warn('Библиотека marked.js не загружена. Отображение без форматирования.');
+                    outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
+                }
+            } else {
                 throw new Error(result.error);
             }
         } catch (error) {
-            // --- НАЧАЛО ИЗМЕНЕНИЙ: Используем систему переводов ---
             let userFriendlyError;
-            
-            // Проверяем, содержит ли сообщение об ошибке текст про внутреннюю ошибку сервера
             if (error.message.includes("INTERNAL") || error.message.includes("HTTP 500")) {
-                // Берем текст для серверной ошибки из LANG_PACK
                 userFriendlyError = _('ai_error_server');
             } else {
-                // Берем общий текст ошибки из LANG_PACK
                 userFriendlyError = _('ai_error_generic');
             }
-
             outputEl.innerHTML = `<p style="color: var(--feedback-incorrect-text);">${userFriendlyError}</p>`;
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         }
     }
 

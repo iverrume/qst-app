@@ -5834,3 +5834,27 @@ body.dark-mode .explain-flashcard-btn:hover {
 .parser-tab-content.active {
     display: block; /* Показываем только активную */
 }
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ АНАЛИЗА ОШИБОК В ОКНЕ ИИ              === */
+/* ======================================================= */
+
+#aiExplanationOutput h3 {
+    font-size: 1.1em;
+    padding-bottom: 5px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Заголовок для правильного ответа */
+#aiExplanationOutput h3:first-of-type {
+    color: var(--feedback-correct-text);
+    border-bottom-color: var(--feedback-correct-border);
+}
+
+/* Заголовок для анализа ошибки */
+#aiExplanationOutput h3:last-of-type {
+    color: var(--feedback-incorrect-text);
+    border-bottom-color: var(--feedback-incorrect-border);
+}
