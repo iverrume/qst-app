@@ -1230,7 +1230,6 @@ body.dark-mode {
     font-weight: bold;
     min-width: 20px;
     text-align: center;
-    animation: pulse 2s infinite;
 }
 
 .header-controls {
@@ -1386,7 +1385,6 @@ body.dark-mode {
     font-weight: bold;
     min-width: 18px;
     text-align: center;
-    animation: pulse 2s infinite;
 }
 
 .tab-item.active .tab-counter {
@@ -1720,7 +1718,6 @@ body.synthwave-mode .option-vote-btn.correct {
 
 .question-square.has-votes {
     background: linear-gradient(135deg, var(--chat-success), #1e8449);
-    animation: pulse 2s infinite;
 }
 
 .vote-indicator {
@@ -2059,7 +2056,6 @@ emoji-picker.visible {
     font-size: 0.75em;
     font-weight: bold;
     border: 2px solid var(--container-bg-color);
-    animation: pulse 2s infinite;
 }
 
 #chatToggle {
@@ -5788,5 +5784,9 @@ body.dark-mode .explain-flashcard-btn:hover {
 */
 .flashcard-text-content {
     width: 100%;
-    text-align: center; /* Центрируем текст внутри самого блока */
+    text-align: left; /* Центрируем текст внутри самого блока */
+}
+
+.pulse-active {
+    animation: pulse 2s infinite;
 }

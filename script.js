@@ -201,6 +201,8 @@ const ChatModule = (function() {
             chat_translate_button_title_on: "Показать оригинал",
             chat_translate_button_title_off: "Перевести чат",
             chat_translation_failed: "Ошибка перевода",
+            ai_error_summary_generic: 'Не удалось получить сводку. Попробуйте еще раз.',
+            ai_error_summary_server: 'Не удалось получить сводку: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
 
         },
         kk: {
@@ -392,6 +394,8 @@ const ChatModule = (function() {
             chat_translate_button_title_on: "Түпнұсқаны көрсету",
             chat_translate_button_title_off: "Чатты аудару",
             chat_translation_failed: "Аудару қатесі",
+            ai_error_summary_generic: 'Түйіндемені алу мүмкін болмады. Қайталап көріңіз.',
+            ai_error_summary_server: 'Түйіндемені алу мүмкін болмады: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
         },
         en: {
             // TABS
@@ -585,6 +589,8 @@ const ChatModule = (function() {
             chat_translate_button_title_on: "Show Original",
             chat_translate_button_title_off: "Translate Chat",
             chat_translation_failed: "Translation failed",
+            ai_error_summary_generic: 'Failed to get summary. Please try again.',
+            ai_error_summary_server: 'Failed to get summary: A temporary server error occurred. Please try again later.',
         }
     };
     let currentChatLang = localStorage.getItem('chatLanguage') || 'ru';
@@ -1557,6 +1563,31 @@ const ChatModule = (function() {
             console.log('UI пользователя обновлено:', displayName);
         }
     }
+
+// script.js (вставить новую функцию в ChatModule)
+
+    /**
+     * Находит все сообщения пользователя в текущем DOM и обновляет его имя.
+     * @param {string} userId - ID пользователя, чье имя нужно обновить.
+     * @param {string} newName - Новое имя пользователя.
+     */
+    function updateAuthorNameInView(userId, newName) {
+        if (!messageArea || !userId || !newName) return;
+        
+        // Находим все сообщения, которые мы пометили нашим data-атрибутом
+        const userMessages = messageArea.querySelectorAll(`.message[data-author-id="${userId}"]`);
+        
+        userMessages.forEach(msgElement => {
+            // В каждом сообщении находим элемент с именем автора
+            const authorEl = msgElement.querySelector('.author');
+            if (authorEl) {
+                // И просто меняем его текстовое содержимое
+                authorEl.textContent = newName;
+            }
+        });
+        console.log(`Обновлено имя для ${userMessages.length} сообщений в DOM.`);
+    }
+
     
     // ========== AUTHENTICATION ==========
     function switchAuthTab(tabType) {
@@ -2012,7 +2043,15 @@ const ChatModule = (function() {
         const messageEl = document.createElement('div');
         messageEl.id = `message-${message.id}`;
         messageEl.className = `message ${message.authorId === currentUser?.uid ? 'mine' : 'other'}`;
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем метку с ID автора ---
+        if (message.authorId) {
+            messageEl.dataset.authorId = message.authorId;
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
         if (message.isPinned) messageEl.classList.add('pinned');
+
         
         const timestamp = message.createdAt;
         const displayTime = formatSmartTimestamp(timestamp);
@@ -2138,12 +2177,25 @@ const ChatModule = (function() {
                 updatePromises.push(currentUser.updatePassword(newPassword));
             }
 
+
+
             await Promise.all(updatePromises);
             alert("Профиль успешно обновлен!");
             updateUserUI(); // Обновляем имя в шапке
+
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: Обновляем имя в старых сообщениях ---
+            // Проверяем, что имя действительно было изменено
+            if (newName && newName !== currentUser.displayName) {
+                // Вызываем нашу новую функцию
+                updateAuthorNameInView(currentUser.uid, newName);
+            }
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            
             closeModal('profileEditModal');
 
         } catch (error) {
+
+
             console.error("Ошибка обновления профиля:", error);
             showError("Не удалось обновить профиль. " + getErrorMessage(error.code));
         }
@@ -4516,11 +4568,32 @@ const ChatModule = (function() {
                 throw new Error(result.error || 'Не удалось получить сводку от ИИ.');
             }
 
+
+
         } catch (error) {
             // В случае любой другой ошибки (например, проблемы с сетью)
             console.error("Ошибка при получении сводки от ИИ:", error);
-            alert(error.message);
+            
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: Используем _chat вместо _ ---
+            let userFriendlyError;
+
+            if (error.message.includes("INTERNAL") || error.message.includes("HTTP 500")) {
+                // Если это ошибка сервера, используем специальный текст из чата
+                userFriendlyError = _chat('ai_error_summary_server');
+            } else {
+                // Иначе используем общий текст ошибки из чата
+                userFriendlyError = _chat('ai_error_summary_generic');
+            }
+
+            // Показываем пользователю понятное сообщение
+            alert(userFriendlyError);
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
         } finally {
+
+
+
+
             // В любом случае (успех или ошибка) убираем индикатор загрузки
             mainApp.hideGlobalLoader();
         }
@@ -4965,6 +5038,10 @@ const mainApp = (function() {
             session_cards_viewed: 'Просмотрено',
             ai_error_generic: 'Не удалось сгенерировать объяснение. Попробуйте, пожалуйста, еще раз.',
             ai_error_server: 'Не удалось сгенерировать объяснение: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
+            parser_overwrite_warning: 'Поле с результатом уже содержит текст. Вы уверены, что хотите перезаписать его?',
+            ai_error_generation: 'Произошла ошибка при генерации теста.',
+            ai_error_server_generation: 'Ошибка генерации теста: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
+            ai_char_limit_exceeded: 'Лимит символов превышен ({current}/{max})',
 
         },
         kk: {
@@ -5106,6 +5183,11 @@ const mainApp = (function() {
             session_cards_viewed: 'Қаралды',
             ai_error_generic: 'Түсіндірмені жасау мүмкін болмады. Қайталап көріңіз.',
             ai_error_server: 'Түсіндірмені жасау мүмкін болмады: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
+            parser_overwrite_warning: 'Нәтиже өрісінде мәтін бар. Оны қайта жазғыңыз келетініне сенімдісіз бе?',
+            ai_error_generation: 'Тест жасау кезінде қате пайда болды.',
+            ai_error_server_generation: 'Тест жасау қатесі: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
+            ai_char_limit_exceeded: 'Таңба шегінен асып кетті ({current}/{max})',
+
         },
         en: {
             // Main Screen
@@ -5253,6 +5335,11 @@ const mainApp = (function() {
             session_cards_viewed: 'Viewed',
             ai_error_generic: 'Failed to generate explanation. Please try again.',
             ai_error_server: 'Failed to generate explanation: A temporary server error occurred. Please try again later.',
+            parser_overwrite_warning: 'The result field already contains text. Are you sure you want to overwrite it?',
+            ai_error_generation: 'An error occurred while generating the test.',
+            ai_error_server_generation: 'Test generation failed: A temporary server error occurred. Please try again later.',
+            ai_char_limit_exceeded: 'Character limit exceeded ({current}/{max})',
+
         }
 
 
@@ -5358,6 +5445,8 @@ const mainApp = (function() {
     let isTranslateModeEnabled = localStorage.getItem('isTranslateModeEnabled') === 'true'; 
     let currentQuizTranslations = new Map(); // Для кэша в текущей сессии
     let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
+    const AI_INPUT_CHAR_LIMIT = 14000; // Безопасный лимит символов для ИИ
+
 
     
 
@@ -5515,6 +5604,7 @@ const mainApp = (function() {
         createVariantFilterCheckboxes();
         manageBackButtonInterceptor();
         setupExtensionListener();
+        setupAnimationObserver();
     }
 
 
@@ -5619,6 +5709,7 @@ const mainApp = (function() {
         runParserBtn?.addEventListener('click', runParser);
         downloadParsedBtn?.addEventListener('click', downloadParsedQst);
         clearParserInputBtn?.addEventListener('click', clearParserInput);
+        parserInput?.addEventListener('input', checkAICharacterLimit);
 
 
         nextButton.addEventListener('click', handleNextButtonClick);
@@ -8360,6 +8451,55 @@ const mainApp = (function() {
         return p.innerHTML;
     }
 
+
+    /**
+     * Проверяет, содержит ли целевой элемент текст, и запрашивает подтверждение на перезапись.
+     * @param {HTMLElement} targetElement - Элемент (например, textarea), который нужно проверить.
+     * @returns {boolean} - Возвращает true, если можно продолжать, и false, если пользователь отменил действие.
+     */
+    function checkAndConfirmOverwrite(targetElement) {
+        if (targetElement.value.trim() !== '') {
+            // Если поле не пустое, показываем диалог подтверждения
+            return confirm(_('parser_overwrite_warning'));
+        }
+        // Если поле пустое, разрешаем действие без диалога
+        return true;
+    }
+
+
+
+
+    /**
+     * Проверяет количество символов в поле ввода для ИИ и обновляет состояние кнопки генерации.
+     */
+    function checkAICharacterLimit() {
+        if (!parserInput || !generateTestFromTextBtn) return;
+
+        const currentLength = parserInput.value.length;
+        const originalButtonText = _('ai_generate_button');
+
+        if (currentLength > AI_INPUT_CHAR_LIMIT) {
+            // Если лимит превышен
+            generateTestFromTextBtn.disabled = true;
+            // Формируем текст предупреждения с текущим и максимальным значением
+            const warningText = _('ai_char_limit_exceeded')
+                .replace('{current}', currentLength)
+                .replace('{max}', AI_INPUT_CHAR_LIMIT);
+            generateTestFromTextBtn.innerHTML = `<span>⚠️ ${warningText}</span>`;
+            // Добавляем красную рамку к полю ввода для наглядности
+            parserInput.style.borderColor = 'var(--accent, red)';
+        } else {
+            // Если все в порядке
+            generateTestFromTextBtn.disabled = false;
+            generateTestFromTextBtn.innerHTML = originalButtonText;
+            // Убираем красную рамку
+            parserInput.style.borderColor = '';
+        }
+    }
+
+
+
+
     // Вспомогательная функция для "умного" разделения на блоки
     function smartSplitIntoBlocks(text) {
         // Сначала заменяем двойные или более переносы строк на уникальный разделитель
@@ -8806,6 +8946,7 @@ const mainApp = (function() {
         const reader = new FileReader();
         reader.onload = (e) => {
             parserInput.value = e.target.result;
+            checkAICharacterLimit();
         };
         reader.readAsText(file, 'UTF-8');
     }
@@ -9008,6 +9149,12 @@ const mainApp = (function() {
             return;
         }
 
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем проверку на перезапись ---
+        if (!checkAndConfirmOverwrite(parserOutput)) {
+            return; // Если пользователь нажал "Отмена", прерываем выполнение
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
         hideAndResetErrorArea();
         parserOutputArea.classList.add('hidden');
 
@@ -9096,6 +9243,7 @@ const mainApp = (function() {
         parserFileInput.value = ''; // Важно также сбросить выбранный файл!
         parserInput.focus(); // Возвращаем курсор в поле для удобства
         hideAndResetErrorArea();
+        checkAICharacterLimit();
     }
 
 
@@ -9107,6 +9255,12 @@ const mainApp = (function() {
             alert(_('ai_error_text_empty'));
             return;
         }
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем проверку на перезапись ---
+        if (!checkAndConfirmOverwrite(parserOutput)) {
+            return; // Если пользователь нажал "Отмена", прерываем выполнение
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         // Временно изменяем вид кнопки на время загрузки
         const originalButtonHTML = generateTestFromTextBtn.innerHTML;
@@ -9143,9 +9297,24 @@ const mainApp = (function() {
                 throw new Error(result.error || _('ai_error_generation'));
             }
 
+
+
         } catch (error) {
             console.error("Ошибка генерации теста:", error);
-            alert(error.message);
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: Улучшенная обработка ошибок ---
+            let userFriendlyError;
+
+            if (error.message.includes("INTERNAL") || error.message.includes("HTTP 500")) {
+                // Если это ошибка сервера, используем специальный текст
+                userFriendlyError = _('ai_error_server_generation');
+            } else {
+                // Иначе используем общий текст ошибки
+                userFriendlyError = _('ai_error_generation');
+            }
+
+            // Показываем пользователю понятное сообщение
+            alert(userFriendlyError);
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
         } finally {
             // Возвращаем кнопку в исходное состояние
             generateTestFromTextBtn.disabled = false;
@@ -9485,6 +9654,43 @@ const mainApp = (function() {
         console.log("Слушатель сообщений от расширения QSTiUM Helper активен.");
     }
 
+
+
+    /**
+     * Создает и настраивает Intersection Observer для управления CSS-анимациями.
+     * Анимация будет активна только тогда, когда элемент виден на экране.
+     */
+    function setupAnimationObserver() {
+        // Проверяем, поддерживает ли браузер эту технологию
+        if (!('IntersectionObserver' in window)) {
+            console.warn('IntersectionObserver не поддерживается. Анимации будут работать постоянно.');
+            // В качестве запасного варианта, просто добавляем класс всем элементам
+            document.querySelectorAll('.chat-badge, .unread-badge, .question-square.has-votes, .tab-counter').forEach(el => {
+                el.classList.add('pulse-active');
+            });
+            return;
+        }
+
+        // Создаем сам "наблюдатель"
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                // isIntersecting - это свойство, которое говорит, виден ли элемент
+                if (entry.isIntersecting) {
+                    // Если виден - добавляем класс с анимацией
+                    entry.target.classList.add('pulse-active');
+                } else {
+                    // Если не виден - убираем класс
+                    entry.target.classList.remove('pulse-active');
+                }
+            });
+        });
+
+        // Находим все элементы, за которыми нужно следить
+        const animatedElements = document.querySelectorAll('.chat-badge, .unread-badge, .question-square.has-votes, .tab-counter');
+        
+        // Говорим "наблюдателю" начать следить за каждым из них
+        animatedElements.forEach(el => observer.observe(el));
+    }
 
 
     // Expose mainApp to window for ChatModule access
