@@ -7799,17 +7799,29 @@ const mainApp = (function() {
             
             // Если включен режим обратной связи, сохраняем данные об ошибке
             if (quizSettings.feedbackMode) {
-                incorrectlyAnsweredQuestionsData.push(...question.originalRaw, "");
+                
+                // === НАЧАЛО ИСПРАВЛЕНИЙ ===
+                // Формируем полноценный, валидный .qst блок для этого вопроса
+                let errorQstBlock = `? ${question.text.replace(/\n/g, ' ')}\n`;
 
-                // === НАЧАЛО НОВОГО КОДА ===
-                // Собираем детальную информацию для ИИ-анализа
+                question.options.forEach((option, index) => {
+                    // Определяем правильный префикс: '+' для верного ответа, '-' для остальных
+                    const prefix = (index === question.correctAnswerIndex) ? '+' : '-';
+                    errorQstBlock += `${prefix} ${option.text.replace(/\n/g, ' ')}\n`;
+                });
+
+                // Сохраняем готовый блок в массив. 
+                // Добавляем пустую строку в конце для разделения вопросов в файле.
+                incorrectlyAnsweredQuestionsData.push(errorQstBlock, "");
+
+                // Также сохраняем детальную информацию для ИИ-анализа
                 const errorDetails = {
                   questionText: question.text,
                   correctAnswer: question.options[question.correctAnswerIndex].text,
                   userAnswer: question.options[selectedIndex].text
                 };
                 currentQuizErrorData.push(errorDetails);
-                // === КОНЕЦ НОВОГО КОДА ===
+                // === КОНЕЦ ИСПРАВЛЕНИЙ ===
             }
         }
 
@@ -7819,30 +7831,22 @@ const mainApp = (function() {
             li.classList.add('answered');
         });
 
-        // 6. === УМНАЯ ЛОГИКА СОЗДАНИЯ КНОПКИ "ОБЪЯСНИТЬ" ===
-        // Сначала удаляем старую кнопку, если она вдруг осталась
+        // 6. Создаем кнопку "Объяснить"
         const existingBtn = feedbackAreaEl.querySelector('.explain-btn');
         if (existingBtn) existingBtn.remove();
-
-        // Создаем новую кнопку
         const explainBtn = document.createElement('button');
         explainBtn.textContent = _('ai_explain_button');
         explainBtn.className = 'explain-btn';
         explainBtn.style.marginLeft = '15px';
 
-        // Определяем, что будет делать кнопка при клике
         if (isCorrect) {
-            // Если ответ ПРАВИЛЬНЫЙ, передаем только объект вопроса
             explainBtn.onclick = () => showAIExplanation(question);
         } else {
-            // Если ответ НЕПРАВИЛЬНЫЙ, передаем и вопрос, и текст ошибки
             const incorrectAnswerText = question.options[selectedIndex].text;
             explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText);
         }
         
-        // Добавляем созданную кнопку в область обратной связи
         feedbackAreaEl.appendChild(explainBtn);
-        // === КОНЕЦ УМНОЙ ЛОГИКИ ===
 
         // 7. Обновляем все остальные элементы интерфейса
         updateScoreDisplay();
