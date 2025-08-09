@@ -9029,13 +9029,13 @@ const mainApp = (function() {
             if (themeToggleButton) themeToggleButton.textContent = '🌙';
         } else if (currentTheme === 'synthwave') {
             document.body.classList.add('synthwave-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '☀️';
+            if (themeToggleButton) themeToggleButton.textContent = '💎';
         } else if (currentTheme === 'glass-light') { // <-- НОВЫЙ БЛОК
             document.body.classList.add('glass-light');
-            if (themeToggleButton) themeToggleButton.textContent = '💎'; // Иконка для светлого стекла
+            if (themeToggleButton) themeToggleButton.textContent = '🔮'; // Иконка для светлого стекла
         } else if (currentTheme === 'glass-dark') { // <-- НОВЫЙ БЛОК
             document.body.classList.add('glass-dark');
-            if (themeToggleButton) themeToggleButton.textContent = '💧'; // Иконка для темного стекла
+            if (themeToggleButton) themeToggleButton.textContent = '☀️'; // Иконка для темного стекла
         } else {
             // Светлая тема (light) - нет класса
             if (themeToggleButton) themeToggleButton.textContent = '🌤️';
