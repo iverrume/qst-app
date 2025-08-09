@@ -6428,3 +6428,18 @@ body.glass-dark .result-card-actions button {
 body.glass-dark .result-card-actions button:hover {
     color: var(--text-color) !important;
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ССЫЛКИ В ПОДВАЛЕ (FOOTER)     === */
+/* ======================================================= */
+
+footer p a {
+    color: var(--secondary-text-color); /* Наследуем цвет текста подвала */
+    text-decoration: none;           /* Убираем стандартное подчеркивание */
+    transition: color 0.2s ease;     /* Плавный переход цвета при наведении */
+}
+
+footer p a:hover {
+    color: var(--text-color);        /* При наведении делаем текст чуть ярче */
+    text-decoration: underline;      /* И добавляем подчеркивание для наглядности */
+}

@@ -9017,7 +9017,7 @@ const mainApp = (function() {
  
 
     function loadTheme() {
-        const currentTheme = localStorage.getItem('theme') || 'claude'; 
+        const currentTheme = localStorage.getItem('theme') || 'glass-dark'; 
         // Сначала убираем все классы тем
         document.body.classList.remove('dark-mode', 'claude-mode', 'synthwave-mode', 'glass-light', 'glass-dark'); 
 
@@ -9044,8 +9044,8 @@ const mainApp = (function() {
 
 
     function toggleTheme() {
-            const themes = ['light', 'claude', 'dark', 'synthwave', 'glass-light', 'glass-dark']; // <-- ДОБАВЛЕНЫ НОВЫЕ ТЕМЫ
-            const currentTheme = localStorage.getItem('theme') || 'light';
+            const themes = ['light', 'claude', 'dark', 'synthwave', 'glass-light', 'glass-dark']; 
+            const currentTheme = localStorage.getItem('theme') || 'glass-dark';
             const currentIndex = themes.indexOf(currentTheme);
             const nextIndex = (currentIndex + 1) % themes.length; // Находим индекс следующей темы
             const newTheme = themes[nextIndex];
