@@ -169,7 +169,49 @@ body.synthwave-mode {
     --accent: #38BDF8;
 }
 
+/* --- Стеклянная светлая тема --- */
+body.glass-light {
+    --bg-color: #e0e0e0; /* Фоновый цвет, если градиент не загрузится */
+    --container-bg-color: rgba(255, 255, 255, 0.65); /* Белый, полупрозрачный */
+    --text-color: #2c3e50;
+    --secondary-text-color: #5a6268;
+    --heading-color: #2c3e50;
+    --border-color: rgba(255, 255, 255, 0.4);
+    --dashed-border-color: rgba(255, 255, 255, 0.3);
+    --input-bg-color: rgba(255, 255, 255, 0.5);
+    --input-hover-bg-color: rgba(255, 255, 255, 0.7);
+    --input-border-color: rgba(200, 200, 200, 0.8);
+    --button-primary-bg: #2c3e50;
+    --button-primary-hover-bg: #34495e;
+}
 
+/* --- Стеклянная темная тема (как на скриншоте) --- */
+body.glass-dark {
+    --bg-color: #121212;
+    --container-bg-color: rgba(42, 42, 42, 0.5); /* Более нейтральный темный */
+    --text-color: #e0e0e0;
+    --secondary-text-color: #a0a0a0;
+    --heading-color: #ffffff;
+    --border-color: rgba(255, 255, 255, 0.1); /* Светлая рамка для контраста */
+    --dashed-border-color: rgba(255, 255, 255, 0.2);
+    --input-bg-color: rgba(255, 255, 255, 0.05);
+    --input-hover-bg-color: rgba(255, 255, 255, 0.1);
+    --input-border-color: rgba(255, 255, 255, 0.2);
+    --input-hover-border-color: rgba(255, 255, 255, 0.4);
+    --button-primary-bg: #4A4A4A;
+    --button-primary-hover-bg: #5A5A5A;
+    --button-primary-text: #FFFFFF;
+    --theme-toggle-border: rgba(255, 255, 255, 0.2);
+    --theme-toggle-hover-bg: rgba(255, 255, 255, 0.1);
+/* Новые, стильные цвета для обратной связи */
+    --feedback-correct-bg: rgba(34, 197, 94, 0.15);  /* Полупрозрачный зеленый */
+    --feedback-correct-text: #4ADE80;                 /* Яркий зеленый текст */
+    --feedback-correct-border: rgba(74, 222, 128, 0.4); /* Полупрозрачная зеленая рамка */
+    --feedback-incorrect-bg: rgba(239, 68, 68, 0.15); /* Полупрозрачный красный */
+    --feedback-incorrect-text: #F87171;                /* Яркий красный текст */
+    --feedback-incorrect-border: rgba(248, 113, 113, 0.4); /* Полупрозрачная красная рамка */
+
+}
 
 /* Общие стили */
 html {
@@ -190,6 +232,28 @@ body {
     flex-direction: column;
     min-height: 100vh;
     overflow-x: hidden;
+    position: relative;
+}
+
+/* Градиентный фон для стеклянных тем */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1; /* Располагаем под всем контентом */
+    background-image: radial-gradient(circle at 10% 20%, rgba(108, 92, 231, 0.2) 0%, transparent 40%), 
+                      radial-gradient(circle at 80% 70%, rgba(243, 156, 18, 0.15) 0%, transparent 45%);
+    opacity: 0; /* По умолчанию фон скрыт */
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Показываем фон только для наших новых тем */
+body.glass-dark::before,
+body.glass-light::before {
+    opacity: 1;
 }
 
 .app-wrapper {
@@ -210,8 +274,9 @@ body {
 .container {
     background-color: var(--container-bg-color);
     padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 0 15px var(--shadow-color);
+    border-radius: 16px; /* <-- ИЗМЕНЕНО: Более скругленные углы */
+    box-shadow: 0 10px 30px var(--shadow-color), inset 0 0 0 1px rgba(255, 255, 255, 0.1); /* <-- ИЗМЕНЕНО */
+    border: 1px solid var(--border-color); /* <-- ДОБАВЛЕНО */
     width: 100%;
     max-width: 700px;
     margin-left: auto;
@@ -227,6 +292,22 @@ body {
         padding: 20px 30px;
     }
 }
+
+/* Применяем эффект стекла к основным элементам в наших новых темах */
+body.glass-dark .container,
+body.glass-light .container,
+body.glass-dark .advanced-chat-modal, 
+body.glass-light .advanced-chat-modal, 
+body.glass-dark .modal-content,
+body.glass-light .modal-content,
+body.glass-dark .auth-modal,
+body.glass-light .auth-modal,
+body.glass-dark .dropdown-content, /* <-- ДОБАВЛЕНО */
+body.glass-light .dropdown-content { /* <-- ДОБАВЛЕНО */
+    backdrop-filter: blur(24px); /* <-- ИЗМЕНЕНО */
+    -webkit-backdrop-filter: blur(24px); /* <-- ИЗМЕНЕНО */
+}
+
 
 .header-controls {
     display: flex;
@@ -1180,6 +1261,12 @@ body.dark-mode {
     animation: fadeIn 0.3s ease;
 }
 
+/* Делаем оверлей чата прозрачным только для стеклянных тем */
+body.glass-light .advanced-chat-overlay,
+body.glass-dark .advanced-chat-overlay {
+    background: transparent;
+}
+
 .advanced-chat-modal {
     background: var(--container-bg-color);
     width: 95%;
@@ -1813,6 +1900,11 @@ body.synthwave-mode .option-vote-btn.correct {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
+
+
+
+
+
 
 
 
@@ -4638,31 +4730,59 @@ body.claude-mode .message.mine.pinned .message-content {
     padding-right: 5px; /* Небольшой отступ, чтобы скроллбар не прилипал к тексту */
 }
 
-/* --- ИСПРАВЛЕННЫЙ КОД --- */
 
-/* ===== КАСТОМНЫЕ СКРОЛЛБАРЫ ДЛЯ ТЕМНЫХ ТЕМ ===== */
 
+/* ======================================================= */
+/* ===    АДАПТИВНЫЕ СКРОЛЛБАРЫ ДЛЯ ТЕМНЫХ И СТЕКЛЯННЫХ ТЕМ === */
+/* ======================================================= */
+
+/* Группируем все кастомные темы для применения общих стилей */
+body.dark-mode,
+body.synthwave-mode,
+body.glass-dark,
+body.glass-light { /* <-- ДОБАВЛЕНО */
+    /* Стили для Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--secondary-text-color) transparent; /* <-- ИЗМЕНЕНО */
+}
+
+/* Стили для Webkit-браузеров (Chrome, Safari, Edge) */
 body.dark-mode ::-webkit-scrollbar,
-body.synthwave-mode ::-webkit-scrollbar {
-  width: 8px; 
+body.synthwave-mode ::-webkit-scrollbar,
+body.glass-dark ::-webkit-scrollbar,
+body.glass-light ::-webkit-scrollbar { /* <-- ДОБАВЛЕНО */
+    width: 8px;
+    height: 8px;
 }
 
 body.dark-mode ::-webkit-scrollbar-track,
-body.synthwave-mode ::-webkit-scrollbar-track {
-  background: var(--input-bg-color);
+body.synthwave-mode ::-webkit-scrollbar-track,
+body.glass-dark ::-webkit-scrollbar-track,
+body.glass-light ::-webkit-scrollbar-track { /* <-- ДОБАВЛЕНО */
+    background: transparent; /* Делаем дорожку полностью прозрачной */
 }
 
 body.dark-mode ::-webkit-scrollbar-thumb,
-body.synthwave-mode ::-webkit-scrollbar-thumb {
-  background-color: #475569; /* Используем цвет из палитры synthwave */
-  border-radius: 4px;
-  border: 2px solid var(--input-bg-color);
+body.synthwave-mode ::-webkit-scrollbar-thumb,
+body.glass-dark ::-webkit-scrollbar-thumb,
+body.glass-light ::-webkit-scrollbar-thumb { /* <-- ДОБАВЛЕНО */
+    /* Используем переменные вместо жестко заданных цветов */
+    background-color: var(--secondary-text-color); /* <-- ИЗМЕНЕНО */
+    border-radius: 4px;
+    /* Убираем рамку, так как дорожка теперь прозрачная */
+    border: none;
 }
 
 body.dark-mode ::-webkit-scrollbar-thumb:hover,
-body.synthwave-mode ::-webkit-scrollbar-thumb:hover {
-  background-color: #64748B; /* Используем цвет из палитры synthwave */
+body.synthwave-mode ::-webkit-scrollbar-thumb:hover,
+body.glass-dark ::-webkit-scrollbar-thumb:hover,
+body.glass-light ::-webkit-scrollbar-thumb:hover { /* <-- ДОБАВЛЕНО */
+    /* При наведении делаем ползунок чуть ярче */
+    background-color: var(--text-color); /* <-- ИЗМЕНЕНО */
 }
+
+
+
 
 /* ===== СТИЛИ ДЛЯ КАНАЛОВ ТЕСТИРОВАНИЯ ===== */
 
@@ -5904,4 +6024,59 @@ body.dark-mode .explain-flashcard-btn:hover {
 
 .ai-analysis-result ul {
     padding-left: 20px;
+}
+
+/* Дополнительные стили для элементов в теме glass-dark */
+body.glass-dark #searchQueryInput,
+body.glass-dark #fileInput {
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--input-border-color);
+    color: var(--text-color);
+}
+
+body.glass-dark #searchQueryInput::placeholder {
+    color: var(--secondary-text-color);
+}
+
+body.glass-dark .header-buttons button {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ ЗАКРЕПЛЕННЫХ СООБЩЕНИЙ В GLASS-ТЕМАХ === */
+/* ======================================================= */
+
+/* Светлая стеклянная тема */
+body.glass-light .message.pinned .message-content {
+    background: rgba(44, 62, 80, 0.1); /* Полупрозрачная темная подложка */
+    border-left: 4px solid var(--button-primary-bg);
+}
+
+/* Темная стеклянная тема */
+body.glass-dark .message.pinned .message-content {
+    background: rgba(56, 189, 248, 0.1); /* Полупрозрачная голубая подсветка */
+    border-left: 4px solid var(--button-primary-bg); /* Яркая голубая рамка */
+}
+
+/* 
+  Это правило гарантирует, что на ваших собственных закрепленных сообщениях
+  текст останется читаемым (белым), а не станет черным.
+*/
+body.glass-dark .message.mine.pinned .message-content {
+    color: var(--text-color);
+}
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ КНОПКИ "ОБЪЯСНИТЬ" В GLASS-DARK ТЕМЕ  === */
+/* ======================================================= */
+
+body.glass-dark #feedbackArea .explain-btn {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.glass-dark #feedbackArea .explain-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }

@@ -26,37 +26,42 @@
 
 <body>
 
-    <!-- === НАЧАЛО НОВОГО КОДА: ПЛАШКА ОБНОВЛЕНИЯ === -->
     <div id="updateNotification" class="update-notification hidden">
         <span data-lang-key="update_available_text">Доступна новая версия!</span>
         <button id="updateBtn" data-lang-key="update_button_text">Обновить</button>
     </div>
-    <!-- === КОНЕЦ НОВОГО КОДА === -->
+
     <div class="app-wrapper">
+        <!-- === ВОТ ОН, ВОССТАНОВЛЕННЫЙ КОНТЕЙНЕР === -->
         <div class="container">
+
             <div class="header-controls">
-                <h1></h1>
+                <!-- Заголовок теперь тоже с ключом перевода -->
+                <h1 id="appTitleHeader" data-lang-key="app_title">QSTiUM</h1>
+
+
                 <div class="header-buttons">
-                    <!-- Эти кнопки управляются через JS, title уже в LANG_PACK -->
-                    <button id="copyQuestionBtnQuiz" title="Копировать текущий вопрос" class="hidden">📋</button> 
+                    <!-- Все кнопки остаются как в новой версии -->
+                    <button id="copyQuestionBtnQuiz" title="Копировать текущий вопрос" class="hidden" data-lang-key="copy_question_title" data-lang-skip-content="true">📋</button> 
                     <div class="dropdown hidden" id="webSearchDropdown">
-                        <button id="searchWebButton" title="Найти в интернете">🌐</button>
+                        <button id="searchWebButton" title="Найти в интернете" data-lang-key="search_web_title" data-lang-skip-content="true">🌐</button>
                         <div id="searchDropdownContent" class="dropdown-content">
-                            <a href="#" data-engine="google">Google</a>
-                            <a href="#" data-engine="yandex">Яндекс</a>
-                            <a href="#" data-engine="perplexity">Perplexity</a>
+                            <a href="#" data-engine="google" data-lang-key="search_engine_google">Google</a>
+                            <a href="#" data-engine="yandex" data-lang-key="search_engine_yandex">Яндекс</a>
+                            <a href="#" data-engine="perplexity" data-lang-key="search_engine_perplexity">Perplexity</a>
                         </div>
                     </div>
-                    <button id="chatToggle" title="Открыть чат">
-                         💬 <span id="chatNotificationBadge" class="chat-badge hidden">0</span>
-                    </button>
-                    <button id="quickModeToggle" title="Быстрый режим (Автопереход)" class="hidden">⚡</button> 
-                    <button id="triggerWordToggle" title="Триггер-слова" class="hidden">✍️</button>
-                    <button id="themeToggle" title="Сменить тему">🌙</button>
-                    <button id="languageToggle" title="Сменить язык">Рус</button>
-                    <button id="favoriteQuestionBtn" title="Добавить в избранное" class="hidden">⭐</button>
-                    <button id="translateQuestionBtn" title="Перевести вопрос" class="hidden">अа</button>
+                    <button id="chatToggle" title="Открыть чат" data-lang-key="chat_button_title" data-lang-skip-content="true">💬</button>
+                    <button id="quickModeToggle" title="Быстрый режим (Автопереход)" class="hidden" data-lang-key="quick_mode_title" data-lang-skip-content="true">⚡</button> 
+                    <button id="triggerWordToggle" title="Триггер-слова" class="hidden" data-lang-key="trigger_words_title" data-lang-skip-content="true">✍️</button>
+                    <button id="themeToggle" title="Сменить тему" data-lang-key="theme_button_title" data-lang-skip-content="true">🌙</button>
+                    <button id="languageToggle" title="Сменить язык" data-lang-key="language_toggle_title">Рус</button>
+                    <button id="favoriteQuestionBtn" title="Добавить в избранное" class="hidden" data-lang-key="favorite_button_title" data-lang-skip-content="true">⭐</button>
+                    <button id="translateQuestionBtn" title="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true">अа</button>
                 </div>
+
+
+
             </div>
 
             <div class="file-upload-area" id="fileUploadArea">
@@ -195,14 +200,12 @@
                      <button id="reviewErrorsButton" data-lang-key="review_errors_button">Работа над ошибками</button>
                 </div>
 
-                <!-- === НАЧАЛО НОВОГО БЛОКА === -->
                 <div id="aiAnalysisArea" class="hidden">
-                    <button id="aiAnalysisBtn">🤖 Аналитика ошибок от ИИ</button>
+                    <button id="aiAnalysisBtn" data-lang-key="ai_error_analysis_button">🤖 Аналитика ошибок от ИИ</button>
                     <div id="aiAnalysisResult" class="ai-analysis-result hidden">
                         <!-- Сюда будет вставлен результат анализа -->
                     </div>
                 </div>
-                <!-- === КОНЕЦ НОВОГО БЛОКА === -->
                 
                 <div id="triggeredQuizDownloadArea" class="hidden">
                     <button id="downloadTriggeredQuizButton" data-lang-key="download_triggered_quiz_button">Скачать тест с триггерами</button>
@@ -211,16 +214,12 @@
             </div>
 
             <div id="parserArea" class="hidden">
-                <!-- ================= НОВЫЙ БЛОК: ВКЛАДКИ ================= -->
                 <div class="parser-tabs">
                     <button id="converterTabBtn" class="parser-tab active" data-lang-key="tab_converter">Конвертер из текста</button>
                     <button id="aiGeneratorTabBtn" class="parser-tab" data-lang-key="tab_ai_generator">ИИ-генератор по теме</button>
                 </div>
 
-                <!-- ================= НОВЫЙ БЛОК: КОНТЕНТ ДЛЯ ВКЛАДОК ================= -->
                 <div class="parser-tab-content-wrapper">
-
-                    <!-- ========= ВКЛАДКА 1: КОНВЕРТЕР (старый функционал) ========= -->
                     <div id="converterContent" class="parser-tab-content active">
                         <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="parser_description">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
                         
@@ -235,7 +234,7 @@
                         <div class="settings-group">
                             <label for="parserPatternSelect" data-lang-key="parser_select_format">2. Выберите формат (или оставьте для автоопределения):</label>
                             <select id="parserPatternSelect" style="width: 100%; padding: 8px; border-radius: 4px;">
-                                <option value="auto" selected>-- Автоматическое определение --</option>
+                                <option value="auto" selected data-lang-key="parser_auto_detect">-- Автоматическое определение --</option>
                             </select>
                         </div>
                         <div class="settings-group" style="text-align: center;">
@@ -259,7 +258,7 @@
                             <label for="aiAnswerCount" data-lang-key="ai_answer_count_label">Количество вариантов ответа:</label>
                             <select id="aiAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
                                 <option value="3">3</option>
-                                <option value="4" selected>4 (стандарт)</option>
+                                <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
                                 <option value="5">5</option>
                                 <option value="6">6</option>
                             </select>
@@ -279,9 +278,6 @@
                         </div>
                     </div>
 
-
-
-                    <!-- ========= ВКЛАДКА 2: ИИ-ГЕНЕРАТОР (новый функционал) ========= -->
                     <div id="aiGeneratorContent" class="parser-tab-content">
                         <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="ai_topic_description">ИИ самостоятельно создаст тест на основе указанной темы, используя свои знания.</p>
                         
@@ -299,7 +295,7 @@
                             <label for="aiTopicAnswerCount" data-lang-key="ai_topic_answer_count_label">3. Количество вариантов ответа (если не указано в теме):</label>
                              <select id="aiTopicAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
                                 <option value="3">3</option>
-                                <option value="4" selected>4 (стандарт)</option>
+                                <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
                                 <option value="5">5</option>
                                 <option value="6">6</option>
                             </select>
@@ -312,18 +308,14 @@
                             </div>
                         </div>
 
-                        <!-- ================= ВОТ ОНА, ВОССТАНОВЛЕННАЯ КНОПКА ================= -->
                          <div class="settings-group" style="text-align: center;">
                             <button id="generateTestFromTopicBtn">
                                 <span data-lang-key="ai_generate_from_topic_button">🤖 Создать тест по теме (ИИ)</span>
                             </button>
                         </div>
-                        <!-- ==================================================================== -->
                     </div>
-                    
                 </div>
 
-                <!-- ================= ОБЩИЕ ЭЛЕМЕНТЫ (результат, ошибки, кнопки) ================= -->
                 <div id="parserErrorsArea" class="hidden">
                     <button id="showErrorsBtn">
                         <span data-lang-key="parser_errors_found">⚠️ Ошибки форматирования</span> (<span id="errorCount">0</span>)
@@ -335,15 +327,15 @@
                     <h3 data-lang-key="parser_result_title">Результат:</h3>
                     
                     <div class="filter-controls-container">
-                        <button id="filterVariantsBtn">⚙️ Фильтр по вариантам</button>
+                        <button id="filterVariantsBtn" data-lang-key="filter_variants_button">⚙️ Фильтр по вариантам</button>
                         <div id="filterVariantsDropdown" class="filter-dropdown hidden">
-                            <div class="filter-dropdown-header">Выберите кол-во вариантов:</div>
-                            <div id="filterVariantCheckboxes" class="filter-checkboxes">
-                                <!-- Чекбоксы будут сгенерированы скриптом -->
+                            <div class="filter-dropdown-header" data-lang-key="filter_variants_header">Выберите кол-во вариантов:</div>
+                            <div class="filter-checkboxes" id="filterVariantCheckboxes">
+                                <!-- Сюда JS вставит чекбоксы -->
                             </div>
                             <div class="filter-actions">
-                                <button id="applyVariantFilterBtn">Применить</button>
-                                <button id="resetVariantFilterBtn" class="btn-secondary-small">Сброс</button>
+                                <button id="applyVariantFilterBtn" data-lang-key="filter_apply_button">Применить</button>
+                                <button id="resetVariantFilterBtn" class="btn-secondary-small" data-lang-key="filter_reset_button">Сброс</button>
                             </div>
                         </div>
                     </div>
@@ -354,54 +346,41 @@
                 <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);" data-lang-key="back_button">Назад</button>
             </div>
 
-        </div>   
+        </div> <!-- === КОНЕЦ ВОССТАНОВЛЕННОГО КОНТЕЙНЕРА === -->
 
         <footer>
-            <p>prod by @iverrum</p>
+            <p data-lang-key="footer_copyright">prod by @iverrum</p>
         </footer>
         
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
-
     </div> 
     
     <div id="testResultsModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
             <h3 id="testResultsModalTitle" data-lang-key="results_modal_title">Результаты по тесту</h3>
-            <div id="testResultsTableContainer" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
-                <!-- Таблица с результатами будет вставлена сюда -->
-            </div>
+            <div id="testResultsTableContainer" style="max-height: 400px; overflow-y: auto; margin-top: 20px;"></div>
             <div class="modal-buttons">
                 <button onclick="ChatModule.closeModal('testResultsModal')" data-lang-key="auth_close_button">Закрыть</button>
             </div>
         </div>
     </div>
 
-    <!-- === НАЧАЛО НОВОГО КОДА: МОДАЛЬНОЕ ОКНО ОБЪЯСНЕНИЙ === -->
     <div id="aiExplanationModal" class="modal-overlay hidden">
         <div class="modal-content" style="text-align: left;">
-            
-            <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
             <div class="parser-label-container" style="margin-bottom: 10px;">
                 <h3 data-lang-key="ai_explanation_title">💡 Объяснение от ИИ</h3>
                 <button id="aiExplanationTranslateBtn" class="btn-secondary-small hidden" data-lang-key="ai_toggle_translation_button">
                     Оригинал/Перевод
                 </button>
             </div>
-
-
-
             <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
             <div class="settings-group" style="border: none; padding: 0; margin-bottom: 15px;">
                 <label data-lang-key="ai_explanation_style_label">Стиль объяснения:</label>
-
-                
                 <div id="aiExplanationStyleDropdown" class="style-dropdown">
-                    <!-- Это главная кнопка, которая всегда видна -->
                     <button id="aiExplanationStyleButton" class="style-dropdown-btn">
                         <span id="aiExplanationStyleText">Просто</span>
                         <span class="dropdown-arrow">▼</span>
                     </button>
-                    <!-- Это скрытое содержимое списка -->
                     <div id="aiExplanationStyleContent" class="style-dropdown-content hidden">
                         <a href="#" data-style="simple" data-lang-key="ai_style_simple">Просто</a>
                         <a href="#" data-style="scientific" data-lang-key="ai_style_scientific">Научно</a>
@@ -411,37 +390,24 @@
                         <a href="#" data-style="visual" data-lang-key="ai_style_visual">Наглядно</a>
                     </div>
                 </div>
-
-
             </div>
-            <div id="aiExplanationOutput">
-                <!-- Сюда будет вставляться объяснение или спиннер -->
-            </div>
+            <div id="aiExplanationOutput"></div>
             <div class="modal-buttons" style="justify-content: space-between; margin-top: 20px;">
-                            <!-- НОВАЯ КНОПКА -->
-                            <button id="copyExplanationBtn" data-lang-key="copy_button">Копировать</button>
-                            
-                            <button onclick="ChatModule.closeModal('aiExplanationModal')" data-lang-key="auth_close_button">Закрыть</button>
-                        </div>
+                <button id="copyExplanationBtn" data-lang-key="copy_button">Копировать</button>
+                <button onclick="ChatModule.closeModal('aiExplanationModal')" data-lang-key="auth_close_button">Закрыть</button>
+            </div>
         </div>
     </div>
-
     
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <script src="script.js"></script>    
-    <!-- === НАЧАЛО НОВОГО КОДА: УВЕДОМЛЕНИЕ О ВЫХОДЕ === -->
+    
     <div id="exitToast" class="exit-toast hidden" data-lang-key="exit_toast_text">
         Нажмите еще раз для выхода
     </div>
-    <!-- === КОНЕЦ НОВОГО КОДА === -->
-
-
 </body>
 </html>
-
-
