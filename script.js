@@ -4873,6 +4873,8 @@ const ChatModule = (function() {
                 ChatModule.openAuthModal();
                 return;
             }
+
+            document.body.classList.add('chat-open');
             
             // Просто показываем чат. Текст в нем уже будет на правильном языке.
             chatOverlay.classList.remove('hidden');
@@ -4888,6 +4890,7 @@ const ChatModule = (function() {
 
         closeChatModal: () => {
             if (chatOverlay) {
+                document.body.classList.remove('chat-open');
                 chatOverlay.classList.add('hidden');
             }
             if (window.mainApp) window.mainApp.manageBackButtonInterceptor();
@@ -5117,6 +5120,11 @@ const mainApp = (function() {
             parser_result_title: 'Результат:',
             download_parsed_button: 'Скачать .qst файл',
             back_button: 'Назад',
+
+
+
+
+
             // Кнопки в шапке (ДОБАВЛЕНО для единообразия)
             copy_question_title: 'Копировать текущий вопрос',
             search_web_title: 'Найти в интернете',
@@ -5142,7 +5150,7 @@ const mainApp = (function() {
 
             ai_explanation_title: '💡 Объяснение от ИИ',
             ai_explanation_style_label: 'Стиль объяснения:',
-            ai_explain_button: 'Объяснить',
+            ai_explain_button: 'Объяснить💡',
             ai_explanation_loading: 'ИИ готовит объяснение...',
 
             ai_generating_button: '🤖 Генерация...',
@@ -5196,8 +5204,6 @@ const mainApp = (function() {
             ai_generate_from_topic_button: "🤖 Создать тест по теме (ИИ)",
             ai_thinking_topic: "ИИ-генератор размышляет над вашей темой...",
             ai_topic_auto_category_label: "4. Автоматически создавать категории",
-
-
             parser_auto_detect: '-- Автоматическое определение --',
             filter_variants_button: '⚙️ Фильтр по вариантам',
             filter_variants_header: 'Выберите кол-во вариантов:',
@@ -5221,7 +5227,6 @@ const mainApp = (function() {
             ai_explanation_prepare_error: 'Не удалось подготовить окно объяснения.',
             ai_analyzing_errors_button: 'ИИ анализирует... 🧠', 
             ai_error_analysis_button: '🤖 Аналитика ошибок от ИИ',
-
             search_engine_google: 'Google',
             search_engine_yandex: 'Яндекс',
             search_engine_perplexity: 'Perplexity',
@@ -5230,7 +5235,6 @@ const mainApp = (function() {
             error_no_question_to_favorite: 'Не удалось определить текущий вопрос для добавления в избранное.',
             error_favorites_require_auth: 'Для использования избранного необходимо войти в аккаунт.',
             error_cannot_process_question: 'Не удалось обработать вопрос для сохранения.',
-
             app_title: 'QSTiUM',
             confirm_delete_session: 'Вы уверены, что хотите удалить сохраненный тест "{fileName}"? Это действие необратимо.',
             error_session_not_found: 'Ошибка: сохраненная сессия для этого файла не найдена.',
@@ -5242,56 +5246,12 @@ const mainApp = (function() {
             error_filter_all_match: 'Все вопросы соответствуют заданному фильтру!',
             error_download_failed_generic: 'Не удалось скачать данные. Пожалуйста, попробуйте еще раз.',
             error_generic_for_alert: 'Произошла ошибка', // Для общих алертов
-
-
-            copy_question_title: 'Копировать текущий вопрос',
-            search_web_title: 'Найти в интернете',
-            quick_mode_title: 'Быстрый режим (Автопереход)',
-            trigger_words_title: 'Триггер-слова',
-            theme_button_title: '🌗',
-            language_toggle_title: 'Сменить язык',
-            favorite_button_title: 'Добавить в избранное',
-            translate_question_title: 'Перевести текущий вопрос',
-            copy_success: 'Содержимое скопировано в буфер обмена!',
             copy_error: 'Не удалось скопировать. Скопируйте текст вручную.',
-            footer_copyright: 'prod by @iverrum',
-            exit_toast_text: 'Нажмите еще раз для выхода',
-            app_title: 'QSTiUM',
-            confirm_delete_session: 'Вы уверены, что хотите удалить сохраненный тест "{fileName}"? Это действие необратимо.',
-            error_session_not_found: 'Ошибка: сохраненная сессия для этого файла не найдена.',
-            error_session_file_not_found: 'Не удалось восстановить сессию. Исходный файл не найден в "Недавно использованных".',
-            error_cheat_sheet_first: 'Сначала сгенерируйте шпору.',
-            error_download_parsed_first: 'Сначала сконвертируйте файл.',
-            error_filter_no_variant_selected: 'Не выбрано ни одного количества вариантов для фильтрации.',
-            error_filter_found_mismatch: 'Найдено {count} вопросов, не соответствующих фильтру.',
-            error_filter_all_match: 'Все вопросы соответствуют заданному фильтру!',
-            error_download_failed_generic: 'Не удалось скачать данные. Пожалуйста, попробуйте еще раз.',
-            error_generic_for_alert: 'Произошла ошибка', // Для общих алертов
-            loading_default_text: 'Загрузка...',
-            search_no_results: 'По вашему запросу ничего не найдено.',
-            search_error_prefix: 'Произошла ошибка:',
-            gradus_loading: 'Загрузка...',
-            gradus_folder_empty: 'Папка пуста',
-            gradus_loading_error_prefix: 'Ошибка:',
-            gradus_loading_quiz_prefix: 'Загрузка теста',
-            error_no_questions_for_cheatsheet: 'Нет вопросов для генерации шпоры.',
-            parser_input_empty_alert: 'Поле для ввода текста пустое!',
-            parser_pattern_not_found_alert: 'Произошла ошибка. Выбранный паттерн не найден.',
-            parser_no_questions_recognized_alert: 'Не удалось найти ни одного вопроса по выбранному формату. Попробуйте другой.',
-            parser_no_questions_with_errors_alert: 'Не удалось распознать ни одного вопроса. Обнаружено ошибок: {count}.',
-            parser_conversion_success_alert: 'Успешно сконвертировано {count} вопросов!',
-            parser_conversion_summary_alert: 'Операция завершена.\n\nРаспознано вопросов: {parsed}\nОбнаружено ошибок форматирования: {errors}',
-            ai_topic_empty_alert: 'Пожалуйста, введите тему для генерации теста.',
-            ai_explanation_prepare_error: 'Не удалось подготовить окно объяснения.',
-            error_no_question_to_copy: 'Не удалось определить текущий вопрос для копирования.',
-            error_no_question_to_favorite: 'Не удалось определить текущий вопрос для добавления в избранное.',
-            error_favorites_require_auth: 'Для использования избранного необходимо войти в аккаунт.',
-            error_cannot_process_question: 'Не удалось обработать вопрос для сохранения.',
+            copy_success: 'Содержимое скопировано в буфер обмена!',
             ai_explanation_question: 'Вопрос',
             ai_explanation_correct_answer: 'Правильный ответ',
             feedback_correct: 'Правильно!',
             feedback_incorrect: 'Неправильно!',
-
             mobile_download_ready_title: '✅ Файл готов к скачиванию!',
             mobile_download_button: '📥 Скачать файл',
             mobile_download_link_info: '💡 Ссылка будет активна 1 минуту',
@@ -5433,6 +5393,11 @@ const mainApp = (function() {
             parser_result_title: 'Нәтиже:',
             download_parsed_button: '.qst файлын жүктеу',
             back_button: 'Артқа',
+
+
+
+
+
             // Header Buttons
             copy_question_title: 'Ағымдағы сұрақты көшіру',
             search_web_title: 'Интернеттен іздеу',
@@ -5456,10 +5421,10 @@ const mainApp = (function() {
             copy_question_tooltip: "Сұрақты көшіру",
             favorite_question_tooltip: "Таңдаулыларға қосу",
 
-
+            copy_success: "Мазмұн алмасу буферіне көшірілді!",
             ai_explanation_title: '💡 ЖИ түсіндірмесі',
             ai_explanation_style_label: 'Түсіндіру стилі:',
-            ai_explain_button: 'Түсіндіру',
+            ai_explain_button: 'Түсіндіру💡',
             ai_explanation_loading: 'ЖИ түсіндірме дайындауда...',
             ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Талдау үшін мәтінді енгізіңіз.',
@@ -5770,10 +5735,10 @@ const mainApp = (function() {
             ai_error_text_empty: 'Please paste text to analyze.',
             ai_error_generation: 'An error occurred while generating the test.',
 
-
+            copy_success: "Content copied to clipboard!",
             ai_explanation_title: '💡 AI Explanation',
             ai_explanation_style_label: 'Explanation Style:',
-            ai_explain_button: 'Explain',
+            ai_explain_button: 'Explain💡',
             ai_explanation_loading: 'AI is preparing an explanation...',
             ai_generating_button: '🤖 Generating...',
             ai_error_text_empty: 'Please paste text to analyze.',
@@ -6276,7 +6241,7 @@ const mainApp = (function() {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
                 // Теперь функция _() здесь доступна!
-                alert(_('copy_success')); 
+                showCopyNotification(_('copy_success')); 
             } else {
                 // Fallback для старых браузеров
                 const textArea = document.createElement('textarea');
@@ -6286,7 +6251,7 @@ const mainApp = (function() {
                 textArea.setSelectionRange(0, 99999);
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert(_('copy_success'));
+                showCopyNotification(_('copy_success'));
             }
         } catch (error) {
             console.error('Ошибка копирования:', error);
@@ -6636,12 +6601,12 @@ const mainApp = (function() {
         searchResultCardsContainer.innerHTML = `
             <div class="result-card">
                 <div class="result-card-header">
-                    <span class="provider-tag">🗄️ ${_('search_provider_db')}</span>
                     <div class="result-card-actions">
                         <span class="relevance-tag">${_('relevance_tag')} ${100 - index}%</span>
                         <button class="explain-search-result-btn" title="${_('ai_explain_button_title')}" onclick='window.mainApp.handleExplainClickInSearch(event, "${escapedResultText}")'>💡</button>
                         <button class="copy-search-result-btn" title="${_('copy_question_tooltip')}" onclick='window.mainApp.handleCopyClickInSearch(event, "${escapedResultText}")'>📋</button>
                         <button class="favorite-search-result-btn" title="${_('favorite_question_tooltip')}" onclick='window.mainApp.handleFavoriteClickInSearch(event, "${escapedResultText}")'>⭐</button>
+                        <button class="translate-search-result-btn" title="${_('translate_question_title')}" onclick='window.mainApp.handleTranslateClickInSearch(event, this, "${escapedResultText}")'>अа</button>
                     </div>
                 </div> <!--  <<<<<====== ВОТ ОН, НЕДОСТАЮЩИЙ ЗАКРЫВАЮЩИЙ ТЕГ! -->
                 <div class="result-card-content">
@@ -7869,7 +7834,18 @@ const mainApp = (function() {
     }
 
 
-
+    // Новая вспомогательная функция
+    function formatQuestionObjectToQstString(questionObject) {
+        if (!questionObject || !questionObject.text || !questionObject.options) {
+            return '';
+        }
+        let qstString = `? ${questionObject.text}\n`;
+        questionObject.options.forEach(opt => {
+            const prefix = opt.isCorrect ? '+' : '-';
+            qstString += `${prefix} ${opt.text}\n`;
+        });
+        return qstString.trim();
+    }
 
     /**
      * Преобразует диапазон номеров вопросов в реальные индексы массива, пропуская категории.
@@ -8513,23 +8489,24 @@ const mainApp = (function() {
                 li.classList.add('answered');
             });
         
-            // 6. Создаем кнопку "Объяснить"
-            const existingBtn = feedbackAreaEl.querySelector('.explain-btn');
-            if (existingBtn) existingBtn.remove();
+// 6. Создаем панель обратной связи с кнопкой "Объяснить"
+            const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
+            
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
             explainBtn.className = 'explain-btn';
-            explainBtn.style.marginLeft = '15px';
-        
+
             if (isCorrect) {
-                // Для объяснения всегда передаем ОРИГИНАЛЬНЫЙ вопрос
                 explainBtn.onclick = () => showAIExplanation(originalQuestion);
             } else {
                 const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-                // И здесь тоже
                 explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
             }
             
+            // Очищаем старое содержимое и добавляем новые элементы
+            feedbackAreaEl.innerHTML = ''; 
+            const textNode = document.createTextNode(feedbackText);
+            feedbackAreaEl.appendChild(textNode);
             feedbackAreaEl.appendChild(explainBtn);
         
             // 7. Обновляем все остальные элементы интерфейса
@@ -8998,6 +8975,7 @@ const mainApp = (function() {
         fileUploadArea.classList.add('hidden');
         quizSetupArea.classList.add('hidden');
         quizArea.classList.remove('hidden');
+        appTitleHeader?.classList.add('hidden');
 
         // 6. Запускаем UI теста с восстановленными данными
         totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
@@ -10447,6 +10425,93 @@ const mainApp = (function() {
             alert(_('error_no_question_for_explanation'));
         }
     }
+
+
+    async function handleTranslateClickInSearch(event, buttonElement, rawQuestionText) {
+        event.stopPropagation();
+
+        const parsedQuestions = parseQstContent(rawQuestionText);
+        if (!parsedQuestions || parsedQuestions.length === 0) {
+            alert(_('error_cannot_process_question'));
+            return;
+        }
+        const originalQuestionObject = parsedQuestions[0];
+
+        buttonElement.classList.add('translating');
+        buttonElement.disabled = true;
+
+        try {
+            const targetLang = localStorage.getItem('appLanguage') || 'ru';
+            const translatedQuestionObject = await getTranslatedQuestion(originalQuestionObject, targetLang);
+
+            if (translatedQuestionObject) {
+                const card = buttonElement.closest('.result-card');
+                if (!card) return;
+
+                // 1. Находим элементы, которые нужно анимировать
+                const questionElement = card.querySelector('.question-text-detail');
+                const optionElements = card.querySelectorAll('.answer-option');
+
+                if (!questionElement || optionElements.length === 0) {
+                    // Если вдруг не нашли элементы, используем старый метод как запасной
+                    const contentArea = card.querySelector('.result-card-content');
+                    const translatedRawText = formatQuestionObjectToQstString(translatedQuestionObject);
+                    contentArea.innerHTML = parseAndRenderQuestionBlock(translatedRawText);
+                } else {
+                    // 2. Создаем массив для всех анимаций
+                    const allAnimations = [];
+
+                    // Добавляем анимацию для текста вопроса
+                    allAnimations.push(
+                        animateTextTransformation(questionElement, originalQuestionObject.text, translatedQuestionObject.text)
+                    );
+                    
+                    // Добавляем анимации для каждого варианта ответа
+                    optionElements.forEach((optionEl, i) => {
+                        const originalOption = originalQuestionObject.options[i];
+                        const translatedOption = translatedQuestionObject.options[i];
+
+                        if (originalOption && translatedOption) {
+                            // Собираем полный текст (с иконкой) для анимации
+                            const originalFullText = `${originalOption.isCorrect ? '✓' : '✗'} ${originalOption.text}`;
+                            const translatedFullText = `${translatedOption.isCorrect ? '✓' : '✗'} ${translatedOption.text}`;
+                            
+                            // Используем более простую анимацию для однострочных элементов
+                            allAnimations.push(animateSingleLine(optionEl, originalFullText, translatedFullText));
+                        }
+                    });
+
+                    // 3. Ждем, пока ВСЕ анимации завершатся
+                    await Promise.all(allAnimations);
+                }
+
+                // 4. Обновляем onclick-атрибуты кнопок новым (переведенным) текстом
+                const translatedRawText = formatQuestionObjectToQstString(translatedQuestionObject);
+                const escapedTranslatedText = escape(translatedRawText);
+
+                const explainBtn = card.querySelector('.explain-search-result-btn');
+                if (explainBtn) explainBtn.setAttribute('onclick', `window.mainApp.handleExplainClickInSearch(event, "${escapedTranslatedText}")`);
+                
+                const copyBtn = card.querySelector('.copy-search-result-btn');
+                if (copyBtn) copyBtn.setAttribute('onclick', `window.mainApp.handleCopyClickInSearch(event, "${escapedTranslatedText}")`);
+                
+                const favBtn = card.querySelector('.favorite-search-result-btn');
+                if (favBtn) favBtn.setAttribute('onclick', `window.mainApp.handleFavoriteClickInSearch(event, "${escapedTranslatedText}")`);
+                
+                buttonElement.setAttribute('onclick', `window.mainApp.handleTranslateClickInSearch(event, this, "${escapedTranslatedText}")`);
+            } else {
+                alert(_('error_translation_failed'));
+            }
+        } catch (error) {
+            console.error("Ошибка перевода в поиске:", error);
+            alert(_('error_translation_failed'));
+        } finally {
+            buttonElement.classList.remove('translating');
+            buttonElement.disabled = false;
+        }
+    }
+
+
     
     function manageBackButtonInterceptor() {
         // Код остается тот же самый
@@ -11131,6 +11196,7 @@ const mainApp = (function() {
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,
         handleCopyClickInSearch: handleCopyClickInSearch,
         handleExplainClickInSearch: handleExplainClickInSearch,
+        handleTranslateClickInSearch: handleTranslateClickInSearch,
         showGlobalLoader: showGlobalLoader,
         hideGlobalLoader: hideGlobalLoader,
         manageBackButtonInterceptor: manageBackButtonInterceptor,
