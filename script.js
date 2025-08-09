@@ -72,7 +72,8 @@ const ChatModule = (function() {
             date_label: "Дата:",
             anonymous_user: "Аноним",
             expand_message: "Развернуть", 
-            collapse_message: "Свернуть", 
+            collapse_message: "Свернуть",
+            edited_indicator: "(изм.)", 
             // Modals
             user_actions_title: "Действия",
             user_actions_text: "Выберите, что вы хотите сделать.",
@@ -331,6 +332,7 @@ const ChatModule = (function() {
             anonymous_user: "Аноним",
             expand_message: "Көбірек көрсету",
             collapse_message: "Жасыру",
+            edited_indicator: "(өзг.)",
             // Modals
             user_actions_title: "Әрекеттер",
             user_actions_text: "Не істегіңіз келетінін таңдаңыз.",
@@ -588,6 +590,7 @@ const ChatModule = (function() {
             anonymous_user: "Anonymous",
             expand_message: "Read more", 
             collapse_message: "Show less", 
+            edited_indicator: "(edited)",
             // Modals
             user_actions_title: "Actions",
             user_actions_text: "Choose what you want to do.",
@@ -798,7 +801,19 @@ const ChatModule = (function() {
     function _chat(key) {
         return LANG_PACK_CHAT[currentChatLang]?.[key] || key;
     }
-
+/**
+     * Форматирует строку перевода, заменяя плейсхолдеры типа {key} на значения.
+     * @param {string} key - Ключ строки в языковом пакете.
+     * @param {object} replacements - Объект с заменами, например { channelName: 'VIP' }.
+     * @returns {string} - Отформатированная строка.
+     */
+    function _chatFormat(key, replacements) {
+        let str = _chat(key);
+        for (const placeholder in replacements) {
+            str = str.replace(`{${placeholder}}`, replacements[placeholder]);
+        }
+        return str;
+    }
     
     // Core variables
     let db = null;
@@ -3786,9 +3801,9 @@ const ChatModule = (function() {
 
             // Теперь стандартная проверка: если канал все еще не разблокирован, запрашиваем пароль
             if (!unlockedChannels.has(channel.id)) {
-                const password = prompt(_chat('channel_enter_password_prompt', {
-                    channelName: channel.name
-                }));
+                            const password = prompt(_chatFormat('channel_enter_password_prompt', {
+                                channelName: channel.name
+                            }));
                 if (password === null) return;
 
                 const enteredPasswordHash = await hashPassword(password);

@@ -308,12 +308,25 @@ body.glass-light .dropdown-content { /* <-- ДОБАВЛЕНО */
     -webkit-backdrop-filter: blur(24px); /* <-- ИЗМЕНЕНО */
 }
 
-
 .header-controls {
+    position: relative; /* Это важно, оставляем */
     display: flex;
-    justify-content: center;
     align-items: center;
-    /* Мы убираем отступ отсюда, чтобы он не влиял на чат */
+    padding-top: 15px;
+}
+
+
+/* Центрируем блок кнопок по всей ширине родителя */
+.header-buttons {
+    position: absolute; /* Вырываем из потока */
+    left: 50%;          /* Смещаем левый край блока в центр */
+    transform: translateX(-50%); /* Сдвигаем сам блок влево на половину его ширины */
+    
+    /* Стили для самих кнопок */
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: nowrap;
 }
 
 /* А здесь создаем новое, более точное правило ТОЛЬКО для главного экрана */
@@ -321,16 +334,21 @@ body.glass-light .dropdown-content { /* <-- ДОБАВЛЕНО */
     margin-bottom: 50px;
 }
 
+
+
+
+/* Выравниваем заголовок по левому краю */
 .header-controls h1 {
     margin: 0;
-    text-align: left;
     font-size: 1.5em;
     line-height: 1.2;
-    margin-right: 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex-shrink: 0;
+    /* Убедимся, что заголовок не мешает кнопкам */
+    z-index: 1; 
 }
+
+
+
 
 @media (min-width: 768px) {
     .header-controls h1 {
@@ -342,8 +360,7 @@ body.glass-light .dropdown-content { /* <-- ДОБАВЛЕНО */
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: wrap; 
-    justify-content: flex-end; 
+    flex-wrap: nowrap;
 }
 
 #searchWebButton,
@@ -1382,10 +1399,10 @@ body.glass-dark .advanced-chat-overlay {
     overflow: hidden;
 }
 
-/* Sidebar */
+
 .chat-sidebar {
     width: var(--chat-sidebar-width);
-    background: var(--input-bg-color);
+    background-color: var(--container-bg-color); /* <-- ИЗМЕНЕНО */
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -1393,6 +1410,7 @@ body.glass-dark .advanced-chat-overlay {
     flex-shrink: 0;
     height: 100%;
 }
+
 
 .sidebar-section {
     padding: 20px;
@@ -3858,7 +3876,7 @@ button[onclick*="copyToClipboard"].copied:after {
         padding: 4px 6px; /* Делаем кнопки еще компактнее */
         font-size: 1.1em;   /* Уменьшаем иконки */
     }
-    /* --- КОНЕЦ ИСПРАВЛЕНИЙ --- */
+
 }
 
 
@@ -6079,4 +6097,19 @@ body.glass-dark #feedbackArea .explain-btn {
 
 body.glass-dark #feedbackArea .explain-btn:hover {
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ ФОНА МОБИЛЬНОГО МЕНЮ (ФИНАЛЬНОЕ)  === */
+/* ======================================================= */
+
+/*
+  Этот код делает фон-затемнитель (оверлей) НЕПРОЗРАЧНЫМ
+  только на мобильных устройствах, когда сайдбар открыт.
+  Это решает проблему читаемости текста в стеклянных темах.
+*/
+@media (max-width: 768px) {
+    .sidebar-container.open {
+        background: var(--bg-color); /* Используем основной цвет фона темы */
+    }
 }
