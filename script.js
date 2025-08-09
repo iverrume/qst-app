@@ -1561,6 +1561,60 @@ const ChatModule = (function() {
                     aiHelperMenu.classList.add('hidden');
                 }
             });
+
+
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ ВСЕХ ДЕЙСТВИЙ ВНУТРИ СООБЩЕНИЙ
+        messageArea.addEventListener('click', (event) => {
+            const target = event.target;
+            const actionTarget = target.closest('[data-action]');
+            if (!actionTarget) return;
+
+            const action = actionTarget.dataset.action;
+            const messageEl = actionTarget.closest('.message');
+            if (!messageEl && !action.includes('question')) return; // Для ссылок на вопросы messageEl может не быть
+
+            const messageId = messageEl?.id.replace('message-', '');
+            const messageText = messageEl?.dataset.rawText || '';
+            const authorName = messageEl?.querySelector('.author')?.textContent || _chat('anonymous_user');
+
+            switch (action) {
+                case 'reply':
+                    startReply(messageId, authorName, messageText);
+                    break;
+                case 'show-reaction-picker':
+                    showReactionPicker(messageId, actionTarget);
+                    break;
+                case 'toggle-pin':
+                    togglePinMessage(messageId);
+                    break;
+                case 'edit':
+                    startEditMessage(messageId, messageText);
+                    break;
+                case 'delete':
+                    deleteMessage(messageId);
+                    break;
+                case 'toggle-reaction':
+                    toggleReaction(messageId, actionTarget.dataset.emoji);
+                    break;
+                case 'scroll-to':
+                    scrollToMessage(actionTarget.dataset.messageId);
+                    break;
+                case 'navigate-to-question':
+                    navigateToQuestion(actionTarget.dataset.questionId, actionTarget.dataset.messageId);
+                    break;
+                case 'show-file-actions':
+                    const isTesting = actionTarget.dataset.isTesting === 'true';
+                    showFileActionsModal(actionTarget.dataset.fileId, actionTarget.dataset.fileName, isTesting);
+                    break;
+                case 'show-results':
+                    showTestResults(actionTarget.dataset.fileId, actionTarget.dataset.channelId);
+                    break;
+            }
+        });
+
+
+
+
         }
 
 
@@ -2251,9 +2305,10 @@ const ChatModule = (function() {
 
 
 
+
     /**
      * Создает DOM-элемент для одного сообщения со всей логикой.
-     * ВЕРСИЯ 2.1: Добавлена очистка текста от лишних пробелов (.trim()).
+     * ВЕРСИЯ 3.0: Переход на data-атрибуты и делегирование событий.
      * @param {object} message - Объект сообщения из базы данных Firebase.
      * @returns {HTMLElement} - Готовый для вставки в DOM элемент сообщения.
      */
@@ -2262,48 +2317,55 @@ const ChatModule = (function() {
         messageEl.id = `message-${message.id}`;
         messageEl.className = `message ${message.authorId === currentUser?.uid ? 'mine' : 'other'}`;
         
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем метку с ID автора ---
         if (message.authorId) {
             messageEl.dataset.authorId = message.authorId;
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         if (message.isPinned) messageEl.classList.add('pinned');
 
-        
         const timestamp = message.createdAt;
         const displayTime = formatSmartTimestamp(timestamp);
         const fullTimeTitle = timestamp?.toDate?.().toLocaleString(currentChatLang, {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'}) || '';
+        
         let replyHTML = '';
         if (message.replyTo) {
-            replyHTML = `<div class="reply-context" onclick="ChatModule.scrollToMessage('${message.replyTo.messageId}')"><div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div><div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div></div>`;
+            replyHTML = `<div class="reply-context" data-action="scroll-to" data-message-id="${message.replyTo.messageId}">
+                            <div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div>
+                            <div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div>
+                        </div>`;
         }
         
         let contentHTML = '';
-        
-        if (message.type === 'file_share' || message.type === 'question_link') {
-            if (message.type === 'file_share') {
-                 messageEl.classList.add('file-share-bubble');
-                const qCount = message.fileInfo.questions;
-                const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
-                const currentChannelData = channels.find(c => c.id === currentChannel);
-                const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
-                const resultsButtonHTML = isTestingChannel 
-                    ? `<div class="test-results-action"><button class="results-btn" onclick="ChatModule.showTestResults('${message.fileInfo.id}', '${message.channelId}')">${_chat('results_button')}</button></div>` 
-                    : '';
-                contentHTML = `<div class="file-share-content" onclick="ChatModule.showFileActionsModal('${message.fileInfo.id}', '${escape(message.fileInfo.name)}', ${isTestingChannel})"><div class="file-share-icon">📄</div><div class="file-share-details"><div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div><div class="file-share-info">${qCount} ${qText}</div></div><div class="file-share-arrow">→</div></div>${resultsButtonHTML}`;
-            } else {
-                 messageEl.classList.add('question-link-bubble');
-                contentHTML = `<div class="question-link-content" onclick="ChatModule.navigateToQuestion('${message.questionId}', '${message.id}')"><span class="question-link-icon">❓</span><div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div><span class="question-link-arrow">→</span></div>`;
-            }
+        if (message.type === 'file_share') {
+            messageEl.classList.add('file-share-bubble');
+            const qCount = message.fileInfo.questions;
+            const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
+            const currentChannelData = channels.find(c => c.id === currentChannel);
+            const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
+            const resultsButtonHTML = isTestingChannel 
+                ? `<div class="test-results-action"><button class="results-btn" data-action="show-results" data-file-id="${message.fileInfo.id}" data-channel-id="${message.channelId}">${_chat('results_button')}</button></div>` 
+                : '';
+            contentHTML = `<div class="file-share-content" data-action="show-file-actions" data-file-id="${message.fileInfo.id}" data-file-name="${escape(message.fileInfo.name)}" data-is-testing="${isTestingChannel}">
+                                <div class="file-share-icon">📄</div>
+                                <div class="file-share-details">
+                                    <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
+                                    <div class="file-share-info">${qCount} ${qText}</div>
+                                </div>
+                                <div class="file-share-arrow">→</div>
+                           </div>${resultsButtonHTML}`;
+        } else if (message.type === 'question_link') {
+            messageEl.classList.add('question-link-bubble');
+            contentHTML = `<div class="question-link-content" data-action="navigate-to-question" data-question-id="${message.questionId}" data-message-id="${message.id}">
+                                <span class="question-link-icon">❓</span>
+                                <div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div>
+                                <span class="question-link-arrow">→</span>
+                           </div>`;
         } else {
             let messageText = message.text || '';
             let translatingClass = '';
-
             if (isChatTranslateModeEnabled && message.text) {
                 const lang = localStorage.getItem('appLanguage') || 'ru';
                 const cacheKey = getChatCacheKey(message.id, lang);
-
                 if (chatTranslations.has(cacheKey)) {
                     messageText = chatTranslations.get(cacheKey);
                 } else {
@@ -2311,14 +2373,9 @@ const ChatModule = (function() {
                     translatingClass = 'translating';
                 }
             }
-            
             const editedIndicator = message.editedAt ? `<span class="edited-indicator">${_chat('edited_indicator')}</span>` : '';
-            const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="${_chat('pinned_message_title')}">📌</span>` : '';
-            
-            // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
-            // Применяем .trim() к финальному тексту перед тем, как его экранировать и отобразить.
+            const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закреплено">📌</span>` : '';
             contentHTML = `<div class="message-content ${translatingClass}">${pinnedIcon} ${escapeHTML(messageText.trim())} ${editedIndicator}</div>`;
-            // --- КОНЕЦ ИЗМЕНЕНИЯ ---
         }
         
         let reactionsHTML = '<div class="reactions-container">';
@@ -2326,26 +2383,30 @@ const ChatModule = (function() {
             Object.entries(message.reactions).forEach(([emoji, userIds]) => {
                 if (userIds && userIds.length > 0) {
                     const isReactedByMe = userIds.includes(currentUser.uid);
-                    reactionsHTML += `<button class="reaction-badge ${isReactedByMe ? 'mine' : ''}" onclick="ChatModule.toggleReaction('${message.id}', '${emoji}')">${emoji} ${userIds.length}</button>`;
+                    reactionsHTML += `<button class="reaction-badge ${isReactedByMe ? 'mine' : ''}" data-action="toggle-reaction" data-emoji="${emoji}">${emoji} ${userIds.length}</button>`;
                 }
             });
         }
         reactionsHTML += '</div>';
 
-
         let actionsHTML = `
-            <button title="${_chat('tooltip_reply')}" onclick="ChatModule.startReply(...)">↩️</button>
-            <button title="${_chat('tooltip_add_reaction')}" onclick="ChatModule.showReactionPicker(...)">😊</button>
-            <button title="${message.isPinned ? _chat('tooltip_unpin') : _chat('tooltip_pin')}" onclick="ChatModule.togglePinMessage(...)">📌</button>
+            <button title="${_chat('tooltip_reply')}" data-action="reply">↩️</button>
+            <button title="${_chat('tooltip_add_reaction')}" data-action="show-reaction-picker">😊</button>
+            <button title="${message.isPinned ? _chat('tooltip_unpin') : _chat('tooltip_pin')}" data-action="toggle-pin">📌</button>
         `;
-        if (message.authorId === currentUser?.uid && message.type !== 'question_link') {
-            actionsHTML += `<button class="edit-message-btn" title="${_chat('tooltip_edit_message')}" ...>✏️</button>`;
-            actionsHTML += `<button title="${_chat('tooltip_delete_message')}" onclick="ChatModule.deleteMessage(...)">🗑️</button>`;
+        const isAdmin = currentUser?.email === 'iverrum@gmail.com';
+        
+        // Кнопки редактирования и удаления показываются, если пользователь - автор ИЛИ администратор
+        if ((message.authorId === currentUser?.uid || isAdmin) && message.type !== 'question_link') {
+            actionsHTML += `<button title="${_chat('tooltip_edit_message')}" data-action="edit">✏️</button>`;
+            actionsHTML += `<button title="${_chat('tooltip_delete_message')}" data-action="delete">🗑️</button>`;
         }
 
-
-
         messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || _chat('anonymous_user')}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
+        
+        // Сохраняем сырой текст для редактирования
+        messageEl.dataset.rawText = message.text || '';
+
         const contentEl = messageEl.querySelector('.message-content');
         if (contentEl) {
             setTimeout(() => {
@@ -2363,13 +2424,14 @@ const ChatModule = (function() {
                 }
             }, 0);
         }
-        const editBtn = messageEl.querySelector('.edit-message-btn');
-        if (editBtn) {
-            editBtn.dataset.rawText = message.text; 
-        }
         
         return messageEl;
     }
+
+
+
+
+
 
 
     // --- Функции для управления профилем ---
@@ -2857,6 +2919,7 @@ const ChatModule = (function() {
         showModal('editMessageModal');
     }
 
+    // Новый (исправленный) код
     async function saveMessageEdit() {
         const messageId = document.getElementById('editMessageIdInput').value;
         const newText = document.getElementById('editMessageInput').value.trim();
@@ -2864,17 +2927,23 @@ const ChatModule = (function() {
 
         const messageRef = db.collection('messages').doc(messageId);
         try {
-            await messageRef.update({
-                text: newText,
-                editedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            closeModal('editMessageModal');
+            const isAdmin = currentUser.email === 'iverrum@gmail.com';
+            const doc = await messageRef.get();
+            // Проверяем, существует ли сообщение, и является ли пользователь автором ИЛИ администратором
+            if (doc.exists && (doc.data().authorId === currentUser.uid || isAdmin)) {
+                await messageRef.update({
+                    text: newText,
+                    editedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                closeModal('editMessageModal');
+            } else {
+                throw new Error("Permission denied or message not found.");
+            }
         } catch (error) {
             console.error('Ошибка редактирования сообщения:', error);
             showError(_chat('error_save_message_failed'));
         }
     }
-
 
 
 
@@ -3103,10 +3172,17 @@ const ChatModule = (function() {
     async function deleteMessage(messageId) {
         if (!currentUser || !db) return;
 
-        // Спрашиваем подтверждение для безопасности
         if (confirm(_chat('confirm_delete_message'))) {
+            const messageRef = db.collection('messages').doc(messageId);
             try {
-                await db.collection('messages').doc(messageId).delete();
+                const isAdmin = currentUser.email === 'iverrum@gmail.com';
+                const doc = await messageRef.get();
+                // Проверяем, существует ли сообщение, и является ли пользователь автором ИЛИ администратором
+                if (doc.exists && (doc.data().authorId === currentUser.uid || isAdmin)) {
+                    await messageRef.delete();
+                } else {
+                    throw new Error("Permission denied or message not found.");
+                }
             } catch (error) {
                 console.error('Ошибка удаления сообщения:', error);
                 showError(_chat('error_delete_message_failed'));
@@ -3117,9 +3193,16 @@ const ChatModule = (function() {
     async function deleteQuestion(questionId) {
         if (!currentUser || !db) return;
 
-        if (confirm("Вы уверены, что хотите удалить этот вопрос? Это действие необратимо.")) {
+        if (confirm(_chat('confirm_delete_question'))) {
+            const questionRef = db.collection('questions').doc(questionId);
             try {
-                await db.collection('questions').doc(questionId).delete();
+                const isAdmin = currentUser.email === 'iverrum@gmail.com';
+                const doc = await questionRef.get();
+                if (doc.exists && (doc.data().authorId === currentUser.uid || isAdmin)) {
+                    await questionRef.delete();
+                } else {
+                     throw new Error("Permission denied or question not found.");
+                }
             } catch (error) {
                 console.error('Ошибка удаления вопроса:', error);
                 showError(_chat('error_delete_question_failed'));
@@ -3710,8 +3793,6 @@ const ChatModule = (function() {
 
 
 
-
-
     async function deleteChannel() {
         const channelId = document.getElementById('editChannelId').value;
         if (!channelId) return;
@@ -3722,12 +3803,19 @@ const ChatModule = (function() {
         }
 
         if (confirm(_chat('confirm_delete_channel'))) {
+            const channelRef = db.collection('channels').doc(channelId);
             try {
-                await db.collection('channels').doc(channelId).delete();
-                closeModal('channelEditModal');
-                if (currentChannel === channelId) {
-                    const generalChannel = channels.find(c => c.id === 'general');
-                    if(generalChannel) handleChannelClick(generalChannel);
+                const isAdmin = currentUser.email === 'iverrum@gmail.com';
+                const doc = await channelRef.get();
+                if (doc.exists && (doc.data().createdBy === currentUser.uid || isAdmin)) {
+                    await channelRef.delete();
+                    closeModal('channelEditModal');
+                    if (currentChannel === channelId) {
+                        const generalChannel = channels.find(c => c.id === 'general');
+                        if(generalChannel) handleChannelClick(generalChannel);
+                    }
+                } else {
+                    throw new Error("Permission denied or channel not found.");
                 }
             } catch (error) {
                 console.error("Ошибка удаления канала:", error);
