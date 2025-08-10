@@ -284,10 +284,21 @@ body.glass-dark .advanced-chat-modal,
 body.glass-dark .modal-content,
 body.glass-dark .auth-modal,
 body.glass-dark .dropdown-content, 
-body.glass-dark .style-dropdown-content, /* <-- ДОБАВЛЕНО */
-body.glass-dark .filter-dropdown { 
+/* УБРАЛИ .style-dropdown-content ОТСЮДА, чтобы задать ему особое правило ниже */
+body.glass-dark .filter-dropdown,
+body.glass-dark .theme-picker-dropdown { 
     backdrop-filter: blur(28px); 
     -webkit-backdrop-filter: blur(28px); 
+}
+
+/* НОВЫЙ БЛОК: Особое, более сильное размытие для списка стилей ИИ */
+body.glass-dark .style-dropdown-content {
+    /* 1. Делаем фон элемента почти полностью прозрачным, оставляя лишь легкий оттенок */
+    background-color: rgba(42, 42, 42, 0.2); 
+
+    /* 2. Значительно увеличиваем степень размытия фона за элементом */
+    backdrop-filter: blur(75px);
+    -webkit-backdrop-filter: blur(75px);
 }
 
 .header-controls {
@@ -6812,4 +6823,29 @@ input[type="range"]::-moz-range-thumb {
     transform: translateX(-50%);
     font-size: 0.75em;
     color: var(--secondary-text-color);
+}
+
+/* --- Стили для одиночного ползунка (лимит времени) --- */
+
+.single-slider-container {
+    position: relative;
+    height: 20px;
+    margin: 10px 0;
+}
+
+.single-slider-container input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 5px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: auto; /* В отличие от двойного, здесь он всегда кликабельный */
+    margin: 0;
+    z-index: 3; /* Поверх всего */
+}
+
+/* Прогресс-бар для одиночного слайдера всегда начинается слева */
+#timeSliderProgress {
+    left: 0;
 }

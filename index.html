@@ -134,11 +134,22 @@
 
             <div id="quizSetupArea" class="hidden">
                 <h2 data-lang-key="quiz_settings_title">Настройки теста</h2>
+
+
                 <div class="settings-group">
                     <label for="timeLimit" data-lang-key="time_limit">Лимит времени (минуты, 0 - без лимита):</label>
-                    <input type="range" id="timeLimit" min="0" max="180" value="0" step="10">
-                    <span id="timeLimitValue">0</span> <span data-lang-key="time_limit_minutes">мин</span>
+                    <div class="single-slider-container">
+                        <div id="timeSliderTrack" class="slider-track"></div>
+                        <div id="timeSliderTicks" class="slider-ticks"></div>
+                        <div id="timeSliderProgress" class="slider-progress"></div>
+                        <input type="range" id="timeLimit" min="0" max="180" value="0" step="10">
+                    </div>
+                    <div class="range-inputs-container" style="justify-content: flex-end;">
+                         <span id="timeLimitValue">0</span> <span data-lang-key="time_limit_minutes">мин</span>
+                    </div>
                 </div>
+
+
                 <div class="settings-group" id="questionRangeGroup">
                     <div class="range-label-container">
                         <label for="questionRangeStart" data-lang-key="question_range">Диапазон вопросов:</label>

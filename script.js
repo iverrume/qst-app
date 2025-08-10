@@ -3980,7 +3980,18 @@ const ChatModule = (function() {
     }
     
     function closeModal(modalId) {
-        document.getElementById(modalId)?.classList.add('hidden');
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // Если закрывается именно окно с объяснением ИИ,
+        // убираем класс, блокирующий прокрутку.
+        if (modalId === 'aiExplanationModal') {
+            document.body.classList.remove('chat-open');
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     }
     
 
@@ -6184,7 +6195,7 @@ const mainApp = (function() {
         savedSessionList, appTitleHeader;
 
     let rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
-            shuffleNCheckbox, shuffleNCountInput, sliderTicks;
+            shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks;
 
     let themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon;
     let converterTabBtn, aiGeneratorTabBtn, converterContent, aiGeneratorContent, 
@@ -6379,7 +6390,7 @@ const mainApp = (function() {
         shuffleNCheckbox = getEl('shuffleNQuestions');
         shuffleNCountInput = getEl('shuffleNQuestionsCount');
         sliderTicks = getEl('sliderTicks');
-
+        timeSliderTicks = getEl('timeSliderTicks');
         initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
@@ -6582,7 +6593,10 @@ const mainApp = (function() {
         triggerWordToggle?.addEventListener('click', toggleTriggerWordMode);
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
         readingModeCheckbox?.addEventListener('change', handleReadingModeChange);
-        timeLimitInput.addEventListener('input', () => timeLimitValueDisplay.textContent = timeLimitInput.value);
+        timeLimitInput.addEventListener('input', () => {
+                    timeLimitValueDisplay.textContent = timeLimitInput.value;
+                    updateSingleSliderVisuals();
+                });
 
 
 
@@ -7928,8 +7942,10 @@ const mainApp = (function() {
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
             shuffleNCountInput.max = questionCount; // Устанавливаем макс. для случайного выбора
             
-            // Инициализируем двойной ползунок
+// Инициализируем двойной ползунок
             initDualSlider(questionCount);
+            // Инициализируем одиночный ползунок для времени
+            initSingleSlider(); 
             
             // Сбрасываем состояние режима случайного выбора
             shuffleNCheckbox.checked = false;
@@ -9452,14 +9468,20 @@ const mainApp = (function() {
             displaySingleResult(currentResultIndex);
         }
         
-        // 8. Перезагружаем сохраненные сессии, чтобы их описания тоже перевелись.
-        loadSavedSession();
-        
-        // 9. Обновляем текст на кнопках скачивания перевода, если они видимы.
+// 9. Обновляем текст на кнопках скачивания перевода, если они видимы.
         updateDownloadButtonsText();
 
         // 10. (НОВЫЙ ШАГ) Перерисовываем выпадающий список парсера с новым языком.
         populateParserPatterns();
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамическое обновление текста с количеством вопросов ---
+        // Проверяем, виден ли экран настроек и загружены ли вопросы
+        if (quizSetupArea && !quizSetupArea.classList.contains('hidden') && allParsedQuestions.length > 0) {
+            const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
+            // Принудительно пересобираем строку с уже переведенными частями
+            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     }
 
 
@@ -10580,6 +10602,7 @@ const mainApp = (function() {
             }
             
             updateAIModalQuestionText();
+            document.body.classList.add('chat-open');
             ChatModule.showModal('aiExplanationModal');
             
             fetchAndDisplayExplanation('simple', userIncorrectAnswerText);
@@ -11549,25 +11572,30 @@ const mainApp = (function() {
         sliderProgress.style.width = `${endPercent - startPercent}%`;
     }
 
-    /**
-     * Обрабатывает изменение значений на ползунках.
-     */
+
     function handleSliderInput(event) {
         const startSlider = rangeSliderStart;
         const endSlider = rangeSliderEnd;
-        let startValue = parseInt(startSlider.value);
-        let endValue = parseInt(endSlider.value);
+        const step = 5; // Наш новый шаг
+        const max = parseInt(startSlider.max);
 
+        // Получаем "примагниченные" значения
+        let startValue = snapToStep(parseInt(startSlider.value), step, max);
+        let endValue = snapToStep(parseInt(endSlider.value), step, max);
+        
         // Предотвращаем пересечение бегунков
         if (endValue < startValue) {
+            // Если двигали левый бегунок и он "заехал" за правый, выравниваем их
             if (event.target.id === 'rangeSliderStart') {
-                startSlider.value = endValue;
-                startValue = endValue;
-            } else {
-                endSlider.value = startValue;
-                endValue = startValue;
+                 startValue = endValue;
+            } else { // И наоборот
+                 endValue = startValue;
             }
         }
+
+        // Обновляем положение самих ползунков, чтобы они "прыгнули" на нужную позицию
+        startSlider.value = startValue;
+        endSlider.value = endValue;
 
         // Синхронизируем числовые поля
         questionRangeStartInput.value = startValue;
@@ -11627,8 +11655,7 @@ const mainApp = (function() {
         sliderTicks.innerHTML = ''; // Очищаем старые насечки
 
         // Динамически рассчитываем интервал для насечек, чтобы их не было слишком много
-        let interval = Math.max(5, Math.floor(totalQuestions / 20));
-        interval = Math.ceil(interval / 5) * 5; // Округляем до ближайшего числа, кратного 5
+        const interval = 5;
 
         // Определяем, как часто ставить числовые метки
         const labelIntervalMultiplier = totalQuestions > 200 ? 5 : 4;
@@ -11652,6 +11679,80 @@ const mainApp = (function() {
             }
         }
     }
+
+
+    /**
+     * Инициализирует одиночный ползунок (например, для времени).
+     */
+    function initSingleSlider() {
+        if (!timeLimitInput) return;
+        generateTimeSliderTicks();
+        updateSingleSliderVisuals(); // Устанавливаем начальное положение
+    }
+
+    /**
+     * Обновляет визуальное состояние прогресс-бара одиночного ползунка.
+     */
+    function updateSingleSliderVisuals() {
+        const progressEl = getEl('timeSliderProgress');
+        if (!progressEl || !timeLimitInput) return;
+        
+        const value = parseInt(timeLimitInput.value);
+        const max = parseInt(timeLimitInput.max);
+        const percent = (max > 0) ? (value / max) * 100 : 0;
+        
+        progressEl.style.width = `${percent}%`;
+    }
+
+    /**
+     * Генерирует насечки для ползунка выбора времени.
+     */
+    function generateTimeSliderTicks() {
+        if (!timeSliderTicks) return;
+        timeSliderTicks.innerHTML = '';
+        const max = parseInt(timeLimitInput.max);
+        const step = 30; // Насечки каждые 30 минут
+
+        for (let i = 0; i <= max; i += step) {
+             const positionPercent = (i / max) * 100;
+             
+             const tick = document.createElement('div');
+             tick.className = 'tick';
+             tick.style.left = `${positionPercent}%`;
+             timeSliderTicks.appendChild(tick);
+
+             if (i > 0 && i < max) {
+                const label = document.createElement('span');
+                label.className = 'tick-label';
+                label.textContent = i;
+                label.style.left = `${positionPercent}%`;
+                timeSliderTicks.appendChild(label);
+             }
+        }
+    }
+
+
+    /**
+     * "Примагничивает" значение к ближайшему шагу, с особым случаем для максимального значения.
+     * @param {number} value - Текущее значение.
+     * @param {number} step - Шаг, к которому нужно "примагнитить".
+     * @param {number} max - Максимально возможное значение.
+     * @returns {number} - "Примагниченное" значение.
+     */
+    function snapToStep(value, step, max) {
+      // Если пользователь довел ползунок до самого конца, всегда возвращаем максимум.
+      if (value === max) {
+        return max;
+      }
+      // Округляем значение до ближайшего, кратного шагу.
+      const snappedValue = Math.round(value / step) * step;
+      // Гарантируем, что результат не будет меньше 1.
+      return Math.max(1, snappedValue);
+    }
+
+
+
+
     // --- Public methods exposed from mainApp ---
     return {
         init: initializeApp,
