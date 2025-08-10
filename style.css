@@ -291,33 +291,37 @@ body.glass-dark .filter-dropdown {
 }
 
 
-/* --- НАЧАЛО ИСПРАВЛЕНИЙ: Более надежная шапка --- */
 
-/* 1. Делаем основной контейнер гибким и растягиваем по всей ширине */
+
 .header-controls {
-    position: relative; /* Оставляем на случай, если понадобится для других элементов */
+    position: relative; /* Это важно, оставляем */
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Главное изменение: расталкивает заголовок и кнопки по краям */
-    width: 100%; /* Убедимся, что контейнер занимает всю ширину */
-    gap: 15px; /* Добавим отступ между заголовком и кнопками */
     padding-top: 15px;
 }
 
-/* 2. Блок с кнопками теперь обычный flex-элемент, без абсолютного позиционирования */
+
+/* Центрируем блок кнопок по всей ширине родителя */
 .header-buttons {
+    position: absolute; /* Вырываем из потока */
+    left: 50%;          /* Смещаем левый край блока в центр */
+    transform: translateX(-50%); /* Сдвигаем сам блок влево на половину его ширины */
+    
+    /* Стили для самих кнопок */
     display: flex;
     gap: 10px;
     align-items: center;
-    flex-wrap: nowrap; /* Запрещаем перенос кнопок */
-    flex-shrink: 0; /* Запрещаем блоку с кнопками сжиматься */
+    flex-wrap: nowrap;
 }
 
-/* 3. Оставляем отступ только для главного экрана, как и было */
+/* А здесь создаем новое, более точное правило ТОЛЬКО для главного экрана */
 .container > .header-controls {
     margin-bottom: 50px;
 }
-/* --- КОНЕЦ ИСПРАВЛЕНИЙ --- */
+
+
+
+
 
 
 /* Выравниваем заголовок по левому краю */
@@ -771,6 +775,25 @@ body.dark-mode #answerOptions li.actual-correct {
     width: 60%;
     max-width: 250px;
 }
+
+
+/* ======================================================= */
+/* === АДАПТИВНОСТЬ КНОПОК НАВИГАЦИИ В ТЕСТЕ (370px)   === */
+/* ======================================================= */
+@media (max-width: 370px) {
+    #questionNavigationControls {
+        flex-direction: column; /* Ставит кнопки друг под другом (в столбец) */
+        align-items: center;    /* Центрирует их по горизонтали */
+        gap: 15px;              /* Увеличивает вертикальный отступ между ними */
+    }
+
+    #questionNavigationControls button {
+        width: 80%; /* Делает кнопки шире для удобства нажатия */
+        max-width: 250px; /* Но не позволяет им стать слишком широкими */
+    }
+}
+
+
 
 .quiz-footer-controls {
     margin-top: 25px;
@@ -6690,36 +6713,4 @@ body.glass-dark .question-actions .add-to-favorites-btn {
         padding: 4px 8px; /* Делаем еще компактнее */
         font-size: 0.85em;
     }
-}
-
-
-/* ======================================================= */
-/* ===  УЛУЧШЕННЫЕ СТИЛИ ДЛЯ ЗАКРЕПЛЕННЫХ СООБЩЕНИЙ     === */
-/* ======================================================= */
-
-/* Для темы Claude используем основной цвет кнопок и белый текст */
-body.claude-mode .message.pinned .message-content {
-    background: var(--button-primary-bg);
-    border-left: 4px solid var(--button-primary-hover-bg);
-    color: var(--button-primary-text);
-}
-
-/* 
-  Это правило гарантирует, что даже ваши собственные сообщения (которые по умолчанию
-  имеют фон --button-primary-bg) будут иметь такой же стиль, когда закреплены,
-  сохраняя единообразие.
-*/
-body.claude-mode .message.mine.pinned .message-content {
-    background: var(--button-primary-bg);
-    color: var(--button-primary-text);
-}
-
-/* Для стеклянной темы делаем эффект свечения */
-body.glass-dark .message.pinned .message-content {
-    background: rgba(74, 222, 128, 0.15); /* Полупрозрачный зеленый, как у правильного ответа */
-    border-left: 4px solid #4ADE80; /* Яркая неоновая рамка */
-}
-
-body.glass-dark .message.mine.pinned .message-content {
-    color: var(--text-color); /* Убеждаемся, что текст остается белым */
 }

@@ -9540,7 +9540,7 @@ const mainApp = (function() {
         if (!parserInput || !generateTestFromTextBtn) return;
 
         const currentLength = parserInput.value.length;
-        const originalButtonText = _('ai_generate_button');
+        const originalButtonText = _('ai_generate_from_text_button');
 
         if (currentLength > AI_INPUT_CHAR_LIMIT) {
             // Если лимит превышен
