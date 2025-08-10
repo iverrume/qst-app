@@ -8782,13 +8782,16 @@ const mainApp = (function() {
 // 6. Создаем панель обратной связи с кнопкой "Объяснить"
             const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
             
+
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
             explainBtn.className = 'explain-btn';
 
             if (isCorrect) {
+                // Если ответ верный, передаем только вопрос
                 explainBtn.onclick = () => showAIExplanation(originalQuestion);
             } else {
+                // А если неверный - передаем и вопрос, и текст НЕВЕРНОГО ответа
                 const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
                 explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
             }
