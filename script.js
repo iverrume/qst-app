@@ -8690,20 +8690,23 @@ const mainApp = (function() {
             Array.from(answerOptionsEl.children).forEach(li => {
                 li.removeEventListener('click', handleAnswerSelect);
                 li.classList.add('answered');
-            });
-        
-// 6. Создаем панель обратной связи с кнопкой "Объяснить"
+            });    
+            // 6. Создаем панель обратной связи с кнопкой "Объяснить"
             const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
             
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
             explainBtn.className = 'explain-btn';
 
+            // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
             if (isCorrect) {
+                // Если ответ верный, объясняем по оригинальному вопросу
                 explainBtn.onclick = () => showAIExplanation(originalQuestion);
             } else {
+                // Если ответ неверный, объясняем по тому вопросу (переведенному или нет),
+                // который видел пользователь, чтобы избежать путаницы языков.
                 const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-                explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
+                explainBtn.onclick = () => showAIExplanation(questionForValidation, incorrectAnswerText);
             }
             
             // Очищаем старое содержимое и добавляем новые элементы
@@ -9146,14 +9149,14 @@ const mainApp = (function() {
             alert(_('error_session_not_found'));
             return;
         }
-
         // 1. Находим исходный файл в "Недавно использованных"
         const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
         const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
 
         if (!originalFile) {
             alert(_('error_session_file_not_found'));
-            deleteSavedSession(); // Удаляем "осиротевшую" сессию
+            // Передаем имя файла, чтобы удалить конкретную "осиротевшую" сессию
+            deleteSavedSession(sessionData.originalFileNameForReview); 
             return;
         }
 
@@ -9165,6 +9168,20 @@ const mainApp = (function() {
             // Важно также добавить originalIndex обратно в каждый вопрос
             return { ...allParsedQuestions[originalIndex], originalIndex };
         });
+
+
+        if (sessionData.quizSettings && sessionData.quizSettings.shuffleAnswers) {
+            console.log("Восстановление сессии: применяем перемешивание ответов.");
+            questionsForCurrentQuiz.forEach(q => {
+                // Применяем ту же логику, что и при старте нового теста
+                if (q.type !== 'category' && q.options) {
+                    const correctAnswerObject = q.options[q.correctAnswerIndex];
+                    shuffleArray(q.options); // Используем вашу же функцию перемешивания
+                    q.correctAnswerIndex = q.options.findIndex(opt => opt === correctAnswerObject);
+                }
+            });
+        }
+        
 
         // 4. Восстанавливаем остальное состояние
         userAnswers = sessionData.userAnswers;
@@ -9200,6 +9217,7 @@ const mainApp = (function() {
         // 8. Добавляем защиту от случайного закрытия вкладки
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
+    
     
     function deleteSavedSession(fileName) { // <-- Принимает имя файла
         if (confirm(_('confirm_delete_session').replace('{fileName}', fileName))) {
