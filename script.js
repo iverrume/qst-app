@@ -6103,7 +6103,7 @@ const mainApp = (function() {
             parser_pattern_numbered_plus: "Numbered list (1.) with '+' answer at the start",
             parser_pattern_plus_at_start: "Answer with '+' at the start of the line",
             parser_pattern_tags_cyrillic: "Tags <Вопрос> and <вариант>",
-            parser_pattern_tags_latin: "Tags <question> and <variant>"
+            parser_pattern_tags_latin: "Tags <question> and <variant>",
             copy_success_short: '✓ Copied!',
 
 
