@@ -7916,15 +7916,18 @@ const mainApp = (function() {
                 shuffleQuestionsCheckbox.checked = true;
                 shuffleAnswersCheckbox.checked = true;
                 readingModeCheckbox.checked = false;
+                flashcardsModeCheckbox.checked = false; // <-- ДОБАВЛЕНО: Убираем галочку
                 shuffleQuestionsCheckbox.disabled = true;
                 shuffleAnswersCheckbox.disabled = true;
                 readingModeCheckbox.disabled = true;
+                flashcardsModeCheckbox.disabled = true; // <-- ДОБАВЛЕНО: Блокируем чекбокс
                 questionRangeStartInput.disabled = true;
                 questionRangeEndInput.disabled = true;
             } else {
                 shuffleQuestionsCheckbox.disabled = false;
                 shuffleAnswersCheckbox.disabled = false;
                 readingModeCheckbox.disabled = false;
+                flashcardsModeCheckbox.disabled = false; // <-- ДОБАВЛЕНО: Разблокируем для обычных тестов
                 questionRangeStartInput.disabled = false;
                 questionRangeEndInput.disabled = false;
             }
