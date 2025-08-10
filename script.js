@@ -272,6 +272,7 @@ const ChatModule = (function() {
             auth_required_to_view: 'Войдите для просмотра',
             ai_summary_modal_title: '💡 Сводка от ИИ',
 
+            reauth_wrong_password: "Неверный пароль. Попробуйте еще раз.",
             results_modal_title: "Результаты по тесту",
             results_table_header_num: "#",
             results_table_header_user: "Пользователь",
@@ -535,10 +536,10 @@ const ChatModule = (function() {
             error_delete_message_failed: 'Хабарламаны жою мүмкін болмады.',
             error_download_auth_required: 'Жүктеп алу үшін чатқа кіруіңіз қажет.',
             sidebar_search_placeholder: 'Арналарды іздеу...',
-            copy_success_short: '✓ Көшірілді!',
             auth_required_to_view: 'Көру үшін кіріңіз',
             ai_summary_modal_title: '💡 ЖИ түйіндемесі',
 
+            reauth_wrong_password: "Қате құпия сөз. Қайталап көріңіз.",
             results_modal_title: "Тест нәтижелері",
             results_table_header_num: "#",
             results_table_header_user: "Пайдаланушы",
@@ -801,10 +802,10 @@ const ChatModule = (function() {
             error_delete_message_failed: 'Failed to delete message.',
             error_download_auth_required: 'You must be logged in to download from the chat.',
             sidebar_search_placeholder: 'Search channels...',
-            copy_success_short: '✓ Copied!',
             auth_required_to_view: 'Login to view',
             ai_summary_modal_title: '💡 AI Summary',
 
+            reauth_wrong_password: "Incorrect password. Please try again.",
             results_modal_title: "Test Results",
             results_table_header_num: "#",
             results_table_header_user: "User",
@@ -1088,7 +1089,7 @@ const ChatModule = (function() {
                             <button id="cancelAiSelectionBtn" class="btn-secondary-small">${_chat('ai_selection_cancel')}</button>
                         </div>
                         <div id="tabActionsContainer" class="tab-actions-container hidden"></div>
-                        <div id="messageArea" class="message-area"><div class="empty-state">${_chat('loading_message')}</div></div>
+                        <div id="messageArea" class="message-area"><div class="empty-state">${_chat('loading_messages')}</div></div>
                         <div class="chat-input-area">
                             <div id="replyingToPanel" class="replying-to-panel hidden">
                                 <div class="reply-info"><span>${_chat('reply_panel_title')}</span><p id="replyingToText"></p></div>
@@ -2608,7 +2609,7 @@ const ChatModule = (function() {
         messageArea.innerHTML = '';
         
         if (questions.length === 0) {
-            messageArea.innerHTML = `<div class="empty-state">${_chat('chat_questions_empty')}</div>`;
+            messageArea.innerHTML = `<div class="empty-state">${_chat('questions_empty')}</div>`;
             return;
         }
         
@@ -2710,7 +2711,7 @@ const ChatModule = (function() {
             favoritesListener();
         }
 
-        messageArea.innerHTML = `<div class="empty-state">${_chat('chat_favorites_loading')}</div>`;
+        messageArea.innerHTML = `<div class="empty-state">${_chat('loading_messages')}</div>`;
 
         favoritesListener = db.collection('favorites')
             .where('userId', '==', currentUser.uid)
@@ -5226,7 +5227,6 @@ const mainApp = (function() {
             quiz_settings_title: 'Настройки теста',
             cheat_sheet_title: 'Сгенерированная шпора:',
             quiz_finished_title: 'Тест завершен!',
-            parser_title: 'Конвертер в .qst',
             parser_description: 'Загрузите файл или вставьте текст для преобразования в формат теста.',
             // Настройки теста
             time_limit: 'Лимит времени (минуты, 0 - без лимита):',
@@ -5312,7 +5312,6 @@ const mainApp = (function() {
             ai_error_generation: 'Произошла ошибка при генерации теста.',
             ai_question_count_label: '4. Укажите количество вопросов для ИИ:',
             ai_auto_mode_label: 'Авто',
-            ai_generate_button: '🤖 Сгенерировать тест (ИИ)',
             ai_style_simple: "Просто",
             ai_style_scientific: "Научно",
             ai_style_associative: "Аналогия",
@@ -5499,7 +5498,6 @@ const mainApp = (function() {
             quiz_settings_title: 'Тест баптаулары',
             cheat_sheet_title: 'Дайындалған шпаргалка:',
             quiz_finished_title: 'Тест аяқталды!',
-            parser_title: '.qst форматына түрлендіргіш',
             parser_description: 'Тест пішіміне түрлендіру үшін файлды жүктеңіз немесе мәтінді қойыңыз.',
             // Quiz Settings
             time_limit: 'Уақыт шектеуі (минут, 0 - шектеусіз):',
@@ -5547,7 +5545,7 @@ const mainApp = (function() {
             parser_result_title: 'Нәтиже:',
             download_parsed_button: '.qst файлын жүктеу',
             back_button: 'Артқа',
-
+            copy_success_short: '✓ Көшірілді!',
 
 
 
@@ -5585,7 +5583,6 @@ const mainApp = (function() {
             ai_error_generation: 'Тест жасау кезінде қате пайда болды.',
             ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
             ai_auto_mode_label: 'Авто',
-            ai_generate_button: '🤖 Тест құру (ЖИ)',
             ai_style_simple: "Қарапайым",
             ai_style_scientific: "Ғылыми",
             ai_style_associative: "Аналогия",
@@ -5784,7 +5781,11 @@ const mainApp = (function() {
             parser_pattern_numbered_plus: "Нөмірленген тізім (1.) басында '+' жауабы бар",
             parser_pattern_plus_at_start: "Жол басында '+' белгісі бар жауап",
             parser_pattern_tags_cyrillic: "<Вопрос> және <вариант> тегтері",
-            parser_pattern_tags_latin: "<question> және <variant> тегтері"
+            parser_pattern_tags_latin: "<question> және <variant> тегтері",
+
+            ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
+            ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
+            ai_auto_category_label: 'Санаттарды автоматты түрде жасау'
 
         },
         en: {
@@ -5816,7 +5817,6 @@ const mainApp = (function() {
             quiz_settings_title: 'Quiz Settings',
             cheat_sheet_title: 'Generated Cheat Sheet:',
             quiz_finished_title: 'Quiz Finished!',
-            parser_title: 'Converter to .qst',
             parser_description: 'Upload a file or paste text to convert into a quiz format.',
             // Quiz Settings
             time_limit: 'Time limit (minutes, 0 - no limit):',
@@ -5899,7 +5899,6 @@ const mainApp = (function() {
             ai_error_generation: 'An error occurred while generating the test.',
             ai_question_count_label: '4. Specify the number of questions for the AI:',
             ai_auto_mode_label: 'Auto',
-            ai_generate_button: '🤖 Generate Test (AI)',
             ai_style_simple: "Simple",
             ai_style_scientific: "Scientific",
             ai_style_associative: "Analogy",
@@ -6105,6 +6104,12 @@ const mainApp = (function() {
             parser_pattern_plus_at_start: "Answer with '+' at the start of the line",
             parser_pattern_tags_cyrillic: "Tags <Вопрос> and <вариант>",
             parser_pattern_tags_latin: "Tags <question> and <variant>"
+            copy_success_short: '✓ Copied!',
+
+
+            ai_question_count_label: '4. Specify the number of questions for the AI:',
+            ai_answer_count_label: '5. Specify the number of answer choices:',
+            ai_auto_category_label: 'Automatically create categories'
         }
 
 
