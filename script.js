@@ -10700,7 +10700,7 @@ const mainApp = (function() {
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
 
         try {
-            // --- НОВЫЙ ОБЪЕКТ ДЛЯ ОТПРАВКИ ---
+            // --- ИСПРАВЛЕННЫЙ ОБЪЕКТ ДЛЯ ОТПРАВКИ ---
             const payload = {
                 action: 'getExplanation',
                 question_text: currentAIQuestion.text,
@@ -10717,7 +10717,7 @@ const mainApp = (function() {
 
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                body: JSON.stringify(payload) // Отправляем новый объект
+                body: JSON.stringify(payload) // Убеждаемся, что отправляется именно этот объект
             });
             const result = await response.json();
 
