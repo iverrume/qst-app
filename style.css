@@ -294,11 +294,11 @@ body.glass-dark .theme-picker-dropdown {
 /* НОВЫЙ БЛОК: Особое, более сильное размытие для списка стилей ИИ */
 body.glass-dark .style-dropdown-content {
     /* 1. Делаем фон элемента почти полностью прозрачным, оставляя лишь легкий оттенок */
-    background-color: rgba(42, 42, 42, 0.2); 
+    background-color: rgba(42, 42, 42, 0.95);
 
     /* 2. Значительно увеличиваем степень размытия фона за элементом */
-    backdrop-filter: blur(75px);
-    -webkit-backdrop-filter: blur(75px);
+    backdrop-filter: blur(95px);
+    -webkit-backdrop-filter: blur(95px);
 }
 
 .header-controls {
