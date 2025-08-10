@@ -270,7 +270,14 @@ const ChatModule = (function() {
             sidebar_search_placeholder: 'Поиск каналов...',
             error_add_to_favorites_failed: "Не удалось добавить в избранное.",
             auth_required_to_view: 'Войдите для просмотра',
-            ai_summary_modal_title: '💡 Сводка от ИИ'
+            ai_summary_modal_title: '💡 Сводка от ИИ',
+
+            results_modal_title: "Результаты по тесту",
+            results_table_header_num: "#",
+            results_table_header_user: "Пользователь",
+            results_table_header_accuracy: "Точность",
+            results_table_header_time: "Время",
+            results_empty_state: "По этому тесту пока нет результатов."
 
 
         },
@@ -530,7 +537,14 @@ const ChatModule = (function() {
             sidebar_search_placeholder: 'Арналарды іздеу...',
             copy_success_short: '✓ Көшірілді!',
             auth_required_to_view: 'Көру үшін кіріңіз',
-            ai_summary_modal_title: '💡 ЖИ түйіндемесі'
+            ai_summary_modal_title: '💡 ЖИ түйіндемесі',
+
+            results_modal_title: "Тест нәтижелері",
+            results_table_header_num: "#",
+            results_table_header_user: "Пайдаланушы",
+            results_table_header_accuracy: "Дәлдік",
+            results_table_header_time: "Уақыт",
+            results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ."
         },
         en: {
             // TABS
@@ -789,7 +803,14 @@ const ChatModule = (function() {
             sidebar_search_placeholder: 'Search channels...',
             copy_success_short: '✓ Copied!',
             auth_required_to_view: 'Login to view',
-            ai_summary_modal_title: '💡 AI Summary'
+            ai_summary_modal_title: '💡 AI Summary',
+
+            results_modal_title: "Test Results",
+            results_table_header_num: "#",
+            results_table_header_user: "User",
+            results_table_header_accuracy: "Accuracy",
+            results_table_header_time: "Time",
+            results_empty_state: "There are no results for this test yet."
         }
     };
 
@@ -4718,40 +4739,6 @@ const ChatModule = (function() {
         }
     }
 
-    async function showTestResults(fileId, channelId) {
-        const modalTitle = document.getElementById('testResultsModalTitle');
-        const tableContainer = document.getElementById('testResultsTableContainer');
-        
-        modalTitle.textContent = _chat('results_modal_title');
-        tableContainer.innerHTML = `<div class="loading-placeholder">${_chat('loading_message')}</div>`;
-        showModal('testResultsModal');
-
-        try {
-            const querySnapshot = await db.collection('testResults')
-                .where('fileId', '==', fileId)
-                .where('channelId', '==', channelId)
-                .orderBy('accuracy', 'desc')
-                .get();
-                
-            if (querySnapshot.empty) {
-                tableContainer.innerHTML = `<div class="results-empty-state">${_chat('chat_test_results_empty')}</div>`;
-                return;
-            }
-            
-            let tableHTML = `...`; // (остальной код остается без изменений)
-
-            querySnapshot.docs.forEach((doc, index) => {
-                // ...
-            });
-            
-            tableHTML += `</tbody></table>`;
-            tableContainer.innerHTML = tableHTML;
-
-        } catch (error) {
-            console.error("Ошибка загрузки результатов теста:", error);
-            tableContainer.innerHTML = `<div class="results-empty-state">${_chat('chat_test_results_loading_error')} ${error.message}</div>`;
-        }
-    }
 
     function showAISummaryModal(title, content) {
         getEl('aiSummaryModalTitle').textContent = title;
@@ -4766,6 +4753,74 @@ const ChatModule = (function() {
         
         showModal('aiSummaryModal');
     }
+
+
+
+    async function showTestResults(fileId, channelId) {
+        const modalTitle = document.getElementById('testResultsModalTitle');
+        const tableContainer = document.getElementById('testResultsTableContainer');
+        
+        // Используем ключ перевода для заголовка
+        modalTitle.textContent = _chat('results_modal_title');
+        
+        // ИСПРАВЛЕНИЕ №1: Используем правильный ключ для "Загрузки"
+        tableContainer.innerHTML = `<div class="loading-placeholder">${_chat('loading_messages')}</div>`;
+        showModal('testResultsModal');
+
+        try {
+            const querySnapshot = await db.collection('testResults')
+                .where('fileId', '==', fileId)
+                .where('channelId', '==', channelId)
+                .orderBy('accuracy', 'desc')
+                .get();
+                
+            if (querySnapshot.empty) {
+                // Используем ключ перевода для пустого состояния
+                tableContainer.innerHTML = `<div class="results-empty-state">${_chat('chat_test_results_empty')}</div>`;
+                return;
+            }
+            
+            // ИСПРАВЛЕНИЕ №2: Собираем таблицу с правильными ключами для заголовков
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>                      
+                            <th>${_chat('results_table_header_num')}</th>
+                            <th>${_chat('results_table_header_user')}</th>
+                            <th>${_chat('results_table_header_accuracy')}</th>
+                            <th>${_chat('results_table_header_time')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            querySnapshot.docs.forEach((doc, index) => {
+                const result = doc.data();
+                const time = result.timeSpentSeconds;
+                const minutes = Math.floor(time / 60);
+                const seconds = time % 60;
+                const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                tableHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${escapeHTML(result.userName || _chat('anonymous_user'))}</td>
+                        <td>${result.accuracy.toFixed(1)}%</td>
+                        <td>${timeFormatted}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `</tbody></table>`;
+            tableContainer.innerHTML = tableHTML;
+
+        } catch (error) {
+            console.error("Ошибка загрузки результатов теста:", error);
+            // Используем ключ перевода для сообщения об ошибке
+            tableContainer.innerHTML = `<div class="results-empty-state">${_chat('chat_test_results_loading_error')} ${error.message}</div>`;
+        }
+    }
+
 
     function formatMessagesForAI(messages) {
         // Превращаем массив объектов сообщений в простой текстовый формат
@@ -4886,6 +4941,8 @@ const ChatModule = (function() {
         getEl('aiSelectionBanner').classList.add('hidden');
         getEl('messageArea').classList.remove('selection-mode');
     }
+
+
 
     function handleAiMessageSelection(event) {
         // Функция сработает только если мы в режиме выбора
@@ -5114,6 +5171,15 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91g
 
 const mainApp = (function() {
     'use strict';
+
+
+    const THEMES = {
+        'glass-dark': { name: 'Стекло (тёмная)', icon: '🔮' },
+        'synthwave-mode':  { name: 'Неон', icon: '🔭' },
+        'dark-mode':       { name: 'Тёмная', icon: '🌙' },
+        'claude-mode':     { name: 'Claude', icon: '🌤️' },
+        'light':      { name: 'Светлая', icon: '☀️' }
+    };
 
     let backButtonPressedOnce = false;
 
@@ -6106,6 +6172,7 @@ const mainApp = (function() {
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList, appTitleHeader;
 
+    let themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon;
     let converterTabBtn, aiGeneratorTabBtn, converterContent, aiGeneratorContent, 
         aiTopicInput, generateTestFromTopicBtn, aiTopicQuestionCount, aiTopicAnswerCount;
     let aiTopicAutoCategory;
@@ -6270,6 +6337,12 @@ const mainApp = (function() {
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
         appTitleHeader = getEl('appTitleHeader');
+
+        themeDropdownContainer = getEl('themeDropdownContainer');
+        themeDropdownButton = getEl('themeDropdownButton');
+        themeDropdownContent = getEl('themeDropdownContent');
+        themeIcon = getEl('themeIcon');
+
         flashcardsModeCheckbox = getEl('flashcardsMode');
 
         translateQuestionBtn = getEl('translateQuestionBtn');
@@ -6315,6 +6388,7 @@ const mainApp = (function() {
         loadSavedSession();
         const savedLang = localStorage.getItem('appLanguage') || 'ru';
         populateParserPatterns();
+        populateThemeDropdown();
         setLanguage(savedLang);
         createVariantFilterCheckboxes();
         manageBackButtonInterceptor();
@@ -6487,7 +6561,40 @@ const mainApp = (function() {
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
         readingModeCheckbox?.addEventListener('change', handleReadingModeChange);
         timeLimitInput.addEventListener('input', () => timeLimitValueDisplay.textContent = timeLimitInput.value);
-        themeToggleButton?.addEventListener('click', toggleTheme);
+
+
+
+
+        // --- Исправленная логика для выпадающего списка тем ---
+        themeDropdownButton?.addEventListener('click', (event) => {
+            event.stopPropagation(); // Предотвращаем "всплытие" клика до window
+            themeDropdownContent.classList.toggle('show');
+        });
+
+        themeDropdownContent?.addEventListener('click', (event) => {
+            event.preventDefault();
+            const target = event.target.closest('a');
+            if (target && target.dataset.theme) {
+                setTheme(target.dataset.theme);
+                themeDropdownContent.classList.remove('show'); // <-- ВОТ ЭТА СТРОКА
+            }
+        });
+        
+        // Универсальный обработчик для закрытия всех выпадающих списков
+        window.addEventListener('click', (event) => {
+            // Закрываем список поисковиков
+            if (!event.target.closest('#webSearchDropdown') && searchDropdownContent?.classList.contains('show')) {
+                searchDropdownContent.classList.remove('show');
+            }
+            // Закрываем список тем (УЛУЧШЕННАЯ ЛОГИКА)
+            if (!event.target.closest('#themeDropdownContainer') && themeDropdownContent?.classList.contains('show')) {
+                themeDropdownContent.classList.remove('show');
+            }
+        });
+
+
+
+
         languageToggle?.addEventListener('click', toggleLanguage);
         chatToggleBtn?.addEventListener('click', () => {
             ChatModule.openChatModal();
@@ -9105,44 +9212,56 @@ const mainApp = (function() {
  
 
     function loadTheme() {
-        const currentTheme = localStorage.getItem('theme') || 'glass-dark'; 
-        // Сначала убираем все классы тем
-        document.body.classList.remove('dark-mode', 'claude-mode', 'synthwave-mode', 'glass-light', 'glass-dark'); 
+        const currentThemeId = localStorage.getItem('theme') || 'glass-dark';
+        const themeData = THEMES[currentThemeId] || THEMES['glass-dark'];
 
-        if (currentTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '🔭'; 
-        } else if (currentTheme === 'claude') {
-            document.body.classList.add('claude-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '🌙';
-        } else if (currentTheme === 'synthwave') {
-            document.body.classList.add('synthwave-mode');
-            if (themeToggleButton) themeToggleButton.textContent = '💎';
-        } else if (currentTheme === 'glass-light') { // <-- НОВЫЙ БЛОК
-            document.body.classList.add('glass-light');
-            if (themeToggleButton) themeToggleButton.textContent = '🔮'; // Иконка для светлого стекла
-        } else if (currentTheme === 'glass-dark') { // <-- НОВЫЙ БЛОК
-            document.body.classList.add('glass-dark');
-            if (themeToggleButton) themeToggleButton.textContent = '☀️'; // Иконка для темного стекла
-        } else {
-            // Светлая тема (light) - нет класса
-            if (themeToggleButton) themeToggleButton.textContent = '🌤️';
+        // 1. Удаляем ВСЕ возможные классы тем, перебирая ключи объекта THEMES
+        Object.keys(THEMES).forEach(themeKey => {
+            document.body.classList.remove(themeKey);
+        });
+        
+        // 2. Добавляем нужный класс, если это не светлая тема
+        if (currentThemeId !== 'light') {
+            document.body.classList.add(currentThemeId);
+        }
+
+        // 3. Обновляем главную кнопку
+        if (themeIcon) themeIcon.textContent = themeData.icon;
+
+        // 4. Обновляем активный пункт в выпадающем списке
+        if (themeDropdownContent) {
+            const links = themeDropdownContent.querySelectorAll('a');
+            links.forEach(link => {
+                link.classList.toggle('active', link.dataset.theme === currentThemeId);
+            });
         }
     }
 
 
-    function toggleTheme() {
-            const themes = ['light', 'claude', 'dark', 'synthwave', 'glass-light', 'glass-dark']; 
-            const currentTheme = localStorage.getItem('theme') || 'glass-dark';
-            const currentIndex = themes.indexOf(currentTheme);
-            const nextIndex = (currentIndex + 1) % themes.length; // Находим индекс следующей темы
-            const newTheme = themes[nextIndex];
+    function populateThemeDropdown() {
+        if (!themeDropdownContent) return;
+        themeDropdownContent.innerHTML = ''; // Очищаем на случай повторного вызова
 
-            localStorage.setItem('theme', newTheme);
-            loadTheme(); // Вызываем обновленную функцию для применения темы и иконки
+        for (const themeId in THEMES) {
+            const theme = THEMES[themeId];
+            const link = document.createElement('a');
+            link.href = '#';
+            link.dataset.theme = themeId;
+            link.title = theme.name; // Добавляем название темы во всплывающую подсказку
+            link.innerHTML = `<span class="theme-option-icon">${theme.icon}</span>`;
+            themeDropdownContent.appendChild(link);
         }
+    }
 
-      
+    /**
+     * Устанавливает новую тему, сохраняет и обновляет UI.
+     * @param {string} themeId - ID новой темы.
+     */
+    function setTheme(themeId) {
+        localStorage.setItem('theme', themeId);
+        loadTheme();
+    }
+
 
     async function handleCopyExplanation() {
         const outputEl = getEl('aiExplanationOutput');
@@ -9201,22 +9320,38 @@ const mainApp = (function() {
         });
         
         // 5. Обновляем всплывающие подсказки (атрибут title) у кнопок в шапке.
-        getEl('copyQuestionBtnQuiz').title = translations.copy_question_title;
-        getEl('searchWebButton').title = translations.search_web_title;
-        getEl('chatToggle').title = translations.chat_button_title;
-        getEl('quickModeToggle').title = translations.quick_mode_title;
-        getEl('triggerWordToggle').title = translations.trigger_words_title;
-        getEl('themeToggle').title = translations.theme_button_title;
-        getEl('languageToggle').title = translations.language_toggle_title;
-        getEl('favoriteQuestionBtn').title = translations.favorite_button_title;
-        getEl('translateQuestionBtn').title = translations.translate_question_title;
+        const copyBtn = getEl('copyQuestionBtnQuiz');
+        if (copyBtn) copyBtn.title = translations.copy_question_title;
         
-        // 6. Обновляем текст на самой кнопке переключения языка.
-        // ИСПОЛЬЗУЕМ ЦЕНТРАЛИЗОВАННЫЕ КОНСТАНТЫ ВМЕСТО ЛОКАЛЬНЫХ МАССИВОВ.
-        const currentIndex = LANG_CYCLE.indexOf(lang);
-        const nextIndex = (currentIndex + 1) % LANG_CYCLE.length;
-        const nextLangCode = LANG_CYCLE[nextIndex];
-        languageToggle.textContent = SUPPORTED_LANGS[nextLangCode];
+        const searchWebBtn = getEl('searchWebButton');
+        if (searchWebBtn) searchWebBtn.title = translations.search_web_title;
+        
+        const chatBtn = getEl('chatToggle');
+        if (chatBtn) chatBtn.title = translations.chat_button_title;
+        
+        const quickModeBtn = getEl('quickModeToggle');
+        if (quickModeBtn) quickModeBtn.title = translations.quick_mode_title;
+        
+        const triggerBtn = getEl('triggerWordToggle');
+        if (triggerBtn) triggerBtn.title = translations.trigger_words_title;
+        
+        const themeBtn = getEl('themeDropdownButton');
+        if (themeBtn) themeBtn.title = translations.theme_button_title;
+        
+        const langBtn = getEl('languageToggle');
+        if (langBtn) langBtn.title = translations.language_toggle_title;
+        
+        const favoriteBtn = getEl('favoriteQuestionBtn');
+        if (favoriteBtn) favoriteBtn.title = translations.favorite_button_title;
+        
+        const translateBtn = getEl('translateQuestionBtn');
+        if (translateBtn) translateBtn.title = translations.translate_question_title;
+        
+// 6. Обновляем текст на самой кнопке переключения языка.
+        // Кнопка должна показывать аббревиатуру ТЕКУЩЕГО языка.
+        if (languageToggle && SUPPORTED_LANGS[lang]) {
+            languageToggle.textContent = SUPPORTED_LANGS[lang];
+        }
 
         // 7. Если открыт экран результатов поиска, перерисовываем его, чтобы применился новый язык.
         if (searchResultsContainer && !searchResultsContainer.classList.contains('hidden') && searchResultsData.length > 0) {

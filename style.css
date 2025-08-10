@@ -169,21 +169,7 @@ body.synthwave-mode {
     --accent: #38BDF8;
 }
 
-/* --- Стеклянная светлая тема --- */
-body.glass-light {
-    --bg-color: #e0e0e0; /* Фоновый цвет, если градиент не загрузится */
-    --container-bg-color: rgba(255, 255, 255, 0.65); /* Белый, полупрозрачный */
-    --text-color: #2c3e50;
-    --secondary-text-color: #5a6268;
-    --heading-color: #2c3e50;
-    --border-color: rgba(255, 255, 255, 0.4);
-    --dashed-border-color: rgba(255, 255, 255, 0.3);
-    --input-bg-color: rgba(255, 255, 255, 0.5);
-    --input-hover-bg-color: rgba(255, 255, 255, 0.7);
-    --input-border-color: rgba(200, 200, 200, 0.8);
-    --button-primary-bg: #2c3e50;
-    --button-primary-hover-bg: #34495e;
-}
+
 
 /* --- Стеклянная темная тема (как на скриншоте) --- */
 body.glass-dark {
@@ -251,8 +237,7 @@ body::before {
 }
 
 /* Показываем фон только для наших новых тем */
-body.glass-dark::before,
-body.glass-light::before {
+body.glass-dark::before {
     opacity: 1;
 }
 
@@ -295,19 +280,12 @@ body.glass-light::before {
 
 /* Применяем эффект стекла к основным элементам в наших новых темах */
 body.glass-dark .container,
-body.glass-light .container,
 body.glass-dark .advanced-chat-modal, 
-body.glass-light .advanced-chat-modal, 
 body.glass-dark .modal-content,
-body.glass-light .modal-content,
 body.glass-dark .auth-modal,
-body.glass-light .auth-modal,
 body.glass-dark .dropdown-content, 
-body.glass-light .dropdown-content,
 body.glass-dark .style-dropdown-content, /* <-- ДОБАВЛЕНО */
-body.glass-light .style-dropdown-content, /* <-- ДОБАВЛЕНО */
-body.glass-dark .filter-dropdown, /* <-- ДОБАВЛЕНО на всякий случай */
-body.glass-light .filter-dropdown { /* <-- ДОБАВЛЕНО на всякий случай */
+body.glass-dark .filter-dropdown { 
     backdrop-filter: blur(28px); 
     -webkit-backdrop-filter: blur(28px); 
 }
@@ -1110,7 +1088,10 @@ body.dark-mode footer {
 .dropdown-content {
     display: none;
     position: absolute;
-    right: 0;
+    /* УБИРАЕМ right: 0; и ДОБАВЛЯЕМ эти две строки: */
+    left: 50%;
+    transform: translateX(-50%);
+    /* ------------------------------------------- */
     background-color: var(--container-bg-color);
     min-width: 160px;
     box-shadow: 0px 8px 16px 0px var(--shadow-color);
@@ -1132,9 +1113,12 @@ body.dark-mode footer {
 }
 
 .dropdown-content.show {
-    display: block;
+    display: block; /* По умолчанию для всех выпадающих списков */
 }
 
+#themeDropdownContent.show {
+    display: flex;
+}
 
 /* ===== ГИБРИДНЫЕ СТИЛИ ЧАТА (Красивый + Функциональный) ===== */
 
@@ -1283,7 +1267,6 @@ body.dark-mode {
 }
 
 /* Делаем оверлей чата прозрачным только для стеклянных тем */
-body.glass-light .advanced-chat-overlay,
 body.glass-dark .advanced-chat-overlay {
     background: transparent;
 }
@@ -4780,8 +4763,7 @@ body.claude-mode .message.mine.pinned .message-content {
 /* Группируем все кастомные темы для применения общих стилей */
 body.dark-mode,
 body.synthwave-mode,
-body.glass-dark,
-body.glass-light { /* <-- ДОБАВЛЕНО */
+body.glass-dark { /* <-- ДОБАВЛЕНО */
     /* Стили для Firefox */
     scrollbar-width: thin;
     scrollbar-color: var(--secondary-text-color) transparent; /* <-- ИЗМЕНЕНО */
@@ -4790,23 +4772,20 @@ body.glass-light { /* <-- ДОБАВЛЕНО */
 /* Стили для Webkit-браузеров (Chrome, Safari, Edge) */
 body.dark-mode ::-webkit-scrollbar,
 body.synthwave-mode ::-webkit-scrollbar,
-body.glass-dark ::-webkit-scrollbar,
-body.glass-light ::-webkit-scrollbar { /* <-- ДОБАВЛЕНО */
+body.glass-dark ::-webkit-scrollbar { /* <-- ДОБАВЛЕНО */
     width: 8px;
     height: 8px;
 }
 
 body.dark-mode ::-webkit-scrollbar-track,
 body.synthwave-mode ::-webkit-scrollbar-track,
-body.glass-dark ::-webkit-scrollbar-track,
-body.glass-light ::-webkit-scrollbar-track { /* <-- ДОБАВЛЕНО */
+body.glass-dark ::-webkit-scrollbar-track { /* <-- ДОБАВЛЕНО */
     background: transparent; /* Делаем дорожку полностью прозрачной */
 }
 
 body.dark-mode ::-webkit-scrollbar-thumb,
 body.synthwave-mode ::-webkit-scrollbar-thumb,
-body.glass-dark ::-webkit-scrollbar-thumb,
-body.glass-light ::-webkit-scrollbar-thumb { /* <-- ДОБАВЛЕНО */
+body.glass-dark ::-webkit-scrollbar-thumb { /* <-- ДОБАВЛЕНО */
     /* Используем переменные вместо жестко заданных цветов */
     background-color: var(--secondary-text-color); /* <-- ИЗМЕНЕНО */
     border-radius: 4px;
@@ -4816,8 +4795,7 @@ body.glass-light ::-webkit-scrollbar-thumb { /* <-- ДОБАВЛЕНО */
 
 body.dark-mode ::-webkit-scrollbar-thumb:hover,
 body.synthwave-mode ::-webkit-scrollbar-thumb:hover,
-body.glass-dark ::-webkit-scrollbar-thumb:hover,
-body.glass-light ::-webkit-scrollbar-thumb:hover { /* <-- ДОБАВЛЕНО */
+body.glass-dark ::-webkit-scrollbar-thumb:hover { /* <-- ДОБАВЛЕНО */
     /* При наведении делаем ползунок чуть ярче */
     background-color: var(--text-color); /* <-- ИЗМЕНЕНО */
 }
@@ -6082,11 +6060,7 @@ body.glass-dark .header-buttons button {
 /* === СТИЛИ ДЛЯ ЗАКРЕПЛЕННЫХ СООБЩЕНИЙ В GLASS-ТЕМАХ === */
 /* ======================================================= */
 
-/* Светлая стеклянная тема */
-body.glass-light .message.pinned .message-content {
-    background: rgba(44, 62, 80, 0.1); /* Полупрозрачная темная подложка */
-    border-left: 4px solid var(--button-primary-bg);
-}
+
 
 /* Темная стеклянная тема */
 body.glass-dark .message.pinned .message-content {
@@ -6136,7 +6110,6 @@ body.glass-dark #feedbackArea .explain-btn:hover {
 /* ======================================================= */
 
 /* Применяем стили к обычным кнопкам в обеих стеклянных темах */
-body.glass-light button,
 body.glass-dark button {
     background-color: var(--input-bg-color); /* Полупрозрачный фон */
     color: var(--text-color);
@@ -6146,36 +6119,19 @@ body.glass-dark button {
 }
 
 /* Эффект при наведении */
-body.glass-light button:hover:not(:disabled),
 body.glass-dark button:hover:not(:disabled) {
     background-color: var(--input-hover-bg-color);
     border-color: var(--input-hover-border-color);
 }
 
 /* Стили для красной кнопки "Завершить тест" */
-body.glass-light #finishTestButton.finish-test-early,
 body.glass-dark #finishTestButton.finish-test-early {
     background-color: var(--feedback-incorrect-bg);
     color: var(--feedback-incorrect-text);
     border-color: var(--feedback-incorrect-border);
 }
 
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ КНОПКИ ОТПРАВКИ В ТЕМЕ GLASS-LIGHT    === */
-/* ======================================================= */
 
-body.glass-light .advanced-send-btn {
-    background: var(--container-bg-color); /* Полупрозрачный белый фон */
-    color: var(--text-color); /* Темно-серый цвет иконки */
-    border: 1px solid var(--border-color); /* Полупрозрачная рамка */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-body.glass-light .advanced-send-btn:hover {
-    background: var(--input-hover-bg-color); /* Чуть более заметный фон при наведении */
-    border-color: var(--input-hover-border-color);
-}
 
 /* ======================================================= */
 /* ===     КЛАСС ДЛЯ БЛОКИРОВКИ СКРОЛЛА СТРАНИЦЫ      === */
@@ -6233,44 +6189,20 @@ body.chat-open {
 }
 
 /* Особые стили для стеклянных тем */
-body.glass-dark #feedbackArea.correct-feedback .explain-btn:hover,
-body.glass-light #feedbackArea.correct-feedback .explain-btn:hover {
+body.glass-dark #feedbackArea.correct-feedback .explain-btn:hover {
     color: var(--container-bg-color); /* Фон кнопки станет цветом текста */
 }
 
-body.glass-dark #feedbackArea.incorrect-feedback .explain-btn:hover,
-body.glass-light #feedbackArea.incorrect-feedback .explain-btn:hover {
+body.glass-dark #feedbackArea.incorrect-feedback .explain-btn:hover {
     color: var(--container-bg-color); /* Фон кнопки станет цветом текста */
 }
 
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ ОКНА ИИ В ТЕМЕ GLASS-LIGHT            === */
-/* ======================================================= */
-
-/* 1. Делаем фон самого модального окна светлее и прозрачнее */
-body.glass-light #aiExplanationModal .modal-content {
-    background-color: rgba(255, 255, 255, 0.85); /* Более светлый и прозрачный фон */
-    border-color: rgba(255, 255, 255, 0.6); /* Более светлая рамка */
-}
-
-/* 2. Делаем внутренние блоки (вопрос, выпадающий список) более прозрачными */
-body.glass-light #aiExplanationQuestion,
-body.glass-light .style-dropdown-btn {
-    background-color: rgba(255, 255, 255, 0.4); /* Менее плотный фон */
-    border-color: rgba(200, 200, 200, 0.6); /* Полупрозрачная рамка */
-}
-
-/* 3. Улучшаем внешний вид выпадающего списка стилей */
-body.glass-light .style-dropdown-content {
-    background-color: rgba(255, 255, 255, 0.7); /* Почти непрозрачный для читаемости */
-}
 
 /* ======================================================= */
 /* ===   УНИВЕРСАЛЬНЫЕ СТЕКЛЯННЫЕ КНОПКИ ДЛЯ GLASS-ТЕМ  === */
 /* ======================================================= */
 
 /* 1. Применяем стеклянный стиль ко ВСЕМ кнопкам, КРОМЕ навигации */
-body.glass-light button:not(.quick-nav-btn), /* <-- ИЗМЕНЕНО */
 body.glass-dark button:not(.quick-nav-btn) {  /* <-- ИЗМЕНЕНО */
     background-color: var(--input-bg-color) !important;
     color: var(--text-color) !important;
@@ -6280,7 +6212,6 @@ body.glass-dark button:not(.quick-nav-btn) {  /* <-- ИЗМЕНЕНО */
     transition: all 0.2s ease;
 }
 
-body.glass-light button:not(.quick-nav-btn):hover:not(:disabled), /* <-- ИЗМЕНЕНО */
 body.glass-dark button:not(.quick-nav-btn):hover:not(:disabled) {  /* <-- ИЗМЕНЕНО */
     background-color: var(--input-hover-bg-color) !important;
     border-color: var(--input-hover-border-color) !important;
@@ -6289,7 +6220,6 @@ body.glass-dark button:not(.quick-nav-btn):hover:not(:disabled) {  /* <-- ИЗМ
 /* 2. Теперь ПЕРЕОПРЕДЕЛЯЕМ стили для кнопок, которые должны быть другими */
 
 /* Красная кнопка "Завершить тест" */
-body.glass-light #finishTestButton.finish-test-early,
 body.glass-dark #finishTestButton.finish-test-early {
     background-color: var(--feedback-incorrect-bg) !important;
     color: var(--feedback-incorrect-text) !important;
@@ -6297,16 +6227,12 @@ body.glass-dark #finishTestButton.finish-test-early {
 }
 
 /* Кнопки в шапке (смайлики) - им не нужен фон */
-body.glass-light .header-buttons button,
 body.glass-dark .header-buttons button {
     background-color: rgba(255, 255, 255, 0.1) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Активные кнопки в шапке */
-body.glass-light #quickModeToggle.active,
-body.glass-light #triggerWordToggle.active,
-body.glass-light #translateQuestionBtn.active,
 body.glass-dark #quickModeToggle.active,
 body.glass-dark #triggerWordToggle.active,
 body.glass-dark #translateQuestionBtn.active {
@@ -6316,7 +6242,6 @@ body.glass-dark #translateQuestionBtn.active {
 }
 
 /* Кнопка отправки в чате */
-body.glass-light .advanced-send-btn,
 body.glass-dark .advanced-send-btn {
     background: var(--button-primary-bg) !important;
     color: var(--button-primary-text) !important;
@@ -6328,7 +6253,6 @@ body.glass-dark .advanced-send-btn {
 /* ======================================================= */
 
 /* Базовый стиль для кнопок навигации в стеклянных темах */
-body.glass-light .quick-nav-btn,
 body.glass-dark .quick-nav-btn {
     background-color: var(--input-bg-color);
     color: var(--text-color);
@@ -6336,29 +6260,12 @@ body.glass-dark .quick-nav-btn {
 }
 
 /* Стиль для текущей активной кнопки */
-body.glass-light .quick-nav-btn.current,
 body.glass-dark .quick-nav-btn.current {
     background-color: var(--button-primary-bg);
     color: var(--button-primary-text);
     border-color: var(--button-primary-bg);
 }
 
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ КНОПКИ АНАЛИТИКИ ИИ (GLASS-LIGHT)     === */
-/* ======================================================= */
-
-body.glass-light #aiAnalysisBtn {
-    background: rgba(142, 68, 173, 0.25) !important; /* Полупрозрачный фиолетовый фон */
-    color: #6c5ce7 !important; /* Яркий фиолетовый текст */
-    border: 1px solid rgba(142, 68, 173, 0.4) !important; /* Полупрозрачная фиолетовая рамка */
-    font-weight: bold;
-}
-
-body.glass-light #aiAnalysisBtn:hover {
-    background: rgba(142, 68, 173, 0.4) !important;
-    color: #5b48d6 !important;
-    border-color: rgba(142, 68, 173, 0.6) !important;
-}
 
 /* ======================================================= */
 /* === СТИЛИ ДЛЯ РЕЗУЛЬТАТОВ ПОИСКА (GLASS-DARK)       === */
@@ -6442,4 +6349,344 @@ footer p a {
 footer p a:hover {
     color: var(--text-color);        /* При наведении делаем текст чуть ярче */
     text-decoration: underline;      /* И добавляем подчеркивание для наглядности */
+}
+
+/* ======================================================= */
+/* === ИСПРАВЛЕНИЕ АКТИВНЫХ КНОПОК ДЛЯ GLASS-DARK ТЕМЫ === */
+/* ======================================================= */
+
+body.glass-dark #quickModeToggle.active,
+body.glass-dark #triggerWordToggle.active,
+body.glass-dark #translateQuestionBtn.active {
+    /* Яркий, но полупрозрачный фон для эффекта "включено" */
+    background-color: rgba(56, 189, 248, 0.4) !important; /* Голубой из темы synthwave, но прозрачный */
+    
+    /* Яркий цвет текста/иконки */
+    color: #E2E8F0 !important;
+    
+    /* Светящаяся рамка */
+    border-color: rgba(56, 189, 248, 0.7) !important;
+    
+    /* Добавим легкую тень для эффекта свечения */
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ КАРТОЧЕК ВОПРОСОВ В ТЕМЕ SYNTHWAVE  === */
+/* ======================================================= */
+
+/* 1. Применяем единый стиль для карточек вопросов и избранного */
+body.synthwave-mode .question-bubble,
+body.synthwave-mode .favorite-item {
+    /* Используем фон, как у других контейнеров в этой теме */
+    background: var(--container-bg-color); 
+    
+    /* Делаем акцентную рамку в цвет заголовков (голубой) */
+    border: 2px solid var(--accent); 
+    
+    /* Убираем стандартную тень и добавляем легкое неоновое свечение */
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1); 
+}
+
+/* 2. Гарантируем правильный цвет текста внутри карточки */
+body.synthwave-mode .question-bubble .question-content p,
+body.synthwave-mode .question-bubble .question-content p strong,
+body.synthwave-mode .favorite-item p {
+    /* Используем основной цвет текста темы */
+    color: var(--text-color);
+}
+
+/* 3. Стилизуем кнопки ответов, чтобы они тоже соответствовали теме */
+body.synthwave-mode .option-vote-btn {
+    /* Фон чуть темнее, чем у карточки, для контраста */
+    background-color: var(--input-bg-color); 
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.synthwave-mode .option-vote-btn:hover {
+    background-color: var(--input-hover-bg-color);
+    border-color: var(--accent);
+}
+
+/* 4. Стиль для значка с количеством голосов */
+body.synthwave-mode .option-votes-badge {
+    /* Используем основной цвет кнопок (бирюзовый) */
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+}
+
+/* 5. Стиль для квадратика 'Q' */
+body.synthwave-mode .question-square {
+    background: linear-gradient(135deg, var(--button-secondary-bg), var(--button-secondary-hover-bg));
+}
+
+body.synthwave-mode .question-square.has-votes {
+    /* Если есть голоса, делаем его бирюзовым, как кнопки */
+    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
+}
+
+
+
+
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ КАРТОЧЕК ВОПРОСОВ В ТЕМЕ CLAUDE-MODE === */
+/* ======================================================= */
+
+/* 1. Основной стиль для фона и рамки карточки */
+body.claude-mode .question-bubble,
+body.claude-mode .favorite-item {
+    /* Используем самый светлый бежевый фон из темы */
+    background-color: var(--container-bg-color);
+    
+    /* Добавляем теплую рамку в цвет темы */
+    border: 1px solid var(--border-color);
+    
+    /* Применяем мягкую тень в коричневых тонах */
+    box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+/* 2. Делаем текст читаемым и стильным */
+body.claude-mode .question-bubble .question-content p {
+    /* Основной текст вопроса будет мягкого коричневого цвета */
+    color: var(--text-color);
+}
+
+/* ...а подписи "Автор", "Дата" делаем приглушенными */
+body.claude-mode .question-bubble .question-content p strong {
+    color: var(--secondary-text-color);
+}
+
+/* 3. Стилизуем варианты ответов */
+body.claude-mode .option-vote-btn {
+    /* Делаем фон белым для контраста, как у полей ввода в этой теме */
+    background-color: var(--input-bg-color);
+    border-color: var(--input-border-color);
+    color: var(--text-color);
+}
+
+body.claude-mode .option-vote-btn:hover {
+    background-color: var(--input-hover-bg-color);
+    border-color: var(--input-hover-border-color);
+}
+
+/* 4. Приводим кнопки действий в соответствие с темой */
+body.claude-mode .question-actions .add-to-favorites-btn {
+    /* Кнопка "В избранное" теперь использует приглушенный зеленый */
+    background: var(--button-success-bg);
+    color: var(--button-primary-text); /* Белый текст */
+    border: none;
+}
+
+body.claude-mode .question-actions .copy-question-btn {
+    /* Кнопка "Копировать" использует вторичный цвет кнопок */
+    background: var(--button-secondary-bg);
+    color: var(--button-secondary-text); /* Коричневый текст */
+    border: none;
+}
+
+/* 5. Обновляем иконку "Q" и значок с голосами */
+body.claude-mode .question-square {
+    /* Иконка "Q" теперь в приглушенном зеленом цвете */
+    background: var(--button-success-bg);
+}
+
+body.claude-mode .question-square.has-votes {
+    /* Если есть голоса, делаем иконку в основном цвете темы */
+    background: var(--button-primary-bg);
+}
+
+body.claude-mode .option-votes-badge {
+    /* Значок с количеством голосов также использует основной цвет */
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
+}
+
+
+
+
+
+
+/* ======================================================= */
+/* ===  СТИЛИ ДЛЯ КАРТОЧЕК ВОПРОСОВ В ТЕМЕ GLASS-DARK   === */
+/* ======================================================= */
+
+/* 1. Основной стиль для фона и рамки карточки */
+body.glass-dark .question-bubble,
+body.glass-dark .favorite-item {
+    background: var(--input-bg-color); /* Полупрозрачный фон, как у полей ввода */
+    border: 1px solid var(--border-color); /* Полупрозрачная светлая рамка */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Более подходящая тень */
+}
+
+/* 2. Стилизуем иконку "Q" и значок с голосами */
+body.glass-dark .question-square {
+    background: var(--button-primary-bg); /* Нейтральный серый, как у кнопок */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+body.glass-dark .question-square.has-votes {
+    background: linear-gradient(135deg, #22C55E, #16a34a); /* Сочный зеленый для акцента */
+}
+
+body.glass-dark .vote-indicator {
+    border-color: var(--input-bg-color); /* Рамка значка должна совпадать с фоном карточки */
+}
+
+/* 3. Делаем текст читаемым */
+body.glass-dark .question-content p {
+    color: var(--text-color); /* Основной светлый текст */
+}
+
+body.glass-dark .question-content p strong {
+    color: var(--secondary-text-color); /* Приглушенный цвет для подписей "Автор", "Дата" */
+}
+
+/* 4. Стилизуем кнопки с вариантами ответов */
+body.glass-dark .option-vote-btn {
+    background-color: transparent; /* Делаем кнопки частью карточки */
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+body.glass-dark .option-vote-btn:hover {
+    background-color: var(--input-hover-bg-color); /* Легкая подсветка при наведении */
+    border-color: var(--input-hover-border-color);
+}
+
+/* 5. Значок с количеством голосов на кнопке ответа */
+body.glass-dark .option-votes-badge {
+    background-color: var(--button-secondary-bg); /* Нейтральный серый фон */
+    color: var(--button-secondary-text);
+}
+
+/* 6. Стили для кнопок, за которые проголосовал пользователь */
+body.glass-dark .option-vote-btn.voted-by-user {
+    border-color: #38BDF8; /* Яркий голубой акцент */
+    background-color: rgba(56, 189, 248, 0.1);
+}
+
+/* 7. Кнопки действий "В избранное" и "Копировать" */
+body.glass-dark .question-actions button {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+body.glass-dark .question-actions button:hover {
+    border-color: var(--text-color);
+}
+
+/* Делаем кнопку "В избранное" особенной */
+body.glass-dark .question-actions .add-to-favorites-btn {
+    background-color: var(--feedback-correct-bg);
+    color: var(--feedback-correct-text);
+    border-color: var(--feedback-correct-border);
+}
+
+/* ======================================================= */
+/* ===     СТИЛИ ДЛЯ МИНИАТЮРНОГО ВЫПАДАЮЩЕГО СПИСКА   === */
+/* ======================================================= */
+
+/* 1. Стиль для основной кнопки (теперь она снова похожа на остальные) */
+#themeDropdownButton {
+    background: none;
+    border: 1px solid var(--theme-toggle-border);
+    color: var(--text-color);
+    font-size: 1.3em;
+    padding: 5px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+#themeDropdownButton:hover {
+    background-color: var(--theme-toggle-hover-bg);
+}
+
+/* 2. Контейнер выпадающего списка */
+.theme-picker-dropdown {
+    padding: 8px; /* Небольшие отступы */
+    /* display: flex;  <-- УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТУ СТРОКУ */
+    flex-wrap: wrap; /* Разрешаем перенос, если не помещаются */
+    gap: 6px; /* Отступы между иконками */
+    min-width: auto; /* Убираем минимальную ширину */
+    width: max-content; /* Ширина по содержимому */
+}
+
+/* 3. Элементы (ссылки) в списке */
+.theme-picker-dropdown a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;  /* Делаем квадратными */
+    height: 36px;
+    border-radius: 50%; /* Делаем круглыми */
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.theme-picker-dropdown a:hover {
+    background-color: var(--input-hover-bg-color);
+    transform: scale(1.1);
+}
+
+/* 4. Иконки внутри ссылок */
+.theme-picker-dropdown .theme-option-icon {
+    font-size: 1.5em;
+}
+
+/* 5. Стиль для активной (выбранной) темы */
+.theme-picker-dropdown a.active {
+    background-color: var(--button-primary-bg);
+    box-shadow: 0 0 0 2px var(--container-bg-color), 0 0 0 4px var(--button-primary-bg);
+}
+
+.theme-picker-dropdown a.active:hover {
+    background-color: var(--button-primary-hover-bg);
+}
+
+/* 6. Адаптивность для мобильных (уменьшаем размеры) */
+@media (max-width: 768px) {
+    #themeDropdownButton {
+        padding: 4px 6px;
+        font-size: 1.1em;
+    }
+}
+
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ КНОПКИ СМЕНЫ ЯЗЫКА            === */
+/* ======================================================= */
+
+/* Применяем стили, как у других кнопок-иконок */
+#languageToggle {
+    background: none;
+    border: 1px solid var(--theme-toggle-border);
+    color: var(--text-color);
+    padding: 5px 12px; /* Делаем чуть шире, чтобы текст помещался */
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    line-height: 1.3;
+    flex-shrink: 0;
+    
+    /* Устанавливаем шрифт, чтобы он выглядел аккуратно */
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+#languageToggle:hover {
+    background-color: var(--theme-toggle-hover-bg);
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    #languageToggle {
+        padding: 4px 8px; /* Делаем еще компактнее */
+        font-size: 0.85em;
+    }
 }

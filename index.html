@@ -58,7 +58,18 @@
                     <button id="chatToggle" title="Открыть чат" data-lang-key="chat_button_title" data-lang-skip-content="true">💬</button>
                     <button id="quickModeToggle" title="Быстрый режим (Автопереход)" class="hidden" data-lang-key="quick_mode_title" data-lang-skip-content="true">⚡</button> 
                     <button id="triggerWordToggle" title="Триггер-слова" class="hidden" data-lang-key="trigger_words_title" data-lang-skip-content="true">✍️</button>
-                    <button id="themeToggle" title="Сменить тему" data-lang-key="theme_button_title" data-lang-skip-content="true">🌙</button>
+
+
+                    <div class="dropdown" id="themeDropdownContainer">
+                        <button id="themeDropdownButton" title="Сменить тему" data-lang-key="theme_button_title" data-lang-skip-content="true">
+                            <span id="themeIcon">🌗</span>
+                        </button>
+                        <div id="themeDropdownContent" class="dropdown-content theme-picker-dropdown">
+                            <!-- Сюда JS вставит иконки тем -->
+                        </div>
+                    </div>
+
+
                     <button id="languageToggle" title="Сменить язык" data-lang-key="language_toggle_title">Рус</button>
                     <button id="favoriteQuestionBtn" title="Добавить в избранное" class="hidden" data-lang-key="favorite_button_title" data-lang-skip-content="true">⭐</button>
                     <button id="translateQuestionBtn" title="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true">अа</button>
