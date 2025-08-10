@@ -5467,7 +5467,9 @@ const mainApp = (function() {
             parser_pattern_numbered_plus: "Нумерованный список (1.) с ответом '+' в начале",
             parser_pattern_plus_at_start: "Ответ с '+' в начале строки",
             parser_pattern_tags_cyrillic: "Теги <Вопрос> и <вариант>",
-            parser_pattern_tags_latin: "Теги <question> и <variant>"
+            parser_pattern_tags_latin: "Теги <question> и <variant>",
+
+            shuffle_n_questions: "Случайный набор из"
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -5785,7 +5787,9 @@ const mainApp = (function() {
 
             ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
             ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
-            ai_auto_category_label: 'Санаттарды автоматты түрде жасау'
+            ai_auto_category_label: 'Санаттарды автоматты түрде жасау',
+
+            shuffle_n_questions: "Араластырылған жиынтық"
 
         },
         en: {
@@ -6109,7 +6113,9 @@ const mainApp = (function() {
 
             ai_question_count_label: '4. Specify the number of questions for the AI:',
             ai_answer_count_label: '5. Specify the number of answer choices:',
-            ai_auto_category_label: 'Automatically create categories'
+            ai_auto_category_label: 'Automatically create categories',
+
+            shuffle_n_questions: "Random set of"
         }
 
 
@@ -6176,6 +6182,9 @@ const mainApp = (function() {
         prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList, appTitleHeader;
+
+    let rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
+            shuffleNCheckbox, shuffleNCountInput, sliderTicks;
 
     let themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon;
     let converterTabBtn, aiGeneratorTabBtn, converterContent, aiGeneratorContent, 
@@ -6362,6 +6371,14 @@ const mainApp = (function() {
         aiTopicQuestionCount = getEl('aiTopicQuestionCount');
         aiTopicAnswerCount = getEl('aiTopicAnswerCount');
         aiTopicAutoCategory = getEl('aiTopicAutoCategory');
+
+        rangeSliderStart = getEl('rangeSliderStart');
+        rangeSliderEnd = getEl('rangeSliderEnd');
+        sliderProgress = getEl('sliderProgress');
+        questionRangeGroup = getEl('questionRangeGroup');
+        shuffleNCheckbox = getEl('shuffleNQuestions');
+        shuffleNCountInput = getEl('shuffleNQuestionsCount');
+        sliderTicks = getEl('sliderTicks');
 
         initServiceWorkerUpdater();
 
@@ -6656,6 +6673,8 @@ const mainApp = (function() {
         downloadTranslatedTxtButton?.addEventListener('click', handleDownloadTranslatedTxt);
         downloadTranslatedQstButton?.addEventListener('click', handleDownloadTranslatedQst);
         // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
+        shuffleNCheckbox?.addEventListener('change', handleShuffleNToggle);
 
 
     }
@@ -7906,11 +7925,15 @@ const mainApp = (function() {
             quizSetupArea.classList.remove('hidden');
             
             const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
-            questionRangeStartInput.value = 1;
-            questionRangeStartInput.max = questionCount;
-            questionRangeEndInput.value = questionCount;
-            questionRangeEndInput.max = questionCount;
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
+            shuffleNCountInput.max = questionCount; // Устанавливаем макс. для случайного выбора
+            
+            // Инициализируем двойной ползунок
+            initDualSlider(questionCount);
+            
+            // Сбрасываем состояние режима случайного выбора
+            shuffleNCheckbox.checked = false;
+            handleShuffleNToggle();
 
             if (quizContext && !quizContext.isPractice) {
                 shuffleQuestionsCheckbox.checked = true;
@@ -8096,14 +8119,59 @@ const mainApp = (function() {
     }
 
 
-
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
-        // Используем контекст, сохраненный ранее в processFile
         let finalQuizContext = currentQuizContext; 
         
         let sourceArray;
-        if (!isErrorReview) {
-            // Просто считываем значения с экрана настроек
+
+        // --- НОВАЯ ЛОГИКА: Проверяем режим случайного выбора ---
+        if (shuffleNCheckbox.checked && !isErrorReview) {
+            quizSettings.shuffleQuestions = true; // Принудительно включаем перемешивание
+            quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
+            quizSettings.feedbackMode = feedbackModeCheckbox.checked;
+            quizSettings.readingMode = readingModeCheckbox.checked;
+            quizSettings.flashcardsMode = flashcardsModeCheckbox.checked;
+            quizSettings.timeLimit = parseInt(timeLimitInput.value);
+
+            const n = parseInt(shuffleNCountInput.value);
+            const allActualQuestions = allParsedQuestions.filter(q => q.type !== 'category');
+            
+            if (n > allActualQuestions.length || n < 1) {
+                alert(`Укажите количество от 1 до ${allActualQuestions.length}`);
+                return;
+            }
+
+            // --- Сложная логика для случайного выбора с сохранением категорий ---
+            const questionMap = new Map();
+            allParsedQuestions.forEach((q, index) => {
+                if(q.type !== 'category') {
+                    questionMap.set(index, q);
+                }
+            });
+
+            const allQuestionIndices = Array.from(questionMap.keys());
+            shuffleArray(allQuestionIndices);
+            const selectedIndices = new Set(allQuestionIndices.slice(0, n));
+            
+            sourceArray = [];
+            allParsedQuestions.forEach((item, index) => {
+                if (item.type === 'category' || selectedIndices.has(index)) {
+                     // Добавляем к вопросу его оригинальный индекс для кэша переводов
+                    sourceArray.push({ ...item, originalIndex: index });
+                }
+            });
+
+            // Очистка пустых категорий
+            sourceArray = sourceArray.filter((item, index, arr) => {
+                if (item.type === 'category') {
+                    const nextItem = arr[index + 1];
+                    return nextItem && nextItem.type !== 'category';
+                }
+                return true;
+            });
+
+        } else if (!isErrorReview) {
+            // --- Старая логика для диапазона ---
             quizSettings.timeLimit = parseInt(timeLimitInput.value);
             quizSettings.shuffleQuestions = shuffleQuestionsCheckbox.checked;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
@@ -8133,17 +8201,19 @@ const mainApp = (function() {
                 }));     
 
         } else {
+            // --- Логика для работы над ошибками (не меняется) ---
             sourceArray = questionsSource;
             quizSettings.timeLimit = 0;
             quizSettings.shuffleQuestions = false;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
         }
         
+        // --- Общая логика обработки выбранных вопросов (не меняется) ---
         if (quizSettings.shuffleQuestions && !isErrorReview) {
             let shuffledQuiz = [];
             let questionGroup = [];
 
-            sourceArray.forEach((item, index) => {
+            sourceArray.forEach((item) => {
                 if (item.type === 'category') {
                     if (questionGroup.length > 0) {
                         shuffleArray(questionGroup);
@@ -8169,6 +8239,7 @@ const mainApp = (function() {
 
         questionsForCurrentQuiz = questionsForCurrentQuiz.map(q => JSON.parse(JSON.stringify(q)));
         triggerWordsUsedInQuiz = questionsForCurrentQuiz.some(q => q.type !== 'category' && q.triggeredWordIndices && q.triggeredWordIndices.length > 0);
+        
         if (quizSettings.readingMode) {
             questionsForCurrentQuiz.forEach(q => {
                 if (q.type !== 'category' && q.options && q.correctAnswerIndex > -1) {
@@ -8195,10 +8266,10 @@ const mainApp = (function() {
             return;
         }
 
-        // Добавляем уникальный индекс внутри текущего теста для каждого вопроса
         questionsForCurrentQuiz.forEach((q, index) => {
             q.originalIndexInQuiz = index;
         });
+        
         quizSetupArea.classList.add('hidden');
         cheatSheetResultArea.classList.add('hidden');
         gradusFoldersContainer.classList.add('hidden');
@@ -8690,23 +8761,20 @@ const mainApp = (function() {
             Array.from(answerOptionsEl.children).forEach(li => {
                 li.removeEventListener('click', handleAnswerSelect);
                 li.classList.add('answered');
-            });    
-            // 6. Создаем панель обратной связи с кнопкой "Объяснить"
+            });
+        
+// 6. Создаем панель обратной связи с кнопкой "Объяснить"
             const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
             
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
             explainBtn.className = 'explain-btn';
 
-            // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
             if (isCorrect) {
-                // Если ответ верный, объясняем по оригинальному вопросу
                 explainBtn.onclick = () => showAIExplanation(originalQuestion);
             } else {
-                // Если ответ неверный, объясняем по тому вопросу (переведенному или нет),
-                // который видел пользователь, чтобы избежать путаницы языков.
                 const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-                explainBtn.onclick = () => showAIExplanation(questionForValidation, incorrectAnswerText);
+                explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
             }
             
             // Очищаем старое содержимое и добавляем новые элементы
@@ -9149,14 +9217,14 @@ const mainApp = (function() {
             alert(_('error_session_not_found'));
             return;
         }
+
         // 1. Находим исходный файл в "Недавно использованных"
         const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
         const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
 
         if (!originalFile) {
             alert(_('error_session_file_not_found'));
-            // Передаем имя файла, чтобы удалить конкретную "осиротевшую" сессию
-            deleteSavedSession(sessionData.originalFileNameForReview); 
+            deleteSavedSession(); // Удаляем "осиротевшую" сессию
             return;
         }
 
@@ -9217,7 +9285,6 @@ const mainApp = (function() {
         // 8. Добавляем защиту от случайного закрытия вкладки
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
-    
     
     function deleteSavedSession(fileName) { // <-- Принимает имя файла
         if (confirm(_('confirm_delete_session').replace('{fileName}', fileName))) {
@@ -9540,7 +9607,7 @@ const mainApp = (function() {
         if (!parserInput || !generateTestFromTextBtn) return;
 
         const currentLength = parserInput.value.length;
-        const originalButtonText = _('ai_generate_from_text_button');
+        const originalButtonText = _('ai_generate_button');
 
         if (currentLength > AI_INPUT_CHAR_LIMIT) {
             // Если лимит превышен
@@ -11431,9 +11498,160 @@ const mainApp = (function() {
     }
 
 
+    /**
+     * Инициализирует и настраивает двойной ползунок выбора диапазона.
+     * @param {number} totalQuestions - Общее количество вопросов в тесте.
+     */
+    function initDualSlider(totalQuestions) {
+        if (!rangeSliderStart || !rangeSliderEnd) return;
 
+        // Устанавливаем максимальные значения для всех связанных элементов
+        rangeSliderStart.max = totalQuestions;
+        rangeSliderEnd.max = totalQuestions;
+        questionRangeStartInput.max = totalQuestions;
+        questionRangeEndInput.max = totalQuestions;
 
+        // Сбрасываем значения по умолчанию (весь диапазон)
+        rangeSliderStart.value = 1;
+        questionRangeStartInput.value = 1;
+        rangeSliderEnd.value = totalQuestions;
+        questionRangeEndInput.value = totalQuestions;
+        
+        // Удаляем старые обработчики, чтобы избежать дублирования
+        rangeSliderStart.removeEventListener('input', handleSliderInput);
+        rangeSliderEnd.removeEventListener('input', handleSliderInput);
+        questionRangeStartInput.removeEventListener('input', handleNumberInput);
+        questionRangeEndInput.removeEventListener('input', handleNumberInput);
 
+        rangeSliderStart.addEventListener('input', handleSliderInput);
+        rangeSliderEnd.addEventListener('input', handleSliderInput);
+        questionRangeStartInput.addEventListener('input', handleNumberInput);
+        questionRangeEndInput.addEventListener('input', handleNumberInput);
+
+        updateSliderVisuals();
+        generateSliderTicks(totalQuestions); // <-- ДОБАВЛЕНО
+    }
+    
+    /**
+     * Обновляет визуальное состояние ползунка (закрашенную область).
+     */
+    function updateSliderVisuals() {
+        if (!sliderProgress || !rangeSliderStart || !rangeSliderEnd) return;
+        
+        const startValue = parseInt(rangeSliderStart.value);
+        const endValue = parseInt(rangeSliderEnd.value);
+        const max = parseInt(rangeSliderStart.max);
+
+        const startPercent = ((startValue - 1) / (max - 1)) * 100;
+        const endPercent = ((endValue - 1) / (max - 1)) * 100;
+
+        sliderProgress.style.left = `${startPercent}%`;
+        sliderProgress.style.width = `${endPercent - startPercent}%`;
+    }
+
+    /**
+     * Обрабатывает изменение значений на ползунках.
+     */
+    function handleSliderInput(event) {
+        const startSlider = rangeSliderStart;
+        const endSlider = rangeSliderEnd;
+        let startValue = parseInt(startSlider.value);
+        let endValue = parseInt(endSlider.value);
+
+        // Предотвращаем пересечение бегунков
+        if (endValue < startValue) {
+            if (event.target.id === 'rangeSliderStart') {
+                startSlider.value = endValue;
+                startValue = endValue;
+            } else {
+                endSlider.value = startValue;
+                endValue = startValue;
+            }
+        }
+
+        // Синхронизируем числовые поля
+        questionRangeStartInput.value = startValue;
+        questionRangeEndInput.value = endValue;
+        
+        updateSliderVisuals();
+    }
+
+    /**
+     * Обрабатывает изменение значений в числовых полях.
+     */
+    function handleNumberInput(event) {
+        let startValue = parseInt(questionRangeStartInput.value);
+        let endValue = parseInt(questionRangeEndInput.value);
+        const max = parseInt(rangeSliderStart.max);
+
+        // Валидация
+        if (startValue < 1) startValue = 1;
+        if (endValue > max) endValue = max;
+        if (startValue > endValue) {
+             if (event.target.id === 'questionRangeStart') {
+                startValue = endValue;
+             } else {
+                endValue = startValue;
+             }
+        }
+        
+        questionRangeStartInput.value = startValue;
+        questionRangeEndInput.value = endValue;
+
+        // Синхронизируем ползунки
+        rangeSliderStart.value = startValue;
+        rangeSliderEnd.value = endValue;
+        
+        updateSliderVisuals();
+    }
+    
+    /**
+     * Включает/отключает блок выбора диапазона в зависимости от чекбокса "Случайный набор".
+     */
+    function handleShuffleNToggle() {
+        const isDisabled = shuffleNCheckbox.checked;
+        questionRangeGroup.classList.toggle('disabled', isDisabled);
+        shuffleNCountInput.disabled = !isDisabled;
+    }
+
+    /**
+     * Генерирует и отображает насечки (ticks) под двойным ползунком.
+     * @param {number} totalQuestions - Общее количество вопросов.
+     */
+    function generateSliderTicks(totalQuestions) {
+        if (!sliderTicks || totalQuestions < 10) {
+            sliderTicks.innerHTML = '';
+            return;
+        }
+
+        sliderTicks.innerHTML = ''; // Очищаем старые насечки
+
+        // Динамически рассчитываем интервал для насечек, чтобы их не было слишком много
+        let interval = Math.max(5, Math.floor(totalQuestions / 20));
+        interval = Math.ceil(interval / 5) * 5; // Округляем до ближайшего числа, кратного 5
+
+        // Определяем, как часто ставить числовые метки
+        const labelIntervalMultiplier = totalQuestions > 200 ? 5 : 4;
+        const labelInterval = interval * labelIntervalMultiplier;
+
+        for (let i = 1; i <= totalQuestions; i += interval) {
+            const positionPercent = ((i - 1) / (totalQuestions - 1)) * 100;
+            
+            const tick = document.createElement('div');
+            tick.className = 'tick';
+            tick.style.left = `${positionPercent}%`;
+            sliderTicks.appendChild(tick);
+
+            // Добавляем метки для первого, последнего и "юбилейных" значений
+            if (i === 1 || i % labelInterval === 0 || i + interval > totalQuestions) {
+                const label = document.createElement('span');
+                label.className = 'tick-label';
+                label.textContent = (i + interval > totalQuestions && i !== totalQuestions) ? totalQuestions : i;
+                label.style.left = `${positionPercent}%`;
+                sliderTicks.appendChild(label);
+            }
+        }
+    }
     // --- Public methods exposed from mainApp ---
     return {
         init: initializeApp,

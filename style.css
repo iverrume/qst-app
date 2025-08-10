@@ -290,9 +290,6 @@ body.glass-dark .filter-dropdown {
     -webkit-backdrop-filter: blur(28px); 
 }
 
-
-
-
 .header-controls {
     position: relative; /* Это важно, оставляем */
     display: flex;
@@ -318,8 +315,6 @@ body.glass-dark .filter-dropdown {
 .container > .header-controls {
     margin-bottom: 50px;
 }
-
-
 
 
 
@@ -775,25 +770,6 @@ body.dark-mode #answerOptions li.actual-correct {
     width: 60%;
     max-width: 250px;
 }
-
-
-/* ======================================================= */
-/* === АДАПТИВНОСТЬ КНОПОК НАВИГАЦИИ В ТЕСТЕ (370px)   === */
-/* ======================================================= */
-@media (max-width: 370px) {
-    #questionNavigationControls {
-        flex-direction: column; /* Ставит кнопки друг под другом (в столбец) */
-        align-items: center;    /* Центрирует их по горизонтали */
-        gap: 15px;              /* Увеличивает вертикальный отступ между ними */
-    }
-
-    #questionNavigationControls button {
-        width: 80%; /* Делает кнопки шире для удобства нажатия */
-        max-width: 250px; /* Но не позволяет им стать слишком широкими */
-    }
-}
-
-
 
 .quiz-footer-controls {
     margin-top: 25px;
@@ -6713,4 +6689,127 @@ body.glass-dark .question-actions .add-to-favorites-btn {
         padding: 4px 8px; /* Делаем еще компактнее */
         font-size: 0.85em;
     }
+}
+
+/* --- Стили для двойного ползунка --- */
+
+.range-label-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dual-slider-container {
+    position: relative;
+    height: 20px;
+    margin: 10px 0;
+}
+
+.dual-slider-container input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 5px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+    margin: 0;
+}
+
+/* Верхний слайдер должен быть "прозрачным" для кликов */
+.dual-slider-container input[type="range"]:last-of-type {
+    pointer-events: auto;
+}
+
+/* Стили для бегунков (thumbs) */
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background-color: var(--button-primary-bg);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    margin-top: -8px; /* Выравнивание по центру дорожки */
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background-color: var(--button-primary-bg);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    border: none;
+}
+
+.slider-track, .slider-progress {
+    position: absolute;
+    width: 100%;
+    height: 5px;
+    border-radius: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+}
+
+.slider-track {
+    background-color: var(--border-color);
+    z-index: 0;
+}
+
+.slider-progress {
+    background-color: var(--button-primary-bg);
+    z-index: 1;
+}
+
+.range-inputs-container {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* Стиль для отключения группы настроек */
+.settings-group.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.settings-group.disabled input,
+.settings-group.disabled label {
+    cursor: not-allowed;
+}
+
+/* --- Стили для насечек на ползунке --- */
+
+.slider-ticks {
+    position: absolute;
+    top: 18px; /* Располагаем под основной линией слайдера */
+    left: 10px;  /* Отступ, равный половине ширины бегунка */
+    right: 10px; /* Отступ с другого края */
+    height: 10px;
+    pointer-events: none; /* Чтобы не мешали кликать по слайдеру */
+    z-index: 1;
+}
+
+.tick {
+    position: absolute;
+    width: 1px;
+    height: 5px;
+    background-color: var(--secondary-text-color);
+    top: 0;
+}
+
+.tick-label {
+    position: absolute;
+    top: 8px; /* Располагаем под насечкой */
+    transform: translateX(-50%);
+    font-size: 0.75em;
+    color: var(--secondary-text-color);
 }

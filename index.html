@@ -139,11 +139,32 @@
                     <input type="range" id="timeLimit" min="0" max="180" value="0" step="10">
                     <span id="timeLimitValue">0</span> <span data-lang-key="time_limit_minutes">мин</span>
                 </div>
+                <div class="settings-group" id="questionRangeGroup">
+                    <div class="range-label-container">
+                        <label for="questionRangeStart" data-lang-key="question_range">Диапазон вопросов:</label>
+                        <span id="maxQuestionsInfo"></span>
+                    </div>
+
+                    <div class="dual-slider-container">
+                        <div id="sliderTrack" class="slider-track"></div>
+                        <div id="sliderTicks" class="slider-ticks"></div>
+                        <div id="sliderProgress" class="slider-progress"></div>
+                        <input type="range" id="rangeSliderStart" min="1" value="1" step="1">
+                        <input type="range" id="rangeSliderEnd" min="1" value="100" step="1">
+                    </div>
+
+                    <div class="range-inputs-container">
+                        <span data-lang-key="range_from">От</span> 
+                        <input type="number" id="questionRangeStart" min="1" value="1" class="range-input">
+                        <span data-lang-key="range_to">До</span> 
+                        <input type="number" id="questionRangeEnd" min="1" class="range-input">
+                    </div>
+                </div>
                 <div class="settings-group">
-                    <label for="questionRangeStart" data-lang-key="question_range">Диапазон вопросов:</label>
-                    <span data-lang-key="range_from">От</span> <input type="number" id="questionRangeStart" min="1" value="1" class="range-input">
-                    <span data-lang-key="range_to">До</span> <input type="number" id="questionRangeEnd" min="1" class="range-input">
-                    <span id="maxQuestionsInfo"></span>
+                    <input type="checkbox" id="shuffleNQuestions">
+                    <label for="shuffleNQuestions" data-lang-key="shuffle_n_questions">Случайный набор из</label>
+                    <input type="number" id="shuffleNQuestionsCount" min="1" value="50" class="range-input" style="width: 70px;">
+                    <label for="shuffleNQuestionsCount" data-lang-key="questions_label_for_range">вопросов</label>
                 </div>
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleQuestions">
