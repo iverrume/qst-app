@@ -6292,6 +6292,7 @@ const mainApp = (function() {
     let currentAIUserIncorrectAnswer = null;
     let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
     const AI_INPUT_CHAR_LIMIT = 14000; // Безопасный лимит символов для ИИ
+    let aiExplanationAbortController = null;
 
 
     
