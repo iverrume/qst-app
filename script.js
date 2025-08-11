@@ -2,27 +2,22 @@
     // ====   НОВЫЙ БЛОК: ОПТИМИЗАЦИЯ СКОРОСТИ   ====
     // ============================================
 
-    // Функция для автоопределения "слабого" устройства
+    // Функция для определения, является ли устройство мобильным
+    function isMobileDevice() {
+      // Проверяем по User Agent строке - это самый надежный способ
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Функция-решатель: включать ли режим низкой производительности?
     function shouldEnableLowPowerMode() {
-      try {
-        // navigator.hardwareConcurrency доступен в большинстве современных браузеров
-        const coreCount = navigator.hardwareConcurrency || 2;
-        // navigator.deviceMemory - экспериментальное API, может быть недоступно
-        const memoryInGB = navigator.deviceMemory || 2;
-        
-        // Считаем устройство "слабым", если у него 4 или меньше ядер, ИЛИ 4 ГБ или меньше ОЗУ.
-        const isWeakHardware = coreCount <= 4 || memoryInGB <= 4;
-        
-        // Проверяем системную настройку "Уменьшить движение"
-        const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        
-        console.log(`Оценка производительности: Ядра=${coreCount}, Память=${memoryInGB}GB. Слабое железо: ${isWeakHardware}. Уменьшить движение: ${prefersReducedMotion}`);
-        
-        return isWeakHardware || prefersReducedMotion;
-      } catch (e) {
-        console.warn("Не удалось определить производительность устройства, будет использован стандартный режим.", e);
-        return false; // В случае ошибки, работаем в стандартном режиме
-      }
+      // Проверяем системную настройку "Уменьшить движение" (это важно для доступности)
+      const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      const isMobile = isMobileDevice();
+      console.log(`Проверка устройства: Мобильное: ${isMobile}. Уменьшить движение: ${prefersReducedMotion}`);
+      
+      // Включаем режим, если это мобильное устройство ИЛИ если пользователь сам этого хочет
+      return isMobile || prefersReducedMotion;
     }
 
     // Применяем "легкий" режим, если нужно
@@ -35,7 +30,6 @@
 
     // Вызываем функцию при старте приложения
     applyLowPowerMode();
-
 
 
 // ============================================
