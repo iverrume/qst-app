@@ -10739,8 +10739,19 @@ const mainApp = (function() {
 
 
 
-    async function fetchAndDisplayExplanation(style, userSelectedAnswerText) { // 💡 Принимаем выбранный ответ
+
+    async function fetchAndDisplayExplanation(style, userSelectedAnswerText) {
         if (!currentAIQuestion) return;
+
+        // --- 💡 НАЧАЛО ИЗМЕНЕНИЙ: ЛОГИКА ОТМЕНЫ ---
+        // Если предыдущий запрос все еще выполняется, отменяем его.
+        if (aiExplanationAbortController) {
+            aiExplanationAbortController.abort();
+        }
+        // Создаем новый "пульт управления" для ТЕКУЩЕГО запроса.
+        aiExplanationAbortController = new AbortController();
+        const signal = aiExplanationAbortController.signal;
+        // --- 💡 КОНЕЦ ИЗМЕНЕНИЙ ---
 
         // Обновляем UI для выбора стиля
         const styleContentEl = getEl('aiExplanationStyleContent');
@@ -10752,20 +10763,21 @@ const mainApp = (function() {
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
 
         try {
-            // --- 💡 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Формируем правильный payload ---
             const payload = {
                 action: 'getExplanation',
                 question_text: currentAIQuestion.text,
                 correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
-                user_incorrect_answer_text: userSelectedAnswerText, // Всегда отправляем выбранный ответ
+                user_incorrect_answer_text: userSelectedAnswerText,
                 style: style,
                 targetLanguage: localStorage.getItem('appLanguage') || 'ru'
             };
-            
+
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: signal // 💡 Передаем сигнал отмены в запрос
             });
+            
             const result = await response.json();
 
             if (result.success) {
@@ -10778,6 +10790,14 @@ const mainApp = (function() {
                 throw new Error(result.error);
             }
         } catch (error) {
+            // --- 💡 ИЗМЕНЕНИЕ В ОБРАБОТКЕ ОШИБКИ ---
+            // Если ошибка произошла из-за нашей отмены, мы НЕ показываем ее пользователю.
+            if (error.name === 'AbortError') {
+                console.log('Предыдущий запрос на объяснение был отменен.');
+                return; // Просто выходим из функции
+            }
+
+            // Если это любая другая (настоящая) ошибка, показываем ее.
             let userFriendlyError;
             if (error.message.includes("INTERNAL") || error.message.includes("HTTP 500")) {
                 userFriendlyError = _('ai_error_server');
@@ -10787,6 +10807,7 @@ const mainApp = (function() {
             outputEl.innerHTML = `<p style="color: var(--feedback-incorrect-text);">${userFriendlyError}</p>`;
         }
     }
+
 
     function handleExplainClickInSearch(event, rawQuestionText) {
         event.stopPropagation(); // Предотвращаем срабатывание других кликов
@@ -10809,6 +10830,7 @@ const mainApp = (function() {
             alert(_('error_no_question_for_explanation'));
         }
     }
+
 
 
     async function handleTranslateClickInSearch(event, buttonElement, rawQuestionText) {
