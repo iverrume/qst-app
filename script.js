@@ -8622,7 +8622,9 @@ const mainApp = (function() {
         if (explainBtn) {
             explainBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                showAIExplanation(question); 
+                // 💡 Считаем, что пользователь "выбрал" правильный ответ, т.к. другого нет
+                const correctAnswerText = question.options[question.correctAnswerIndex].text;
+                showAIExplanation(question, correctAnswerText); 
             });
         }
         
@@ -8828,22 +8830,19 @@ const mainApp = (function() {
                 li.classList.add('answered');
             });
         
-// 6. Создаем панель обратной связи с кнопкой "Объяснить"
+            // 6. Создаем панель обратной связи с кнопкой "Объяснить"
             const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
-            
+
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
             explainBtn.className = 'explain-btn';
 
-            if (isCorrect) {
-                explainBtn.onclick = () => showAIExplanation(originalQuestion);
-            } else {
-                const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-                explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
-            }
-            
+            // 💡 ВСЕГДА передаем текст ВЫБРАННОГО пользователем варианта
+            const selectedOptionText = questionForValidation.options[selectedIndex].text;
+            explainBtn.onclick = () => showAIExplanation(originalQuestion, selectedOptionText);
+
             // Очищаем старое содержимое и добавляем новые элементы
-            feedbackAreaEl.innerHTML = ''; 
+            feedbackAreaEl.innerHTML = '';
             const textNode = document.createTextNode(feedbackText);
             feedbackAreaEl.appendChild(textNode);
             feedbackAreaEl.appendChild(explainBtn);
@@ -10597,45 +10596,48 @@ const mainApp = (function() {
 
 
  
-    async function showAIExplanation(question, userIncorrectAnswerText = null) {
+
+    async function showAIExplanation(question, userSelectedAnswerText = null) { // 💡 Принимаем выбранный ответ
         currentAIQuestion = question;
-        currentAIUserIncorrectAnswer = userIncorrectAnswerText;
+        // 💡 Если ответ не передан явно, считаем, что пользователь "выбрал" правильный
+        // Это нужно для случаев вызова из поиска или для правильных ответов в тесте
+        const finalSelectedAnswer = userSelectedAnswerText !== null 
+            ? userSelectedAnswerText 
+            : question.options[question.correctAnswerIndex].text;
+        
+        currentAIUserIncorrectAnswer = finalSelectedAnswer; // Сохраняем для смены стиля
         currentAITranslation = null;
         isAIModalShowingTranslation = false;
         
         const outputEl = getEl('aiExplanationOutput');
         const toggleBtn = getEl('aiExplanationTranslateBtn');
-        const questionEl = getEl('aiExplanationQuestion');
         
         toggleBtn.classList.add('hidden');
         outputEl.innerHTML = '';
 
+        // ... (код для настройки стилей остается без изменений)
         const styleContentEl = getEl('aiExplanationStyleContent');
         const styleTextEl = getEl('aiExplanationStyleText');
         styleContentEl.innerHTML = ''; 
-        
         const styles = ['simple', 'scientific', 'associative', 'stepbystep', 'practical', 'visual'];
-        
         styles.forEach(styleKey => {
             const link = document.createElement('a');
             link.href = '#';
             link.dataset.style = styleKey;
             link.textContent = _('ai_style_' + styleKey.toLowerCase());
-            
-            if (styleKey === 'simple') {
-                link.classList.add('active');
-            }
+            if (styleKey === 'simple') link.classList.add('active');
             styleContentEl.appendChild(link);
         });
         styleTextEl.textContent = _('ai_style_simple');
 
-        showGlobalLoader(_('ai_explanation_title')); // Используем ключ
+
+        showGlobalLoader(_('ai_explanation_title'));
 
         try {
+            // ... (код для определения, нужен ли перевод, остается без изменений)
             if (isTranslateModeEnabled) {
                 const lang = localStorage.getItem('appLanguage') || 'ru';
                 const translationResult = await getCachedOrFetchTranslation(question, question.originalIndex, lang);
-                
                 if (translationResult) {
                     currentAITranslation = translationResult.question;
                     isAIModalShowingTranslation = true;
@@ -10644,7 +10646,6 @@ const mainApp = (function() {
             } else {
                 const appLang = localStorage.getItem('appLanguage') || 'ru';
                 const questionLang = detectLanguage(question.text);
-
                 if (appLang !== questionLang) {
                     toggleBtn.classList.remove('hidden');
                 }
@@ -10654,7 +10655,8 @@ const mainApp = (function() {
             document.body.classList.add('chat-open');
             ChatModule.showModal('aiExplanationModal');
             
-            fetchAndDisplayExplanation('simple', userIncorrectAnswerText);
+            // 💡 Запускаем получение объяснения, передавая выбранный ответ
+            fetchAndDisplayExplanation('simple', finalSelectedAnswer);
 
         } catch (error) {
             console.error("Ошибка при подготовке окна объяснения:", error);
@@ -10737,9 +10739,10 @@ const mainApp = (function() {
 
 
 
-    async function fetchAndDisplayExplanation(style, userIncorrectAnswerText = null) { // <<<--- Добавлен второй параметр
+    async function fetchAndDisplayExplanation(style, userSelectedAnswerText) { // 💡 Принимаем выбранный ответ
         if (!currentAIQuestion) return;
 
+        // Обновляем UI для выбора стиля
         const styleContentEl = getEl('aiExplanationStyleContent');
         styleContentEl.querySelectorAll('a').forEach(a => a.classList.remove('active'));
         const activeLink = styleContentEl.querySelector(`a[data-style="${style}"]`);
@@ -10749,24 +10752,19 @@ const mainApp = (function() {
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
 
         try {
-            // --- НОВЫЙ ОБЪЕКТ ДЛЯ ОТПРАВКИ ---
+            // --- 💡 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Формируем правильный payload ---
             const payload = {
                 action: 'getExplanation',
                 question_text: currentAIQuestion.text,
                 correct_answer_text: currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text,
+                user_incorrect_answer_text: userSelectedAnswerText, // Всегда отправляем выбранный ответ
                 style: style,
                 targetLanguage: localStorage.getItem('appLanguage') || 'ru'
             };
-
-            // Если неверный ответ был передан, добавляем его в payload
-            if (userIncorrectAnswerText) {
-                payload.user_incorrect_answer_text = userIncorrectAnswerText;
-            }
-            // ---------------------------------
-
+            
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                body: JSON.stringify(payload) // Отправляем новый объект
+                body: JSON.stringify(payload)
             });
             const result = await response.json();
 
@@ -10774,7 +10772,6 @@ const mainApp = (function() {
                 if (window.marked) {
                     outputEl.innerHTML = marked.parse(result.explanation);
                 } else {
-                    console.warn('Библиотека marked.js не загружена. Отображение без форматирования.');
                     outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
                 }
             } else {
@@ -10791,7 +10788,6 @@ const mainApp = (function() {
         }
     }
 
-
     function handleExplainClickInSearch(event, rawQuestionText) {
         event.stopPropagation(); // Предотвращаем срабатывание других кликов
 
@@ -10802,10 +10798,10 @@ const mainApp = (function() {
         if (parsedQuestions && parsedQuestions.length > 0) {
             const questionObject = parsedQuestions[0];
             
-            // Проверяем, что парсинг прошел успешно и у нас есть все данные
             if (questionObject && questionObject.text && questionObject.options) {
-                // Вызываем уже существующую функцию для показа модального окна
-                showAIExplanation(questionObject);
+                // 💡 Считаем, что пользователь хочет объяснение ПРАВИЛЬНОГО ответа
+                const correctAnswerText = questionObject.options[questionObject.correctAnswerIndex].text;
+                showAIExplanation(questionObject, correctAnswerText);
             } else {
                 alert(_('error_cannot_fully_process_question'));
             }
