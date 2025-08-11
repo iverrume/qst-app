@@ -294,11 +294,11 @@ body.glass-dark .theme-picker-dropdown {
 /* НОВЫЙ БЛОК: Особое, более сильное размытие для списка стилей ИИ */
 body.glass-dark .style-dropdown-content {
     /* 1. Делаем фон элемента почти полностью прозрачным, оставляя лишь легкий оттенок */
-    background-color: rgba(42, 42, 42, 0.95);
+    background-color: rgba(42, 42, 42, 0.2); 
 
     /* 2. Значительно увеличиваем степень размытия фона за элементом */
-    backdrop-filter: blur(95px);
-    -webkit-backdrop-filter: blur(95px);
+    backdrop-filter: blur(75px);
+    -webkit-backdrop-filter: blur(75px);
 }
 
 .header-controls {
@@ -6848,4 +6848,64 @@ input[type="range"]::-moz-range-thumb {
 /* Прогресс-бар для одиночного слайдера всегда начинается слева */
 #timeSliderProgress {
     left: 0;
+}
+
+
+/* ======================================================= */
+/* ===         ОПТИМИЗАЦИЯ ДЛЯ СЛАБЫХ УСТРОЙСТВ        === */
+/* ======================================================= */
+
+/* 1. Уважаем системные настройки пользователя на уменьшение анимаций */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 2. Стиль для режима низкой производительности (.low-power) */
+
+/* Значительно уменьшаем размытие для всех "стеклянных" элементов */
+.low-power .container,
+.low-power .advanced-chat-modal, 
+.low-power .modal-content,
+.low-power .auth-modal,
+.low-power .dropdown-content,
+.low-power .filter-dropdown,
+.low-power .style-dropdown-content, /* Важно добавить и этот класс */
+.low-power .theme-picker-dropdown {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Полностью убираем тени, которые могут нагружать GPU */
+.low-power .container,
+.low-power .advanced-chat-modal,
+.low-power .modal-content,
+.low-power .auth-modal,
+.low-power .dropdown-content,
+.low-power .result-card,
+.low-power button:hover,
+.low-power .message-content,
+.low-power #answerOptions li {
+  box-shadow: none !important;
+}
+
+/* Убираем анимацию градиентного фона на стеклянных темах */
+.low-power body.glass-dark::before {
+  display: none !important;
+}
+
+/* 3. Оптимизация рендеринга больших блоков */
+/* Эти блоки будут отрисовываться браузером только тогда, когда они приближаются к области видимости */
+#quizSetupArea,
+#quizArea,
+#resultsArea,
+#parserArea,
+.chat-main-content {
+  content-visibility: auto;
+  /* Примерный размер, чтобы браузер зарезервировал место и не было "прыжков" страницы */
+  contain-intrinsic-size: 1px 500px;
 }
