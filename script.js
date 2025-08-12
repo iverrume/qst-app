@@ -8918,44 +8918,44 @@ const mainApp = (function() {
                 }
             }
         
-            // 5. Блокируем все варианты ответа, чтобы предотвратить повторный клик
-            Array.from(answerOptionsEl.children).forEach(li => {
-                li.removeEventListener('click', handleAnswerSelect);
-                li.classList.add('answered');
-            });
-        
-// 6. Создаем панель обратной связи с кнопкой "Объяснить"
-            const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
-            
-            const explainBtn = document.createElement('button');
-            explainBtn.textContent = _('ai_explain_button');
-            explainBtn.className = 'explain-btn';
+              // 5. Блокируем все варианты ответа, чтобы предотвратить повторный клик
+              Array.from(answerOptionsEl.children).forEach(li => {
+                  li.removeEventListener('click', handleAnswerSelect);
+                  li.classList.add('answered');
+              });
+          
+              // 6. Создаем панель обратной связи с кнопкой "Объяснить"
+              const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
+              
+              const explainBtn = document.createElement('button');
+              explainBtn.textContent = _('ai_explain_button');
+              explainBtn.className = 'explain-btn';
 
-            if (isCorrect) {
-                // Находим текст правильного ответа
-                const correctAnswerText = originalQuestion.options[originalQuestion.correctAnswerIndex].text;
-                // Передаем его вторым аргументом, чтобы сервер понял, что нужно просто объяснить правильный ответ
-                explainBtn.onclick = () => showAIExplanation(originalQuestion, correctAnswerText);
-            } else {
-                const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-                explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
-            }
-            
-            // Очищаем старое содержимое и добавляем новые элементы
-            feedbackAreaEl.innerHTML = ''; 
-            const textNode = document.createTextNode(feedbackText);
-            feedbackAreaEl.appendChild(textNode);
-            feedbackAreaEl.appendChild(explainBtn);
-        
-            // 7. Обновляем все остальные элементы интерфейса
-            updateScoreDisplay();
-            updateNavigationButtons();
-            updateQuickNavButtons();
-            
-            // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
-            if (quickModeEnabled) {
-                setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
-            }
+              if (isCorrect) {
+                  // Находим текст правильного ответа
+                  const correctAnswerText = originalQuestion.options[originalQuestion.correctAnswerIndex].text;
+                  // Передаем его вторым аргументом, чтобы сервер понял, что нужно просто объяснить правильный ответ
+                  explainBtn.onclick = () => showAIExplanation(originalQuestion, correctAnswerText);
+              } else {
+                  const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
+                  explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
+              }
+              
+              // Очищаем старое содержимое и добавляем новые элементы
+              feedbackAreaEl.innerHTML = ''; 
+              const textNode = document.createTextNode(feedbackText);
+              feedbackAreaEl.appendChild(textNode);
+              feedbackAreaEl.appendChild(explainBtn);
+          
+              // 7. Обновляем все остальные элементы интерфейса
+              updateScoreDisplay();
+              updateNavigationButtons();
+              updateQuickNavButtons();
+              
+              // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
+              if (quickModeEnabled) {
+                  setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
+              }
         }
 
 
