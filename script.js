@@ -5530,7 +5530,10 @@ const mainApp = (function() {
             parser_pattern_tags_cyrillic: "Теги <Вопрос> и <вариант>",
             parser_pattern_tags_latin: "Теги <question> и <variant>",
 
-            shuffle_n_questions: "Случайный набор из"
+            shuffle_n_questions: "Случайный набор из",
+
+            translate_engine_google: "Google Переводчик",
+            translate_engine_ai: "AI Переводчик"
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -5849,7 +5852,8 @@ const mainApp = (function() {
             ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
             ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
             ai_auto_category_label: 'Санаттарды автоматты түрде жасау',
-
+            translate_engine_google: "Google Аудармашы",
+            translate_engine_ai: "AI Аудармашы",
             shuffle_n_questions: "Араластырылған жиынтық"
 
         },
@@ -6175,7 +6179,8 @@ const mainApp = (function() {
             ai_question_count_label: '4. Specify the number of questions for the AI:',
             ai_answer_count_label: '5. Specify the number of answer choices:',
             ai_auto_category_label: 'Automatically create categories',
-
+            translate_engine_google: "Google Translate",
+            translate_engine_ai: "AI Translator",
             shuffle_n_questions: "Random set of"
         }
 
@@ -6244,6 +6249,7 @@ const mainApp = (function() {
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList, appTitleHeader;
 
+    let translateEngineToggle, translateEngineDropdown;
     let rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
             shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks;
 
@@ -6293,6 +6299,7 @@ const mainApp = (function() {
     let currentAIUserIncorrectAnswer = null;
     let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
     const AI_INPUT_CHAR_LIMIT = 14000; // Безопасный лимит символов для ИИ
+    let currentTranslateEngine = 'google'; // 'google' или 'ai'
 
 
     
@@ -6308,6 +6315,65 @@ const mainApp = (function() {
         // Chrome требует, чтобы returnValue был установлен.
         event.returnValue = '';
     };
+
+
+  /**
+   * НОВАЯ ФУНКЦИЯ: Обновляет UI выбора движка перевода (галочка).
+   */
+  function updateTranslateEngineUI() {
+      const engine = localStorage.getItem('translateEngine') || 'google';
+      currentTranslateEngine = engine;
+
+      const links = translateEngineDropdown.querySelectorAll('a');
+      links.forEach(link => {
+          link.classList.toggle('active', link.dataset.engine === engine);
+      });
+  }
+
+
+  /**
+   * НОВАЯ УЛУЧШЕННАЯ ФУНКЦИЯ: Устанавливает движок и запускает повторный перевод.
+   */
+  function setTranslateEngine(engine) {
+      // 1. Сохраняем выбор и обновляем UI (галочку)
+      localStorage.setItem('translateEngine', engine);
+      updateTranslateEngineUI();
+      translateEngineDropdown.classList.remove('show');
+
+      // 2. Проверяем, нужно ли запускать повторный перевод
+      // (только если мы на экране теста и режим перевода уже включен)
+      if (!quizArea.classList.contains('hidden') && isTranslateModeEnabled && questionsForCurrentQuiz.length > 0) {
+          
+          console.log(`Запрошен повторный перевод с помощью: ${engine}`);
+
+          const currentOriginalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
+          const lang = localStorage.getItem('appLanguage') || 'ru';
+          
+          // 3. Удаляем из кэша перевод для ТЕКУЩЕГО вопроса и ТЕКУЩЕГО языка.
+          // Это заставит систему запросить его с сервера заново.
+          const cacheKey = getCacheKey(currentOriginalQuestion.originalIndex, lang);
+          if (currentQuizTranslations.has(cacheKey)) {
+              currentQuizTranslations.delete(cacheKey);
+              console.log(`Кэш для вопроса #${currentOriginalQuestion.originalIndex} (${lang}) очищен для повторного перевода.`);
+          }
+          
+          // 4. Перезагружаем текущий вопрос. Функция сама поймет, что нужно сделать перевод.
+          loadQuestion(currentQuestionIndex);
+      }
+  }
+    
+    /**
+     * НОВАЯ ФУНКЦИЯ: Управляет видимостью кнопок перевода.
+     */
+    function updateTranslateButtonsVisibility() {
+        // Проверяем, виден ли экран теста
+        const shouldBeVisible = !quizArea.classList.contains('hidden');
+        
+        // Показываем или скрываем обе кнопки одновременно
+        translateQuestionBtn.classList.toggle('hidden', !shouldBeVisible);
+        translateEngineToggle.classList.toggle('hidden', !shouldBeVisible);
+    }
+
 
     function initializeApp() {
         // --- ИЗМЕНЕНИЕ: Присваиваем значения переменным здесь ---
@@ -6441,6 +6507,8 @@ const mainApp = (function() {
         shuffleNCountInput = getEl('shuffleNQuestionsCount');
         sliderTicks = getEl('sliderTicks');
         timeSliderTicks = getEl('timeSliderTicks');
+        translateEngineToggle = getEl('translateEngineToggle');
+        translateEngineDropdown = getEl('translateEngineDropdown');
         initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
@@ -6477,6 +6545,7 @@ const mainApp = (function() {
         manageBackButtonInterceptor();
         setupExtensionListener();
         setupAnimationObserver();
+        updateTranslateEngineUI();
     }
 
 
@@ -6663,19 +6732,41 @@ const mainApp = (function() {
             }
         });
         
-        // Универсальный обработчик для закрытия всех выпадающих списков
+
+        // ===== ИСПРАВЛЕННЫЙ БЛОК ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ ПЕРЕВОДЧИКА =====
+
+        // 1. Логика ОТКРЫТИЯ меню по клику на треугольник
+        translateEngineToggle?.addEventListener('click', (e) => {
+            e.stopPropagation(); // Останавливаем всплытие, чтобы не сработал window.click
+            translateEngineDropdown.classList.toggle('show'); // Используем .show, как и в других меню
+        });
+        
+        translateEngineDropdown?.addEventListener('click', (e) => {
+            e.preventDefault();
+            // ИСПРАВЛЕНИЕ: Ищем ближайший родительский элемент <a> с атрибутом data-engine
+            const target = e.target.closest('a[data-engine]');
+            if (target && target.dataset.engine) {
+                setTranslateEngine(target.dataset.engine);
+                // Явно закрываем меню после выбора, чтобы избежать любых проблем
+                translateEngineDropdown.classList.remove('show');
+            }
+        });
+
+        // 3. Логика ЗАКРЫТИЯ меню при клике где-угодно еще (внутри глобального обработчика)
         window.addEventListener('click', (event) => {
             // Закрываем список поисковиков
             if (!event.target.closest('#webSearchDropdown') && searchDropdownContent?.classList.contains('show')) {
                 searchDropdownContent.classList.remove('show');
             }
-            // Закрываем список тем (УЛУЧШЕННАЯ ЛОГИКА)
+            // Закрываем список тем
             if (!event.target.closest('#themeDropdownContainer') && themeDropdownContent?.classList.contains('show')) {
                 themeDropdownContent.classList.remove('show');
             }
+            // Закрываем список движков перевода (ИСПРАВЛЕННАЯ ЛОГИКА)
+            if (!event.target.closest('.translate-engine-container') && translateEngineDropdown?.classList.contains('show')) {
+                 translateEngineDropdown.classList.remove('show');
+            }
         });
-
-
 
 
         languageToggle?.addEventListener('click', toggleLanguage);
@@ -6736,6 +6827,8 @@ const mainApp = (function() {
         // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
         shuffleNCheckbox?.addEventListener('change', handleShuffleNToggle);
+
+
 
 
     }
@@ -6960,10 +7053,13 @@ const mainApp = (function() {
     }
 
 
-
     function handleWebSearch(event) {
         event.preventDefault();
-        const engine = event.target.dataset.engine;
+        // ИСПРАВЛЕНИЕ: Ищем ближайший родительский элемент <a> с атрибутом data-engine
+        const target = event.target.closest('a[data-engine]');
+        if (!target) return; // Если клик был мимо ссылок, выходим
+        
+        const engine = target.dataset.engine; // Теперь мы точно берем атрибут у нужного элемента
         if (!engine) return;
 
         if (currentQuestionIndex >= questionsForCurrentQuiz.length) {
@@ -8362,21 +8458,19 @@ const mainApp = (function() {
         // 1. Сначала настраиваем кнопки, которые видны в ЛЮБОМ режиме теста
         finishTestButton?.classList.remove('hidden');
         continueLaterButton?.classList.remove('hidden');
-        languageToggle?.classList.add('hidden'); // Кнопка смены языка приложения всегда скрыта во время теста
+        languageToggle?.classList.add('hidden');
 
         // 2. Теперь, в зависимости от режима, настраиваем уникальные для него кнопки
         if (quizSettings.flashcardsMode) {
             // РЕЖИМ КАРТОЧЕК
-            // Показываем:
-            translateQuestionBtn?.classList.remove('hidden');
             // Скрываем:
             webSearchDropdown?.classList.add('hidden');
             copyQuestionBtnQuiz?.classList.add('hidden');
             getEl('favoriteQuestionBtn')?.classList.add('hidden');
             quickModeToggle?.classList.add('hidden');
             triggerWordToggle?.classList.add('hidden');
-            downloadTranslatedTxtButton?.classList.add('hidden'); // <-- Важное исправление
-            downloadTranslatedQstButton?.classList.add('hidden'); // <-- Важное исправление
+            downloadTranslatedTxtButton?.classList.add('hidden');
+            downloadTranslatedQstButton?.classList.add('hidden');
         } else {
             // ОБЫЧНЫЙ РЕЖИМ ТЕСТА
             // Показываем:
@@ -8385,12 +8479,13 @@ const mainApp = (function() {
             getEl('favoriteQuestionBtn')?.classList.remove('hidden');
             quickModeToggle?.classList.remove('hidden');
             triggerWordToggle?.classList.remove('hidden');
-            translateQuestionBtn?.classList.remove('hidden');
-            downloadTranslatedTxtButton?.classList.remove('hidden'); // <-- Важное исправление
-            downloadTranslatedQstButton?.classList.remove('hidden'); // <-- Важное исправление
+            downloadTranslatedTxtButton?.classList.remove('hidden');
+            downloadTranslatedQstButton?.classList.remove('hidden');
         }
-
         // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ---
+
+        // === ГЛАВНОЕ ИЗМЕНЕНИЕ: ВЫЗЫВАЕМ НАШУ НОВУЮ ФУНКЦИЮ ЗДЕСЬ ===
+        updateTranslateButtonsVisibility();
 
         // Вызываем эти функции в самом конце, чтобы они применились к видимым кнопкам
         updateDownloadButtonsText();
@@ -9120,7 +9215,6 @@ const mainApp = (function() {
         finishTestButton?.classList.add('hidden');
         webSearchDropdown?.classList.add('hidden');
         getEl('favoriteQuestionBtn')?.classList.add('hidden');
-        translateQuestionBtn?.classList.add('hidden');
         downloadTranslatedTxtButton?.classList.add('hidden');
         downloadTranslatedQstButton?.classList.add('hidden');
         languageToggle?.classList.remove('hidden');
@@ -9139,6 +9233,7 @@ const mainApp = (function() {
         loadRecentFiles();
         loadSavedSession();
         manageBackButtonInterceptor();
+        updateTranslateButtonsVisibility();
     }
 
 
@@ -11021,11 +11116,16 @@ const mainApp = (function() {
      * @returns {Promise<object|null>} - Промис с переведенным объектом вопроса или null в случае ошибки.
      */
     async function getTranslatedQuestion(questionObject, targetLang) {
+        // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+        // 1. Определяем, какую 'action' отправить на сервер, в зависимости от выбора пользователя.
+        const action = currentTranslateEngine === 'ai' ? 'aiTranslateQuestion' : 'translateQuestion';
+        // === КОНЕЦ ИЗМЕНЕНИЯ ===
+
         try {
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: 'translateQuestion',
+                    action: action, // Используем переменную action
                     questionObject: questionObject,
                     targetLang: targetLang
                 })

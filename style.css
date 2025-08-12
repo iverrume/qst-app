@@ -174,7 +174,7 @@ body.synthwave-mode {
 /* --- Стеклянная темная тема (как на скриншоте) --- */
 body.glass-dark {
     --bg-color: #121212;
-    --container-bg-color: rgba(42, 42, 42, 0.5); /* Более нейтральный темный */
+    --container-bg-color: rgba(42, 42, 42, 0.7); /* <-- ИЗМЕНЕНО: сделали фон плотнее */
     --text-color: #e0e0e0;
     --secondary-text-color: #a0a0a0;
     --heading-color: #ffffff;
@@ -260,7 +260,7 @@ body.glass-dark::before {
     background-color: var(--container-bg-color);
     padding: 15px;
     border-radius: 16px; /* <-- ИЗМЕНЕНО: Более скругленные углы */
-    box-shadow: 0 10px 30px var(--shadow-color), inset 0 0 0 1px rgba(255, 255, 255, 0.1); /* <-- ИЗМЕНЕНО */
+    box-shadow: 0 10px 30px var(--shadow-color), inset 0 0 0 1px rgba(255, 255, 255, 0.2); /* <-- ИЗМЕНЕНО */
     border: 1px solid var(--border-color); /* <-- ДОБАВЛЕНО */
     width: 100%;
     max-width: 700px;
@@ -269,7 +269,7 @@ body.glass-dark::before {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* overflow: hidden; */ /* <--- МЫ ЗАКОММЕНТИРОВАЛИ ИЛИ УДАЛИЛИ ЭТУ СТРОКУ */
 }
 
 @media (min-width: 768px) {
@@ -287,8 +287,8 @@ body.glass-dark .dropdown-content,
 /* УБРАЛИ .style-dropdown-content ОТСЮДА, чтобы задать ему особое правило ниже */
 body.glass-dark .filter-dropdown,
 body.glass-dark .theme-picker-dropdown { 
-    backdrop-filter: blur(28px); 
-    -webkit-backdrop-filter: blur(28px); 
+    backdrop-filter: blur(50px); /* <-- ИЗМЕНЕНО: размытие стало сильнее */
+    -webkit-backdrop-filter: blur(50px); /* <-- ИЗМЕНЕНО: для Safari */
 }
 
 /* НОВЫЙ БЛОК: Особое, более сильное размытие для списка стилей ИИ */
@@ -306,6 +306,7 @@ body.glass-dark .style-dropdown-content {
     display: flex;
     align-items: center;
     padding-top: 15px;
+    z-index: 100; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
 }
 
 
@@ -321,6 +322,14 @@ body.glass-dark .style-dropdown-content {
     align-items: center;
     flex-wrap: nowrap;
 }
+
+.header-buttons {
+    pointer-events: none; /* сам контейнер не ловит клики */
+}
+.header-buttons > * {
+    pointer-events: auto; /* кнопки внутри работают */
+}
+
 
 /* А здесь создаем новое, более точное правило ТОЛЬКО для главного экрана */
 .container > .header-controls {
@@ -1099,17 +1108,17 @@ body.dark-mode footer {
 .dropdown-content {
     display: none;
     position: absolute;
-    /* УБИРАЕМ right: 0; и ДОБАВЛЯЕМ эти две строки: */
     left: 50%;
     transform: translateX(-50%);
-    /* ------------------------------------------- */
     background-color: var(--container-bg-color);
     min-width: 160px;
     box-shadow: 0px 8px 16px 0px var(--shadow-color);
-    z-index: 1;
+    z-index: 3000 !important;       /* всегда поверх */
+    pointer-events: auto !important; /* клики проходят */
     border: 1px solid var(--border-color);
     border-radius: 5px;
 }
+
 
 .dropdown-content a {
     color: var(--text-color);
@@ -1118,6 +1127,20 @@ body.dark-mode footer {
     display: block;
     text-align: left;
 }
+
+/* Универсально для всех выпадающих меню */
+.dropdown-content {
+  position: absolute; /* уже есть, важно сохранить */
+  z-index: 3000 !important;     /* выше всего в хедере */
+  pointer-events: auto !important; /* точно принимает клики */
+}
+
+/* На всякий: у пунктов всегда кликаемость по всей ширине */
+.dropdown-content a {
+  display: block;
+  pointer-events: auto;
+}
+
 
 .dropdown-content a:hover {
     background-color: var(--input-hover-bg-color);
@@ -6908,4 +6931,72 @@ input[type="range"]::-moz-range-thumb {
   content-visibility: auto;
   /* Примерный размер, чтобы браузер зарезервировал место и не было "прыжков" страницы */
   contain-intrinsic-size: 1px 500px;
+}
+
+
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ВЫБОРА ДВИЖКА ПЕРЕВОДА        === */
+/* ======================================================= */
+
+/* 1. Контейнер для двух кнопок */
+.translate-engine-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* 2. Стили для основной кнопки (убираем скругление справа) */
+#translateQuestionBtn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+}
+
+/* 3. Стили для кнопки-треугольника */
+#translateEngineToggle {
+    background: none;
+    border: 1px solid var(--theme-toggle-border);
+    color: var(--text-color);
+    padding: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    line-height: 1.3;
+    font-size: 0.8em;
+    height: 100%;
+}
+
+#translateEngineToggle:hover {
+    background-color: var(--theme-toggle-hover-bg);
+}
+
+/* 4. Стили для выпадающего меню */
+#translateEngineDropdown {
+    min-width: 180px;
+    top: calc(100% + 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+}
+
+/* 5. Ссылки внутри меню (обычное состояние) */
+#translateEngineDropdown a {
+    /* Тут нам больше не нужны flex-стили */
+    display: block; /* Просто делаем ссылку блочной */
+}
+
+/* 6. КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Стиль для активного (выбранного) пункта */
+#translateEngineDropdown a.active {
+    background-color: var(--button-primary-bg); /* Цвет фона как у главной кнопки */
+    color: var(--button-primary-text); /* Цвет текста как у главной кнопки */
+    font-weight: bold; /* Делаем текст жирным для акцента */
+}
+
+/* 7. Убедимся, что при наведении на активный пункт, он не меняет цвет */
+#translateEngineDropdown a.active:hover {
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
 }

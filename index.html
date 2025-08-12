@@ -72,7 +72,21 @@
 
                     <button id="languageToggle" title="Сменить язык" data-lang-key="language_toggle_title">Рус</button>
                     <button id="favoriteQuestionBtn" title="Добавить в избранное" class="hidden" data-lang-key="favorite_button_title" data-lang-skip-content="true">⭐</button>
-                    <button id="translateQuestionBtn" title="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true">अа</button>
+                    <div class="translate-engine-container">
+                        <button id="translateQuestionBtn" title="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true">अа</button>
+                        <button id="translateEngineToggle" class="hidden" title="Выбрать движок перевода">▼</button>
+                        <div id="translateEngineDropdown" class="dropdown-content">
+                            <a href="#" data-engine="google" data-lang-key="translate_engine_google">
+                                <span class="engine-name">Google</span>
+                                <span class="checkmark">✓</span>
+                            </a>
+                            <a href="#" data-engine="ai" data-lang-key="translate_engine_ai">
+                                <span class="engine-name">AI (ИИ)</span>
+                                <span class="checkmark">✓</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- === КОНЕЦ НОВОГО БЛОКА ПЕРЕВОДЧИКА === -->
                 </div>
 
 
