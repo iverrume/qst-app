@@ -1606,7 +1606,7 @@ body.glass-dark .advanced-chat-overlay {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* <--- ДОБАВЬТЕ ЭТУ СТРОКУ */
+    overflow: hidden;
 }
  
 
@@ -6849,6 +6849,7 @@ input[type="range"]::-moz-range-thumb {
 #timeSliderProgress {
     left: 0;
 }
+
 
 /* ======================================================= */
 /* ===         ОПТИМИЗАЦИЯ ДЛЯ СЛАБЫХ УСТРОЙСТВ        === */
