@@ -8615,12 +8615,15 @@ const mainApp = (function() {
         };
         // === КОНЕЦ НОВОГО КОДА ===
 
-        // Привязываем событие к кнопке "Объяснить"
+// Привязываем событие к кнопке "Объяснить"
         const explainBtn = getEl('explainFlashcardBtn');
         if (explainBtn) {
             explainBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                showAIExplanation(question); 
+                // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+                // Передаем текст правильного ответа вторым аргументом
+                showAIExplanation(question, question.options[question.correctAnswerIndex].text);
+                // === КОНЕЦ ИЗМЕНЕНИЯ ===
             });
         }
         
@@ -10805,8 +10808,12 @@ const mainApp = (function() {
             
             // Проверяем, что парсинг прошел успешно и у нас есть все данные
             if (questionObject && questionObject.text && questionObject.options) {
-                // Вызываем уже существующую функцию для показа модального окна
-                showAIExplanation(questionObject);
+                // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+                // 1. Находим текст правильного ответа
+                const correctAnswerText = questionObject.options[questionObject.correctAnswerIndex].text;
+                // 2. Передаем его вторым аргументом в функцию
+                showAIExplanation(questionObject, correctAnswerText);
+                // === КОНЕЦ ИЗМЕНЕНИЯ ===
             } else {
                 alert(_('error_cannot_fully_process_question'));
             }
