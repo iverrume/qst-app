@@ -4561,7 +4561,7 @@ body.claude-mode .message.mine .message-content {
 
 /* Состояние, когда сообщение развернуто */
 .message-content.collapsible.expanded {
-    max-height: 2000px; /* Большая высота для анимации */
+    max-height: 20000px; /* Большая высота для анимации */
 }
 
 /* Убираем градиент, когда сообщение развернуто */

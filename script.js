@@ -1,29 +1,29 @@
-    // ============================================
-    // ====   НОВЫЙ БЛОК: ОПТИМИЗАЦИЯ СКОРОСТИ   ====
-    // ============================================
+  function shouldEnableLowPowerMode() {
+    try {
+      // navigator.hardwareConcurrency доступен в большинстве современных браузеров
+      const coreCount = navigator.hardwareConcurrency || 2;
+      // navigator.deviceMemory - экспериментальное API, может быть недоступно
+      const memoryInGB = navigator.deviceMemory || 2;
+      
+      // Считаем устройство "слабым", если у него 4 или меньше ядер, ИЛИ 4 ГБ или меньше ОЗУ.
+      const isWeakHardware = coreCount <= 4 || memoryInGB <= 4;
+      
+      // Проверяем системную настройку "Уменьшить движение"
+      const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Функция для автоопределения "слабого" устройства
-    function shouldEnableLowPowerMode() {
-      try {
-        // navigator.hardwareConcurrency доступен в большинстве современных браузеров
-        const coreCount = navigator.hardwareConcurrency || 2;
-        // navigator.deviceMemory - экспериментальное API, может быть недоступно
-        const memoryInGB = navigator.deviceMemory || 2;
-        
-        // Считаем устройство "слабым", если у него 4 или меньше ядер, ИЛИ 4 ГБ или меньше ОЗУ.
-        const isWeakHardware = coreCount <= 4 || memoryInGB <= 4;
-        
-        // Проверяем системную настройку "Уменьшить движение"
-        const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        
-        console.log(`Оценка производительности: Ядра=${coreCount}, Память=${memoryInGB}GB. Слабое железо: ${isWeakHardware}. Уменьшить движение: ${prefersReducedMotion}`);
-        
-        return isWeakHardware || prefersReducedMotion;
-      } catch (e) {
-        console.warn("Не удалось определить производительность устройства, будет использован стандартный режим.", e);
-        return false; // В случае ошибки, работаем в стандартном режиме
-      }
+      // НОВАЯ СТРОКА: Проверяем, является ли устройство мобильным по User Agent
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // ИЗМЕНЕНА ЭТА СТРОКА: Добавили в лог информацию о мобильном устройстве
+      console.log(`Оценка производительности: Ядра=${coreCount}, Память=${memoryInGB}GB. Слабое железо: ${isWeakHardware}. Уменьшить движение: ${prefersReducedMotion}. Мобильное: ${isMobile}`);
+      
+      // ИЗМЕНЕНА ЭТА СТРОКА: Добавили проверку isMobile
+      return isWeakHardware || prefersReducedMotion || isMobile;
+    } catch (e) {
+      console.warn("Не удалось определить производительность устройства, будет использован стандартный режим.", e);
+      return false; // В случае ошибки, работаем в стандартном режиме
     }
+  }
 
     // Применяем "легкий" режим, если нужно
     function applyLowPowerMode() {
@@ -1843,6 +1843,7 @@ const ChatModule = (function() {
             }
 
             const isUnread = messageData.authorId !== currentUser.uid && (currentChannel !== messageData.channelId || currentTab !== 'messages' || document.hidden);
+            // СТАЛО (скопируйте и замените)
             if (isUnread) {
                 const isPrivateMessage = !messageData.memberIds.includes('public');
                 const isUnlockedPublicChannel = messageData.memberIds.includes('public') && (messageData.channelId === 'general' || unlockedChannels.has(messageData.channelId));
@@ -8836,7 +8837,10 @@ const mainApp = (function() {
             explainBtn.className = 'explain-btn';
 
             if (isCorrect) {
-                explainBtn.onclick = () => showAIExplanation(originalQuestion);
+                // Находим текст правильного ответа
+                const correctAnswerText = originalQuestion.options[originalQuestion.correctAnswerIndex].text;
+                // Передаем его вторым аргументом, чтобы сервер понял, что нужно просто объяснить правильный ответ
+                explainBtn.onclick = () => showAIExplanation(originalQuestion, correctAnswerText);
             } else {
                 const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
                 explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
