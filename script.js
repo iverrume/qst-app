@@ -6582,9 +6582,6 @@ const mainApp = (function() {
                 getEl('aiExplanationStyleContent').classList.add('hidden');
 
                 fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
-
-                // Запрашиваем новое объяснение
-                fetchAndDisplayExplanation(style);
             }
         });
 
