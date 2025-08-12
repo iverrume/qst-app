@@ -1,6 +1,49 @@
+    // ============================================
+    // ====   НОВЫЙ БЛОК: ОПТИМИЗАЦИЯ СКОРОСТИ   ====
+    // ============================================
+
+    // Функция для автоопределения "слабого" устройства
+    function shouldEnableLowPowerMode() {
+      try {
+        // navigator.hardwareConcurrency доступен в большинстве современных браузеров
+        const coreCount = navigator.hardwareConcurrency || 2;
+        // navigator.deviceMemory - экспериментальное API, может быть недоступно
+        const memoryInGB = navigator.deviceMemory || 2;
+        
+        // Считаем устройство "слабым", если у него 4 или меньше ядер, ИЛИ 4 ГБ или меньше ОЗУ.
+        const isWeakHardware = coreCount <= 4 || memoryInGB <= 4;
+        
+        // Проверяем системную настройку "Уменьшить движение"
+        const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        
+        console.log(`Оценка производительности: Ядра=${coreCount}, Память=${memoryInGB}GB. Слабое железо: ${isWeakHardware}. Уменьшить движение: ${prefersReducedMotion}`);
+        
+        return isWeakHardware || prefersReducedMotion;
+      } catch (e) {
+        console.warn("Не удалось определить производительность устройства, будет использован стандартный режим.", e);
+        return false; // В случае ошибки, работаем в стандартном режиме
+      }
+    }
+
+    // Применяем "легкий" режим, если нужно
+    function applyLowPowerMode() {
+      if (shouldEnableLowPowerMode()) {
+        document.body.classList.add('low-power');
+        console.log('Активирован режим низкой производительности (low-power).');
+      }
+    }
+
+    // Вызываем функцию при старте приложения
+    applyLowPowerMode();
+
+
+
 // ============================================
 // ИСПРАВЛЕННЫЙ МОДУЛЬ ЧАТА
 // ============================================
+
+
+
 
 const ChatModule = (function() {
     'use strict';
@@ -1807,9 +1850,10 @@ const ChatModule = (function() {
                 if (isPrivateMessage || isUnlockedPublicChannel) {
                     updateUnreadCount(messageData.channelId, 1);
 
-                    // --- ДОБАВЬТЕ ЭТУ СТРОКУ ---
-                    if (isPrivateMessage) loadPrivateChats(); // Пересортировать и обновить список ЛС
-                    // --- КОНЕЦ ДОБАВЛЕНИЯ ---
+                    // --- ВОТ ОНО, ИСПРАВЛЕНИЕ! ---
+                    // Если пришло личное сообщение, перерисовываем список личных чатов.
+                    // Это гарантирует, что чат появится в списке, и счетчик на нем отобразится.
+                    if (isPrivateMessage) loadPrivateChats(); 
                 }
             }
         }
@@ -4391,7 +4435,8 @@ const ChatModule = (function() {
 
 
 
-    async function uploadFileToServer(fileName, fileContent, url) { // <-- 1. Добавлен 'url'
+    // ИСПРАВЛЕННЫЙ КОД
+    async function uploadFileToServer(fileName, fileContent, url) {
         if (!fileName || !fileContent) {
             console.warn("Попытка загрузить пустой файл. Отменено.");
             return;
@@ -4405,12 +4450,13 @@ const ChatModule = (function() {
 
         try {
             const payload = {
+                action: 'saveToArchive', // <-- ДОБАВЬТЕ ЭТУ СТРОКУ
                 fileName: fileName,
                 content: fileContent,
                 isQstValid: true
             };
 
-            const response = await fetch(url, { // <-- 2. Используется 'url' вместо googleAppScriptUrl
+            const response = await fetch(url, {
                 method: 'POST',
                 mode: 'no-cors',
                 cache: 'no-cache',
@@ -4426,6 +4472,9 @@ const ChatModule = (function() {
             console.error("Ошибка при загрузке файла:", error);
         }
     }
+
+
+
 
     function toggleNotifications() {
         notificationsEnabled = !notificationsEnabled;
@@ -6532,6 +6581,9 @@ const mainApp = (function() {
                 getEl('aiExplanationStyleContent').classList.add('hidden');
 
                 fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
+
+                // Запрашиваем новое объяснение
+                fetchAndDisplayExplanation(style);
             }
         });
 
