@@ -4244,10 +4244,10 @@ const ChatModule = (function() {
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
                     headers: {
-                        // Указываем правильный Content-Type
-                        'Content-Type': 'application/json',
+                        // ИЗМЕНЕНИЕ: Отправляем как простой текст, чтобы избежать preflight-запроса
+                        'Content-Type': 'text/plain;charset=utf-8',
                     },
-                    body: JSON.stringify({
+                    body: JSON.stringify({ // Тело запроса остается строкой JSON
                         action: 'chatFileUpload',
                         fileName: file.name,
                         content: fileContent
