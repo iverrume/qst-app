@@ -4211,12 +4211,11 @@ const ChatModule = (function() {
 
 
 
-    // НОВЫЙ КОД
+    // НОВЫЙ КОД (ВЕРНУТЬ)
     function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Проверка расширения (остается без изменений)
         const allowedExtensions = ['.qst', '.txt'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
@@ -4234,42 +4233,44 @@ const ChatModule = (function() {
             sendBtn.innerHTML = ''; 
 
             try {
-                // 1. Парсим файл, чтобы посчитать вопросы
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
-
-
-                // 2. Отправляем файл на сервер в формате, обходящем CORS-редирект Google
-                const urlWithParams = `${googleAppScriptUrl}?action=chatFileUpload&fileName=${encodeURIComponent(file.name)}`;
-
-                const response = await fetch(urlWithParams, {
+                // Отправляем файл на сервер для сохранения (без ожидания ответа)
+                await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
-                    body: fileContent // Отправляем содержимое файла напрямую, без JSON-обертки
+                    mode: 'no-cors', // Возвращаем 'no-cors'
+                    body: JSON.stringify({
+                        action: 'chatFileUpload',
+                        fileName: file.name,
+                        content: fileContent
+                    })
                 });
 
-
-
-                // 3. Теперь мы МОЖЕМ прочитать ответ
-                const result = await response.json();
-
-                // 4. Проверяем ответ от сервера
-                if (result.success && result.fileId) {
-                    // Если все успешно, сразу отправляем сообщение в чат
-                    await sendFileMessage(file.name, result.fileId, questionCount);
-                } else {
-                    // Если сервер вернул ошибку, показываем ее
-                    throw new Error(result.error || _chat('error_upload_failed'));
-                }
+                // Ждем 2 секунды и делаем повторный запрос для получения ID
+                 setTimeout(async () => {
+                    try {
+                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`);
+                        const fileData = await checkResponse.json();
+                        
+                        if(fileData.success && fileData.fileId){
+                            await sendFileMessage(file.name, fileData.fileId, questionCount);
+                        } else {
+                            throw new Error(fileData.error || _chat('error_fetch_file_id_failed'));
+                        }
+                    } catch(error) {
+                        console.error("Ошибка получения ID файла: ", error);
+                        showError(_chat('error_upload_failed'));
+                    } finally {
+                        sendBtn.disabled = false;
+                        sendBtn.classList.remove('loading');
+                        sendBtn.innerHTML = '➤';
+                    }
+                }, 2000);
 
             } catch (error) {
                 console.error('Ошибка при обработке файла чата:', error);
-                showError(`${_chat('error_file_process_failed')} ${error.message}`);
-            } finally {
-                // В любом случае возвращаем кнопку в нормальное состояние
+                showError(_chat('error_file_process_failed'));
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
