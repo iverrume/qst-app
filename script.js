@@ -5609,7 +5609,8 @@ const mainApp = (function() {
             enter_activation_key_alert: "Пожалуйста, введите ключ активации.",
             checking_button: "Проверка...",
             search_activated_alert: "Поиск по базе успешно активирован на этом устройстве!",
-            server_connection_error_alert: "Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение."
+            server_connection_error_alert: "Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение.",
+            checking_access: "Проверка..."
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -5939,7 +5940,8 @@ const mainApp = (function() {
             enter_activation_key_alert: "Белсендіру кілтін енгізіңіз.",
             checking_button: "Тексерілуде...",
             search_activated_alert: "Дерекқор бойынша іздеу осы құрылғыда сәтті белсендірілді.",
-            server_connection_error_alert: "Кілті тексеру үшін сервермен байланысу мүмкін болмады. Интернет қосылымын тексеріңіз."
+            server_connection_error_alert: "Кілті тексеру үшін сервермен байланысу мүмкін болмады. Интернет қосылымын тексеріңіз.",
+            checking_access: "Тексеру..."
 
         },
         en: {
@@ -6275,7 +6277,8 @@ const mainApp = (function() {
             enter_activation_key_alert: "Please enter the activation key.",
             checking_button: "Checking...",
             search_activated_alert: "Database search has been successfully activated on this device.",
-            server_connection_error_alert: "Could not contact the server to verify the key. Please check your internet connection."
+            server_connection_error_alert: "Could not contact the server to verify the key. Please check your internet connection.",
+            checking_access: "Checking..."
         }
 
 
