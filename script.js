@@ -6356,9 +6356,11 @@ const mainApp = (function() {
             shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks;
 
     let themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon;
+
     let converterTabBtn, aiFromTextTabBtn, aiFromTopicTabBtn, 
         converterContent, aiFromTextContent, aiGeneratorContent, 
         aiTopicInput, generateTestFromTopicBtn, aiTopicQuestionCount, aiTopicAnswerCount;
+
     let aiTopicAutoCategory;
 
     let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
@@ -6597,13 +6599,14 @@ const mainApp = (function() {
         translateQuestionBtn = getEl('translateQuestionBtn');
         downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
         downloadTranslatedQstButton = getEl('downloadTranslatedQstButton');
+
         converterTabBtn = getEl('converterTabBtn');
         aiFromTextTabBtn = getEl('aiFromTextTabBtn');
-        aiGeneratorTabBtn = getEl('aiGeneratorTabBtn');
-        aiFromTextContent = getEl('aiFromTextContent');
+        aiFromTopicTabBtn = getEl('aiFromTopicTabBtn'); // <-- ИСПРАВЛЕНО
         converterContent = getEl('converterContent');
+        aiFromTextContent = getEl('aiFromTextContent');
         aiGeneratorContent = getEl('aiGeneratorContent');
-        aiTopicInput = getEl('aiTopicInput');
+        
         generateTestFromTopicBtn = getEl('generateTestFromTopicBtn');
         aiTopicQuestionCount = getEl('aiTopicQuestionCount');
         aiTopicAnswerCount = getEl('aiTopicAnswerCount');
@@ -6749,7 +6752,7 @@ const mainApp = (function() {
         // ===== НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ВКЛАДОК ПАРСЕРА =====
         converterTabBtn?.addEventListener('click', () => switchParserTab('converter'));
         aiFromTextTabBtn?.addEventListener('click', () => switchParserTab('aiFromText'));
-        aiGeneratorTabBtn?.addEventListener('click', () => switchParserTab('aiGenerator'));
+        aiFromTopicTabBtn?.addEventListener('click', () => switchParserTab('aiGenerator')); // <-- ИСПРАВЛЕНО
 
         // Обработчик для НОВОЙ кнопки генерации по теме
         generateTestFromTopicBtn?.addEventListener('click', handleAIGenerationFromTopicRequest);
@@ -10741,7 +10744,7 @@ const mainApp = (function() {
         // Убираем активное состояние у всех кнопок
         converterTabBtn.classList.remove('active');
         aiFromTextTabBtn.classList.remove('active');
-        aiGeneratorTabBtn.classList.remove('active');
+        aiFromTopicTabBtn.classList.remove('active');
 
         // Показываем нужную вкладку и делаем активной ее кнопку
         if (tabId === 'converter') {
@@ -10752,7 +10755,7 @@ const mainApp = (function() {
             aiFromTextTabBtn.classList.add('active');
         } else if (tabId === 'aiGenerator') {
             aiGeneratorContent.classList.add('active');
-            aiGeneratorTabBtn.classList.add('active');
+            aiFromTopicTabBtn.classList.add('active');
         }
     }
 
