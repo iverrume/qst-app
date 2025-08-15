@@ -5474,6 +5474,7 @@ const mainApp = (function() {
             ai_char_limit_exceeded: 'Лимит символов превышен ({current}/{max})',
 
             tab_converter: "Конвертер из текста",
+            tab_ai_from_text: "ИИ-генератор из текста", 
             tab_ai_generator: "ИИ-генератор по теме",
             ai_from_text_title: "🤖 Создать тест из вашего текста (ИИ)",
             ai_generate_from_text_button: "Сгенерировать тест из текста",
@@ -5760,6 +5761,7 @@ const mainApp = (function() {
             ai_char_limit_exceeded: 'Таңба шегінен асып кетті ({current}/{max})',
 
             tab_converter: "Мәтіннен түрлендіргіш",
+            tab_ai_from_text: "Мәтіннен ЖИ-генератор",
             tab_ai_generator: "Тақырып бойынша ЖИ-генератор",
             ai_from_text_title: "🤖 Мәтініңізден тест жасау (ЖИ)",
             ai_generate_from_text_button: "Мәтіннен тест жасау",
@@ -6093,6 +6095,7 @@ const mainApp = (function() {
             ai_char_limit_exceeded: 'Character limit exceeded ({current}/{max})',
 
             tab_converter: "Converter from Text",
+            tab_ai_from_text: "AI Generator from Text",
             tab_ai_generator: "AI Generator by Topic",
             ai_from_text_title: "🤖 Create Test from Your Text (AI)",
             ai_generate_from_text_button: "Generate Test from Text",
@@ -6353,7 +6356,8 @@ const mainApp = (function() {
             shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks;
 
     let themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon;
-    let converterTabBtn, aiGeneratorTabBtn, converterContent, aiGeneratorContent, 
+    let converterTabBtn, aiFromTextTabBtn, aiFromTopicTabBtn, 
+        converterContent, aiFromTextContent, aiGeneratorContent, 
         aiTopicInput, generateTestFromTopicBtn, aiTopicQuestionCount, aiTopicAnswerCount;
     let aiTopicAutoCategory;
 
@@ -6594,7 +6598,9 @@ const mainApp = (function() {
         downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
         downloadTranslatedQstButton = getEl('downloadTranslatedQstButton');
         converterTabBtn = getEl('converterTabBtn');
+        aiFromTextTabBtn = getEl('aiFromTextTabBtn');
         aiGeneratorTabBtn = getEl('aiGeneratorTabBtn');
+        aiFromTextContent = getEl('aiFromTextContent');
         converterContent = getEl('converterContent');
         aiGeneratorContent = getEl('aiGeneratorContent');
         aiTopicInput = getEl('aiTopicInput');
@@ -6742,6 +6748,7 @@ const mainApp = (function() {
 
         // ===== НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ВКЛАДОК ПАРСЕРА =====
         converterTabBtn?.addEventListener('click', () => switchParserTab('converter'));
+        aiFromTextTabBtn?.addEventListener('click', () => switchParserTab('aiFromText'));
         aiGeneratorTabBtn?.addEventListener('click', () => switchParserTab('aiGenerator'));
 
         // Обработчик для НОВОЙ кнопки генерации по теме
@@ -10721,30 +10728,33 @@ const mainApp = (function() {
     }
 
 
-
     /**
      * НОВАЯ ФУНКЦИЯ: Переключает активную вкладку в разделе парсера.
-     * @param {string} tabId - ID вкладки ('converter' или 'aiGenerator').
+     * @param {string} tabId - ID вкладки ('converter', 'aiFromText' или 'aiGenerator').
      */
     function switchParserTab(tabId) {
         // Скрываем все вкладки
         converterContent.classList.remove('active');
+        aiFromTextContent.classList.remove('active');
         aiGeneratorContent.classList.remove('active');
 
         // Убираем активное состояние у всех кнопок
         converterTabBtn.classList.remove('active');
+        aiFromTextTabBtn.classList.remove('active');
         aiGeneratorTabBtn.classList.remove('active');
 
         // Показываем нужную вкладку и делаем активной ее кнопку
         if (tabId === 'converter') {
             converterContent.classList.add('active');
             converterTabBtn.classList.add('active');
+        } else if (tabId === 'aiFromText') {
+            aiFromTextContent.classList.add('active');
+            aiFromTextTabBtn.classList.add('active');
         } else if (tabId === 'aiGenerator') {
             aiGeneratorContent.classList.add('active');
             aiGeneratorTabBtn.classList.add('active');
         }
     }
-
 
 
     async function handleAIGenerationFromTopicRequest() {
