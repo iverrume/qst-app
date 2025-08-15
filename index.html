@@ -94,15 +94,18 @@
             </div>
 
             <div class="file-upload-area" id="fileUploadArea">
-                <!-- === НАЧАЛО НОВОГО БЛОКА АКТИВАЦИИ === -->
-                <div id="searchActivationContainer">
-                    <label for="accessCodeInput">Активация поиска по базе:</label>
-                    <input type="text" id="accessCodeInput" placeholder="Введите ваш одноразовый ключ...">
-                    <button id="activateSearchBtn">Активировать</button>
+    
+                <div id="searchVerificationContainer" class="hidden">
+                    <p>Проверка доступа к поиску...</p>
                 </div>
-                <!-- === КОНЕЦ НОВОГО БЛОКА АКТИВАЦИИ === -->
+
+                <div id="searchActivationContainer" class="hidden">
+                    <label for="accessCodeInput" data-lang-key="activation_label">Активация:</label>
+                    <input type="text" id="accessCodeInput" placeholder="Введите ваш одноразовый ключ..." data-lang-key="activation_placeholder">
+                    <button id="activateSearchBtn" data-lang-key="activation_button">Активировать</button>
+                </div>
                 
-                <div id="searchContainer" class="hidden"> <!-- <-- ДОБАВЛЕН КЛАСС HIDDEN -->
+                <div id="searchContainer" class="hidden">
                     <label for="searchQueryInput" data-lang-key="search_in_db">Поиск вопроса в базе:</label>
                     <input type="text" id="searchQueryInput" placeholder="Введите часть текста вопроса..." data-lang-key="search_placeholder">
                     <button id="searchButton" data-lang-key="find_button">Найти</button>

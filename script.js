@@ -5339,7 +5339,6 @@ const mainApp = (function() {
             ai_explain_button: 'Объяснить💡',
             ai_explanation_loading: 'ИИ готовит объяснение...',
 
-            ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Пожалуйста, вставьте текст для анализа.',
             ai_error_generation: 'Произошла ошибка при генерации теста.',
             ai_question_count_label: '4. Укажите количество вопросов для ИИ:',
@@ -5506,7 +5505,14 @@ const mainApp = (function() {
             translate_engine_google: "Google Переводчик",
             translate_engine_ai: "AI Переводчик",
             ai_generate_from_text_button: "Сгенерировать тест из текста",
-            ai_generating_button: "🤖 Генерация..."
+            ai_generating_button: "🤖 Генерация...",
+            activation_label: "Активация:",
+            activation_placeholder: "Введите ваш одноразовый ключ...",
+            activation_button: "Активировать",
+            enter_activation_key_alert: "Пожалуйста, введите ключ активации.",
+            checking_button: "Проверка...",
+            search_activated_alert: "Поиск по базе успешно активирован на этом устройстве!",
+            server_connection_error_alert: "Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение."
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -5829,7 +5835,14 @@ const mainApp = (function() {
             translate_engine_ai: "AI Аудармашы",
             shuffle_n_questions: "Араластырылған жиынтық",
             ai_generate_from_text_button: "Мәтіннен тест жасау",
-            ai_generating_button: "🤖 Генерация..."
+            ai_generating_button: "🤖 Генерация...",
+            activation_label: "Белсендіру:",
+            activation_placeholder: "Бір реттік кілтіңізді енгізіңіз...",
+            activation_button: "Белсендіру",
+            enter_activation_key_alert: "Белсендіру кілтін енгізіңіз.",
+            checking_button: "Тексерілуде...",
+            search_activated_alert: "Дерекқор бойынша іздеу осы құрылғыда сәтті белсендірілді.",
+            server_connection_error_alert: "Кілті тексеру үшін сервермен байланысу мүмкін болмады. Интернет қосылымын тексеріңіз."
 
         },
         en: {
@@ -6158,7 +6171,14 @@ const mainApp = (function() {
             translate_engine_ai: "AI Translator",
             shuffle_n_questions: "Random set of",
             ai_generate_from_text_button: "Generate Test from Text",
-            ai_generating_button: "🤖 Generating..."
+            ai_generating_button: "🤖 Generating...",
+            activation_label: "Activation:",
+            activation_placeholder: "Enter your one-time key...",
+            activation_button: "Activate",
+            enter_activation_key_alert: "Please enter the activation key.",
+            checking_button: "Checking...",
+            search_activated_alert: "Database search has been successfully activated on this device.",
+            server_connection_error_alert: "Could not contact the server to verify the key. Please check your internet connection."
         }
 
 
@@ -6225,6 +6245,8 @@ const mainApp = (function() {
         prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList, appTitleHeader;
+
+    let searchVerificationContainer;
 
     let translateEngineToggle, translateEngineDropdown;
     let rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
@@ -6361,6 +6383,7 @@ const mainApp = (function() {
         searchActivationContainer = getEl('searchActivationContainer');
         accessCodeInput = getEl('accessCodeInput');
         activateSearchBtn = getEl('activateSearchBtn');
+        searchVerificationContainer = getEl('searchVerificationContainer');
         fileUploadArea = getEl('fileUploadArea');
         quizSetupArea = getEl('quizSetupArea');
         quizArea = getEl('quizArea');
@@ -6514,12 +6537,13 @@ const mainApp = (function() {
         
         setupEventListeners();
         // Проверка, активирован ли поиск на этом устройстве
-        if (localStorage.getItem('isSearchActivated') === 'true') {
-            searchActivationContainer.classList.add('hidden');
-            searchContainer.classList.remove('hidden');
+        const activatedKey = localStorage.getItem('activatedSearchKey');
+        if (activatedKey) {
+            // Если ключ есть, отправляем его на повторную проверку
+            revalidateSearchKey(activatedKey);
         } else {
+            // Если ключа нет, просто показываем форму активации
             searchActivationContainer.classList.remove('hidden');
-            searchContainer.classList.add('hidden');
         }
         loadTheme();
         updateQuickModeToggleVisual();
@@ -11983,16 +12007,15 @@ const mainApp = (function() {
     }
 
 
-    // === НАЧАЛО НОВОЙ ФУНКЦИИ ===
     async function handleActivateSearch() {
         const code = accessCodeInput.value.trim();
         if (!code) {
-            alert('Пожалуйста, введите ключ активации.');
+            alert(_('enter_activation_key_alert'));
             return;
         }
 
         activateSearchBtn.disabled = true;
-        activateSearchBtn.textContent = 'Проверка...';
+        activateSearchBtn.textContent = _('checking_button');
 
         try {
             const response = await fetch(googleAppScriptUrl, {
@@ -12006,25 +12029,55 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success) {
-                // Ключ верный и был успешно "сожжен" на сервере
-                localStorage.setItem('isSearchActivated', 'true');
+                localStorage.setItem('activatedSearchKey', code);
                 searchActivationContainer.classList.add('hidden');
                 searchContainer.classList.remove('hidden');
-                alert('Поиск по базе успешно активирован на этом устройстве!');
+                alert(_('search_activated_alert'));
             } else {
-                // Сервер вернул ошибку (ключ неверный или уже использован)
-                alert(result.error || 'Произошла ошибка. Попробуйте еще раз.');
+                alert(result.error || _('error_generic_for_alert'));
             }
 
         } catch (error) {
             console.error("Ошибка при валидации ключа:", error);
-            alert('Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение.');
+            alert(_('server_connection_error_alert'));
         } finally {
             activateSearchBtn.disabled = false;
-            activateSearchBtn.textContent = 'Активировать';
+            activateSearchBtn.textContent = _('activation_button');
         }
     }
-    // === КОНЕЦ НОВОЙ ФУНКЦИИ ===
+
+
+    async function revalidateSearchKey(key) {
+        searchVerificationContainer.classList.remove('hidden'); // Показываем "Проверка..."
+
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'revalidateKey',
+                    code: key
+                })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // Сервер подтвердил, что ключ все еще действителен
+                searchContainer.classList.remove('hidden');
+            } else {
+                // Ключ больше не действителен!
+                localStorage.removeItem('activatedSearchKey'); // Стираем невалидный ключ
+                searchActivationContainer.classList.remove('hidden');
+                console.warn('Доступ к поиску отозван сервером.');
+            }
+        } catch (error) {
+            // В случае ошибки сети, показываем форму активации (безопасный вариант)
+            console.error("Ошибка ревалидации ключа:", error);
+            localStorage.removeItem('activatedSearchKey');
+            searchActivationContainer.classList.remove('hidden');
+        } finally {
+            searchVerificationContainer.classList.add('hidden'); // Скрываем "Проверка..."
+        }
+    }
 
 
 

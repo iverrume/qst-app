@@ -2,7 +2,7 @@
 
 // ВАЖНО: При каждом обновлении ОСНОВНЫХ файлов (css, js) меняйте версию кеша!
 // Например, 'qst-app-cache-v279', 'qst-app-cache-v280' и т.д.
-const CACHE_NAME = 'qst-app-cache-v294'; // Версию пока оставляем, чтобы не вызвать лишнее обновление
+const CACHE_NAME = 'qst-app-cache-v295'; // Версию пока оставляем, чтобы не вызвать лишнее обновление
 
 // Файлы, которые составляют "оболочку" приложения и будут закешированы
 const URLS_TO_CACHE = [
@@ -126,3 +126,50 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+/**
+ * Повторно проверяет ключ, который уже должен быть активирован.
+ * Не изменяет данные в таблице, только читает.
+ */
+function handleRevalidateKey(requestData, startTime) {
+  try {
+    const userCode = requestData.code;
+    if (!userCode) {
+      throw new Error("Ключ для ревалидации не предоставлен.");
+    }
+
+    const SPREADSHEET_ID = '1G9u4eFxjEYuQLlWIYdiSKc_QgPdCruKS69i3nCQthuk'; 
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('AccessKeys');
+    if (!sheet) {
+      throw new Error("Лист 'AccessKeys' не найден.");
+    }
+
+    const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 2).getValues();
+    let keyFound = false;
+    let isStillActive = false;
+
+    for (let i = 0; i < data.length; i++) {
+      // Сравниваем как строки, чтобы избежать проблем с типами
+      if (String(data[i][0]) === String(userCode)) {
+        keyFound = true;
+        // Проверяем, что в колонке IsUsed стоит TRUE
+        if (data[i][1] === true) {
+          isStillActive = true;
+        }
+        break;
+      }
+    }
+
+    if (keyFound && isStillActive) {
+      // Ключ найден и он все еще активен
+      return Utils.createJsonResponse({ success: true, processingTime: Date.now() - startTime });
+    } else {
+      // Ключ не найден или был деактивирован (IsUsed = FALSE)
+      return Utils.createJsonResponse({ success: false, error: "Доступ отозван.", processingTime: Date.now() - startTime });
+    }
+
+  } catch (err) {
+    console.error('Ошибка в handleRevalidateKey:', err.stack);
+    return Utils.createJsonResponse({ success: false, error: 'Ошибка сервера при ревалидации: ' + err.message, processingTime: Date.now() - startTime });
+  }
+}
