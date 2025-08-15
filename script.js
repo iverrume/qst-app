@@ -6240,6 +6240,7 @@ const mainApp = (function() {
     let updateNotification, updateBtn, translateQuestionBtn;
     let downloadTranslatedTxtButton, downloadTranslatedQstButton;
     let flashcardsModeCheckbox;
+    let searchActivationContainer, accessCodeInput, activateSearchBtn;
 
 
     // --- State Variables ---
@@ -6357,6 +6358,9 @@ const mainApp = (function() {
         
         
         fileInput = getEl('fileInput');
+        searchActivationContainer = getEl('searchActivationContainer');
+        accessCodeInput = getEl('accessCodeInput');
+        activateSearchBtn = getEl('activateSearchBtn');
         fileUploadArea = getEl('fileUploadArea');
         quizSetupArea = getEl('quizSetupArea');
         quizArea = getEl('quizArea');
@@ -6509,6 +6513,14 @@ const mainApp = (function() {
         }
         
         setupEventListeners();
+        // Проверка, активирован ли поиск на этом устройстве
+        if (localStorage.getItem('isSearchActivated') === 'true') {
+            searchActivationContainer.classList.add('hidden');
+            searchContainer.classList.remove('hidden');
+        } else {
+            searchActivationContainer.classList.remove('hidden');
+            searchContainer.classList.add('hidden');
+        }
         loadTheme();
         updateQuickModeToggleVisual();
         updateTriggerWordToggleVisual();
@@ -6572,6 +6584,8 @@ const mainApp = (function() {
             manageBackButtonInterceptor();
         });
         searchButton?.addEventListener('click', performSearch);
+
+        activateSearchBtn?.addEventListener('click', handleActivateSearch);
         backToSearchButton?.addEventListener('click', () => {
             searchResultsContainer.classList.add('hidden');
             fileUploadArea.classList.remove('hidden');
@@ -11967,6 +11981,51 @@ const mainApp = (function() {
             }
         }
     }
+
+
+    // === НАЧАЛО НОВОЙ ФУНКЦИИ ===
+    async function handleActivateSearch() {
+        const code = accessCodeInput.value.trim();
+        if (!code) {
+            alert('Пожалуйста, введите ключ активации.');
+            return;
+        }
+
+        activateSearchBtn.disabled = true;
+        activateSearchBtn.textContent = 'Проверка...';
+
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'validateAccessCode',
+                    code: code
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Ключ верный и был успешно "сожжен" на сервере
+                localStorage.setItem('isSearchActivated', 'true');
+                searchActivationContainer.classList.add('hidden');
+                searchContainer.classList.remove('hidden');
+                alert('Поиск по базе успешно активирован на этом устройстве!');
+            } else {
+                // Сервер вернул ошибку (ключ неверный или уже использован)
+                alert(result.error || 'Произошла ошибка. Попробуйте еще раз.');
+            }
+
+        } catch (error) {
+            console.error("Ошибка при валидации ключа:", error);
+            alert('Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение.');
+        } finally {
+            activateSearchBtn.disabled = false;
+            activateSearchBtn.textContent = 'Активировать';
+        }
+    }
+    // === КОНЕЦ НОВОЙ ФУНКЦИИ ===
+
 
 
     // --- Public methods exposed from mainApp ---

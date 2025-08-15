@@ -7044,3 +7044,32 @@ input[type="range"]::-moz-range-thumb {
     font-size: 0.75em;
     color: var(--secondary-text-color);
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ БЛОКА АКТИВАЦИИ ПОИСКА        === */
+/* ======================================================= */
+
+#searchActivationContainer {
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 2px dashed var(--dashed-border-color);
+}
+
+#searchActivationContainer label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+#searchActivationContainer input[type="text"] {
+    padding: 8px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+#searchActivationContainer button {
+    width: 100%;
+}

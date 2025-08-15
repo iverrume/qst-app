@@ -94,12 +94,22 @@
             </div>
 
             <div class="file-upload-area" id="fileUploadArea">
-                <div id="searchContainer">
+                <!-- === НАЧАЛО НОВОГО БЛОКА АКТИВАЦИИ === -->
+                <div id="searchActivationContainer">
+                    <label for="accessCodeInput">Активация поиска по базе:</label>
+                    <input type="text" id="accessCodeInput" placeholder="Введите ваш одноразовый ключ...">
+                    <button id="activateSearchBtn">Активировать</button>
+                </div>
+                <!-- === КОНЕЦ НОВОГО БЛОКА АКТИВАЦИИ === -->
+                
+                <div id="searchContainer" class="hidden"> <!-- <-- ДОБАВЛЕН КЛАСС HIDDEN -->
                     <label for="searchQueryInput" data-lang-key="search_in_db">Поиск вопроса в базе:</label>
                     <input type="text" id="searchQueryInput" placeholder="Введите часть текста вопроса..." data-lang-key="search_placeholder">
                     <button id="searchButton" data-lang-key="find_button">Найти</button>
                 </div>
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+
+
                 <label for="fileInput" data-lang-key="choose_file">Выберите .qst либо .txt файл с устройства:</label>
                 <input type="file" id="fileInput">
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
