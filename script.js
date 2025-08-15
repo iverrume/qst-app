@@ -4240,18 +4240,15 @@ const ChatModule = (function() {
 
 
 
-                // 2. Отправляем файл на сервер НАПРЯМУЮ и ждем JSON-ответ
-                const response = await fetch(googleAppScriptUrl, {
+                // 2. Отправляем файл на сервер в формате, обходящем CORS-редирект Google
+                const urlWithParams = `${googleAppScriptUrl}?action=chatFileUpload&fileName=${encodeURIComponent(file.name)}`;
+
+                const response = await fetch(urlWithParams, {
                     method: 'POST',
                     headers: {
-                        // ИЗМЕНЕНИЕ: Отправляем как простой текст, чтобы избежать preflight-запроса
                         'Content-Type': 'text/plain;charset=utf-8',
                     },
-                    body: JSON.stringify({ // Тело запроса остается строкой JSON
-                        action: 'chatFileUpload',
-                        fileName: file.name,
-                        content: fileContent
-                    })
+                    body: fileContent // Отправляем содержимое файла напрямую, без JSON-обертки
                 });
 
 
