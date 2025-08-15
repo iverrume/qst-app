@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QSTiUM</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="manifest" href="/manifest.json">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+    <style>
+        #gradusButton {
+            line-height: 1.3;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+        #gradusButton .gradus-subtitle {
+            display: block;
+            font-size: 0.75em;
+            font-weight: normal;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="updateNotification" class="update-notification hidden">
+        <span data-lang-key="update_available_text">Доступна новая версия!</span>
+        <button id="updateBtn" data-lang-key="update_button_text">Обновить</button>
+    </div>
+
+    <div class="app-wrapper">
+        <!-- === ВОТ ОН, ВОССТАНОВЛЕННЫЙ КОНТЕЙНЕР === -->
+        <div class="container">
+
+
+
+<div class="header-controls">
+                <!-- Заголовок теперь ВНЕ контейнера с кнопками -->
+                <h1 id="appTitleHeader" data-lang-key="app_title">QSTiUM</h1>
+                
+                <!-- Контейнер теперь только для кнопок -->
+                <div class="header-buttons">
+                    <button id="copyQuestionBtnQuiz" title="Копировать текущий вопрос" class="hidden" data-lang-key="copy_question_title" data-lang-skip-content="true">📋</button> 
+
+
+
+                    <div class="dropdown hidden" id="webSearchDropdown">
+                        <button id="searchWebButton" title="Найти в интернете" data-lang-key="search_web_title" data-lang-skip-content="true">🌐</button>
+                        <div id="searchDropdownContent" class="dropdown-content">
+                            <a href="#" data-engine="google" data-lang-key="search_engine_google">Google</a>
+                            <a href="#" data-engine="yandex" data-lang-key="search_engine_yandex">Яндекс</a>
+                            <a href="#" data-engine="perplexity" data-lang-key="search_engine_perplexity">Perplexity</a>
+                        </div>
+                    </div>
+                    <button id="chatToggle" title="Открыть чат" data-lang-key="chat_button_title" data-lang-skip-content="true">💬</button>
+                    <button id="quickModeToggle" title="Быстрый режим (Автопереход)" class="hidden" data-lang-key="quick_mode_title" data-lang-skip-content="true">⚡</button> 
+                    <button id="triggerWordToggle" title="Триггер-слова" class="hidden" data-lang-key="trigger_words_title" data-lang-skip-content="true">✍️</button>
+
+
+                    <div class="dropdown" id="themeDropdownContainer">
+                        <button id="themeDropdownButton" title="Сменить тему" data-lang-key="theme_button_title" data-lang-skip-content="true">
+                            <span id="themeIcon">🌗</span>
+                        </button>
+                        <div id="themeDropdownContent" class="dropdown-content theme-picker-dropdown">
+                            <!-- Сюда JS вставит иконки тем -->
+                        </div>
+                    </div>
+
+
+                    <button id="languageToggle" title="Сменить язык" data-lang-key="language_toggle_title">Рус</button>
+                    <button id="favoriteQuestionBtn" title="Добавить в избранное" class="hidden" data-lang-key="favorite_button_title" data-lang-skip-content="true">⭐</button>
+                    <div class="translate-engine-container">
+                        <button id="translateQuestionBtn" title="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true">अа</button>
+                        <button id="translateEngineToggle" class="hidden" title="Выбрать движок перевода">▼</button>
+                        <div id="translateEngineDropdown" class="dropdown-content">
+                            <a href="#" data-engine="google" data-lang-key="translate_engine_google">
+                                <span class="engine-name">Google</span>
+                                <span class="checkmark">✓</span>
+                            </a>
+                            <a href="#" data-engine="ai" data-lang-key="translate_engine_ai">
+                                <span class="engine-name">AI (ИИ)</span>
+                                <span class="checkmark">✓</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- === КОНЕЦ НОВОГО БЛОКА ПЕРЕВОДЧИКА === -->
+                </div>
+
+
+
+            </div>
+
+            <div class="file-upload-area" id="fileUploadArea">
+                <div id="searchContainer">
+                    <label for="searchQueryInput" data-lang-key="search_in_db">Поиск вопроса в базе:</label>
+                    <input type="text" id="searchQueryInput" placeholder="Введите часть текста вопроса..." data-lang-key="search_placeholder">
+                    <button id="searchButton" data-lang-key="find_button">Найти</button>
+                </div>
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                <label for="fileInput" data-lang-key="choose_file">Выберите .qst либо .txt файл с устройства:</label>
+                <input type="file" id="fileInput">
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                <button id="gradusButton">
+                    <span data-lang-key="gradus_button_main">GRADUS</span>
+                    <span class="gradus-subtitle" data-lang-key="gradus_subtitle">(General Repository for Academic Data, Utility & Structure)</span>
+                </button>
+                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                <button id="parserButton">
+                    <span data-lang-key="parser_button_main">Перевести</span>
+                    <span class="gradus-subtitle" data-lang-key="parser_subtitle">текст в формат .qst</span>
+                </button>
+                <div id="savedSessionArea" class="hidden">
+                    <h4 data-lang-key="continue_sessions">Продолжить:</h4>
+                    <div id="savedSessionList"></div>
+                </div>
+                <div id="recentFilesArea" class="hidden">
+                    <h4 data-lang-key="recent_files">Недавно использованные:</h4>
+                    <ul id="recentFilesList"></ul>
+                </div>
+            </div>
+
+            <div id="searchResultsContainer" class="view hidden">
+                <div class="search-results-header">
+                    <h2 data-lang-key="search_results_title">Результаты поиска</h2>
+                    <button id="backToSearchButton" class="btn btn-secondary" data-lang-key="back_to_search">Новый поиск</button>
+                </div>
+
+                <div id="searchNavigation" class="search-navigation hidden">
+                    <button id="prevResultBtn" class="nav-arrow" disabled><</button>
+                    <span id="resultCounter">0 / 0</span>
+                    <button id="nextResultBtn" class="nav-arrow" disabled>></button>
+                </div>
+
+                <div id="searchResultCards">
+                    <!-- Карточки с результатами будут вставляться сюда -->
+                </div>
+            </div>
+
+            <div id="gradusFoldersContainer" class="hidden">
+                <h2 data-lang-key="nav_gradus">Навигация по GRADUS</h2>
+                <div id="gradusBreadcrumbs"></div>
+                <div id="gradusFolderList"></div>
+                <button id="backToFileUploadButton" style="margin-top: 15px;" data-lang-key="back_to_main">Назад к главному экрану</button>
+            </div>
+
+            <div id="quizSetupArea" class="hidden">
+                <h2 data-lang-key="quiz_settings_title">Настройки теста</h2>
+
+
+                <div class="settings-group">
+                    <label for="timeLimit" data-lang-key="time_limit">Лимит времени (минуты, 0 - без лимита):</label>
+                    <div class="single-slider-container">
+                        <div id="timeSliderTrack" class="slider-track"></div>
+                        <div id="timeSliderTicks" class="slider-ticks"></div>
+                        <div id="timeSliderProgress" class="slider-progress"></div>
+                        <input type="range" id="timeLimit" min="0" max="180" value="0" step="10">
+                    </div>
+                    <div class="range-inputs-container" style="justify-content: flex-end;">
+                         <span id="timeLimitValue">0</span> <span data-lang-key="time_limit_minutes">мин</span>
+                    </div>
+                </div>
+
+
+                <div class="settings-group" id="questionRangeGroup">
+                    <div class="range-label-container">
+                        <label for="questionRangeStart" data-lang-key="question_range">Диапазон вопросов:</label>
+                        <span id="maxQuestionsInfo"></span>
+                    </div>
+
+                    <div class="dual-slider-container">
+                        <div id="sliderTrack" class="slider-track"></div>
+                        <div id="sliderTicks" class="slider-ticks"></div>
+                        <div id="sliderProgress" class="slider-progress"></div>
+                        <input type="range" id="rangeSliderStart" min="1" value="1" step="1">
+                        <input type="range" id="rangeSliderEnd" min="1" value="100" step="1">
+                    </div>
+
+                    <div class="range-inputs-container">
+                        <span data-lang-key="range_from">От</span> 
+                        <input type="number" id="questionRangeStart" min="1" value="1" class="range-input">
+                        <span data-lang-key="range_to">До</span> 
+                        <input type="number" id="questionRangeEnd" min="1" class="range-input">
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="shuffleNQuestions">
+                    <label for="shuffleNQuestions" data-lang-key="shuffle_n_questions">Случайный набор из</label>
+                    <input type="number" id="shuffleNQuestionsCount" min="1" value="50" class="range-input" style="width: 70px;">
+                    <label for="shuffleNQuestionsCount" data-lang-key="questions_label_for_range">вопросов</label>
+                </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="shuffleQuestions">
+                    <label for="shuffleQuestions" data-lang-key="shuffle_questions">Перемешать вопросы</label>
+                </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="shuffleAnswers">
+                    <label for="shuffleAnswers" data-lang-key="shuffle_answers">Перемешать ответы</label>
+                </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="feedbackMode">
+                    <label for="feedbackMode" data-lang-key="feedback_mode">Режим обратной связи (сохранить ошибки)</label>
+                </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="readingMode">
+                    <label for="readingMode" data-lang-key="reading_mode">Режим чтения (первый вариант верный)</label>
+                </div>
+                <div class="settings-group">
+                    <input type="checkbox" id="flashcardsMode">
+                    <label for="flashcardsMode" data-lang-key="flashcards_mode">Режим карточек (вопрос/ответ)</label>
+                </div>
+                <button id="startQuizButton" data-lang-key="start_quiz_button">Начать тест</button>
+                <button id="generateCheatSheetButton" style="margin-top: 10px;" data-lang-key="generate_cheat_sheet_button">Создать шпору</button>
+                <button id="chooseAnotherFileButton" style="margin-top: 10px;" data-lang-key="choose_another_file_button">Выбрать другой файл</button>
+            </div>
+
+            <div id="cheatSheetResultArea" class="hidden">
+                <h2 data-lang-key="cheat_sheet_title">Сгенерированная шпора:</h2>
+                <textarea id="cheatSheetOutput" readonly rows="15"></textarea>
+                <button id="downloadCheatSheetButton" data-lang-key="download_cheat_sheet_button">Скачать шпору (.txt)</button>
+                <button id="backToSettingsButton" style="margin-top: 10px;" data-lang-key="back_to_settings_button">Назад к настройкам</button>
+            </div>
+
+            <div id="quizArea" class="hidden">
+                <div id="timerDisplay" class="hidden"><span data-lang-key="timer_label">Время:</span> <span id="timeLeft">--:--</span></div>
+                <div id="questionContainer">
+                    <div id="questionText"></div>
+                    <ul id="answerOptions"></ul>
+                    <div id="feedbackArea" class="feedback-area"></div>
+                </div>
+                <div id="questionNavigationControls">
+                    <button id="prevQuestionButton" disabled data-lang-key="prev_question_button">Предыдущий</button>
+                    <button id="nextButton" data-lang-key="next_question_button">Следующий</button>
+                </div>
+                <div id="score">
+                    <p><span data-lang-key="question_label">Вопрос:</span> <span id="currentQuestionNum">0</span> / <span id="totalQuestionsNum">0</span></p>
+                    <p><span data-lang-key="correct_label">Правильно:</span> <span id="correctAnswersCount">0</span></p>
+                </div>
+                <div id="quickNavPanel" class="hidden">
+                    <h4 data-lang-key="quick_nav_title">Навигация по вопросам:</h4>
+                    <div id="quickNavButtons"></div>
+                </div>
+                <div class="quiz-footer-controls">
+                     <button id="downloadTranslatedTxtButton" class="hidden">Скачать (txt)</button>
+                     <button id="downloadTranslatedQstButton" class="hidden">Скачать (qst)</button>
+                     <button id="continueLaterButton" class="hidden" data-lang-key="continue_later_button">Продолжить позже</button>
+                     <button id="finishTestButton" class="finish-test-early hidden" data-lang-key="finish_early_button">Завершить тест</button>
+                </div>
+            </div>
+
+            <div id="resultsArea" class="hidden">
+                <h2 data-lang-key="quiz_finished_title">Тест завершен!</h2>
+                <p><span data-lang-key="your_result">Ваш результат:</span> <span id="finalCorrect"></span> <span data-lang-key="of_label">из</span> <span id="finalTotal"></span>.</p>
+                <p><span data-lang-key="accuracy_label">Точность:</span> <span id="finalPercentage"></span>%</p>
+                <div id="feedbackDownloadArea" class="hidden">
+                    <button id="downloadErrorsButton" data-lang-key="download_errors_button">Скачать неотвеченные/неправильные вопросы</button>
+                </div>
+                <div id="errorReviewArea" class="hidden">
+                     <button id="reviewErrorsButton" data-lang-key="review_errors_button">Работа над ошибками</button>
+                </div>
+
+                <div id="aiAnalysisArea" class="hidden">
+                    <button id="aiAnalysisBtn" data-lang-key="ai_error_analysis_button">🤖 Аналитика ошибок от ИИ</button>
+                    <div id="aiAnalysisResult" class="ai-analysis-result hidden">
+                        <!-- Сюда будет вставлен результат анализа -->
+                    </div>
+                </div>
+                
+                <div id="triggeredQuizDownloadArea" class="hidden">
+                    <button id="downloadTriggeredQuizButton" data-lang-key="download_triggered_quiz_button">Скачать тест с триггерами</button>
+                </div>
+                <button id="restartButton" data-lang-key="restart_button">Пройти другой тест</button>
+            </div>
+
+            <div id="parserArea" class="hidden">
+                <div class="parser-tabs">
+                    <button id="converterTabBtn" class="parser-tab active" data-lang-key="tab_converter">Конвертер из текста</button>
+                    <button id="aiGeneratorTabBtn" class="parser-tab" data-lang-key="tab_ai_generator">ИИ-генератор по теме</button>
+                </div>
+
+                <div class="parser-tab-content-wrapper">
+                    <div id="converterContent" class="parser-tab-content active">
+                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="parser_description">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
+                        
+                        <div class="settings-group">
+                            <div class="parser-label-container">
+                                <label for="parserFileInput" data-lang-key="parser_upload_or_paste">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+                                <button id="clearParserInputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить поле</button>
+                            </div>
+                            <input type="file" id="parserFileInput" accept=".txt">
+                            <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..." data-lang-key="parser_input_placeholder"></textarea>
+                        </div>
+                        <div class="settings-group">
+                            <label for="parserPatternSelect" data-lang-key="parser_select_format">2. Выберите формат (или оставьте для автоопределения):</label>
+                            <select id="parserPatternSelect" style="width: 100%; padding: 8px; border-radius: 4px;">
+                                <option value="auto" selected data-lang-key="parser_auto_detect">-- Автоматическое определение --</option>
+                            </select>
+                        </div>
+                        <div class="settings-group" style="text-align: center;">
+                            <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать</button>
+                        </div>
+                        
+                        <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
+                        
+                        <h4 data-lang-key="ai_from_text_title">🤖 Создать тест из вашего текста (ИИ)</h4>
+
+                        <div class="settings-group">
+                            <label for="aiQuestionCount" data-lang-key="ai_question_count_label">Количество вопросов для ИИ:</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                                <input type="number" id="aiQuestionCount" min="1" value="5" class="range-input" style="width: 80px;">
+                                <input type="checkbox" id="aiAutoCount" style="margin-left: 15px;">
+                                <label for="aiAutoCount" data-lang-key="ai_auto_mode_label">Авто</label>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="aiAnswerCount" data-lang-key="ai_answer_count_label">Количество вариантов ответа:</label>
+                            <select id="aiAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
+                                <option value="3">3</option>
+                                <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                            </select>
+                        </div>
+
+                        <div class="settings-group">
+                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                                <input type="checkbox" id="aiAutoCategory" checked>
+                                <label for="aiAutoCategory" data-lang-key="ai_auto_category_label">Автоматически создавать категории</label>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-group" style="text-align: center;">
+                            <button id="generateTestFromTextBtn">
+                               <span data-lang-key="ai_generate_from_text_button">Сгенерировать тест из текста</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="aiGeneratorContent" class="parser-tab-content">
+                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="ai_topic_description">ИИ самостоятельно создаст тест на основе указанной темы, используя свои знания.</p>
+                        
+                        <div class="settings-group">
+                             <label for="aiTopicInput" data-lang-key="ai_topic_label">1. Введите тему для генерации теста:</label>
+                             <textarea id="aiTopicInput" rows="4" placeholder="Пример: История Древнего Рима в период Республики, 15 вопросов, 4 варианта ответа, с категориями по войнам..." data-lang-key="ai_topic_placeholder"></textarea>
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="aiTopicQuestionCount" data-lang-key="ai_topic_question_count_label">2. Количество вопросов (если не указано в теме):</label>
+                            <input type="number" id="aiTopicQuestionCount" min="1" max="50" value="10" class="range-input" style="width: 80px;">
+                        </div>
+
+                        <div class="settings-group">
+                            <label for="aiTopicAnswerCount" data-lang-key="ai_topic_answer_count_label">3. Количество вариантов ответа (если не указано в теме):</label>
+                             <select id="aiTopicAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
+                                <option value="3">3</option>
+                                <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                            </select>
+                        </div>
+                        
+                        <div class="settings-group">
+                             <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                                <input type="checkbox" id="aiTopicAutoCategory" checked>
+                                <label for="aiTopicAutoCategory" data-lang-key="ai_topic_auto_category_label">4. Автоматически создавать категории</label>
+                            </div>
+                        </div>
+
+                         <div class="settings-group" style="text-align: center;">
+                            <button id="generateTestFromTopicBtn">
+                                <span data-lang-key="ai_generate_from_topic_button">🤖 Создать тест по теме (ИИ)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="parserErrorsArea" class="hidden">
+                    <button id="showErrorsBtn">
+                        <span data-lang-key="parser_errors_found">⚠️ Ошибки форматирования</span> (<span id="errorCount">0</span>)
+                    </button>
+                    <ul id="errorList"></ul>
+                </div>
+                <div id="parserOutputArea" class="hidden">
+                    <hr>
+                    <h3 data-lang-key="parser_result_title">Результат:</h3>
+                    
+                    <div class="filter-controls-container">
+                        <button id="filterVariantsBtn" data-lang-key="filter_variants_button">⚙️ Фильтр по вариантам</button>
+                        <div id="filterVariantsDropdown" class="filter-dropdown hidden">
+                            <div class="filter-dropdown-header" data-lang-key="filter_variants_header">Выберите кол-во вариантов:</div>
+                            <div class="filter-checkboxes" id="filterVariantCheckboxes">
+                                <!-- Сюда JS вставит чекбоксы -->
+                            </div>
+                            <div class="filter-actions">
+                                <button id="applyVariantFilterBtn" data-lang-key="filter_apply_button">Применить</button>
+                                <button id="resetVariantFilterBtn" class="btn-secondary-small" data-lang-key="filter_reset_button">Сброс</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <textarea id="parserOutput" rows="10"></textarea>
+                    <button id="downloadParsedBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
+                </div>
+                <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);" data-lang-key="back_button">Назад</button>
+            </div>
+
+        </div> <!-- === КОНЕЦ ВОССТАНОВЛЕННОГО КОНТЕЙНЕРА === -->
+
+        <footer>
+            <p>
+                <a href="https://chromewebstore.google.com/detail/qstium-helper/ekamfcpbkcekmmbclpnlmhcimnenabcl?hl=ru&utm_source=ext_sidebar" target="_blank" rel="noopener noreferrer" data-lang-key="footer_copyright">prod by @iverrum</a>
+            </p>
+        </footer>
+        
+        <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
+    </div> 
+    
+    <div id="testResultsModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px;">
+            <h3 id="testResultsModalTitle" data-lang-key="results_modal_title">Результаты по тесту</h3>
+            <div id="testResultsTableContainer" style="max-height: 400px; overflow-y: auto; margin-top: 20px;"></div>
+            <div class="modal-buttons">
+                <button onclick="ChatModule.closeModal('testResultsModal')" data-lang-key="auth_close_button">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="aiExplanationModal" class="modal-overlay hidden">
+        <div class="modal-content" style="text-align: left;">
+            <div class="parser-label-container" style="margin-bottom: 10px;">
+                <h3 data-lang-key="ai_explanation_title">💡 Объяснение от ИИ</h3>
+                <button id="aiExplanationTranslateBtn" class="btn-secondary-small hidden" data-lang-key="ai_toggle_translation_button">
+                    Оригинал/Перевод
+                </button>
+            </div>
+            <div id="aiExplanationQuestion" style="background: var(--input-bg-color); padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
+            <div class="settings-group" style="border: none; padding: 0; margin-bottom: 15px;">
+                <label data-lang-key="ai_explanation_style_label">Стиль объяснения:</label>
+                <div id="aiExplanationStyleDropdown" class="style-dropdown">
+                    <button id="aiExplanationStyleButton" class="style-dropdown-btn">
+                        <span id="aiExplanationStyleText">Просто</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div id="aiExplanationStyleContent" class="style-dropdown-content hidden">
+                        <a href="#" data-style="simple" data-lang-key="ai_style_simple">Просто</a>
+                        <a href="#" data-style="scientific" data-lang-key="ai_style_scientific">Научно</a>
+                        <a href="#" data-style="associative" data-lang-key="ai_style_associative">Аналогия</a>
+                        <a href="#" data-style="stepbystep" data-lang-key="ai_style_stepbystep">Пошагово</a>
+                        <a href="#" data-style="practical" data-lang-key="ai_style_practical">Практично</a>
+                        <a href="#" data-style="visual" data-lang-key="ai_style_visual">Наглядно</a>
+                    </div>
+                </div>
+            </div>
+            <div id="aiExplanationOutput"></div>
+            <div class="modal-buttons" style="justify-content: space-between; margin-top: 20px;">
+                <button id="copyExplanationBtn" data-lang-key="copy_button">Копировать</button>
+                <button onclick="ChatModule.closeModal('aiExplanationModal')" data-lang-key="auth_close_button">Закрыть</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script src="script.js" defer></script>   
+    
+    <div id="exitToast" class="exit-toast hidden" data-lang-key="exit_toast_text">
+        Нажмите еще раз для выхода
+    </div>
+</body>
+</html>
