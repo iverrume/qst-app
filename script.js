@@ -4210,6 +4210,7 @@ const ChatModule = (function() {
 
 
 
+
     // НОВЫЙ КОД
     function handleChatFileSelected(event) {
         const file = event.target.files[0];
@@ -4237,10 +4238,11 @@ const ChatModule = (function() {
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
+
+
                 // 2. Отправляем файл на сервер НАПРЯМУЮ и ждем JSON-ответ
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    // mode: 'no-cors' <-- УБИРАЕМ ЭТУ СТРОКУ!
                     headers: {
                         // Указываем правильный Content-Type
                         'Content-Type': 'application/json',
@@ -4251,6 +4253,8 @@ const ChatModule = (function() {
                         content: fileContent
                     })
                 });
+
+
 
                 // 3. Теперь мы МОЖЕМ прочитать ответ
                 const result = await response.json();
