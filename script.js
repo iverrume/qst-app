@@ -5165,7 +5165,104 @@ window.ChatModule = ChatModule;
 
 
 
+// === НАЧАЛО НОВОГО МОДУЛЯ DBManager ===
+const DBManager = (function() {
+    'use strict';
 
+    const DB_NAME = 'QSTiUM_AppDB';
+    const STORE_NAME = 'AppSettings';
+    let db = null;
+
+    // 1. Инициализация базы данных
+    async function init() {
+        return new Promise((resolve, reject) => {
+            if (db) {
+                return resolve(db);
+            }
+
+            const request = indexedDB.open(DB_NAME, 1);
+
+            request.onerror = (event) => {
+                console.error("Ошибка при открытии IndexedDB:", event.target.error);
+                reject("Не удалось инициализировать базу данных.");
+            };
+
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                console.log("✅ IndexedDB успешно инициализирована.");
+                resolve(db);
+            };
+
+            // Этот обработчик срабатывает, если БД создается впервые или ее версия меняется
+            request.onupgradeneeded = (event) => {
+                const dbInstance = event.target.result;
+                // Создаем "таблицу" (хранилище объектов) для наших настроек
+                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+                    dbInstance.createObjectStore(STORE_NAME, { keyPath: 'key' });
+                    console.log(`Хранилище "${STORE_NAME}" создано.`);
+                }
+            };
+        });
+    }
+
+    // 2. Сохранение ключа
+    async function saveKey(keyName, keyValue) {
+        if (!db) await init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put({ key: keyName, value: keyValue });
+
+            request.onsuccess = () => resolve(true);
+            request.onerror = (event) => {
+                console.error("Ошибка сохранения ключа в IndexedDB:", event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    // 3. Получение ключа
+    async function getKey(keyName) {
+        if (!db) await init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(keyName);
+
+            request.onsuccess = (event) => {
+                resolve(event.target.result ? event.target.result.value : null);
+            };
+            request.onerror = (event) => {
+                console.error("Ошибка получения ключа из IndexedDB:", event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    // 4. Удаление ключа
+    async function deleteKey(keyName) {
+        if (!db) await init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(keyName);
+
+            request.onsuccess = () => resolve(true);
+            request.onerror = (event) => {
+                console.error("Ошибка удаления ключа из IndexedDB:", event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    return {
+        init,
+        saveKey,
+        getKey,
+        deleteKey
+    };
+})();
+// === КОНЕЦ НОВОГО МОДУЛЯ DBManager ===
 
 
 
@@ -6536,15 +6633,28 @@ const mainApp = (function() {
         }
         
         setupEventListeners();
-        // Проверка, активирован ли поиск на этом устройстве
-        const activatedKey = localStorage.getItem('activatedSearchKey');
-        if (activatedKey) {
-            // Если ключ есть, отправляем его на повторную проверку
-            revalidateSearchKey(activatedKey);
-        } else {
-            // Если ключа нет, просто показываем форму активации
-            searchActivationContainer.classList.remove('hidden');
-        }
+
+
+
+
+        // === НАЧАЛО ОБНОВЛЕННОГО УЧАСТКА КОДА ===
+        // Инициализируем IndexedDB и затем проверяем ключ
+        DBManager.init().then(() => {
+            DBManager.getKey('activatedSearchKey').then(activatedKey => {
+                if (activatedKey) {
+                    // Если ключ есть в IndexedDB, отправляем его на повторную проверку
+                    revalidateSearchKey(activatedKey);
+                } else {
+                    // Если ключа нет, просто показываем форму активации
+                    searchActivationContainer.classList.remove('hidden');
+                }
+            });
+        });
+        // === КОНЕЦ ОБНОВЛЕННОГО УЧАСТКА КОДА ===
+
+
+
+
         loadTheme();
         updateQuickModeToggleVisual();
         updateTriggerWordToggleVisual();
@@ -12007,7 +12117,8 @@ const mainApp = (function() {
     }
 
 
-    async function handleActivateSearch() {
+
+    async function handleActivateSearch() { // <-- async уже есть, это хорошо
         const code = accessCodeInput.value.trim();
         if (!code) {
             alert(_('enter_activation_key_alert'));
@@ -12029,7 +12140,9 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success) {
-                localStorage.setItem('activatedSearchKey', code);
+                // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+                await DBManager.saveKey('activatedSearchKey', code); // Сохраняем ключ в IndexedDB
+                // === КОНЕЦ ИЗМЕНЕНИЯ ===
                 searchActivationContainer.classList.add('hidden');
                 searchContainer.classList.remove('hidden');
                 alert(_('search_activated_alert'));
@@ -12045,6 +12158,8 @@ const mainApp = (function() {
             activateSearchBtn.textContent = _('activation_button');
         }
     }
+
+
 
 
     async function revalidateSearchKey(key) {
@@ -12065,14 +12180,14 @@ const mainApp = (function() {
                 searchContainer.classList.remove('hidden');
             } else {
                 // Ключ больше не действителен!
-                localStorage.removeItem('activatedSearchKey'); // Стираем невалидный ключ
+                await DBManager.deleteKey('activatedSearchKey');  // Стираем невалидный ключ
                 searchActivationContainer.classList.remove('hidden');
                 console.warn('Доступ к поиску отозван сервером.');
             }
         } catch (error) {
             // В случае ошибки сети, показываем форму активации (безопасный вариант)
             console.error("Ошибка ревалидации ключа:", error);
-            localStorage.removeItem('activatedSearchKey');
+            await DBManager.deleteKey('activatedSearchKey');
             searchActivationContainer.classList.remove('hidden');
         } finally {
             searchVerificationContainer.classList.add('hidden'); // Скрываем "Проверка..."
