@@ -12,8 +12,8 @@
     --input-border-color: #ddd;
     --input-hover-border-color: #ccc;
     /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
-    --button-primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --button-primary-hover-bg: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    --button-primary-bg: linear-gradient(135deg, #34495e, #2c3e50);
+    --button-primary-hover-bg: linear-gradient(135deg, #2c3e50, #34495e);
     /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --button-primary-text: white;
     --button-secondary-bg: #6c757d;
@@ -57,8 +57,8 @@ body.dark-mode {
     --input-border-color: #444;
     --input-hover-border-color: #555;
     /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
-    --button-primary-bg: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
-    --button-primary-hover-bg: linear-gradient(135deg, #66a6ff 0%, #89f7fe 100%);
+    --button-primary-bg: linear-gradient(135deg, #65737e, #4f5b66);
+    --button-primary-hover-bg: linear-gradient(135deg, #4f5b66, #65737e);
     /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --button-primary-text: #f0f0f0;
     --button-secondary-bg: #495057;
@@ -448,14 +448,6 @@ input[type="file"] {
     box-sizing: border-box;
 }
 
-#fileInput {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid var(--input-border-color);
-    border-radius: 4px;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-}
 
 #fileInput::-webkit-file-upload-button {
     background-color: var(--button-secondary-bg);
@@ -852,6 +844,53 @@ button:disabled {
     opacity: 0.7;
 }
 
+/* ======================================================= */
+/* === ИСПРАВЛЕНИЕ ГЛАВНЫХ КНОПОК НА ГЛАВНОМ ЭКРАНЕ   === */
+/* ======================================================= */
+
+/* Применяем отдельный, более сильный стиль к кнопкам-действиям на главном экране */
+#gradusButton,
+#parserButton,
+#activateSearchBtn,
+#searchButton { /* <-- Также применяем стиль к кнопке "Найти" */
+    /* 1. Возвращаем правильный фон и цвет текста из переменных темы */
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+
+    /* 2. Задаем общие стили для солидного вида */
+    width: 100%;
+    border: none; /* Убираем рамку, так как фон теперь контрастный */
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 1.05em;
+    font-weight: 500;
+    margin: 10px 0;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 2px 5px var(--shadow-light-color);
+    transition: all 0.2s ease-in-out;
+    
+    /* Эти свойства нужны, если --button-primary-bg это градиент */
+    background-size: 200% auto; 
+    background-position: left center;
+}
+
+/* 3. Добавляем красивый эффект при наведении */
+#gradusButton:hover,
+#parserButton:hover,
+#activateSearchBtn:hover,
+#searchButton:hover {
+    background-position: right center; /* Анимация градиента */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+/* 4. Отдельно стилизуем кнопку "Выбрать файл", чтобы она выглядела как вторичное действие */
+#fileInput {
+    display: block; /* Делаем элемент блочным для правильных отступов */
+    margin: 10px 0;
+}
+
 #startQuizButton,
 #downloadErrorsButton,
 #reviewErrorsButton {
@@ -988,6 +1027,68 @@ button:disabled {
     display: none !important;
 }
 
+
+/* ======================================================= */
+/* ===  ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ПОЛЕЙ ВВОДА НА ГЛАВНОМ ЭКРАНЕ === */
+/* ======================================================= */
+
+/* 1. Общий стиль для всех полей ввода на главном экране */
+#searchQueryInput,
+#accessCodeInput,
+#fileInput {
+    padding: 12px 15px; /* Увеличим отступы для солидности */
+    border: 1px solid var(--input-border-color); /* Используем правильную рамку */
+    border-radius: 8px; /* Сделаем углы более скругленными */
+    background-color: var(--input-bg-color); /* <-- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: правильный фон */
+    color: var(--text-color);
+    font-size: 1em; /* Увеличим шрифт для читаемости */
+    transition: all 0.2s ease-in-out; /* Плавный переход для всего */
+    box-shadow: inset 0 1px 2px var(--shadow-light-color); /* Легкая внутренняя тень */
+}
+
+/* 2. Стиль при наведении курсора */
+#searchQueryInput:hover,
+#accessCodeInput:hover,
+#fileInput:hover {
+    border-color: var(--input-hover-border-color);
+    background-color: var(--input-hover-bg-color);
+}
+
+/* 3. Стиль при фокусе (когда пользователь печатает) - делаем красивую подсветку */
+#searchQueryInput:focus,
+#accessCodeInput:focus {
+    outline: none;
+    border-color: var(--button-primary-bg);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); /* Мягкая тень "свечения" */
+}
+
+/* 4. Стиль для текста-плейсхолдера (чтобы он был виден в темной теме) */
+#searchQueryInput::placeholder,
+#accessCodeInput::placeholder {
+    color: var(--secondary-text-color);
+    opacity: 1; /* Для Firefox */
+}
+
+/* 5. Отдельный стиль для кнопки внутри поля выбора файла */
+#fileInput::-webkit-file-upload-button {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border: none; /* Убираем лишнюю рамку */
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 15px;
+    transition: background-color 0.2s;
+}
+
+#fileInput::-webkit-file-upload-button:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+
+
+
+
+
 footer {
     width: 100%;
     text-align: center;
@@ -1090,14 +1191,6 @@ body.dark-mode footer {
     font-weight: bold;
 }
 
-#searchQueryInput {
-    padding: 8px;
-    border: 1px solid var(--input-border-color);
-    border-radius: 4px;
-    background-color: var(--container-bg-color);
-    color: var(--text-color);
-    margin-bottom: 10px;
-}
 
 #searchButton {
     width: 100%;
@@ -6149,13 +6242,6 @@ body.dark-mode .explain-flashcard-btn:hover {
     padding-left: 20px;
 }
 
-/* Дополнительные стили для элементов в теме glass-dark */
-body.glass-dark #searchQueryInput,
-body.glass-dark #fileInput {
-    background-color: var(--input-bg-color);
-    border: 1px solid var(--input-border-color);
-    color: var(--text-color);
-}
 
 body.glass-dark #searchQueryInput::placeholder {
     color: var(--secondary-text-color);
