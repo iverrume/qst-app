@@ -6757,6 +6757,9 @@ const mainApp = (function() {
         setupExtensionListener();
         setupAnimationObserver();
         updateTranslateEngineUI();
+
+        // Скрываем индикатор начальной загрузки, когда все готово
+        getEl('initial-loader')?.classList.add('hidden');
     }
 
 
