@@ -2358,90 +2358,122 @@ const ChatModule = (function() {
 
 
 
-
     /**
-     * Создает DOM-элемент для одного сообщения со всей логикой.
-     * ВЕРСИЯ 3.0: Переход на data-атрибуты и делегирование событий.
+     * Создает DOM-элемент для одного сообщения, используя <template> для производительности и безопасности.
+     * ВЕРСИЯ 4.0: Полный рефакторинг с разделением логики.
      * @param {object} message - Объект сообщения из базы данных Firebase.
      * @returns {HTMLElement} - Готовый для вставки в DOM элемент сообщения.
      */
     function createMessageElement(message) {
-        const messageEl = document.createElement('div');
+        // 1. Клонируем базовую структуру из шаблона
+        const template = getEl('messageTemplate');
+        const messageClone = template.content.cloneNode(true);
+        const messageEl = messageClone.querySelector('.message');
+
+        // 2. Настраиваем корневой элемент сообщения
         messageEl.id = `message-${message.id}`;
         messageEl.className = `message ${message.authorId === currentUser?.uid ? 'mine' : 'other'}`;
-        
-        if (message.authorId) {
-            messageEl.dataset.authorId = message.authorId;
-        }
-
+        if (message.authorId) messageEl.dataset.authorId = message.authorId;
         if (message.isPinned) messageEl.classList.add('pinned');
+        messageEl.dataset.rawText = message.text || ''; // Сохраняем "сырой" текст для редактирования
 
+        // 3. Заполняем шапку: автор и время
         const timestamp = message.createdAt;
-        const displayTime = formatSmartTimestamp(timestamp);
         const fullTimeTitle = timestamp?.toDate?.().toLocaleString(currentChatLang, {year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'}) || '';
         
-        let replyHTML = '';
+        messageEl.querySelector('.author').textContent = message.authorName || _chat('anonymous_user');
+        const timestampEl = messageEl.querySelector('.timestamp');
+        timestampEl.textContent = formatSmartTimestamp(timestamp);
+        timestampEl.title = fullTimeTitle;
+
+        // 4. Добавляем блок "ответ на сообщение", если он есть
         if (message.replyTo) {
-            replyHTML = `<div class="reply-context" data-action="scroll-to" data-message-id="${message.replyTo.messageId}">
-                            <div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div>
-                            <div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div>
-                        </div>`;
+            const replyContainer = messageEl.querySelector('.reply-context-container');
+            const replyEl = document.createElement('div');
+            replyEl.className = 'reply-context';
+            replyEl.dataset.action = 'scroll-to';
+            replyEl.dataset.messageId = message.replyTo.messageId;
+            replyEl.innerHTML = `
+                <div class="reply-author">${escapeHTML(message.replyTo.authorName || '')}</div>
+                <div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div>
+            `;
+            replyContainer.appendChild(replyEl);
         }
         
-        let contentHTML = '';
-        if (message.type === 'file_share') {
-            messageEl.classList.add('file-share-bubble');
-            const qCount = message.fileInfo.questions;
-            const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
-            const currentChannelData = channels.find(c => c.id === currentChannel);
-            const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
-            const resultsButtonHTML = isTestingChannel 
-                ? `<div class="test-results-action"><button class="results-btn" data-action="show-results" data-file-id="${message.fileInfo.id}" data-channel-id="${message.channelId}">${_chat('results_button')}</button></div>` 
-                : '';
-            contentHTML = `<div class="file-share-content" data-action="show-file-actions" data-file-id="${message.fileInfo.id}" data-file-name="${escape(message.fileInfo.name)}" data-is-testing="${isTestingChannel}">
-                                <div class="file-share-icon">📄</div>
-                                <div class="file-share-details">
-                                    <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
-                                    <div class="file-share-info">${qCount} ${qText}</div>
-                                </div>
-                                <div class="file-share-arrow">→</div>
-                           </div>${resultsButtonHTML}`;
-        } else if (message.type === 'question_link') {
-            messageEl.classList.add('question-link-bubble');
-            contentHTML = `<div class="question-link-content" data-action="navigate-to-question" data-question-id="${message.questionId}" data-message-id="${message.id}">
-                                <span class="question-link-icon">❓</span>
-                                <div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div>
-                                <span class="question-link-arrow">→</span>
-                           </div>`;
-        } else {
-            let messageText = message.text || '';
-            let translatingClass = '';
-            if (isChatTranslateModeEnabled && message.text) {
-                const lang = localStorage.getItem('appLanguage') || 'ru';
-                const cacheKey = getChatCacheKey(message.id, lang);
-                if (chatTranslations.has(cacheKey)) {
-                    messageText = chatTranslations.get(cacheKey);
-                } else {
-                    fetchAndCacheTranslation(message);
-                    translatingClass = 'translating';
+        // 5. Заполняем основное содержимое в зависимости от типа сообщения
+        const contentContainer = messageEl.querySelector('.message-main-content');
+        switch (message.type) {
+            case 'file_share':
+                messageEl.classList.add('file-share-bubble');
+                const qCount = message.fileInfo.questions;
+                const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
+                const currentChannelData = channels.find(c => c.id === currentChannel);
+                const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
+                
+                contentContainer.innerHTML = `
+                    <div class="file-share-content" data-action="show-file-actions" data-file-id="${message.fileInfo.id}" data-file-name="${escape(message.fileInfo.name)}" data-is-testing="${isTestingChannel}">
+                        <div class="file-share-icon">📄</div>
+                        <div class="file-share-details">
+                            <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
+                            <div class="file-share-info">${qCount} ${qText}</div>
+                        </div>
+                        <div class="file-share-arrow">→</div>
+                    </div>
+                    ${isTestingChannel ? `<div class="test-results-action"><button class="results-btn" data-action="show-results" data-file-id="${message.fileInfo.id}" data-channel-id="${message.channelId}">${_chat('results_button')}</button></div>` : ''}
+                `;
+                break;
+
+            case 'question_link':
+                messageEl.classList.add('question-link-bubble');
+                contentContainer.innerHTML = `
+                    <div class="question-link-content" data-action="navigate-to-question" data-question-id="${message.questionId}" data-message-id="${message.id}">
+                        <span class="question-link-icon">❓</span>
+                        <div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div>
+                        <span class="question-link-arrow">→</span>
+                    </div>
+                `;
+                break;
+
+            default: // Обычное текстовое сообщение
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+
+                let messageText = message.text || '';
+                if (isChatTranslateModeEnabled && message.text) {
+                    const lang = localStorage.getItem('appLanguage') || 'ru';
+                    const cacheKey = getChatCacheKey(message.id, lang);
+                    if (chatTranslations.has(cacheKey)) {
+                        messageText = chatTranslations.get(cacheKey);
+                    } else {
+                        fetchAndCacheTranslation(message);
+                        contentDiv.classList.add('translating');
+                    }
                 }
-            }
-            const editedIndicator = message.editedAt ? `<span class="edited-indicator">${_chat('edited_indicator')}</span>` : '';
-            const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закреплено">📌</span>` : '';
-            contentHTML = `<div class="message-content ${translatingClass}">${pinnedIcon} ${escapeHTML(messageText.trim())} ${editedIndicator}</div>`;
+                
+                const editedIndicator = message.editedAt ? `<span class="edited-indicator">${_chat('edited_indicator')}</span>` : '';
+                const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закреплено">📌</span>` : '';
+                contentDiv.innerHTML = `${pinnedIcon} ${escapeHTML(messageText.trim())} ${editedIndicator}`;
+                contentContainer.appendChild(contentDiv);
+                break;
         }
-        
-        let reactionsHTML = '<div class="reactions-container">';
+
+        // 6. Добавляем реакции
+        const reactionsContainer = messageEl.querySelector('.reactions-container');
         if (message.reactions) {
             Object.entries(message.reactions).forEach(([emoji, userIds]) => {
                 if (userIds && userIds.length > 0) {
-                    const isReactedByMe = userIds.includes(currentUser.uid);
-                    reactionsHTML += `<button class="reaction-badge ${isReactedByMe ? 'mine' : ''}" data-action="toggle-reaction" data-emoji="${emoji}">${emoji} ${userIds.length}</button>`;
+                    const reactionBtn = document.createElement('button');
+                    reactionBtn.className = `reaction-badge ${userIds.includes(currentUser.uid) ? 'mine' : ''}`;
+                    reactionBtn.dataset.action = 'toggle-reaction';
+                    reactionBtn.dataset.emoji = emoji;
+                    reactionBtn.textContent = `${emoji} ${userIds.length}`;
+                    reactionsContainer.appendChild(reactionBtn);
                 }
             });
         }
-        reactionsHTML += '</div>';
 
+        // 7. Формируем и вставляем панель действий
+        const actionsToolbar = messageEl.querySelector('.message-actions-toolbar');
         let actionsHTML = `
             <button title="${_chat('tooltip_reply')}" data-action="reply">↩️</button>
             <button title="${_chat('tooltip_add_reaction')}" data-action="show-reaction-picker">😊</button>
@@ -2449,18 +2481,14 @@ const ChatModule = (function() {
         `;
         const isAdmin = currentUser?.email === 'iverrum@gmail.com';
         
-        // Кнопки редактирования и удаления показываются, если пользователь - автор ИЛИ администратор
-        if ((message.authorId === currentUser?.uid || isAdmin) && message.type !== 'question_link') {
+        if ((message.authorId === currentUser?.uid || isAdmin) && message.type !== 'question_link' && message.type !== 'file_share') {
             actionsHTML += `<button title="${_chat('tooltip_edit_message')}" data-action="edit">✏️</button>`;
             actionsHTML += `<button title="${_chat('tooltip_delete_message')}" data-action="delete">🗑️</button>`;
         }
+        actionsToolbar.innerHTML = actionsHTML;
 
-        messageEl.innerHTML = `<div class="message-header"><span class="author">${message.authorName || _chat('anonymous_user')}</span><span class="timestamp" title="${fullTimeTitle}">${displayTime}</span></div>${replyHTML}${contentHTML}${reactionsHTML}<div class="message-actions-toolbar">${actionsHTML}</div>`;
-        
-        // Сохраняем сырой текст для редактирования
-        messageEl.dataset.rawText = message.text || '';
-
-        const contentEl = messageEl.querySelector('.message-content');
+        // 8. Логика для сворачивания длинных сообщений
+        const contentEl = contentContainer.querySelector('.message-content');
         if (contentEl) {
             setTimeout(() => {
                 const MAX_HEIGHT = 250;
@@ -2473,14 +2501,14 @@ const ChatModule = (function() {
                         const isExpanded = contentEl.classList.toggle('expanded');
                         this.textContent = isExpanded ? _chat('collapse_message') : _chat('expand_message');
                     };
-                    messageEl.appendChild(expandBtn);
+                    messageEl.appendChild(expandBtn); // Добавляем кнопку после всех основных блоков
                 }
             }, 0);
         }
         
+        // 9. Возвращаем полностью собранный DOM-элемент
         return messageEl;
     }
-
 
 
 
@@ -7098,56 +7126,55 @@ const mainApp = (function() {
     
 
 
-
-
     function displaySingleResult(index) {
         const resultText = searchResultsData[index];
         if (!resultText) return;
 
+        // 1. Находим и клонируем наш шаблон
+        const template = getEl('searchResultCardTemplate');
+        const cardClone = template.content.cloneNode(true);
+
+        // 2. Находим нужные элементы ВНУТРИ клона
+        const cardContentContainer = cardClone.querySelector('.result-card-content');
+        const explainBtn = cardClone.querySelector('.explain-search-result-btn');
+        const copyBtn = cardClone.querySelector('.copy-search-result-btn');
+        const favoriteBtn = cardClone.querySelector('.favorite-search-result-btn');
+        const translateBtn = cardClone.querySelector('.translate-search-result-btn');
+
+        // 3. Заполняем клон данными
         const cardContentHTML = parseAndRenderQuestionBlock(resultText);
-        // Мы используем одинарные кавычки для атрибута onclick и добавляем
-        // результат экранированной строки. Это самый надежный способ.
-       const escapedResultText = escape(resultText);
+        cardContentContainer.innerHTML = cardContentHTML; // Здесь innerHTML безопасен, т.к. parseAndRenderQuestionBlock экранирует данные
 
-        searchResultCardsContainer.innerHTML = `
-            <div class="result-card">
-                <div class="result-card-header">
-                    <div class="result-card-actions">
-                        <button class="explain-search-result-btn" title="${_('ai_explain_button_title')}" onclick='window.mainApp.handleExplainClickInSearch(event, "${escapedResultText}")'>💡</button>
-                        <button class="copy-search-result-btn" title="${_('copy_question_tooltip')}" onclick='window.mainApp.handleCopyClickInSearch(event, "${escapedResultText}")'>📋</button>
-                        <button class="favorite-search-result-btn" title="${_('favorite_question_tooltip')}" onclick='window.mainApp.handleFavoriteClickInSearch(event, "${escapedResultText}")'>⭐</button>
-                        <button class="translate-search-result-btn" title="${_('translate_question_title')}" onclick='window.mainApp.handleTranslateClickInSearch(event, this, "${escapedResultText}")'>अа</button>
-                    </div>
-                </div>
-                <div class="result-card-content">
-                    ${cardContentHTML}
-                </div>
-            </div>
-        `;
+        const escapedResultText = escape(resultText);
+        explainBtn.setAttribute('onclick', `window.mainApp.handleExplainClickInSearch(event, "${escapedResultText}")`);
+        copyBtn.setAttribute('onclick', `window.mainApp.handleCopyClickInSearch(event, "${escapedResultText}")`);
+        favoriteBtn.setAttribute('onclick', `window.mainApp.handleFavoriteClickInSearch(event, "${escapedResultText}")`);
+        translateBtn.setAttribute('onclick', `window.mainApp.handleTranslateClickInSearch(event, this, "${escapedResultText}")`);
+        
+        // Переводим title кнопок
+        explainBtn.title = _('ai_explain_button_title');
+        copyBtn.title = _('copy_question_tooltip');
+        favoriteBtn.title = _('favorite_question_tooltip');
+        translateBtn.title = _('translate_question_title');
 
+        // 4. Очищаем старое содержимое и вставляем готовый клон
+        searchResultCardsContainer.innerHTML = '';
+        searchResultCardsContainer.appendChild(cardClone);
+
+        // Логика навигации и отправки сообщения расширению остается без изменений
         resultCounterEl.textContent = `${index + 1} / ${searchResultsData.length}`;
         prevResultBtn.disabled = (index === 0);
         nextResultBtn.disabled = (index >= searchResultsData.length - 1);
-        // === НАЧАЛО НОВОГО КОДА ===
-        // После того, как мы отобразили результат, ищем правильный ответ
+        
         const resultCard = searchResultCardsContainer.querySelector('.result-card');
         if (resultCard) {
-            // Ищем элемент с классом 'correct'
             const correctAnswerEl = resultCard.querySelector('.answer-option.correct');
             if (correctAnswerEl) {
-                // Извлекаем чистый текст ответа, убирая галочку "✓" в начале
                 const answerText = correctAnswerEl.textContent.replace(/^✓\s*/, '').trim();
-                
                 console.log(`QSTiUM.com: Найден правильный ответ: "${answerText}". Отправляю в расширение.`);
-                
-                // Отправляем сообщение нашему content.js, который крутится на этой же странице
-                window.postMessage({
-                    type: "TO_QSTIUM_EXTENSION", // Новый тип сообщения
-                    answer: answerText
-                }, "*");
+                window.postMessage({ type: "TO_QSTIUM_EXTENSION", answer: answerText }, "*");
             }
         }
-        // === КОНЕЦ НОВОГО КОДА ===
     }
 
 
@@ -9448,66 +9475,63 @@ const mainApp = (function() {
     }
 
 
-
-
     function loadSavedSession() {
         const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
         const sessions = savedSessionsJSON ? JSON.parse(savedSessionsJSON) : [];
 
+        savedSessionList.innerHTML = ''; // Очищаем контейнер
+
         if (sessions.length === 0) {
             savedSessionArea.classList.add('hidden');
-            savedSessionList.innerHTML = '';
             return;
         }
 
-        let allCardsHTML = '';
+        const template = getEl('savedSessionCardTemplate');
+
         sessions.forEach(sessionData => {
+            // 1. Клонируем шаблон для каждой сессии
+            const cardClone = template.content.cloneNode(true);
+
+            // 2. Находим элементы внутри клона
+            const nameEl = cardClone.querySelector('.saved-session-name');
+            const progressLabelEl = cardClone.querySelector('.progress-label');
+            const timeEl = cardClone.querySelector('.saved-session-time');
+            const progressBarFillEl = cardClone.querySelector('.progress-bar-fill');
+            const resumeBtn = cardClone.querySelector('.btn-resume');
+            const deleteBtn = cardClone.querySelector('.btn-delete');
+            
+            // 3. Заполняем данными
             const totalQuestions = sessionData.totalQuestionCount;
             const answeredQuestions = sessionData.userAnswers.filter(a => a && a.answered).length;
             const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
 
-            let timeInfo = '';
+            nameEl.textContent = sessionData.originalFileNameForReview || 'Сохраненный тест';
+            progressBarFillEl.style.width = `${progress}%`;
+            
+            if (sessionData.quizSettings && sessionData.quizSettings.flashcardsMode) {
+                progressLabelEl.textContent = `${_('session_cards_viewed')} ${answeredQuestions} ${_('from')} ${totalQuestions}`;
+            } else {
+                progressLabelEl.textContent = `${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}`;
+            }
+            
             if (sessionData.quizSettings.timeLimit > 0 && sessionData.timeLeftInSeconds) {
                 const minutes = Math.floor(sessionData.timeLeftInSeconds / 60);
                 const seconds = sessionData.timeLeftInSeconds % 60;
-                timeInfo = `<div class="saved-session-time">${_('time_left')}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>`;
+                timeEl.textContent = `${_('time_left')}: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
             }
 
-            // --- НАЧАЛО ИЗМЕНЕНИЙ: Определяем правильный текст для прогресса ---
-            let progressLabel = '';
-            if (sessionData.quizSettings && sessionData.quizSettings.flashcardsMode) {
-                // Если это сессия карточек
-                progressLabel = `${_('session_cards_viewed')} ${answeredQuestions} ${_('from')} ${totalQuestions}`;
-            } else {
-                // Если это обычный тест
-                progressLabel = `${_('answered_of')} ${answeredQuestions} ${_('from')} ${totalQuestions}`;
-            }
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            resumeBtn.textContent = _('continue_quiz_button');
+            deleteBtn.textContent = _('delete_session_button');
+            resumeBtn.dataset.filename = sessionData.originalFileNameForReview;
+            deleteBtn.dataset.filename = sessionData.originalFileNameForReview;
 
-            // ВАЖНО: Добавляем data-filename к кнопкам!
-            allCardsHTML += `
-                <div class="saved-session-card">
-                    <div class="saved-session-name">${sessionData.originalFileNameForReview || 'Сохраненный тест'}</div>
-                    <div class="saved-session-progress-info">
-                        <span>${progressLabel}</span>
-                        ${timeInfo}
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-bar-fill" style="width: ${progress}%;"></div>
-                    </div>
-                    <div class="saved-session-actions">
-                        <button class="btn-resume" data-filename="${sessionData.originalFileNameForReview}">${_('continue_quiz_button')}</button>
-                        <button class="btn-delete" data-filename="${sessionData.originalFileNameForReview}">${_('delete_session_button')}</button>
-                    </div>
-                </div>
-            `;
+            // 4. Вставляем готовый клон в DOM
+            savedSessionList.appendChild(cardClone);
         });
 
-        savedSessionList.innerHTML = allCardsHTML;
         savedSessionArea.classList.remove('hidden');
 
-        // Используем делегирование событий для всех кнопок
-        savedSessionList.removeEventListener('click', handleSessionCardClick); // Сначала удаляем старый, чтобы не было дублей
+        savedSessionList.removeEventListener('click', handleSessionCardClick);
         savedSessionList.addEventListener('click', handleSessionCardClick);
     }
 

@@ -492,7 +492,52 @@
 
 
         </div> <!-- === КОНЕЦ ВОССТАНОВЛЕННОГО КОНТЕЙНЕРА === -->
-
+        <!-- ========== ШАБЛОНЫ ДЛЯ ДИНАМИЧЕСКОГО КОНТЕНТА ========== -->
+        <template id="searchResultCardTemplate">
+            <div class="result-card">
+                <div class="result-card-header">
+                     <!-- Правый блок с действиями будет заполнен JS -->
+                    <div class="result-card-actions">
+                         <button class="explain-search-result-btn" title="Объяснить с помощью ИИ">💡</button>
+                         <button class="copy-search-result-btn" title="Копировать вопрос">📋</button>
+                         <button class="favorite-search-result-btn" title="Добавить в избранное">⭐</button>
+                         <button class="translate-search-result-btn" title="Перевести вопрос">अа</button>
+                    </div>
+                </div>
+                <div class="result-card-content">
+                    <!-- Содержимое вопроса и ответов будет вставлено сюда -->
+                </div>
+            </div>
+        </template>
+        <template id="messageTemplate">
+            <div class="message">
+                <div class="message-header">
+                    <span class="author"></span>
+                    <span class="timestamp"></span>
+                </div>
+                <div class="reply-context-container"></div>
+                <div class="message-main-content"></div>
+                <div class="reactions-container"></div>
+                <div class="message-actions-toolbar"></div>
+            </div>
+        </template>
+        <template id="savedSessionCardTemplate">
+            <div class="saved-session-card">
+                <div class="saved-session-name"></div>
+                <div class="saved-session-progress-info">
+                    <span class="progress-label"></span>
+                    <div class="saved-session-time"></div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-bar-fill"></div>
+                </div>
+                <div class="saved-session-actions">
+                    <button class="btn-resume"></button>
+                    <button class="btn-delete"></button>
+                </div>
+            </div>
+        </template>
+        <!-- ========== КОНЕЦ ШАБЛОНОВ ========== -->
         <footer>
             <p>
                 <a href="https://chromewebstore.google.com/detail/qstium-helper/ekamfcpbkcekmmbclpnlmhcimnenabcl?hl=ru&utm_source=ext_sidebar" target="_blank" rel="noopener noreferrer" data-lang-key="footer_copyright">prod by @iverrum</a>
