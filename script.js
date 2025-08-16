@@ -5393,12 +5393,12 @@ const mainApp = (function() {
             download_triggered_quiz_button: 'Скачать тест с триггерами',
             restart_button: 'Пройти другой тест',
             // Парсер
-            parser_upload_or_paste: '1. Загрузите файл (.txt) или вставьте текст ниже:',
+            parser_upload_or_paste: 'Загрузите файл (.txt) или вставьте текст ниже:',
             clear_parser_input: 'Очистить поле',
             parser_input_placeholder: 'Или вставьте сюда текст из вашего документа...',
-            parser_select_format: '2. Выберите формат (или оставьте для автоопределения):',
+            parser_select_format: 'Выберите формат (или оставьте для автоопределения):',
             parser_auto_detect: '-- Автоматическое определение --',
-            parser_run_button: '3. Конвертировать',
+            parser_run_button: 'Конвертировать',
             parser_errors_found: '⚠️ Ошибки форматирования',
             parser_result_title: 'Результат:',
             download_parsed_button: 'Скачать .qst файл',
@@ -5438,7 +5438,7 @@ const mainApp = (function() {
 
             ai_error_text_empty: 'Пожалуйста, вставьте текст для анализа.',
             ai_error_generation: 'Произошла ошибка при генерации теста.',
-            ai_question_count_label: '4. Укажите количество вопросов для ИИ:',
+            ai_question_count_label: 'Укажите количество вопросов для ИИ:',
             ai_auto_mode_label: 'Авто',
             ai_style_simple: "Просто",
             ai_style_scientific: "Научно",
@@ -5446,7 +5446,7 @@ const mainApp = (function() {
             ai_style_stepbystep: "Пошагово",
             ai_style_practical: "Практично",
             ai_style_visual: "Наглядно",
-            ai_answer_count_label: '5. Укажите количество вариантов ответа:', 
+            ai_answer_count_label: 'Укажите количество вариантов ответа:', 
             ai_auto_category_label: 'Автоматически создавать категории', 
             exit_modal_title: 'Подтверждение',
             exit_modal_text: 'Вы уверены, что хотите выйти из приложения?',
@@ -5479,13 +5479,13 @@ const mainApp = (function() {
             ai_from_text_title: "🤖 Создать тест из вашего текста (ИИ)",
             ai_generate_from_text_button: "Сгенерировать тест из текста",
             ai_topic_description: "ИИ самостоятельно создаст тест на основе указанной темы, используя свои знания.",
-            ai_topic_label: "1. Введите тему для генерации теста:",
+            ai_topic_label: "Введите тему для генерации теста:",
             ai_topic_placeholder: "Пример: История Древнего Рима в период Республики, 15 вопросов, 4 варианта ответа, с категориями по войнам...",
-            ai_topic_question_count_label: "2. Количество вопросов (если не указано в теме):",
-            ai_topic_answer_count_label: "3. Количество вариантов ответа (если не указано в теме):",
+            ai_topic_question_count_label: "Количество вопросов (если не указано в теме):",
+            ai_topic_answer_count_label: "Количество вариантов ответа (если не указано в теме):",
             ai_generate_from_topic_button: "🤖 Создать тест по теме (ИИ)",
             ai_thinking_topic: "ИИ-генератор размышляет над вашей темой...",
-            ai_topic_auto_category_label: "4. Автоматически создавать категории",
+            ai_topic_auto_category_label: "Автоматически создавать категории",
             parser_auto_detect: '-- Автоматическое определение --',
             filter_variants_button: '⚙️ Фильтр по вариантам',
             filter_variants_header: 'Выберите кол-во вариантов:',
@@ -5611,6 +5611,8 @@ const mainApp = (function() {
             checking_button: "Проверка...",
             search_activated_alert: "Поиск по базе успешно активирован на этом устройстве!",
             server_connection_error_alert: "Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение.",
+            ai_from_text_description: "Вставьте текст в поле ниже, и ИИ создаст по нему тест с вопросами и ответами.",
+            ai_parser_input_placeholder: "Вставьте сюда текст для анализа ИИ...",
             checking_access: "Проверка..."
         },
         kk: {
@@ -5679,12 +5681,12 @@ const mainApp = (function() {
             download_triggered_quiz_button: 'Триггерлері бар тестті жүктеу',
             restart_button: 'Басқа тест өту',
             // Parser
-            parser_upload_or_paste: '1. Файлды (.txt) жүктеңіз немесе мәтінді төменге қойыңыз:',
+            parser_upload_or_paste: 'Файлды (.txt) жүктеңіз немесе мәтінді төменге қойыңыз:',
             clear_parser_input: 'Өрісті тазарту',
             parser_input_placeholder: 'Немесе құжаттағы мәтінді осында қойыңыз...',
-            parser_select_format: '2. Пішімді таңдаңыз (немесе автоанықтау үшін қалдырыңыз):',
+            parser_select_format: 'Пішімді таңдаңыз (немесе автоанықтау үшін қалдырыңыз):',
             parser_auto_detect: '-- Автоматты түрде анықтау --',
-            parser_run_button: '3. Түрлендіру',
+            parser_run_button: 'Түрлендіру',
             parser_errors_found: '⚠️ Пішімдеу қателері',
             parser_result_title: 'Нәтиже:',
             download_parsed_button: '.qst файлын жүктеу',
@@ -5725,7 +5727,7 @@ const mainApp = (function() {
             ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Талдау үшін мәтінді енгізіңіз.',
             ai_error_generation: 'Тест жасау кезінде қате пайда болды.',
-            ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
+            ai_question_count_label: 'ЖИ үшін сұрақтар санын көрсетіңіз:',
             ai_auto_mode_label: 'Авто',
             ai_style_simple: "Қарапайым",
             ai_style_scientific: "Ғылыми",
@@ -5733,7 +5735,7 @@ const mainApp = (function() {
             ai_style_stepbystep: "Қадаммен",
             ai_style_practical: "Практикалық",
             ai_style_visual: "Көрнекі",
-            ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
+            ai_answer_count_label: 'Жауап нұсқаларының санын көрсетіңіз:',
             ai_auto_category_label: 'Санаттарды автоматты түрде жасау',
             exit_modal_title: 'Растау',
             exit_modal_text: 'Қосымшадан шыққыңыз келетініне сенімдісіз бе?',
@@ -5766,13 +5768,13 @@ const mainApp = (function() {
             ai_from_text_title: "🤖 Мәтініңізден тест жасау (ЖИ)",
             ai_generate_from_text_button: "Мәтіннен тест жасау",
             ai_topic_description: "ЖИ өз білімін пайдалана отырып, көрсетілген тақырып негізінде тестті өз бетінше жасайды.",
-            ai_topic_label: "1. Тест жасау үшін тақырыпты енгізіңіз:",
+            ai_topic_label: "Тест жасау үшін тақырыпты енгізіңіз:",
             ai_topic_placeholder: "Мысалы: Республика кезеңіндегі Ежелгі Рим тарихы, 15 сұрақ, 4 жауап нұсқасы, соғыстар бойынша санаттармен...",
-            ai_topic_question_count_label: "2. Сұрақтар саны (егер тақырыпта көрсетілмесе):",
-            ai_topic_answer_count_label: "3. Жауап нұсқаларының саны (егер тақырыпта көрсетілмесе):",
+            ai_topic_question_count_label: "Сұрақтар саны (егер тақырыпта көрсетілмесе):",
+            ai_topic_answer_count_label: "Жауап нұсқаларының саны (егер тақырыпта көрсетілмесе):",
             ai_generate_from_topic_button: "🤖 Тақырып бойынша тест жасау (ЖИ)",
             ai_thinking_topic: "ЖИ-генератор сіздің тақырыбыңызды ойластыруда...",
-            ai_topic_auto_category_label: "4. Санаттарды автоматты түрде жасау",
+            ai_topic_auto_category_label: "Санаттарды автоматты түрде жасау",
 
             parser_auto_detect: '-- Автоматты түрде анықтау --',
             filter_variants_button: '⚙️ Нұсқалар сүзгісі',
@@ -5928,8 +5930,8 @@ const mainApp = (function() {
             parser_pattern_tags_cyrillic: "<Вопрос> және <вариант> тегтері",
             parser_pattern_tags_latin: "<question> және <variant> тегтері",
 
-            ai_question_count_label: '4. ЖИ үшін сұрақтар санын көрсетіңіз:',
-            ai_answer_count_label: '5. Жауап нұсқаларының санын көрсетіңіз:',
+            ai_question_count_label: 'ЖИ үшін сұрақтар санын көрсетіңіз:',
+            ai_answer_count_label: 'Жауап нұсқаларының санын көрсетіңіз:',
             ai_auto_category_label: 'Санаттарды автоматты түрде жасау',
             translate_engine_google: "Google Аудармашы",
             translate_engine_ai: "AI Аудармашы",
@@ -5943,7 +5945,9 @@ const mainApp = (function() {
             checking_button: "Тексерілуде...",
             search_activated_alert: "Дерекқор бойынша іздеу осы құрылғыда сәтті белсендірілді.",
             server_connection_error_alert: "Кілті тексеру үшін сервермен байланысу мүмкін болмады. Интернет қосылымын тексеріңіз.",
-            checking_access: "Тексеру..."
+            checking_access: "Тексеру...",
+            ai_from_text_description: "Төмендегі өріске мәтінді қойыңыз, сонда ЖИ сол бойынша сұрақтар мен жауаптары бар тест жасайды.",
+            ai_parser_input_placeholder: "ЖИ талдауы үшін мәтінді осында қойыңыз...",
 
         },
         en: {
@@ -6012,12 +6016,12 @@ const mainApp = (function() {
             download_triggered_quiz_button: 'Download Quiz with Triggers',
             restart_button: 'Take Another Quiz',
             // Parser
-            parser_upload_or_paste: '1. Upload a file (.txt) or paste text below:',
+            parser_upload_or_paste: 'Upload a file (.txt) or paste text below:',
             clear_parser_input: 'Clear input',
             parser_input_placeholder: 'Or paste text from your document here...',
-            parser_select_format: '2. Select format (or leave for auto-detection):',
+            parser_select_format: 'Select format (or leave for auto-detection):',
             parser_auto_detect: '-- Automatic detection --',
-            parser_run_button: '3. Convert',
+            parser_run_button: 'Convert',
             parser_errors_found: '⚠️ Formatting errors',
             parser_result_title: 'Result:',
             download_parsed_button: 'Download .qst file',
@@ -6055,7 +6059,7 @@ const mainApp = (function() {
             ai_generating_button: '🤖 Generating...',
             ai_error_text_empty: 'Please paste text to analyze.',
             ai_error_generation: 'An error occurred while generating the test.',
-            ai_question_count_label: '4. Specify the number of questions for the AI:',
+            ai_question_count_label: 'Specify the number of questions for the AI:',
             ai_auto_mode_label: 'Auto',
             ai_style_simple: "Simple",
             ai_style_scientific: "Scientific",
@@ -6063,7 +6067,7 @@ const mainApp = (function() {
             ai_style_stepbystep: "Step-by-step",
             ai_style_practical: "Practical",
             ai_style_visual: "Visual",
-            ai_answer_count_label: '5. Specify the number of answer choices:',
+            ai_answer_count_label: 'Specify the number of answer choices:',
             ai_auto_category_label: 'Automatically create categories',
 
             exit_modal_title: 'Confirmation',
@@ -6100,13 +6104,13 @@ const mainApp = (function() {
             ai_from_text_title: "🤖 Create Test from Your Text (AI)",
             ai_generate_from_text_button: "Generate Test from Text",
             ai_topic_description: "The AI will independently create a test based on the specified topic using its knowledge.",
-            ai_topic_label: "1. Enter a topic to generate a test:",
+            ai_topic_label: "Enter a topic to generate a test:",
             ai_topic_placeholder: "Example: History of Ancient Rome during the Republic, 15 questions, 4 answer choices, with categories by wars...",
-            ai_topic_question_count_label: "2. Number of questions (if not specified in the topic):",
-            ai_topic_answer_count_label: "3. Number of answer choices (if not specified in the topic):",
+            ai_topic_question_count_label: "Number of questions (if not specified in the topic):",
+            ai_topic_answer_count_label: "Number of answer choices (if not specified in the topic):",
             ai_generate_from_topic_button: "🤖 Create Test by Topic (AI)",
             ai_thinking_topic: "AI generator is thinking about your topic...",
-            ai_topic_auto_category_label: "4. Automatically create categories",
+            ai_topic_auto_category_label: "Automatically create categories",
 
             parser_auto_detect: '-- Automatic detection --',
             filter_variants_button: '⚙️ Filter by variants',
@@ -6266,8 +6270,8 @@ const mainApp = (function() {
             copy_success_short: '✓ Copied!',
 
 
-            ai_question_count_label: '4. Specify the number of questions for the AI:',
-            ai_answer_count_label: '5. Specify the number of answer choices:',
+            ai_question_count_label: 'Specify the number of questions for the AI:',
+            ai_answer_count_label: 'Specify the number of answer choices:',
             ai_auto_category_label: 'Automatically create categories',
             translate_engine_google: "Google Translate",
             translate_engine_ai: "AI Translator",
@@ -6281,7 +6285,9 @@ const mainApp = (function() {
             checking_button: "Checking...",
             search_activated_alert: "Database search has been successfully activated on this device.",
             server_connection_error_alert: "Could not contact the server to verify the key. Please check your internet connection.",
-            checking_access: "Checking..."
+            checking_access: "Checking...",
+            ai_from_text_description: "Paste text into the field below, and the AI will create a test with questions and answers based on it.",
+            ai_parser_input_placeholder: "Paste text here for AI analysis...",
         }
 
 
@@ -6321,7 +6327,6 @@ const mainApp = (function() {
     };
 
 
-    // --- ИЗМЕНЕНИЕ: Объявляем переменные здесь, но не присваиваем значения ---
     let fileInput, fileUploadArea, quizSetupArea, quizArea, resultsArea,
         questionTextEl, answerOptionsEl, feedbackAreaEl, prevQuestionButton,
         nextButton, restartButton, startQuizButton, currentQuestionNumEl,
@@ -6341,34 +6346,45 @@ const mainApp = (function() {
         searchResultsContainer, backToSearchButton, webSearchDropdown,
         searchWebButton, searchDropdownContent, chatToggleBtn, languageToggle,
         copyQuestionBtnQuiz, parserArea, parserButton, backToMainFromParserBtn,
-        parserFileInput, parserInput, parserPatternSelect, runParserBtn,
-        parserOutputArea, parserOutput, downloadParsedBtn, clearParserInputBtn,
+        
+        // --- Переменные для активации ---
+        searchVerificationContainer, searchActivationContainer, accessCodeInput, activateSearchBtn,
+
+        // --- Общие переменные парсера ---
         filterVariantsBtn, filterVariantsDropdown, filterVariantCheckboxes,
-        applyVariantFilterBtn, resetVariantFilterBtn, searchNavigation,
-        prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
-        searchResultCardsContainer, continueLaterButton, savedSessionArea, 
-        savedSessionList, appTitleHeader;
+        applyVariantFilterBtn, resetVariantFilterBtn,
 
-    let searchVerificationContainer;
-
-    let translateEngineToggle, translateEngineDropdown;
-    let rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
-            shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks;
-
-    let themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon;
-
-    let converterTabBtn, aiFromTextTabBtn, aiFromTopicTabBtn, 
+        // --- Переменные вкладок ---
+        converterTabBtn, aiFromTextTabBtn, aiFromTopicTabBtn, 
         converterContent, aiFromTextContent, aiGeneratorContent, 
-        aiTopicInput, generateTestFromTopicBtn, aiTopicQuestionCount, aiTopicAnswerCount;
+        
+        // --- Переменные вкладки "Конвертер" ---
+        parserFileInput, parserInput, clearParserInputBtn, parserPatternSelect, runParserBtn,
+        converterErrorsArea, converterErrorsHeader, converterErrorCount, converterErrorList, // <<-- ИЗМЕНЕНО
+        converterOutputArea, converterOutput, downloadConverterBtn, clearConverterOutputBtn,
 
-    let aiTopicAutoCategory;
+        // --- Переменные вкладки "ИИ из текста" ---
+        aiParserFileInput, aiParserInput, clearAiParserInputBtn,
+        aiFromTextOutputArea, aiFromTextOutput, downloadAiFromTextBtn, clearAiFromTextOutputBtn,
+        generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory,
 
-    let generateTestFromTextBtn, aiQuestionCount, aiAutoCount, aiAutoCategory;
-    let exitConfirmationModal, confirmExitBtn, cancelExitBtn;
-    let updateNotification, updateBtn, translateQuestionBtn;
-    let downloadTranslatedTxtButton, downloadTranslatedQstButton;
-    let flashcardsModeCheckbox;
-    let searchActivationContainer, accessCodeInput, activateSearchBtn;
+        // --- Переменные вкладки "ИИ по теме" ---
+        aiTopicInput, generateTestFromTopicBtn, aiTopicQuestionCount, aiTopicAnswerCount,
+        aiFromTopicOutputArea, aiFromTopicOutput, downloadAiFromTopicBtn, clearAiFromTopicOutputBtn,
+        aiTopicAutoCategory,
+
+        // --- Остальные переменные ---
+        searchNavigation, prevResultBtn, nextResultBtn, resultCounterEl, readingModeCheckbox, 
+        searchResultCardsContainer, continueLaterButton, savedSessionArea, 
+        savedSessionList, appTitleHeader, translateEngineToggle, translateEngineDropdown,
+        rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
+        shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks,
+        themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon,
+        exitConfirmationModal, confirmExitBtn, cancelExitBtn,
+        updateNotification, updateBtn, translateQuestionBtn,
+        downloadTranslatedTxtButton, downloadTranslatedQstButton,
+        flashcardsModeCheckbox;
+
 
 
     // --- State Variables ---
@@ -6481,32 +6497,85 @@ const mainApp = (function() {
     }
 
 
+
+
+
     function initializeApp() {
-        // --- ИЗМЕНЕНИЕ: Присваиваем значения переменным здесь ---
+        // --- ОБНОВЛЕННЫЙ БЛОК ПРИСВОЕНИЯ ПЕРЕМЕННЫХ ---
         
-        
+        // Основные экраны и контейнеры
         fileInput = getEl('fileInput');
-        searchActivationContainer = getEl('searchActivationContainer');
-        accessCodeInput = getEl('accessCodeInput');
-        activateSearchBtn = getEl('activateSearchBtn');
-        searchVerificationContainer = getEl('searchVerificationContainer');
         fileUploadArea = getEl('fileUploadArea');
         quizSetupArea = getEl('quizSetupArea');
         quizArea = getEl('quizArea');
         resultsArea = getEl('resultsArea');
+        appTitleHeader = getEl('appTitleHeader');
+
+        // Элементы активации и поиска
+        searchVerificationContainer = getEl('searchVerificationContainer');
+        searchActivationContainer = getEl('searchActivationContainer');
+        accessCodeInput = getEl('accessCodeInput');
+        activateSearchBtn = getEl('activateSearchBtn');
+        searchContainer = getEl('searchContainer');
+        searchQueryInput = getEl('searchQueryInput');
+        searchButton = getEl('searchButton');
+        searchResultsContainer = getEl('searchResultsContainer');
+        backToSearchButton = getEl('backToSearchButton');
+        searchResultCardsContainer = getEl('searchResultCards');
+        searchNavigation = getEl('searchNavigation');
+        prevResultBtn = getEl('prevResultBtn');
+        nextResultBtn = getEl('nextResultBtn');
+        resultCounterEl = getEl('resultCounter');
+        
+        // Кнопки в шапке (Header)
+        webSearchDropdown = getEl('webSearchDropdown');
+        searchWebButton = getEl('searchWebButton');
+        searchDropdownContent = getEl('searchDropdownContent');
+        chatToggleBtn = getEl('chatToggle');
+        languageToggle = getEl('languageToggle');
+        copyQuestionBtnQuiz = getEl('copyQuestionBtnQuiz');
+        quickModeToggle = getEl('quickModeToggle');
+        triggerWordToggle = getEl('triggerWordToggle');
+        translateQuestionBtn = getEl('translateQuestionBtn');
+        translateEngineToggle = getEl('translateEngineToggle');
+        translateEngineDropdown = getEl('translateEngineDropdown');
+        themeDropdownContainer = getEl('themeDropdownContainer');
+        themeDropdownButton = getEl('themeDropdownButton');
+        themeDropdownContent = getEl('themeDropdownContent');
+        themeIcon = getEl('themeIcon');
+
+        // Элементы экрана теста (Quiz Area)
         questionTextEl = getEl('questionText');
         answerOptionsEl = getEl('answerOptions');
         feedbackAreaEl = getEl('feedbackArea');
         prevQuestionButton = getEl('prevQuestionButton');
         nextButton = getEl('nextButton');
-        restartButton = getEl('restartButton');
-        startQuizButton = getEl('startQuizButton');
+        timerDisplayEl = getEl('timerDisplay');
+        timeLeftEl = getEl('timeLeft');
         currentQuestionNumEl = getEl('currentQuestionNum');
         totalQuestionsNumEl = getEl('totalQuestionsNum');
         correctAnswersCountEl = getEl('correctAnswersCount');
+        quickNavPanel = getEl('quickNavPanel');
+        quickNavButtonsContainer = getEl('quickNavButtons');
+        downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
+        downloadTranslatedQstButton = getEl('downloadTranslatedQstButton');
+        continueLaterButton = getEl('continueLaterButton');
+        finishTestButton = getEl('finishTestButton');
+        
+        // Элементы экрана результатов (Results Area)
+        restartButton = getEl('restartButton');
         finalCorrectEl = getEl('finalCorrect');
         finalTotalEl = getEl('finalTotal');
         finalPercentageEl = getEl('finalPercentage');
+        feedbackDownloadArea = getEl('feedbackDownloadArea');
+        downloadErrorsButton = getEl('downloadErrorsButton');
+        errorReviewArea = getEl('errorReviewArea');
+        reviewErrorsButton = getEl('reviewErrorsButton');
+        triggeredQuizDownloadArea = getEl('triggeredQuizDownloadArea');
+        downloadTriggeredQuizButton = getEl('downloadTriggeredQuizButton');
+
+        // Элементы экрана настроек (Setup Area)
+        startQuizButton = getEl('startQuizButton');
         timeLimitInput = getEl('timeLimit');
         timeLimitValueDisplay = getEl('timeLimitValue');
         questionRangeStartInput = getEl('questionRangeStart');
@@ -6516,102 +6585,9 @@ const mainApp = (function() {
         shuffleAnswersCheckbox = getEl('shuffleAnswers');
         feedbackModeCheckbox = getEl('feedbackMode');
         readingModeCheckbox = getEl('readingMode');
-        timerDisplayEl = getEl('timerDisplay');
-        timeLeftEl = getEl('timeLeft');
-        quickNavPanel = getEl('quickNavPanel');
-        quickNavButtonsContainer = getEl('quickNavButtons');
-        feedbackDownloadArea = getEl('feedbackDownloadArea');
-        downloadErrorsButton = getEl('downloadErrorsButton');
-        themeToggleButton = getEl('themeToggle');
-        quickModeToggle = getEl('quickModeToggle');
-        triggerWordToggle = getEl('triggerWordToggle');
-        recentFilesArea = getEl('recentFilesArea');
-        recentFilesListEl = getEl('recentFilesList');
-        errorReviewArea = getEl('errorReviewArea');
-        reviewErrorsButton = getEl('reviewErrorsButton');
-        generateCheatSheetButton = getEl('generateCheatSheetButton');
-        cheatSheetResultArea = getEl('cheatSheetResultArea');
-        cheatSheetOutputEl = getEl('cheatSheetOutput');
-        downloadCheatSheetButton = getEl('downloadCheatSheetButton');
-        backToSettingsButton = getEl('backToSettingsButton');
-        chooseAnotherFileButton = getEl('chooseAnotherFileButton');
-        finishTestButton = getEl('finishTestButton');
-        triggeredQuizDownloadArea = getEl('triggeredQuizDownloadArea');
-        downloadTriggeredQuizButton = getEl('downloadTriggeredQuizButton');
-        gradusButton = getEl('gradusButton');
-        gradusFoldersContainer = getEl('gradusFoldersContainer');
-        gradusFolderList = getEl('gradusFolderList');
-        backToFileUploadButton = getEl('backToFileUploadButton');
-        gradusBreadcrumbs = getEl('gradusBreadcrumbs');
-        searchContainer = getEl('searchContainer');
-        searchQueryInput = getEl('searchQueryInput');
-        searchButton = getEl('searchButton');
-        searchResultsContainer = getEl('searchResultsContainer');
-        backToSearchButton = getEl('backToSearchButton');
-        webSearchDropdown = getEl('webSearchDropdown');
-        searchWebButton = getEl('searchWebButton');
-        searchDropdownContent = getEl('searchDropdownContent');
-        chatToggleBtn = getEl('chatToggle');
-        languageToggle = getEl('languageToggle');
-        copyQuestionBtnQuiz = getEl('copyQuestionBtnQuiz');
-        parserArea = getEl('parserArea');
-        parserButton = getEl('parserButton');
-        backToMainFromParserBtn = getEl('backToMainFromParserBtn');
-        parserFileInput = getEl('parserFileInput');
-        parserInput = getEl('parserInput');
-        parserPatternSelect = getEl('parserPatternSelect');
-        runParserBtn = getEl('runParserBtn');
-        parserOutputArea = getEl('parserOutputArea');
-        parserOutput = getEl('parserOutput');
-        downloadParsedBtn = getEl('downloadParsedBtn');
-        clearParserInputBtn = getEl('clearParserInputBtn');
-        filterVariantsBtn = getEl('filterVariantsBtn');
-        filterVariantsDropdown = getEl('filterVariantsDropdown');
-        filterVariantCheckboxes = getEl('filterVariantCheckboxes');
-        applyVariantFilterBtn = getEl('applyVariantFilterBtn');
-        resetVariantFilterBtn = getEl('resetVariantFilterBtn');
-        searchNavigation = getEl('searchNavigation');
-        prevResultBtn = getEl('prevResultBtn');
-        nextResultBtn = getEl('nextResultBtn');
-        resultCounterEl = getEl('resultCounter');
-        searchResultCardsContainer = getEl('searchResultCards');
-        continueLaterButton = getEl('continueLaterButton');
-        savedSessionArea = getEl('savedSessionArea');
-        savedSessionList = getEl('savedSessionList');
-        generateTestFromTextBtn = getEl('generateTestFromTextBtn');
-        aiQuestionCount = getEl('aiQuestionCount');
-        aiAutoCount = getEl('aiAutoCount');
-        aiAutoCategory = getEl('aiAutoCategory');
-        exitConfirmationModal = getEl('exitConfirmationModal');
-        confirmExitBtn = getEl('confirmExitBtn');
-        cancelExitBtn = getEl('cancelExitBtn');
-        updateNotification = getEl('updateNotification');
-        updateBtn = getEl('updateBtn');
-        appTitleHeader = getEl('appTitleHeader');
-
-        themeDropdownContainer = getEl('themeDropdownContainer');
-        themeDropdownButton = getEl('themeDropdownButton');
-        themeDropdownContent = getEl('themeDropdownContent');
-        themeIcon = getEl('themeIcon');
-
         flashcardsModeCheckbox = getEl('flashcardsMode');
-
-        translateQuestionBtn = getEl('translateQuestionBtn');
-        downloadTranslatedTxtButton = getEl('downloadTranslatedTxtButton');
-        downloadTranslatedQstButton = getEl('downloadTranslatedQstButton');
-
-        converterTabBtn = getEl('converterTabBtn');
-        aiFromTextTabBtn = getEl('aiFromTextTabBtn');
-        aiFromTopicTabBtn = getEl('aiFromTopicTabBtn'); // <-- ИСПРАВЛЕНО
-        converterContent = getEl('converterContent');
-        aiFromTextContent = getEl('aiFromTextContent');
-        aiGeneratorContent = getEl('aiGeneratorContent');
-        
-        generateTestFromTopicBtn = getEl('generateTestFromTopicBtn');
-        aiTopicQuestionCount = getEl('aiTopicQuestionCount');
-        aiTopicAnswerCount = getEl('aiTopicAnswerCount');
-        aiTopicAutoCategory = getEl('aiTopicAutoCategory');
-
+        generateCheatSheetButton = getEl('generateCheatSheetButton');
+        chooseAnotherFileButton = getEl('chooseAnotherFileButton');
         rangeSliderStart = getEl('rangeSliderStart');
         rangeSliderEnd = getEl('rangeSliderEnd');
         sliderProgress = getEl('sliderProgress');
@@ -6620,8 +6596,91 @@ const mainApp = (function() {
         shuffleNCountInput = getEl('shuffleNQuestionsCount');
         sliderTicks = getEl('sliderTicks');
         timeSliderTicks = getEl('timeSliderTicks');
-        translateEngineToggle = getEl('translateEngineToggle');
-        translateEngineDropdown = getEl('translateEngineDropdown');
+        
+        // Шпаргалка (Cheat Sheet)
+        cheatSheetResultArea = getEl('cheatSheetResultArea');
+        cheatSheetOutputEl = getEl('cheatSheetOutput');
+        downloadCheatSheetButton = getEl('downloadCheatSheetButton');
+        backToSettingsButton = getEl('backToSettingsButton');
+
+        // GRADUS
+        gradusButton = getEl('gradusButton');
+        gradusFoldersContainer = getEl('gradusFoldersContainer');
+        gradusFolderList = getEl('gradusFolderList');
+        backToFileUploadButton = getEl('backToFileUploadButton');
+        gradusBreadcrumbs = getEl('gradusBreadcrumbs');
+        
+        // Недавние файлы и сессии
+        recentFilesArea = getEl('recentFilesArea');
+        recentFilesListEl = getEl('recentFilesList');
+        savedSessionArea = getEl('savedSessionArea');
+        savedSessionList = getEl('savedSessionList');
+
+        // Парсер (общие элементы)
+        parserArea = getEl('parserArea');
+        parserButton = getEl('parserButton');
+        backToMainFromParserBtn = getEl('backToMainFromParserBtn');
+        filterVariantsBtn = getEl('filterVariantsBtn');
+        filterVariantsDropdown = getEl('filterVariantsDropdown');
+        filterVariantCheckboxes = getEl('filterVariantCheckboxes');
+        applyVariantFilterBtn = getEl('applyVariantFilterBtn');
+        resetVariantFilterBtn = getEl('resetVariantFilterBtn');
+
+        // Парсер (вкладки)
+        converterTabBtn = getEl('converterTabBtn');
+        aiFromTextTabBtn = getEl('aiFromTextTabBtn');
+        aiFromTopicTabBtn = getEl('aiFromTopicTabBtn');
+        converterContent = getEl('converterContent');
+        aiFromTextContent = getEl('aiFromTextContent');
+        aiGeneratorContent = getEl('aiGeneratorContent');
+
+        // Парсер (элементы вкладки "Конвертер")
+        parserFileInput = getEl('parserFileInput');
+        parserInput = getEl('parserInput');
+        clearParserInputBtn = getEl('clearParserInputBtn');
+        parserPatternSelect = getEl('parserPatternSelect');
+        runParserBtn = getEl('runParserBtn');
+        converterErrorsArea = getEl('converterErrorsArea');
+        converterErrorsHeader = getEl('converterErrorsHeader');
+        converterErrorCount = getEl('converterErrorCount');
+        converterErrorList = getEl('converterErrorList');
+        converterOutputArea = getEl('converterOutputArea');
+        converterOutput = getEl('converterOutput');
+        downloadConverterBtn = getEl('downloadConverterBtn');
+        clearConverterOutputBtn = getEl('clearConverterOutputBtn');
+
+        // Парсер (элементы вкладки "ИИ из текста")
+        aiParserFileInput = getEl('aiParserFileInput');
+        aiParserInput = getEl('aiParserInput');
+        clearAiParserInputBtn = getEl('clearAiParserInputBtn');
+        generateTestFromTextBtn = getEl('generateTestFromTextBtn');
+        aiQuestionCount = getEl('aiQuestionCount');
+        aiAutoCount = getEl('aiAutoCount');
+        aiAutoCategory = getEl('aiAutoCategory');
+        aiFromTextOutputArea = getEl('aiFromTextOutputArea');
+        aiFromTextOutput = getEl('aiFromTextOutput');
+        downloadAiFromTextBtn = getEl('downloadAiFromTextBtn');
+        clearAiFromTextOutputBtn = getEl('clearAiFromTextOutputBtn');
+
+        // Парсер (элементы вкладки "ИИ по теме")
+        aiTopicInput = getEl('aiTopicInput');
+        generateTestFromTopicBtn = getEl('generateTestFromTopicBtn');
+        aiTopicQuestionCount = getEl('aiTopicQuestionCount');
+        aiTopicAnswerCount = getEl('aiTopicAnswerCount');
+        aiTopicAutoCategory = getEl('aiTopicAutoCategory');
+        aiFromTopicOutputArea = getEl('aiFromTopicOutputArea');
+        aiFromTopicOutput = getEl('aiFromTopicOutput');
+        downloadAiFromTopicBtn = getEl('downloadAiFromTopicBtn');
+        clearAiFromTopicOutputBtn = getEl('clearAiFromTopicOutputBtn');
+
+        // Модальные окна и уведомления
+        exitConfirmationModal = getEl('exitConfirmationModal');
+        confirmExitBtn = getEl('confirmExitBtn');
+        cancelExitBtn = getEl('cancelExitBtn');
+        updateNotification = getEl('updateNotification');
+        updateBtn = getEl('updateBtn');
+        
+        // Инициализация Service Worker
         initServiceWorkerUpdater();
 
         // Остальная часть функции initializeApp
@@ -6646,26 +6705,15 @@ const mainApp = (function() {
         
         setupEventListeners();
 
-
-
-
-        // === НАЧАЛО ОБНОВЛЕННОГО УЧАСТКА КОДА ===
-        // Инициализируем IndexedDB и затем проверяем ключ
         DBManager.init().then(() => {
             DBManager.getKey('activatedSearchKey').then(activatedKey => {
                 if (activatedKey) {
-                    // Если ключ есть в IndexedDB, отправляем его на повторную проверку
                     revalidateSearchKey(activatedKey);
                 } else {
-                    // Если ключа нет, просто показываем форму активации
                     searchActivationContainer.classList.remove('hidden');
                 }
             });
         });
-        // === КОНЕЦ ОБНОВЛЕННОГО УЧАСТКА КОДА ===
-
-
-
 
         loadTheme();
         updateQuickModeToggleVisual();
@@ -6682,7 +6730,6 @@ const mainApp = (function() {
         setupAnimationObserver();
         updateTranslateEngineUI();
     }
-
 
 
     async function copyToClipboardMain(text) {
@@ -6712,7 +6759,6 @@ const mainApp = (function() {
 
     
     function setupEventListeners() {
-
         getEl('favoriteQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
         translateQuestionBtn?.addEventListener('click', toggleTranslateMode);
         getEl('copyExplanationBtn')?.addEventListener('click', handleCopyExplanation);
@@ -6730,7 +6776,6 @@ const mainApp = (function() {
             manageBackButtonInterceptor();
         });
         searchButton?.addEventListener('click', performSearch);
-
         activateSearchBtn?.addEventListener('click', handleActivateSearch);
         backToSearchButton?.addEventListener('click', () => {
             searchResultsContainer.classList.add('hidden');
@@ -6743,89 +6788,67 @@ const mainApp = (function() {
             searchDropdownContent.classList.toggle('show');
         });
         searchDropdownContent?.addEventListener('click', handleWebSearch);
-        window.addEventListener('click', (event) => {
-            if (!event.target.matches('#searchWebButton') && searchDropdownContent?.classList.contains('show')) {
-                searchDropdownContent.classList.remove('show');
-            }
-        });
-
-        // ===== НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ВКЛАДОК ПАРСЕРА =====
+        
+        // Вкладки парсера
         converterTabBtn?.addEventListener('click', () => switchParserTab('converter'));
         aiFromTextTabBtn?.addEventListener('click', () => switchParserTab('aiFromText'));
-        aiFromTopicTabBtn?.addEventListener('click', () => switchParserTab('aiGenerator')); // <-- ИСПРАВЛЕНО
+        aiFromTopicTabBtn?.addEventListener('click', () => switchParserTab('aiGenerator'));
 
-        // Обработчик для НОВОЙ кнопки генерации по теме
-        generateTestFromTopicBtn?.addEventListener('click', handleAIGenerationFromTopicRequest);
-
-        generateTestFromTextBtn?.addEventListener('click', handleAIGenerationRequest);
-
-        aiAutoCount?.addEventListener('change', () => {
-            aiQuestionCount.disabled = aiAutoCount.checked;
-        });
-
-        getEl('aiExplanationTranslateBtn')?.addEventListener('click', handleAITranslateToggle);
-        flashcardsModeCheckbox?.addEventListener('change', handleFlashcardsModeChange);
-
-        getEl('aiAnalysisBtn')?.addEventListener('click', requestErrorAnalysis);
-        // Клик на главную кнопку для открытия/закрытия списка
-        getEl('aiExplanationStyleButton')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            getEl('aiExplanationStyleDropdown').classList.toggle('open');
-            getEl('aiExplanationStyleContent').classList.toggle('hidden');
-        });
-
-        // Клик на один из пунктов в списке
-        getEl('aiExplanationStyleContent')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            const target = e.target.closest('a');
-            if (target && target.dataset.style) {
-                const style = target.dataset.style;
-
-                // Обновляем текст на главной кнопке
-                getEl('aiExplanationStyleText').textContent = target.textContent;
-                
-                // Закрываем список
-                getEl('aiExplanationStyleDropdown').classList.remove('open');
-                getEl('aiExplanationStyleContent').classList.add('hidden');
-
-                fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
-            }
-        });
-
-        // Закрываем список при клике в любом другом месте окна
-        window.addEventListener('click', () => {
-            const dropdown = getEl('aiExplanationStyleDropdown');
-            if (dropdown && dropdown.classList.contains('open')) {
-                dropdown.classList.remove('open');
-                getEl('aiExplanationStyleContent').classList.add('hidden');
-            }
-        });
-
-
-        // Внутри функции setupEventListeners()
-            parserButton?.addEventListener('click', () => {
-            // Сбрасываем старые ошибки и фильтры перед показом
+        // Кнопки и инпуты парсера
+        parserButton?.addEventListener('click', () => {
             hideAndResetErrorArea();
             resetVariantFilter();
-            
             fileUploadArea.classList.add('hidden');
             parserArea.classList.remove('hidden');
             manageBackButtonInterceptor();
         });
-
         backToMainFromParserBtn?.addEventListener('click', () => {
             parserArea.classList.add('hidden');
             fileUploadArea.classList.remove('hidden');
             manageBackButtonInterceptor();
         });
-
         parserFileInput?.addEventListener('change', handleParserFileInput);
-        runParserBtn?.addEventListener('click', runParser);
-        downloadParsedBtn?.addEventListener('click', downloadParsedQst);
         clearParserInputBtn?.addEventListener('click', clearParserInput);
-        parserInput?.addEventListener('input', checkAICharacterLimit);
+        runParserBtn?.addEventListener('click', runParser);
+        aiParserFileInput?.addEventListener('change', handleAiParserFileInput);
+        clearAiParserInputBtn?.addEventListener('click', clearAiParserInput);
+        aiParserInput?.addEventListener('input', checkAICharacterLimit);
+        generateTestFromTextBtn?.addEventListener('click', handleAIGenerationRequest);
+        generateTestFromTopicBtn?.addEventListener('click', handleAIGenerationFromTopicRequest);
+        
+        // Кнопки скачивания и очистки результатов
+        downloadConverterBtn?.addEventListener('click', () => downloadParsedQst('converter'));
+        downloadAiFromTextBtn?.addEventListener('click', () => downloadParsedQst('aiFromText'));
+        downloadAiFromTopicBtn?.addEventListener('click', () => downloadParsedQst('aiFromTopic'));
+        clearConverterOutputBtn?.addEventListener('click', () => clearParserOutput('converter'));
+        clearAiFromTextOutputBtn?.addEventListener('click', () => clearParserOutput('aiFromText'));
+        clearAiFromTopicOutputBtn?.addEventListener('click', () => clearParserOutput('aiFromTopic'));
+
+        // Фильтр
+        filterVariantsBtn?.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const header = event.target.closest('.parser-output-header');
+            if (header) {
+                // Позиционируем выпадающее меню относительно шапки
+                filterVariantsDropdown.style.top = `${header.offsetTop + header.offsetHeight}px`;
+                filterVariantsDropdown.style.right = '0px'; // Прижимаем к правому краю
+            }
+            filterVariantsDropdown.classList.toggle('hidden');
+        });
 
 
+
+        applyVariantFilterBtn?.addEventListener('click', filterByVariantCount);
+        resetVariantFilterBtn?.addEventListener('click', resetVariantFilter);
+        window.addEventListener('click', (event) => {
+            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden')) {
+                if (!filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
+                    filterVariantsDropdown.classList.add('hidden');
+                }
+            }
+        });
+
+        // Остальные обработчики...
         nextButton.addEventListener('click', handleNextButtonClick);
         prevQuestionButton.addEventListener('click', loadPreviousQuestion);
         restartButton.addEventListener('click', resetQuizForNewFile);
@@ -6846,85 +6869,58 @@ const mainApp = (function() {
                 showResults();
             }
         });
-
         quickModeToggle?.addEventListener('click', toggleQuickMode);
         triggerWordToggle?.addEventListener('click', toggleTriggerWordMode);
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
         readingModeCheckbox?.addEventListener('change', handleReadingModeChange);
         timeLimitInput.addEventListener('input', () => {
-                    timeLimitValueDisplay.textContent = timeLimitInput.value;
-                    updateSingleSliderVisuals();
-                });
-
-
-
-
-        // --- Исправленная логика для выпадающего списка тем ---
+            timeLimitValueDisplay.textContent = timeLimitInput.value;
+            updateSingleSliderVisuals();
+        });
         themeDropdownButton?.addEventListener('click', (event) => {
-            event.stopPropagation(); // Предотвращаем "всплытие" клика до window
+            event.stopPropagation();
             themeDropdownContent.classList.toggle('show');
         });
-
         themeDropdownContent?.addEventListener('click', (event) => {
             event.preventDefault();
             const target = event.target.closest('a');
             if (target && target.dataset.theme) {
                 setTheme(target.dataset.theme);
-                themeDropdownContent.classList.remove('show'); // <-- ВОТ ЭТА СТРОКА
+                themeDropdownContent.classList.remove('show');
             }
         });
-        
-
-        // ===== ИСПРАВЛЕННЫЙ БЛОК ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ ПЕРЕВОДЧИКА =====
-
-        // 1. Логика ОТКРЫТИЯ меню по клику на треугольник
         translateEngineToggle?.addEventListener('click', (e) => {
-            e.stopPropagation(); // Останавливаем всплытие, чтобы не сработал window.click
-            translateEngineDropdown.classList.toggle('show'); // Используем .show, как и в других меню
+            e.stopPropagation();
+            translateEngineDropdown.classList.toggle('show');
         });
-        
         translateEngineDropdown?.addEventListener('click', (e) => {
             e.preventDefault();
-            // ИСПРАВЛЕНИЕ: Ищем ближайший родительский элемент <a> с атрибутом data-engine
             const target = e.target.closest('a[data-engine]');
             if (target && target.dataset.engine) {
                 setTranslateEngine(target.dataset.engine);
-                // Явно закрываем меню после выбора, чтобы избежать любых проблем
                 translateEngineDropdown.classList.remove('show');
             }
         });
-
-        // 3. Логика ЗАКРЫТИЯ меню при клике где-угодно еще (внутри глобального обработчика)
         window.addEventListener('click', (event) => {
-            // Закрываем список поисковиков
             if (!event.target.closest('#webSearchDropdown') && searchDropdownContent?.classList.contains('show')) {
                 searchDropdownContent.classList.remove('show');
             }
-            // Закрываем список тем
             if (!event.target.closest('#themeDropdownContainer') && themeDropdownContent?.classList.contains('show')) {
                 themeDropdownContent.classList.remove('show');
             }
-            // Закрываем список движков перевода (ИСПРАВЛЕННАЯ ЛОГИКА)
             if (!event.target.closest('.translate-engine-container') && translateEngineDropdown?.classList.contains('show')) {
-                 translateEngineDropdown.classList.remove('show');
+                translateEngineDropdown.classList.remove('show');
             }
         });
-
-
         languageToggle?.addEventListener('click', toggleLanguage);
         chatToggleBtn?.addEventListener('click', () => {
             ChatModule.openChatModal();
         });
-                
         prevResultBtn?.addEventListener('click', () => {
             if (currentResultIndex > 0) {
                 currentResultIndex--;
                 displaySingleResult(currentResultIndex);
-                if (isTranslateModeEnabled && !quizArea.classList.contains('hidden') && questionsForCurrentQuiz.length > 0) {
-    loadQuestion(currentQuestionIndex);
-}
             }
-
         });
         nextResultBtn?.addEventListener('click', () => {
             if (currentResultIndex < searchResultsData.length - 1) {
@@ -6932,47 +6928,45 @@ const mainApp = (function() {
                 displaySingleResult(currentResultIndex);
             }
         });
-
-        // Новые обработчики для фильтра
-        filterVariantsBtn?.addEventListener('click', (event) => {
-            event.stopPropagation(); // Предотвращаем закрытие по клику на саму кнопку
-            filterVariantsDropdown.classList.toggle('hidden');
-        });
-
-        applyVariantFilterBtn?.addEventListener('click', filterByVariantCount);
-        resetVariantFilterBtn?.addEventListener('click', resetVariantFilter);
-        
-        // Закрываем выпадающее меню при клике вне его
-        window.addEventListener('click', (event) => {
-            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden')) {
-                if (!filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
-                    filterVariantsDropdown.classList.add('hidden');
-                }
-            }
-        });
-
-
-        // Обработчики для кнопок в модальном окне выхода
         cancelExitBtn?.addEventListener('click', () => {
             isExitConfirmed = false;
             hideExitConfirmationModal();
         });
-
         confirmExitBtn?.addEventListener('click', () => {
-
             window.location.href = 'about:blank';
         });
-
-        // === НАЧАЛО ИЗМЕНЕНИЙ ===
         downloadTranslatedTxtButton?.addEventListener('click', handleDownloadTranslatedTxt);
         downloadTranslatedQstButton?.addEventListener('click', handleDownloadTranslatedQst);
-        // === КОНЕЦ ИЗМЕНЕНИЙ ===
-
         shuffleNCheckbox?.addEventListener('change', handleShuffleNToggle);
-
-
-
-
+        aiAutoCount?.addEventListener('change', () => {
+            aiQuestionCount.disabled = aiAutoCount.checked;
+        });
+        getEl('aiExplanationTranslateBtn')?.addEventListener('click', handleAITranslateToggle);
+        flashcardsModeCheckbox?.addEventListener('change', handleFlashcardsModeChange);
+        getEl('aiAnalysisBtn')?.addEventListener('click', requestErrorAnalysis);
+        getEl('aiExplanationStyleButton')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            getEl('aiExplanationStyleDropdown').classList.toggle('open');
+            getEl('aiExplanationStyleContent').classList.toggle('hidden');
+        });
+        getEl('aiExplanationStyleContent')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = e.target.closest('a');
+            if (target && target.dataset.style) {
+                const style = target.dataset.style;
+                getEl('aiExplanationStyleText').textContent = target.textContent;
+                getEl('aiExplanationStyleDropdown').classList.remove('open');
+                getEl('aiExplanationStyleContent').classList.add('hidden');
+                fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
+            }
+        });
+        window.addEventListener('click', () => {
+            const dropdown = getEl('aiExplanationStyleDropdown');
+            if (dropdown && dropdown.classList.contains('open')) {
+                dropdown.classList.remove('open');
+                getEl('aiExplanationStyleContent').classList.add('hidden');
+            }
+        });
     }
 
 
@@ -9936,28 +9930,22 @@ const mainApp = (function() {
      * Проверяет количество символов в поле ввода для ИИ и обновляет состояние кнопки генерации.
      */
     function checkAICharacterLimit() {
-        if (!parserInput || !generateTestFromTextBtn) return;
+        if (!aiParserInput || !generateTestFromTextBtn) return; // <-- ИЗМЕНЕНО
 
-        const currentLength = parserInput.value.length;
+        const currentLength = aiParserInput.value.length; // <-- ИЗМЕНЕНО
         const originalButtonText = _('ai_generate_from_text_button');
 
         if (currentLength > AI_INPUT_CHAR_LIMIT) {
-            // Если лимит превышен
             generateTestFromTextBtn.disabled = true;
-            // Формируем текст предупреждения с текущим и максимальным значением
             const warningText = _('ai_char_limit_exceeded')
                 .replace('{current}', currentLength)
                 .replace('{max}', AI_INPUT_CHAR_LIMIT);
             generateTestFromTextBtn.innerHTML = `<span>⚠️ ${warningText}</span>`;
-            // Добавляем красную рамку к полю ввода для наглядности
-            parserInput.style.borderColor = 'var(--accent, red)';
+            aiParserInput.style.borderColor = 'var(--accent, red)'; // <-- ИЗМЕНЕНО
         } else {
-            // Если все в порядке
             generateTestFromTextBtn.disabled = false;
-            // Восстанавливаем HTML-структуру с ключом для перевода
             generateTestFromTextBtn.innerHTML = `<span data-lang-key="ai_generate_from_text_button">${originalButtonText}</span>`;
-            // Убираем красную рамку
-            parserInput.style.borderColor = '';
+            aiParserInput.style.borderColor = ''; // <-- ИЗМЕНЕНО
         }
     }
 
@@ -10379,39 +10367,36 @@ const mainApp = (function() {
      * @param {Array<Object>} errors - Массив объектов ошибок.
      */
     function renderErrors(targetTextarea, errors) {
-        const errorsArea = getEl('parserErrorsArea');
-        const errorCountEl = getEl('errorCount');
-        const errorListEl = getEl('errorList');
-
-        if (!errorsArea || !errorCountEl || !errorListEl) return;
-
-        errorListEl.innerHTML = ''; 
-        errorCountEl.textContent = errors.length;
-        errorsArea.classList.remove('hidden');
+        // Показываем весь контейнер с ошибками
+        converterErrorsArea.classList.remove('hidden');
+        // СРАЗУ показываем и сам список
+        converterErrorList.classList.remove('hidden'); 
+        
+        converterErrorCount.textContent = errors.length;
+        converterErrorList.innerHTML = '';      
 
         errors.forEach(error => {
             const li = document.createElement('li');
             li.className = 'error-list-item';
-            // Отображаем первую строку ошибки или специальный текст
-            li.textContent = error.text.split('\n')[0].trim() || '[пустая строка]';
+            
+            // --- НОВАЯ ЛОГИКА ОБРЕЗКИ ТЕКСТА ---
+            let displayText = (error.text || '').replace(/^\s*\?\s*/, '').trim();
+            if (displayText.length > 60) {
+                displayText = displayText.substring(0, 60) + '...';
+            }
+            // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
+            li.textContent = displayText || '[пустая строка]';
             li.title = `Нажмите, чтобы выделить ошибку:\n\n${error.text}`;
             
-            // Привязываем клик к УНИВЕРСАЛЬНОЙ функции подсветки, передавая НУЖНОЕ поле
             li.addEventListener('click', () => {
-                // ШАГ 1: Переключаем класс. Если он есть - убираем, если нет - добавляем.
                 li.classList.toggle('reviewed');
-                
-                // ШАГ 2: Выполняем уже знакомое действие - подсветку в текстовом поле.
                 highlightErrorInTextarea(targetTextarea, error.start, error.end);
             });
-      
             
-            errorListEl.appendChild(li);
+            converterErrorList.appendChild(li);
         });
     }
-
-
-
 
 
     /**
@@ -10454,9 +10439,9 @@ const mainApp = (function() {
 
 
     function hideAndResetErrorArea() {
-        getEl('parserErrorsArea')?.classList.add('hidden');
-        getEl('errorList').innerHTML = '';
-        getEl('errorCount').textContent = '0';
+        converterErrorsArea?.classList.add('hidden');
+        converterErrorList.innerHTML = '';
+        converterErrorCount.textContent = '0';
     }
 
  
@@ -10527,7 +10512,6 @@ const mainApp = (function() {
     }
 
     function filterByVariantCount() {
-        // Сначала сбрасываем старые ошибки
         hideAndResetErrorArea();
 
         const selectedCounts = Array.from(filterVariantCheckboxes.querySelectorAll('input:checked'))
@@ -10538,15 +10522,21 @@ const mainApp = (function() {
             return;
         }
 
-        const qstText = parserOutput.value;
+        const qstText = converterOutput.value;
         const allQuestions = parseQstResultForFiltering(qstText);
         
         const defectiveQuestions = allQuestions.filter(q => !selectedCounts.includes(q.variantCount));
 
         if (defectiveQuestions.length > 0) {
-            // Адаптируем заголовок блока ошибок
-            getEl('showErrorsBtn').innerHTML = `⚠️ Ошибки количества вариантов (<span id="errorCount">${defectiveQuestions.length}</span>)`;
-            renderErrors(parserOutput, defectiveQuestions);
+            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            // 1. Находим нужный span внутри нашего нового заголовка
+            const errorLabel = converterErrorsHeader.querySelector('span[data-lang-key]');
+            // 2. Меняем его текст (это нормально, так как ошибка специфична)
+            if (errorLabel) errorLabel.textContent = '⚠️ Ошибки количества вариантов';
+            
+            // 3. Вызываем renderErrors, который сделает блок видимым
+            renderErrors(converterOutput, defectiveQuestions); 
+            
             alert(_('error_filter_found_mismatch').replace('{count}', defectiveQuestions.length));
         } else {
             alert(_('error_filter_all_match'));
@@ -10555,11 +10545,11 @@ const mainApp = (function() {
     }
 
     function resetVariantFilter() {
-        filterVariantCheckboxes.querySelectorAll('input:checked').forEach(input => input.checked = false);
-        hideAndResetErrorArea(); // Скрываем блок ошибок
+        // Эта строка больше не вызовет ошибку, так как filterVariantCheckboxes будет найден
+        filterVariantCheckboxes.querySelectorAll('input:checked').forEach(input => input.checked = false); 
+        hideAndResetErrorArea();
         filterVariantsDropdown.classList.add('hidden');
     }
-
 
     function runParser() {
         resetVariantFilter();
@@ -10569,12 +10559,12 @@ const mainApp = (function() {
             return;
         }
 
-        if (!checkAndConfirmOverwrite(parserOutput)) {
+        if (!checkAndConfirmOverwrite(converterOutput)) {
             return;
         }
 
         hideAndResetErrorArea();
-        parserOutputArea.classList.add('hidden');
+        converterOutputArea.classList.add('hidden');
 
         const selectedPatternId = parserPatternSelect.value;
         let result;
@@ -10597,6 +10587,12 @@ const mainApp = (function() {
         const errors = result.errors;
         
         if (errors.length > 0) {
+            // === ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            const errorLabel = converterErrorsHeader.querySelector('span[data-lang-key]');
+            if (errorLabel) {
+                 // Возвращаем текст из словаря
+                errorLabel.textContent = _('parser_errors_found');
+            }
             renderErrors(parserInput, errors);
         }
 
@@ -10625,8 +10621,8 @@ const mainApp = (function() {
             }
         });
 
-        parserOutput.value = qstResult.trim();
-        parserOutputArea.classList.remove('hidden');
+        converterOutput.value = qstResult.trim();
+        converterOutputArea.classList.remove('hidden');
 
         if (errors.length > 0) {
             alert(_('parser_conversion_summary_alert').replace('{parsed}', parsedQuestions.length).replace('{errors}', errors.length));
@@ -10636,13 +10632,42 @@ const mainApp = (function() {
     }
 
 
-
-    async function downloadParsedQst() {
-        const content = parserOutput.value;
-        if (!content) return;
-        await downloadOrShareFile('parsed_test.qst', content, 'text/plain;charset=utf-8', _('share_title_converted_test'));
+    function clearParserOutput(type) {
+        let outputArea, outputTextarea;
+        if (type === 'converter') {
+            outputArea = converterOutputArea;
+            outputTextarea = converterOutput;
+        } else if (type === 'aiFromText') {
+            outputArea = aiFromTextOutputArea;
+            outputTextarea = aiFromTextOutput;
+        } else if (type === 'aiFromTopic') {
+            outputArea = aiFromTopicOutputArea;
+            outputTextarea = aiFromTopicOutput;
+        }
+        
+        if (outputArea && outputTextarea) {
+            outputArea.classList.add('hidden');
+            outputTextarea.value = '';
+        }
     }
 
+    // Замените старую функцию downloadParsedQst на эту
+    async function downloadParsedQst(type) {
+        let content = '';
+        if (type === 'converter') {
+            content = converterOutput.value;
+        } else if (type === 'aiFromText') {
+            content = aiFromTextOutput.value;
+        } else if (type === 'aiFromTopic') {
+            content = aiFromTopicOutput.value;
+        }
+
+        if (!content) {
+            alert(_('error_download_parsed_first'));
+            return;
+        }
+        await downloadOrShareFile('parsed_test.qst', content, 'text/plain;charset=utf-8', _('share_title_converted_test'));
+    }
 
     function clearParserInput() {
         parserInput.value = '';
@@ -10652,18 +10677,34 @@ const mainApp = (function() {
         checkAICharacterLimit();
     }
 
+    function handleAiParserFileInput(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            aiParserInput.value = e.target.result;
+            checkAICharacterLimit();
+        };
+        reader.readAsText(file, 'UTF-8');
+    }
 
+    function clearAiParserInput() {
+        aiParserInput.value = '';
+        aiParserFileInput.value = '';
+        aiParserInput.focus();
+        checkAICharacterLimit();
+    }
 
 
     async function handleAIGenerationRequest() {
-        const text = parserInput.value.trim();
+        const text = aiParserInput.value.trim();
         if (!text) {
             alert(_('ai_error_text_empty'));
             return;
         }
         
         // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем проверку на перезапись ---
-        if (!checkAndConfirmOverwrite(parserOutput)) {
+        if (!checkAndConfirmOverwrite(aiFromTextOutput)) {
             return; // Если пользователь нажал "Отмена", прерываем выполнение
         }
         // --- КОНЕЦ ИЗМЕНЕНИЙ ---
@@ -10696,9 +10737,9 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success && result.qst) {
-                parserOutput.value = result.qst;
-                parserOutputArea.classList.remove('hidden');
-                parserOutputArea.scrollIntoView({ behavior: 'smooth' });
+                aiFromTextOutput.value = result.qst;
+                aiFromTextOutputArea.classList.remove('hidden');
+                aiFromTextOutputArea.scrollIntoView({ behavior: 'smooth' });
             } else {
                 throw new Error(result.error || _('ai_error_generation'));
             }
@@ -10767,7 +10808,7 @@ const mainApp = (function() {
             return;
         }
 
-        if (!checkAndConfirmOverwrite(parserOutput)) {
+        if (!checkAndConfirmOverwrite(aiFromTopicOutput)) {
             return;
         }
 
@@ -10797,9 +10838,9 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success && result.qst) {
-                parserOutput.value = result.qst;
-                parserOutputArea.classList.remove('hidden');
-                parserOutputArea.scrollIntoView({ behavior: 'smooth' });
+                aiFromTopicOutput.value = result.qst;
+                aiFromTopicOutputArea.classList.remove('hidden');
+                aiFromTopicOutputArea.scrollIntoView({ behavior: 'smooth' });
             } else {
                 throw new Error(result.error || _('ai_error_generation'));
             }

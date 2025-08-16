@@ -1202,36 +1202,90 @@ body.dark-mode {
     animation: slideUp 0.4s ease;
 }
 
+
+
+
+
+
+/* ======================================================= */
+/* ===     ФИНАЛЬНЫЕ СТИЛИ ДЛЯ ВКЛАДОК АВТОРИЗАЦИИ v2   === */
+/* ======================================================= */
+
+/* 1. Контейнер-разделитель */
 .auth-tabs {
     display: flex;
     margin-bottom: 25px;
-    border-bottom: 2px solid var(--border-color);
-    border-radius: 8px 8px 0 0;
-    overflow: hidden;
+    border-bottom: 1px solid var(--border-color);
 }
 
+/* 2. Общий стиль для всех вкладок (работает для всех тем) */
 .auth-tab {
     flex: 1;
-    padding: 15px 20px;
-    background: var(--input-bg-color);
-    border: none;
+    padding: 12px 15px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background-color: transparent;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 500;
+    font-size: 0.95em;
+    text-align: center;
+    transition: all 0.2s ease;
+    margin-left: -1px;
+    margin-bottom: -1px;
+    position: relative;
+}
+
+.auth-tab:first-child {
+    margin-left: 0;
+}
+
+/* 3. Стиль для НЕАКТИВНОЙ вкладки (для всех тем) */
+.auth-tab:not(.active) {
     color: var(--secondary-text-color);
-    transition: all 0.3s ease;
-    font-size: 1rem;
+    border-color: var(--border-color);
 }
 
-.auth-tab.active {
-    background: var(--button-primary-bg);
-    color: white;
-    transform: translateY(-2px);
-}
-
+/* 4. Эффект при наведении на НЕАКТИВНУЮ вкладку */
 .auth-tab:hover:not(.active) {
-    background: var(--input-hover-bg-color);
+    background-color: var(--input-hover-bg-color);
     color: var(--text-color);
+    z-index: 1;
 }
+
+/* 5. Стиль для АКТИВНОЙ вкладки (для всех тем) */
+.auth-tab.active {
+    background-color: var(--container-bg-color);
+    color: var(--heading-color);
+    font-weight: 600;
+    border-color: var(--border-color);
+    z-index: 2;
+}
+
+/* 6. Особые, перекрывающие стили ТОЛЬКО для темы glass-dark */
+body.glass-dark .auth-tab.active {
+    /* ВАЖНО: Используем НЕПРОЗРАЧНЫЙ фон, который визуально совпадает с фоном модального окна */
+    background-color: #2a2a2a;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* 7. Страховочная "маска" ТОЛЬКО для темы glass-dark */
+body.glass-dark .auth-tab.active::after {
+    content: "";
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    height: 2px;
+    /* Используем тот же НЕПРОЗРАЧНЫЙ фон для идеального перекрытия */
+    background: #2a2a2a;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    pointer-events: none;
+}
+
+
 
 .auth-form {
     display: none;
@@ -4360,19 +4414,6 @@ button[onclick*="copyToClipboard"].copied:after {
     font-size: 0.9em;
 }
 
-.filter-dropdown {
-    position: absolute;
-    top: 100%; /* Появляется под кнопкой */
-    right: 0;
-    width: 280px;
-    background-color: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 5px 20px var(--shadow-color);
-    z-index: 100;
-    padding: 15px;
-    animation: fadeIn 0.2s;
-}
 
 .filter-dropdown-header {
     font-weight: bold;
@@ -4440,9 +4481,8 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 .filter-dropdown {
-    position: absolute;
-    top: 100%; /* Появляется под кнопкой */
-    right: 0;
+    position: absolute; /* Оставляем absolute */
+    /* right: 0; <-- Удаляем это правило, JS будет управлять позицией */
     width: 280px;
     background-color: var(--container-bg-color);
     border: 1px solid var(--border-color);
@@ -5975,27 +6015,43 @@ body.dark-mode .explain-flashcard-btn:hover {
 }
 
 /* ======================================================= */
-/* ===         СТИЛИ ДЛЯ ВКЛАДОК В ПАРСЕРЕ             === */
+/* ===         ОБНОВЛЕННЫЕ СТИЛИ ДЛЯ ВКЛАДОК           === */
 /* ======================================================= */
 
+/* 1. Контейнер для вкладок (теперь это "бар") */
 .parser-tabs {
     display: flex;
     margin-bottom: 25px;
-    border-bottom: 2px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color); /* Тонкая серая линия внизу */
 }
 
+/* 2. Стили для неактивных вкладок */
 .parser-tab {
-    flex: 1; /* Равномерно распределяет ширину */
-    padding: 12px 15px;
+    flex: 1;
+    padding: 10px 15px; /* Сделали чуть ниже */
     border: none;
-    border-bottom: 3px solid transparent; /* "Невидимая" полоска снизу */
-    background-color: transparent;
-    color: var(--secondary-text-color);
-    font-size: 1.05em;
+    border-bottom: 3px solid transparent; /* "Невидимая" полоска для плавного перехода */
+    background-color: transparent; /* Убрали фон */
+    color: var(--secondary-text-color); /* Сделали неактивные вкладки серыми */
+    font-size: 0.95em; /* Сделали шрифт чуть меньше */
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
-    margin-bottom: -2px; /* Приподнимает кнопки, чтобы их нижняя рамка слилась с общей */
+    margin-bottom: -1px; /* Приподнимает кнопки, чтобы их нижняя рамка слилась с общей */
+    text-align: center; /* Центрируем текст */
+}
+
+/* 3. Эффект при наведении на неактивную вкладку */
+.parser-tab:hover:not(.active) {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+/* 4. Стиль для АКТИВНОЙ вкладки */
+.parser-tab.active {
+    color: var(--button-primary-bg); /* Цвет текста становится акцентным */
+    border-bottom-color: var(--button-primary-bg); /* Показываем цветную полоску внизу */
+    font-weight: 600; /* Делаем текст жирным */
 }
 
 .parser-tab:hover {
@@ -7072,4 +7128,232 @@ input[type="range"]::-moz-range-thumb {
 
 #searchActivationContainer button {
     width: 100%;
+}
+
+/* ======================================================= */
+/* ===  GLASS-DARK: Tabs merge fix v5 (финальный)       === */
+/* ======================================================= */
+
+/* Линия-база под вкладками */
+body.glass-dark .parser-tabs {
+  display: flex;
+  margin-bottom: 25px;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+  z-index: 0;
+}
+
+/* Базовые вкладки: рамки по бокам и сверху, НЕТ нижней; вкладки «садятся» на линию */
+body.glass-dark .parser-tab {
+  border: 1px solid var(--border-color);
+  border-bottom: none !important;          /* Глушим глобальный underline */
+  border-radius: 8px 8px 0 0;
+  margin-left: -1px;                        /* Сшиваем боковые рамки */
+  margin-bottom: -1px;                      /* Опускаем на линию контейнера */
+  background: transparent;
+  color: var(--secondary-text-color);
+  transition: all .2s ease;
+  position: relative;
+  z-index: 0;
+}
+
+/* Первая вкладка без сдвига влево */
+body.glass-dark .parser-tab:first-child { margin-left: 0; }
+
+/* Наведение на неактивные */
+body.glass-dark .parser-tab:hover:not(.active) {
+  background-color: var(--input-hover-bg-color);
+  color: var(--text-color);
+  z-index: 1;
+}
+
+/* АКТИВНАЯ вкладка: делаем фон НЕПРОЗРАЧНЫМ и перекрываем линию снизу */
+body.glass-dark .parser-tab.active {
+  /* === ИЗМЕНЕНИЕ ЗДЕСЬ === */
+  /* ВАЖНО: фон теперь берется из переменной темы, обеспечивая идеальное совпадение */
+  background-color: var(--container-bg-color);
+  /* === КОНЕЦ ИЗМЕНЕНИЯ === */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--heading-color);
+  font-weight: 600;
+  border-color: var(--border-color);
+  border-bottom: none !important;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Страховочная «маска»: забивает 1–2px зоны шва... */
+body.glass-dark .parser-tab.active::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  height: 2px;
+  /* === ИЗМЕНЕНИЕ ЗДЕСЬ === */
+  background: var(--container-bg-color);
+  /* === КОНЕЦ ИЗМЕНЕНИЯ === */
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  pointer-events: none;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ШАПКИ РЕЗУЛЬТАТА ПАРСЕРА      === */
+/* ======================================================= */
+.parser-output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.parser-output-header h3 {
+    margin: 0;
+    text-align: left;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ СПИСКА ОШИБОК ПАРСЕРА         === */
+/* ======================================================= */
+
+/* По умолчанию список с ошибками скрыт */
+#converterErrorList.hidden {
+    display: none;
+}
+
+/* Кнопка-заголовок для ошибок */
+#converterErrorsArea button {
+    width: 100%;
+    background-color: var(--feedback-incorrect-bg);
+    color: var(--feedback-incorrect-text);
+    font-weight: bold;
+    text-align: left;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border: 1px solid var(--feedback-incorrect-border);
+    cursor: pointer; /* Делаем ее кликабельной */
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ПАРСЕРА С ДВУМЯ КОЛОНКАМИ       === */
+/* ======================================================= */
+
+.parser-result-wrapper {
+    display: flex;
+    gap: 15px; /* Расстояние между колонками */
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.result-column {
+    flex: 2; /* Колонка с результатом занимает 2/3 ширины */
+    display: flex;
+    flex-direction: column;
+}
+
+.errors-column {
+    flex: 1; /* Колонка с ошибками занимает 1/3 ширины */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Стилизуем список ошибок, чтобы он занимал всю высоту */
+#converterErrorList {
+    flex-grow: 1; /* Растягиваем список на всю доступную высоту */
+    max-height: 400px; /* Ограничиваем максимальную высоту */
+    overflow-y: auto;
+    background: var(--input-bg-color);
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    margin: 0;
+    padding: 5px;
+}
+
+#converterOutput {
+    height: 400px; /* Задаем фиксированную высоту, равную max-height списка ошибок */
+    resize: vertical; /* Позволяем пользователю менять высоту */
+}
+
+/* ======================================================= */
+/* ===         ФИНАЛЬНАЯ ВЕРСТКА РЕЗУЛЬТАТОВ ПАРСЕРА      === */
+/* ======================================================= */
+
+.parser-result-wrapper {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    /* Задаем высоту всему блоку, чтобы колонки были одинаковыми */
+    height: 400px; 
+}
+
+.result-column {
+    flex-basis: 65%;
+    min-width: 0;
+    display: flex; /* Делаем колонку flex-контейнером */
+}
+
+.errors-column {
+    flex-basis: 35%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column; /* Элементы внутри будут идти друг под другом */
+}
+
+/* Растягиваем textarea на всю высоту своей колонки */
+#converterOutput {
+    flex-grow: 1; /* Главное правило для растягивания */
+    height: 100%; /* Занимает 100% высоты родителя (.result-column) */
+    resize: vertical;
+}
+
+/* === СТИЛИ ДЛЯ БЛОКА ОШИБОК === */
+
+.errors-header {
+    background-color: var(--input-bg-color);
+    color: var(--secondary-text-color);
+    padding: 8px 12px;
+    border-radius: 6px 6px 0 0;
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+    border-bottom: none; /* Убираем нижнюю рамку, чтобы слиться со списком */
+    flex-shrink: 0; /* Заголовок не должен сжиматься */
+}
+
+#converterErrorList {
+    list-style: none;
+    margin: 0;
+    padding: 5px;
+    background: var(--input-bg-color);
+    border-radius: 0 0 6px 6px;
+    border: 1px solid var(--border-color);
+    border-top: none; /* Убираем верхнюю рамку */
+    overflow-y: auto;
+    flex-grow: 1; /* Список растягивается на всю оставшуюся высоту */
+}
+
+.error-list-item {
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin-bottom: 3px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    
+    /* === Ключевые стили для обрезки текста === */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.error-list-item:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+.error-list-item.reviewed {
+    background-color: var(--feedback-correct-bg);
+    color: var(--feedback-correct-text);
 }

@@ -287,7 +287,11 @@
                 <button id="restartButton" data-lang-key="restart_button">Пройти другой тест</button>
             </div>
 
+
+
+
             <div id="parserArea" class="hidden">
+                <!-- === НАЧАЛО БЛОКА НА ЗАМЕНУ === -->
                 <div class="parser-tabs">
                     <button id="converterTabBtn" class="parser-tab active" data-lang-key="tab_converter">Конвертер из текста</button>
                     <button id="aiFromTextTabBtn" class="parser-tab" data-lang-key="tab_ai_from_text">ИИ-генератор из текста</button>
@@ -295,44 +299,106 @@
                 </div>
 
                 <div class="parser-tab-content-wrapper">
-                    <!-- ВКЛАДКА 1: КОНВЕРТЕР (ТЕПЕРЬ ТОЛЬКО ОН) -->
+                    <!-- === ВКЛАДКА 1: КОНВЕРТЕР === -->
                     <div id="converterContent" class="parser-tab-content active">
-                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="parser_description">Загрузите файл или вставьте текст для преобразования в формат теста.</p>
-                        
+                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="parser_description">Загрузите файл или вставьте текст...</p>
+                        <!-- ... поля ввода для конвертера ... -->
                         <div class="settings-group">
                             <div class="parser-label-container">
-                                <label for="parserFileInput" data-lang-key="parser_upload_or_paste">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+                                <label for="parserFileInput" data-lang-key="parser_upload_or_paste">Загрузите файл (.txt) или вставьте текст ниже:</label>
                                 <button id="clearParserInputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить поле</button>
                             </div>
                             <input type="file" id="parserFileInput" accept=".txt">
                             <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..." data-lang-key="parser_input_placeholder"></textarea>
                         </div>
                         <div class="settings-group">
-                            <label for="parserPatternSelect" data-lang-key="parser_select_format">2. Выберите формат (или оставьте для автоопределения):</label>
+                            <label for="parserPatternSelect" data-lang-key="parser_select_format">Выберите формат (или оставьте для автоопределения):</label>
                             <select id="parserPatternSelect" style="width: 100%; padding: 8px; border-radius: 4px;">
                                 <option value="auto" selected data-lang-key="parser_auto_detect">-- Автоматическое определение --</option>
                             </select>
                         </div>
                         <div class="settings-group" style="text-align: center;">
-                            <button id="runParserBtn" data-lang-key="parser_run_button">3. Конвертировать</button>
+                            <button id="runParserBtn" data-lang-key="parser_run_button">Конвертировать</button>
                         </div>
+
+
+
+
+                        <!-- === ОБЛАСТЬ РЕЗУЛЬТАТА ДЛЯ КОНВЕРТЕРА (ФИНАЛЬНАЯ ВЕРСИЯ) === -->
+                        <div id="converterOutputArea" class="hidden">
+                            <hr>
+                            <div class="parser-output-header">
+                                <h3 data-lang-key="parser_result_title">Результат:</h3>
+                                <div style="display: flex; gap: 10px;">
+                                     <button id="filterVariantsBtn" data-lang-key="filter_variants_button">⚙️ Фильтр по вариантам</button>
+                                     <button id="clearConverterOutputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить</button>
+                                </div>
+                            </div>
+                            
+                            <!-- === ВЫПАДАЮЩЕЕ МЕНЮ ФИЛЬТРА (ИСПРАВЛЕННОЕ) === -->
+                            <div id="filterVariantsDropdown" class="filter-dropdown hidden">
+                                <div class="filter-dropdown-header" data-lang-key="filter_variants_header">Выберите кол-во вариантов:</div>
+                                <div id="filterVariantCheckboxes" class="filter-checkboxes">
+                                    <!-- Чекбоксы будут сгенерированы JavaScript -->
+                                </div>
+                                <div class="filter-actions">
+                                    <button id="resetVariantFilterBtn" class="btn-secondary-small" data-lang-key="filter_reset_button">Сброс</button>
+                                    <button id="applyVariantFilterBtn" data-lang-key="filter_apply_button">Применить</button>
+                                </div>
+                            </div>
+                            <!-- === КОНЕЦ ФИЛЬТРА === -->
+
+                            <div class="parser-result-wrapper">
+                                <!-- Колонка с результатом -->
+                                <div class="result-column">
+                                    <textarea id="converterOutput" rows="15"></textarea>
+                                </div>
+
+                                <!-- === ОБНОВЛЕННЫЙ И УПРОЩЕННЫЙ БЛОК ОШИБОК === -->
+                                <div id="converterErrorsArea" class="errors-column hidden">
+                                    <div id="converterErrorsHeader" class="errors-header">
+                                        <!-- Мы убрали ID у заголовка, он больше не нужен для клика -->
+                                        <span><span data-lang-key="parser_errors_found">⚠️ Ошибки</span> (<span id="converterErrorCount">0</span>)</span>
+                                    </div>
+                                    <!-- Список теперь НЕ ИМЕЕТ класса hidden по умолчанию -->
+                                    <ul id="converterErrorList"></ul>
+                                </div>
+
+
+                            </div>
+                            
+                            <button id="downloadConverterBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
+                        </div>
+
+
+
                     </div>
 
-                    <!-- === ВКЛАДКА 2: ИИ-ГЕНЕРАТОР ИЗ ТЕКСТА (НОВАЯ) === -->
+                    <!-- === ВКЛАДКА 2: ИИ-ГЕНЕРАТОР ИЗ ТЕКСТА (ИСПРАВЛЕННЫЙ ПОРЯДОК) === -->
                     <div id="aiFromTextContent" class="parser-tab-content">
-                         <h4 data-lang-key="ai_from_text_title">🤖 Создать тест из вашего текста (ИИ)</h4>
-
+                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="ai_from_text_description">Вставьте текст, и ИИ создаст по нему тест.</p>
+                        
+                        <!-- === ШАГ 1: ПОЛЕ ДЛЯ ВВОДА ТЕКСТА (ПРАВИЛЬНОЕ МЕСТО) === -->
                         <div class="settings-group">
-                            <label for="aiQuestionCount" data-lang-key="ai_question_count_label">Количество вопросов для ИИ:</label>
+                            <div class="parser-label-container">
+                                <label for="aiParserFileInput" data-lang-key="parser_upload_or_paste">1. Загрузите файл (.txt) или вставьте текст ниже:</label>
+                                <button id="clearAiParserInputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить поле</button>
+                            </div>
+                            <input type="file" id="aiParserFileInput" accept=".txt">
+                            <textarea id="aiParserInput" rows="10" placeholder="Вставьте сюда текст для анализа ИИ..." data-lang-key="ai_parser_input_placeholder"></textarea>
+                        </div>
+                        
+                        <!-- === ШАГ 2: НАСТРОЙКИ ИИ (ПРАВИЛЬНОЕ МЕСТО) === -->
+                        <div class="settings-group">
+                            <label for="aiQuestionCount" data-lang-key="ai_question_count_label">2. Количество вопросов для ИИ:</label>
                             <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
                                 <input type="number" id="aiQuestionCount" min="1" value="5" class="range-input" style="width: 80px;">
                                 <input type="checkbox" id="aiAutoCount" style="margin-left: 15px;">
                                 <label for="aiAutoCount" data-lang-key="ai_auto_mode_label">Авто</label>
                             </div>
                         </div>
-
                         <div class="settings-group">
-                            <label for="aiAnswerCount" data-lang-key="ai_answer_count_label">Количество вариантов ответа:</label>
+                            <label for="aiAnswerCount" data-lang-key="ai_answer_count_label">3. Количество вариантов ответа:</label>
                             <select id="aiAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
                                 <option value="3">3</option>
                                 <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
@@ -340,90 +406,90 @@
                                 <option value="6">6</option>
                             </select>
                         </div>
-
                         <div class="settings-group">
-                            <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+                             <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
                                 <input type="checkbox" id="aiAutoCategory" checked>
-                                <label for="aiAutoCategory" data-lang-key="ai_auto_category_label">Автоматически создавать категории</label>
+                                <label for="aiAutoCategory" data-lang-key="ai_auto_category_label">4. Автоматически создавать категории</label>
                             </div>
                         </div>
-                        
+
+                        <!-- === ШАГ 3: КНОПКА ГЕНЕРАЦИИ (ПРАВИЛЬНОЕ МЕСТО) === -->
                         <div class="settings-group" style="text-align: center;">
-                            <button id="generateTestFromTextBtn">
-                               <span data-lang-key="ai_generate_from_text_button">Сгенерировать тест из текста</span>
-                            </button>
+                            <button id="generateTestFromTextBtn"><span data-lang-key="ai_generate_from_text_button">Сгенерировать тест из текста</span></button>
+                        </div>
+
+                        <!-- === ОБЛАСТЬ РЕЗУЛЬТАТА (остается в конце) === -->
+                        <div id="aiFromTextOutputArea" class="hidden">
+                            <hr>
+                            <div class="parser-output-header">
+                                <h3 data-lang-key="parser_result_title">Результат:</h3>
+                                <button id="clearAiFromTextOutputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить</button>
+                            </div>
+                            <textarea id="aiFromTextOutput" rows="10"></textarea>
+                            <button id="downloadAiFromTextBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
                         </div>
                     </div>
 
-                    <!-- ВКЛАДКА 3: ИИ-ГЕНЕРАТОР ПО ТЕМЕ -->
+                    <!-- === ВКЛАДКА 3: ИИ-ГЕНЕРАТОР ПО ТЕМЕ (ИСПРАВЛЕННЫЙ ПОРЯДОК) === -->
                     <div id="aiGeneratorContent" class="parser-tab-content">
-
-                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="ai_topic_description">ИИ самостоятельно создаст тест на основе указанной темы, используя свои знания.</p>
+                        <p style="text-align: center; color: var(--secondary-text-color);" data-lang-key="ai_topic_description">ИИ самостоятельно создаст тест...</p>
                         
+                        <!-- === ШАГ 1: ПОЛЕ ДЛЯ ВВОДА ТЕМЫ (ПРАВИЛЬНОЕ МЕСТО) === -->
                         <div class="settings-group">
-                             <label for="aiTopicInput" data-lang-key="ai_topic_label">1. Введите тему для генерации теста:</label>
-                             <textarea id="aiTopicInput" rows="4" placeholder="Пример: История Древнего Рима в период Республики, 15 вопросов, 4 варианта ответа, с категориями по войнам..." data-lang-key="ai_topic_placeholder"></textarea>
+                             <label for="aiTopicInput" data-lang-key="ai_topic_label">Введите тему для генерации теста:</label>
+                             <textarea id="aiTopicInput" rows="4" placeholder="Пример: История Древнего Рима..." data-lang-key="ai_topic_placeholder"></textarea>
                         </div>
 
+                        <!-- === ШАГ 2: НАСТРОЙКИ ИИ (ПРАВИЛЬНОЕ МЕСТО) === -->
                         <div class="settings-group">
-                            <label for="aiTopicQuestionCount" data-lang-key="ai_topic_question_count_label">2. Количество вопросов (если не указано в теме):</label>
-                            <input type="number" id="aiTopicQuestionCount" min="1" max="50" value="10" class="range-input" style="width: 80px;">
+                            <label for="aiTopicQuestionCount" data-lang-key="ai_topic_question_count_label">Количество вопросов (если не указано в теме):</label>
+                            <input type="number" id="aiTopicQuestionCount" min="1" max="50" value="10" class="range-input" style="width: 80px; margin-top: 10px;">
                         </div>
-
                         <div class="settings-group">
-                            <label for="aiTopicAnswerCount" data-lang-key="ai_topic_answer_count_label">3. Количество вариантов ответа (если не указано в теме):</label>
-                             <select id="aiTopicAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
+                            <label for="aiTopicAnswerCount" data-lang-key="ai_topic_answer_count_label">Количество вариантов ответа (если не указано в теме):</label>
+                            <select id="aiTopicAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
                                 <option value="3">3</option>
                                 <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
                                 <option value="5">5</option>
                                 <option value="6">6</option>
                             </select>
                         </div>
-                        
                         <div class="settings-group">
                              <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
                                 <input type="checkbox" id="aiTopicAutoCategory" checked>
-                                <label for="aiTopicAutoCategory" data-lang-key="ai_topic_auto_category_label">4. Автоматически создавать категории</label>
+                                <label for="aiTopicAutoCategory" data-lang-key="ai_topic_auto_category_label">Автоматически создавать категории</label>
                             </div>
                         </div>
 
-                         <div class="settings-group" style="text-align: center;">
-                            <button id="generateTestFromTopicBtn">
-                                <span data-lang-key="ai_generate_from_topic_button">🤖 Создать тест по теме (ИИ)</span>
-                            </button>
+                        <!-- === ШАГ 3: КНОПКА ГЕНЕРАЦИИ (ПРАВИЛЬНОЕ МЕСТО) === -->
+                        <div class="settings-group" style="text-align: center;">
+                            <button id="generateTestFromTopicBtn"><span data-lang-key="ai_generate_from_topic_button">🤖 Создать тест по теме (ИИ)</span></button>
+                        </div>
+
+                        <!-- === ОБЛАСТЬ РЕЗУЛЬТАТА (остается в конце) === -->
+                        <div id="aiFromTopicOutputArea" class="hidden">
+                            <hr>
+                            <div class="parser-output-header">
+                                <h3 data-lang-key="parser_result_title">Результат:</h3>
+                                <button id="clearAiFromTopicOutputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить</button>
+                            </div>
+                            <textarea id="aiFromTopicOutput" rows="10"></textarea>
+                            <button id="downloadAiFromTopicBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
                         </div>
                     </div>
                 </div>
 
                 <div id="parserErrorsArea" class="hidden">
-                    <button id="showErrorsBtn">
-                        <span data-lang-key="parser_errors_found">⚠️ Ошибки форматирования</span> (<span id="errorCount">0</span>)
-                    </button>
-                    <ul id="errorList"></ul>
+                     <!-- Этот блок был перемещен внутрь вкладок, здесь он больше не нужен, но оставим его пустым на всякий случай, если где-то есть ссылка на ID -->
                 </div>
                 <div id="parserOutputArea" class="hidden">
-                    <hr>
-                    <h3 data-lang-key="parser_result_title">Результат:</h3>
-                    
-                    <div class="filter-controls-container">
-                        <button id="filterVariantsBtn" data-lang-key="filter_variants_button">⚙️ Фильтр по вариантам</button>
-                        <div id="filterVariantsDropdown" class="filter-dropdown hidden">
-                            <div class="filter-dropdown-header" data-lang-key="filter_variants_header">Выберите кол-во вариантов:</div>
-                            <div class="filter-checkboxes" id="filterVariantCheckboxes">
-                                <!-- Сюда JS вставит чекбоксы -->
-                            </div>
-                            <div class="filter-actions">
-                                <button id="applyVariantFilterBtn" data-lang-key="filter_apply_button">Применить</button>
-                                <button id="resetVariantFilterBtn" class="btn-secondary-small" data-lang-key="filter_reset_button">Сброс</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <textarea id="parserOutput" rows="10"></textarea>
-                    <button id="downloadParsedBtn" data-lang-key="download_parsed_button">Скачать .qst файл</button>
+                    <!-- Этот блок также был перемещен -->
                 </div>
                 <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);" data-lang-key="back_button">Назад</button>
+                <!-- === КОНЕЦ БЛОКА НА ЗАМЕНУ === -->
             </div>
+
+
 
         </div> <!-- === КОНЕЦ ВОССТАНОВЛЕННОГО КОНТЕЙНЕРА === -->
 
