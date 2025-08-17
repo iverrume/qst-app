@@ -11131,12 +11131,10 @@ const mainApp = (function() {
 
             // Если неверный ответ был передан, добавляем его в payload
             if (userIncorrectAnswerText) {
+                // Это условие сработает, только если был передан неверный ответ пользователя.
+                // Если пользователь ответил правильно, userIncorrectAnswerText будет null,
+                // и этот ключ просто не будет добавлен в запрос.
                 payload.user_incorrect_answer_text = userIncorrectAnswerText;
-            } else {
-                // ЕСЛИ ОТВЕТ ПРАВИЛЬНЫЙ (userIncorrectAnswerText is null),
-                // мы все равно должны отправить этот ключ, но со значением ПРАВИЛЬНОГО ответа.
-                // Сервер сам поймет, что нужно дать объяснение без разбора ошибки.
-                payload.user_incorrect_answer_text = currentAIQuestion.options[currentAIQuestion.correctAnswerIndex].text;
             }
             // ---------------------------------
 
