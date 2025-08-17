@@ -240,7 +240,7 @@ const ChatModule = (function() {
             ai_error_summary_generic: 'Не удалось получить сводку. Попробуйте еще раз.',
             ai_error_summary_server: 'Не удалось получить сводку: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
             smart_timestamp_yesterday: 'Вчера',
-            delete_favorite_button: '🗑️ Удалить из избранного',
+            delete_favorite_button: '🗑️',
             error_no_messages_to_select: 'В этом канале еще нет сообщений для выбора.',
             chat_online_list_empty: 'В сети никого нет',
             chat_user_actions_for: 'Действия для пользователя {userName}',
@@ -507,7 +507,7 @@ const ChatModule = (function() {
             ai_error_summary_generic: 'Түйіндемені алу мүмкін болмады. Қайталап көріңіз.',
             ai_error_summary_server: 'Түйіндемені алу мүмкін болмады: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
             smart_timestamp_yesterday: 'Кеше',
-            delete_favorite_button: '🗑️ Таңдаулылардан жою',
+            delete_favorite_button: '🗑️',
             error_no_messages_to_select: 'Бұл арнада таңдау үшін хабарламалар әлі жоқ.',
             chat_online_list_empty: 'Желіде ешкім жоқ',
             chat_user_actions_for: '{userName} пайдаланушысы үшін әрекеттер',
@@ -772,7 +772,7 @@ const ChatModule = (function() {
             ai_error_summary_generic: 'Failed to get summary. Please try again.',
             ai_error_summary_server: 'Failed to get summary: A temporary server error occurred. Please try again later.',
             smart_timestamp_yesterday: 'Yesterday',
-            delete_favorite_button: '🗑️ Remove from Favorites',
+            delete_favorite_button: '🗑️',
             error_no_messages_to_select: 'There are no messages in this channel to select yet.',
             chat_online_list_empty: 'No one is online',
             chat_user_actions_for: 'Actions for user {userName}',
@@ -7154,11 +7154,10 @@ const mainApp = (function() {
         const cardContentHTML = parseAndRenderQuestionBlock(resultText);
         cardContentContainer.innerHTML = cardContentHTML; // Здесь innerHTML безопасен, т.к. parseAndRenderQuestionBlock экранирует данные
 
-        const escapedResultText = escape(resultText);
-        explainBtn.setAttribute('onclick', `window.mainApp.handleExplainClickInSearch(event, "${escapedResultText}")`);
-        copyBtn.setAttribute('onclick', `window.mainApp.handleCopyClickInSearch(event, "${escapedResultText}")`);
-        favoriteBtn.setAttribute('onclick', `window.mainApp.handleFavoriteClickInSearch(event, "${escapedResultText}")`);
-        translateBtn.setAttribute('onclick', `window.mainApp.handleTranslateClickInSearch(event, this, "${escapedResultText}")`);
+        explainBtn.addEventListener('click', (e) => window.mainApp.handleExplainClickInSearch(e, resultText));
+        copyBtn.addEventListener('click', (e) => window.mainApp.handleCopyClickInSearch(e, resultText));
+        favoriteBtn.addEventListener('click', (e) => window.mainApp.handleFavoriteClickInSearch(e, resultText));
+        translateBtn.addEventListener('click', (e) => window.mainApp.handleTranslateClickInSearch(e, e.currentTarget, resultText));
         
         // Переводим title кнопок
         explainBtn.title = _('ai_explain_button_title');
@@ -9945,18 +9944,7 @@ const mainApp = (function() {
     }
 
     
-    function escape(str) {
-        if (!str) return '';
-        // Эта версия корректно экранирует все символы,
-        // которые могут сломать JavaScript-строку, включая переносы строк.
-        return str
-            .replace(/\\/g, '\\\\')  // 1. Сначала сами обратные слеши
-            .replace(/`/g, '\\`')   // 2. Затем обратные кавычки для шаблонных строк
-            .replace(/'/g, "\\'")   // 3. Одинарные кавычки
-            .replace(/"/g, '\\"')   // 4. Двойные кавычки
-            .replace(/\n/g, '\\n')  // 5. Переносы строк
-            .replace(/\r/g, '\\r'); // 6. Возврат каретки
-    }
+
 
     function escapeHTML(str) {
         const p = document.createElement("p");

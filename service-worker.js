@@ -22,17 +22,16 @@ const IDB_NAME = 'QSTiUM_AppDB';
 const IDB_STORE_NAME = 'offlineMessages';
 
 
-const CACHE_NAME = 'qst-app-cache-v305'; 
+const CACHE_NAME = 'qst-app-cache-v306'; 
 
 // Файлы, которые составляют "оболочку" приложения и будут закешированы
 const URLS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/favicon.png',
-  '/manifest.json'
-  // '/offline.html' // Можно добавить отдельную страницу для офлайн-режима
+  './', 
+  'index.html',
+  'style.css',
+  'script.js',
+  'favicon.png',
+  'manifest.json'
 ];
 
 // Событие 'install': кешируем оболочку приложения
@@ -107,8 +106,8 @@ self.addEventListener('fetch', (event) => {
         // Если сеть недоступна, достаем главный HTML из кэша
         console.log('Service Worker: Сеть недоступна, отдаем index.html из кэша.');
         const cache = await caches.open(CACHE_NAME);
-        // Важно отдавать именно /index.html, а не "/", чтобы избежать проблем
-        const cachedResponse = await cache.match('/index.html');
+        // Ищем index.html относительно текущей директории SW
+        const cachedResponse = await cache.match('index.html');
         return cachedResponse;
       }
     })());
