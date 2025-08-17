@@ -2896,84 +2896,74 @@ const ChatModule = (function() {
         switchToChannel(channelId, targetName, 'private');
     }
     
+
     async function sendMessage() {
         if (!chatInput || !currentUser || !db) return;
         const text = chatInput.value.trim();
         if (!text) return;
 
-        
         const sendBtn = document.getElementById('sendBtn');
         sendBtn.disabled = true;
         sendBtn.classList.add('loading');
-        sendBtn.innerHTML = ''; 
-        
+        sendBtn.innerHTML = '';
 
         const isQuestionFormat = text.startsWith('?') && (text.includes('\n+') || text.includes('\n-'));
-
+        
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
         try {
-            // Проверяем, нужно ли добавлять пользователя в участники
-            if (currentChannelType === 'public' && currentChannel !== 'general') {
-                // Находим данные текущего канала в нашем локальном кэше (это быстро)
-                const channel = channels.find(c => c.id === currentChannel);
-                
-                // Обновляем список участников, ТОЛЬКО ЕСЛИ пользователь еще не в нем
-                if (channel && (!channel.members || !channel.members.includes(currentUser.uid))) {
-                    const channelRef = db.collection('channels').doc(currentChannel);
-                    await channelRef.update({
-                        members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                    });
-                }
-            }
-
             if (isQuestionFormat) {
+                // Вопросы не поддерживают офлайн-отправку, так как требуют немедленного ответа от сервера
                 await createQuestionFromMessage(text);
                 chatInput.value = '';
-            } else {
-
-                let memberIds = [];
-                if (currentChannelType === 'private') {
-                    // Для личных чатов ID участников есть в названии канала
-                    memberIds = currentChannel.replace('private_', '').split('_');
-                } else {
-                    // Для ПУБЛИЧНЫХ каналов добавляем специальную метку "public"
-                    // Это позволит любому пользователю подписаться на эти сообщения.
-                    memberIds = ['public']; 
-                }
-
-                const message = {
-                    text: text,
-                    authorId: currentUser.uid,
-                    authorName: currentUser.displayName || currentUser.email || 'Аноним',
-                    channelId: currentChannel,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    type: 'message',
-                    reactions: {},
-                    memberIds: memberIds // <--- ДОБАВЛЕНО ЭТО ПОЛЕ
-                };
-
-
-                
-                if (replyContext) {
-                    message.replyTo = replyContext;
-                }
-
-                await db.collection('messages').add(message);
-                updateUnreadCount(currentChannel, 0, true);
-                chatInput.value = '';
-                chatInput.style.height = 'auto';
-                cancelReply();
+                return; // Выходим из функции
             }
-        } catch (error) {
-            console.error('Ошибка отправки сообщения:', error);
-            showError(_chat('error_send_message_failed'));
-        } finally {
 
+            // Создаем объект сообщения, но пока БЕЗ серверного времени
+            const message = {
+                text: text,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || currentUser.email || 'Аноним',
+                channelId: currentChannel,
+                // createdAt будет добавлено либо сервером, либо SW
+                type: 'message',
+                reactions: {},
+                memberIds: currentChannelType === 'private' ? currentChannel.replace('private_', '').split('_') : ['public']
+            };
+            if (replyContext) {
+                message.replyTo = replyContext;
+            }
+
+            // Очищаем поля ввода СРАЗУ, создавая ощущение быстрой отправки
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            cancelReply();
+
+            // Пробуем отправить в Firestore
+            await db.collection('messages').add({
+                ...message,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log("Сообщение успешно отправлено онлайн.");
+
+        } catch (error) {
+            // ЛОВИМ ОШИБКУ ОТСУТСТВИЯ СЕТИ
+            if (error.code === 'unavailable') {
+                console.warn('Сеть недоступна. Сохраняем сообщение для фоновой отправки.');
+                // Отправляем на сохранение в IndexedDB
+                await saveMessageForSync(message);
+            } else {
+                console.error('Ошибка отправки сообщения:', error);
+                showError(_('error_send_message_failed'));
+            }
+        } finally {
+            // Этот блок выполнится в любом случае
             sendBtn.disabled = false;
             sendBtn.classList.remove('loading');
-            sendBtn.innerHTML = '➤'; 
-            
+            sendBtn.innerHTML = '➤';
         }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
+
 
     // --- Функции для Ответов ---
     function startReply(messageId, authorName, text) {
@@ -5060,7 +5050,23 @@ const ChatModule = (function() {
         }
     }
 
+    async function saveMessageForSync(message) {
+        try {
+            // Сохраняем сообщение в IndexedDB через наш менеджер
+            await DBManager.saveKey(message, 'offlineMessages'); // DBManager сам сгенерирует ключ
 
+            // Регистрируем событие синхронизации
+            if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                const swRegistration = await navigator.serviceWorker.ready;
+                await swRegistration.sync.register('sync-chat-messages');
+                console.log('Сообщение сохранено для офлайн-отправки и зарегистрирован sync event.');
+            } else {
+                console.warn('Фоновая синхронизация не поддерживается этим браузером.');
+            }
+        } catch (error) {
+            console.error('Не удалось сохранить сообщение для синхронизации:', error);
+        }
+    }
 
     // ========== PUBLIC METHODS ==========
     return {
@@ -8219,25 +8225,39 @@ const mainApp = (function() {
 
      
 
-    function processFile(fileName, fileContent, quizContext = null) {
+
+    /**
+     * Главная функция-обработчик для обработки файла с тестом.
+     * Загружает контент, парсит его, подготавливает кэш переводов и отображает экран настроек.
+     * Является асинхронной, так как ожидает генерацию хэша для ключа кэша.
+     *
+     * @param {string} fileName - Имя обрабатываемого файла.
+     * @param {string} fileContent - Текстовое содержимое файла.
+     * @param {object|null} quizContext - Дополнительный контекст, передаваемый из чата (для официальных тестов).
+     */
+    async function processFile(fileName, fileContent, quizContext = null) {
         originalFileNameForReview = fileName;
-        currentFileCacheKey = `translation_cache_${fileName}_${fileContent.length}`;
         
+        // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Генерация уникального ключа кэша ---
+        // 1. Асинхронно генерируем хэш из содержимого файла. Это гарантирует уникальность.
+        const contentHash = await generateContentHash(fileContent);
+        // 2. Создаем ключ, который теперь зависит не от размера файла, а от его содержимого.
+        currentFileCacheKey = `translation_cache_${fileName}_${contentHash}`;
+        // ----------------------------------------------------------------
+
         // Гарантированно очищаем кэш от предыдущих сессий
         currentQuizTranslations.clear();
         
-        // Пытаемся загрузить сохраненные переводы для этого файла
+        // Пытаемся загрузить сохраненные переводы для этого конкретного файла из localStorage
         const storedTranslations = localStorage.getItem(currentFileCacheKey);
         if (storedTranslations) {
             try {
-                // ИЗМЕНЕНИЕ: Добавлена проверка формата.
-                // Старый кэш был просто массивом. Новый - массив массивов.
+                // Проверяем, что кэш имеет новый, правильный формат (массив массивов)
                 const parsedData = JSON.parse(storedTranslations);
                 if (Array.isArray(parsedData) && (parsedData.length === 0 || Array.isArray(parsedData[0]))) {
                     currentQuizTranslations = new Map(parsedData);
                     console.log(`Загружен кэш переводов для файла "${fileName}" (${currentQuizTranslations.size} записей).`);
                 } else {
-                    // Если формат старый, просто начинаем с чистого листа.
                     console.log("Обнаружен старый формат кэша. Создается новый.");
                     currentQuizTranslations = new Map();
                 }
@@ -8246,58 +8266,67 @@ const mainApp = (function() {
                 currentQuizTranslations = new Map();
             }
         } else {
+            // Если кэша нет, просто создаем пустой Map
             currentQuizTranslations = new Map();
         }
 
+        // Парсим вопросы из содержимого файла
         allParsedQuestions = parseQstContent(fileContent);
         currentQuizContext = quizContext; 
-        hideGlobalLoader();
+        hideGlobalLoader(); // Скрываем глобальный индикатор загрузки, если он был
 
         if (allParsedQuestions.length > 0) {
+            // Если вопросы найдены, сохраняем файл в "Недавно использованные"
             saveRecentFile(fileName, fileContent);
             
+            // Переключаем интерфейс на экран настроек теста
             fileUploadArea.classList.add('hidden');
             searchResultsContainer.classList.add('hidden');
             quizSetupArea.classList.remove('hidden');
             
+            // Считаем только реальные вопросы (исключая категории)
             const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
+            
+            // Обновляем UI на экране настроек
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
             shuffleNCountInput.max = questionCount; // Устанавливаем макс. для случайного выбора
             
-// Инициализируем двойной ползунок
+            // Инициализируем интерактивные элементы управления
             initDualSlider(questionCount);
-            // Инициализируем одиночный ползунок для времени
             initSingleSlider(); 
             
-            // Сбрасываем состояние режима случайного выбора
+            // Сбрасываем состояние чекбокса случайного выбора
             shuffleNCheckbox.checked = false;
             handleShuffleNToggle();
 
+            // Если это официальный тест из чата, блокируем некоторые настройки
             if (quizContext && !quizContext.isPractice) {
                 shuffleQuestionsCheckbox.checked = true;
                 shuffleAnswersCheckbox.checked = true;
                 readingModeCheckbox.checked = false;
-                flashcardsModeCheckbox.checked = false; // <-- ДОБАВЛЕНО: Убираем галочку
+                flashcardsModeCheckbox.checked = false;
                 shuffleQuestionsCheckbox.disabled = true;
                 shuffleAnswersCheckbox.disabled = true;
                 readingModeCheckbox.disabled = true;
-                flashcardsModeCheckbox.disabled = true; // <-- ДОБАВЛЕНО: Блокируем чекбокс
+                flashcardsModeCheckbox.disabled = true;
                 questionRangeStartInput.disabled = true;
                 questionRangeEndInput.disabled = true;
             } else {
+                // Для обычных тестов все настройки доступны
                 shuffleQuestionsCheckbox.disabled = false;
                 shuffleAnswersCheckbox.disabled = false;
                 readingModeCheckbox.disabled = false;
-                flashcardsModeCheckbox.disabled = false; // <-- ДОБАВЛЕНО: Разблокируем для обычных тестов
+                flashcardsModeCheckbox.disabled = false;
                 questionRangeStartInput.disabled = false;
                 questionRangeEndInput.disabled = false;
             }
         } else {
+            // Если вопросы не найдены, сообщаем пользователю
             alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
         }
+        // Обновляем обработчик кнопки "назад"
         manageBackButtonInterceptor();
     }
-
 
 
 
@@ -8767,7 +8796,7 @@ const mainApp = (function() {
 
 
     function displayCategoryPage(categoryName) {
-        // Показываем основной контейнер вопроса
+        // Показываем основной контейнер вопроса9
         questionContainer.classList.remove('hidden');
         // --- НАЧАЛО ИЗМЕНЕНИЙ ---
         // Очищаем и форматируем текст, используя систему переводов
@@ -9933,6 +9962,33 @@ const mainApp = (function() {
         const p = document.createElement("p");
         p.textContent = str;
         return p.innerHTML;
+    }
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Асинхронно генерирует короткий SHA-1 хэш из текстового содержимого.
+     * @param {string} text - Содержимое файла.
+     * @returns {Promise<string>} - Промис, который разрешается в строку хэша.
+     */
+    async function generateContentHash(text) {
+        if (!text || typeof text !== 'string') return 'no_content';
+        try {
+            // Кодируем текст в бинарный формат
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            // Используем Web Crypto API для хэширования
+            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+            // Преобразуем бинарный хэш в строку HEX
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        } catch (error) {
+            console.error("Ошибка при генерации хэша:", error);
+            // В случае ошибки возвращаем длину как запасной вариант
+            return `fallback_${text.length}`;
+        }
     }
 
 
