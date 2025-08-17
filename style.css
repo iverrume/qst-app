@@ -3563,8 +3563,6 @@ body.dark-mode .message.mine.pinned .message-content {
 
 
 
-/* --- НАЧАЛО БЛОКА НА ЗАМЕНУ --- */
-
 /* Сама шапка карточки: два блока по краям */
 .result-card-header {
     display: flex;
@@ -6886,6 +6884,44 @@ body.glass-dark .question-actions .add-to-favorites-btn {
         font-size: 0.85em;
     }
 }
+
+
+/* ======================================================= */
+/* === Адаптивность для кнопок в основной шапке приложения === */
+/* ======================================================= */
+@media (max-width: 600px) { /* Начинаем изменения на более широких экранах */
+    .header-controls {
+        /* Делаем контейнер гибким и разрешаем перенос */
+        flex-wrap: wrap;
+        justify-content: space-between; /* Заголовок слева, кнопки справа */
+        gap: 10px;
+    }
+
+    .header-controls h1 {
+        /* Заголовок теперь занимает всю доступную ширину в своей строке */
+        width: 100%; 
+        order: -1; /* Гарантирует, что заголовок всегда будет первым */
+        text-align: left; /* Выравниваем по левому краю */
+    }
+
+    .header-buttons {
+        /* Убираем абсолютное позиционирование */
+        position: static;
+        transform: none;
+        width: 100%; /* Растягиваем на всю ширину */
+        justify-content: flex-end; /* Выравниваем кнопки по правому краю */
+    }
+
+    /* Уменьшаем сами кнопки */
+    .header-buttons button, 
+    .header-buttons .dropdown button,
+    .header-buttons .translate-engine-container button {
+        padding: 4px 6px;
+        font-size: 1.1em;
+    }
+}
+
+
 
 /* --- Стили для двойного ползунка --- */
 

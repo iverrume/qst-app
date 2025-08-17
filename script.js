@@ -4227,9 +4227,6 @@ const ChatModule = (function() {
     }
 
 
-
-
-    // НОВЫЙ КОД (ВЕРНУТЬ)
     function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -4251,13 +4248,17 @@ const ChatModule = (function() {
             sendBtn.innerHTML = ''; 
 
             try {
+                // Считаем количество вопросов на клиенте для отображения
                 const questions = window.mainApp.parseQstContent(fileContent);
                 const questionCount = questions.length;
 
-                // Отправляем файл на сервер для сохранения (без ожидания ответа)
-                await fetch(googleAppScriptUrl, {
+                // <<-- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Отправляем файл и ждем ответа -->>
+                const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors', // Возвращаем 'no-cors'
+                    // Убираем mode: 'no-cors', чтобы можно было прочитать ответ
+                    headers: {
+                        'Content-Type': 'text/plain', // Отправляем как текст, чтобы избежать CORS preflight
+                    },
                     body: JSON.stringify({
                         action: 'chatFileUpload',
                         fileName: file.name,
@@ -4265,37 +4266,31 @@ const ChatModule = (function() {
                     })
                 });
 
-                // Ждем 2 секунды и делаем повторный запрос для получения ID
-                 setTimeout(async () => {
-                    try {
-                        const checkResponse = await fetch(`${googleAppScriptUrl}?action=getChatFileInfoByName&fileName=${encodeURIComponent(file.name)}`);
-                        const fileData = await checkResponse.json();
-                        
-                        if(fileData.success && fileData.fileId){
-                            await sendFileMessage(file.name, fileData.fileId, questionCount);
-                        } else {
-                            throw new Error(fileData.error || _chat('error_fetch_file_id_failed'));
-                        }
-                    } catch(error) {
-                        console.error("Ошибка получения ID файла: ", error);
-                        showError(_chat('error_upload_failed'));
-                    } finally {
-                        sendBtn.disabled = false;
-                        sendBtn.classList.remove('loading');
-                        sendBtn.innerHTML = '➤';
-                    }
-                }, 2000);
+                if (!response.ok) {
+                    throw new Error(`Ошибка сервера: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if(result.success && result.fileId){
+                    // Если сервер вернул ID, отправляем сообщение в чат
+                    await sendFileMessage(file.name, result.fileId, questionCount);
+                } else {
+                    throw new Error(result.error || _chat('error_fetch_file_id_failed'));
+                }
 
             } catch (error) {
                 console.error('Ошибка при обработке файла чата:', error);
-                showError(_chat('error_file_process_failed'));
+                showError(_chat('error_file_process_failed') + ': ' + error.message);
+            } finally {
+                // В любом случае возвращаем кнопку в исходное состояние
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
             }
         };
         reader.readAsText(file, 'UTF-8');
-        event.target.value = '';
+        event.target.value = ''; // Сбрасываем input для повторной загрузки того же файла
     }
 
 
@@ -9055,119 +9050,117 @@ const mainApp = (function() {
 
 
     function handleAnswerSelect(event) {
-            // 1. Проверяем, не был ли уже дан ответ на этот вопрос
-            if (userAnswers[currentQuestionIndex].answered) return;
+        // 1. Проверяем, не был ли уже дан ответ на этот вопрос
+        if (userAnswers[currentQuestionIndex].answered) return;
+
+        // 2. Получаем данные о клике и текущем вопросе
+        const selectedOptionLi = event.target;
+        const selectedIndex = parseInt(selectedOptionLi.dataset.index);
         
-            // 2. Получаем данные о клике и текущем вопросе
-            const selectedOptionLi = event.target;
-            const selectedIndex = parseInt(selectedOptionLi.dataset.index);
+        // --- НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ ПРОВЕРКИ ---
+        
+        // Всегда получаем оригинальный (непереведенный) вопрос как источник истины
+        const originalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
+        
+        // По умолчанию, вопрос для проверки - это оригинал
+        let questionForValidation = originalQuestion;
+
+        // Если режим перевода активен, пытаемся найти переведенную версию для ПРОВЕРКИ
+        if (isTranslateModeEnabled) {
+            const lang = localStorage.getItem('appLanguage') || 'ru';
+            const cacheKey = getCacheKey(originalQuestion.originalIndex, lang);
             
-            // --- НАЧАЛО НОВОГО КОДА: УМНАЯ ЛОГИКА ПРОВЕРКИ ---
-            
-            // Всегда получаем оригинальный (непереведенный) вопрос как основу
-            const originalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
-            // По умолчанию, вопрос для проверки - это оригинал
-            let questionForValidation = originalQuestion;
-        
-            // Если режим перевода активен, пытаемся найти переведенную версию для ПРОВЕРКИ
-            if (isTranslateModeEnabled) {
-                const lang = localStorage.getItem('appLanguage') || 'ru';
-                const cacheKey = getCacheKey(originalQuestion.originalIndex, lang);
-                if (currentQuizTranslations.has(cacheKey)) {
-                    // Если перевод есть в кэше, используем его для проверки
-                    questionForValidation = currentQuizTranslations.get(cacheKey);
-                }
+            if (currentQuizTranslations.has(cacheKey)) {
+                // Если перевод есть в кэше, используем его для проверки
+                questionForValidation = currentQuizTranslations.get(cacheKey);
             }
-        
-            // Проверяем правильность, используя ВЫБРАННЫЙ для валидации объект вопроса
-            const isCorrect = selectedIndex === questionForValidation.correctAnswerIndex;
-        
-            // --- КОНЕЦ НОВОГО КОДА ---
-        
-            // 3. Сохраняем результат ответа пользователя
-            userAnswers[currentQuestionIndex] = { answered: true, correct: isCorrect, selectedOptionIndex: selectedIndex };
-        
-            // 4. Обновляем интерфейс в зависимости от правильности ответа
-            if (isCorrect) {
-                selectedOptionLi.classList.add('correct');
-                feedbackAreaEl.textContent = _('feedback_correct');
-                feedbackAreaEl.className = 'feedback-area correct-feedback';
-                score++;
-            } else {
-                selectedOptionLi.classList.add('incorrect');
-                feedbackAreaEl.textContent = _('feedback_incorrect');
-                feedbackAreaEl.className = 'feedback-area incorrect-feedback';
-        
-                // Подсвечиваем правильный ответ, используя данные из объекта для валидации
-                const correctLi = answerOptionsEl.querySelector(`li[data-index="${questionForValidation.correctAnswerIndex}"]`);
-                if (correctLi) correctLi.classList.add('actual-correct');
-        
-                // Если включен режим обратной связи, сохраняем данные об ошибке
-                if (quizSettings.feedbackMode) {
-                    // --- ИЗМЕНЕНИЕ: Для сохранения ошибки используем ВСЕГДА ОРИГИНАЛЬНЫЙ вопрос ---
-                    let errorQstBlock = `? ${originalQuestion.text.replace(/\n/g, ' ')}\n`;
-        
-                    originalQuestion.options.forEach((option, index) => {
-                        const prefix = (index === originalQuestion.correctAnswerIndex) ? '+' : '-';
-                        errorQstBlock += `${prefix} ${option.text.replace(/\n/g, ' ')}\n`;
-                    });
-        
-                    incorrectlyAnsweredQuestionsData.push(errorQstBlock, "");
-        
-                    // Для ИИ-анализа также используем оригинальный вопрос, но ответ пользователя берем из того, что он видел
-                    const errorDetails = {
-                      questionText: originalQuestion.text,
-                      correctAnswer: originalQuestion.options[originalQuestion.correctAnswerIndex].text,
-                      userAnswer: questionForValidation.options[selectedIndex].text // Ответ пользователя из того языка, на котором он отвечал
-                    };
-                    currentQuizErrorData.push(errorDetails);
-                }
-            }
-        
-              // 5. Блокируем все варианты ответа, чтобы предотвратить повторный клик
-              Array.from(answerOptionsEl.children).forEach(li => {
-                  li.removeEventListener('click', handleAnswerSelect);
-                  li.classList.add('answered');
-              });
-          
-              // 6. Создаем панель обратной связи с кнопкой "Объяснить"
-              const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
-              
-              const explainBtn = document.createElement('button');
-              explainBtn.textContent = _('ai_explain_button');
-              explainBtn.className = 'explain-btn';
-
-
-
-
-              if (isCorrect) {
-                  // При правильном ответе у пользователя нет неверного ответа, передаем null
-                  explainBtn.onclick = () => showAIExplanation(originalQuestion, null);
-              } else {
-                  // При неверном ответе передаем именно тот вариант, который выбрал пользователь
-                  const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-                  explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
-              }
-              
-
-
-
-              // Очищаем старое содержимое и добавляем новые элементы
-              feedbackAreaEl.innerHTML = ''; 
-              const textNode = document.createTextNode(feedbackText);
-              feedbackAreaEl.appendChild(textNode);
-              feedbackAreaEl.appendChild(explainBtn);
-          
-              // 7. Обновляем все остальные элементы интерфейса
-              updateScoreDisplay();
-              updateNavigationButtons();
-              updateQuickNavButtons();
-              
-              // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
-              if (quickModeEnabled) {
-                  setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
-              }
+            // Если перевода в кэше нет (например, он еще грузится),
+            // проверка пройдет по оригинальному вопросу, что предотвратит ошибку.
         }
+
+        // Проверяем правильность, используя ВЫБРАННЫЙ для валидации объект вопроса
+        const isCorrect = selectedIndex === questionForValidation.correctAnswerIndex;
+
+        // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ПРОВЕРКИ ---
+
+        // 3. Сохраняем результат ответа пользователя
+        userAnswers[currentQuestionIndex] = { answered: true, correct: isCorrect, selectedOptionIndex: selectedIndex };
+
+        // 4. Обновляем интерфейс в зависимости от правильности ответа
+        if (isCorrect) {
+            selectedOptionLi.classList.add('correct');
+            feedbackAreaEl.textContent = _('feedback_correct');
+            feedbackAreaEl.className = 'feedback-area correct-feedback';
+            score++;
+        } else {
+            selectedOptionLi.classList.add('incorrect');
+            feedbackAreaEl.textContent = _('feedback_incorrect');
+            feedbackAreaEl.className = 'feedback-area incorrect-feedback';
+
+            // Подсвечиваем правильный ответ, используя данные из объекта для валидации
+            const correctLi = answerOptionsEl.querySelector(`li[data-index="${questionForValidation.correctAnswerIndex}"]`);
+            if (correctLi) correctLi.classList.add('actual-correct');
+
+            // Если включен режим обратной связи, сохраняем данные об ошибке
+            if (quizSettings.feedbackMode) {
+                // Для сохранения ошибки используем ВСЕГДА ОРИГИНАЛЬНЫЙ вопрос для консистентности
+                let errorQstBlock = `? ${originalQuestion.text.replace(/\n/g, ' ')}\n`;
+
+                originalQuestion.options.forEach((option, index) => {
+                    const prefix = (index === originalQuestion.correctAnswerIndex) ? '+' : '-';
+                    errorQstBlock += `${prefix} ${option.text.replace(/\n/g, ' ')}\n`;
+                });
+
+                incorrectlyAnsweredQuestionsData.push(errorQstBlock, "");
+
+                // Для ИИ-анализа также используем оригинальный вопрос, но ответ пользователя берем из того, что он видел
+                const errorDetails = {
+                  questionText: originalQuestion.text,
+                  correctAnswer: originalQuestion.options[originalQuestion.correctAnswerIndex].text,
+                  userAnswer: questionForValidation.options[selectedIndex].text // Ответ пользователя из того языка, на котором он отвечал
+                };
+                currentQuizErrorData.push(errorDetails);
+            }
+        }
+
+        // 5. Блокируем все варианты ответа, чтобы предотвратить повторный клик
+        Array.from(answerOptionsEl.children).forEach(li => {
+            li.removeEventListener('click', handleAnswerSelect);
+            li.classList.add('answered');
+        });
+      
+        // 6. Создаем панель обратной связи с кнопкой "Объяснить"
+        const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
+        
+        const explainBtn = document.createElement('button');
+        explainBtn.textContent = _('ai_explain_button');
+        explainBtn.className = 'explain-btn';
+
+        if (isCorrect) {
+            // При правильном ответе у пользователя нет неверного ответа, передаем null
+            explainBtn.onclick = () => showAIExplanation(originalQuestion, null);
+        } else {
+            // При неверном ответе передаем именно тот вариант, который выбрал пользователь
+            const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
+            explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
+        }
+        
+        // Очищаем старое содержимое и добавляем новые элементы
+        feedbackAreaEl.innerHTML = ''; 
+        const textNode = document.createTextNode(feedbackText);
+        feedbackAreaEl.appendChild(textNode);
+        feedbackAreaEl.appendChild(explainBtn);
+      
+        // 7. Обновляем все остальные элементы интерфейса
+        updateScoreDisplay();
+        updateNavigationButtons();
+        updateQuickNavButtons();
+          
+        // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
+        if (quickModeEnabled) {
+            setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
+        }
+    }
 
 
 
