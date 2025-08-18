@@ -8518,7 +8518,7 @@ const mainApp = (function() {
           }
 
           ctx.putImageData(imageData, 0, 0);
-          return canvas.toDataURL('image/jpeg', 0.9);
+          return canvas.toDataURL('image/png');
         };
 
         for (let idx = 0; idx < fnArray.length; idx++) {
@@ -8559,13 +8559,26 @@ const mainApp = (function() {
       // 2) Фолбэк: отрендерить всю страницу в JPEG, чтобы картинка была всегда
       if (images.length === 0) {
         try {
-          const viewport = page.getViewport({ scale: 1.6 });
+          // Базовый viewport при scale:1
+          const baseViewport = page.getViewport({ scale: 1 });
+          // Целевая ширина показа (подгони под свой UI при желании)
+          const TARGET_CSS_WIDTH = Math.min(1200, Math.floor(window.innerWidth * 0.9));
+          const DPR = Math.max(1, window.devicePixelRatio || 1);
+          // Масштаб под ретину и реальную ширину
+          const scale = Math.max(2, (TARGET_CSS_WIDTH * DPR) / baseViewport.width);
+          const viewport = page.getViewport({ scale });
+
           const canvas = document.createElement('canvas');
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          const ctx = canvas.getContext('2d');
+          canvas.width  = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          const ctx = canvas.getContext('2d', { alpha: false });
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
           await page.render({ canvasContext: ctx, viewport }).promise;
-          images.push(canvas.toDataURL('image/jpeg', 0.9));
+          // lossless
+          images.push(canvas.toDataURL('image/png'));
+
         } catch (err) {
           console.error('extractImagesFromPage: фолбэк-рендер не удался.', err);
         }
@@ -8763,7 +8776,7 @@ const mainApp = (function() {
                 ctx.putImageData(imageData, 0, 0);
                 
                 // Конвертируем холст в Base64 Data URL (JPEG для лучшего сжатия) и добавляем в массив
-                images.push(canvas.toDataURL("image/jpeg", 0.9));
+                images.push(canvas.toDataURL("image/png"));
             }
         } catch (error) {
             console.error("Критическая ошибка при извлечении чистого изображения со страницы:", error);
@@ -8950,7 +8963,7 @@ const mainApp = (function() {
         }
 
         ctx.putImageData(imgData, 0, 0);
-        return canvas.toDataURL('image/jpeg', 0.9);
+        return canvas.toDataURL('image/png');
       }
 
       try {
@@ -9010,13 +9023,22 @@ const mainApp = (function() {
       // Фолбэк: рендер страницы в один JPEG (чтобы картинка была всегда)
       if (images.length === 0) {
         try {
-          const viewport = page.getViewport({ scale: 1.6 });
+          const baseViewport = page.getViewport({ scale: 1 });
+          const TARGET_CSS_WIDTH = Math.min(1200, Math.floor(window.innerWidth * 0.9));
+          const DPR = Math.max(1, window.devicePixelRatio || 1);
+          const scale = Math.max(2, (TARGET_CSS_WIDTH * DPR) / baseViewport.width);
+          const viewport = page.getViewport({ scale });
+
           const canvas = document.createElement('canvas');
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          const ctx = canvas.getContext('2d');
+          canvas.width  = Math.ceil(viewport.width);
+          canvas.height = Math.ceil(viewport.height);
+          const ctx = canvas.getContext('2d', { alpha: false });
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
           await page.render({ canvasContext: ctx, viewport }).promise;
-          images.push(canvas.toDataURL('image/jpeg', 0.9));
+          images.push(canvas.toDataURL('image/png'));
+
         } catch (err) {
           console.error('extractImagesFromPage: фолбэк-рендер не удался.', err);
         }
@@ -9556,6 +9578,7 @@ const mainApp = (function() {
 
 
     function startQuiz(quizContext = null) {
+        document.body.classList.add('quiz-active');
         appTitleHeader?.classList.add('hidden');
         currentQuizContext = quizContext;
         quizStartTime = new Date().getTime();
@@ -10354,6 +10377,7 @@ const mainApp = (function() {
 
 
     function resetQuizForNewFile(clearInput = true) {
+        document.body.classList.remove('quiz-active');
         appTitleHeader?.classList.remove('hidden');
         quizSettings = { timeLimit: 0, shuffleQuestions: false, shuffleAnswers: false, questionRangeStart: 1, questionRangeEnd: 0, feedbackMode: false, readingMode: false, flashcardsMode: false };
         quizStartTime = 0;

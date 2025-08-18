@@ -1501,6 +1501,7 @@ body.glass-dark .advanced-chat-overlay {
     text-align: center;
 }
 
+/* Новый код: */
 .header-controls {
     display: flex;
     align-items: center;
@@ -1508,7 +1509,13 @@ body.glass-dark .advanced-chat-overlay {
     padding-top: 15px;
     gap: 15px;
     flex-wrap: wrap;
-    margin-bottom: 60px; /* <<< ДОБАВЬТЕ ЭТУ СТРОКУ */
+    /* Устанавливаем компактный отступ по умолчанию для всех экранов, включая чат */
+    margin-bottom: 20px; 
+}
+
+/* НОВЫЙ БЛОК: Применяем ваш большой отступ только в режиме теста */
+body.quiz-active .header-controls {
+    margin-bottom: 60px;
 }
 
 #currentUser {
@@ -7721,4 +7728,14 @@ body.glass-dark .parser-tab.active::after {
     padding-top: 15px;
     flex-shrink: 0;
   }
+  
+}
+
+/* Бережное отображение изображений (без вторичной деградации) */
+.question-image,
+#aiExplanationModal img {
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  image-rendering: auto; /* сглаживание для тонкого текста/схем */
 }
