@@ -301,48 +301,34 @@ body.glass-dark .style-dropdown-content {
     -webkit-backdrop-filter: blur(75px);
 }
 
-/* Центрируем блок кнопок по всей ширине родителя */
+/* --- ЭТО НОВЫЙ КОД (ВСТАВЬТЕ ЕГО) --- */
 .header-buttons {
-    position: absolute; /* Вырываем из потока документа */
-    left: 50%;          /* Смещаем левый край блока в центр родителя */
-    transform: translateX(-50%); /* Сдвигаем сам блок влево на половину его собственной ширины */
-    
-    /* Стили для самих кнопок внутри контейнера */
     display: flex;
-    gap: 10px;
+    justify-content: center;  /* <<< Центрируем кнопки внутри этого блока */
     align-items: center;
-    flex-wrap: nowrap; /* По умолчанию запрещаем перенос */
+    gap: 10px;
+    flex-grow: 1; /* <<< Заставляем блок занять все свободное место */
+    flex-wrap: wrap; /* Разрешаем перенос кнопок на новую строку */
 }
-/* --- ДОБАВЬТЕ ЭТОТ НОВЫЙ БЛОК --- */
-/* Создаем правило ТОЛЬКО для шапки на главном экране */
-.container > .header-controls {
-    margin-bottom: 50px;
+/* --- ЭТОТ БЛОК НУЖНО ПОЛНОСТЬЮ УДАЛИТЬ --- */
+/* Адаптивность для очень узких экранов (шириной 380px и меньше) */
+@media (max-width: 380px) {
+    .header-buttons {
+        /* Разрешаем кнопкам переноситься на новую строку */
+        flex-wrap: wrap;
+        /* Центрируем строки кнопок внутри их контейнера */
+        justify-content: center;
+        /* Можно немного уменьшить отступ для компактности */
+        gap: 5px;
+    }
 }
 
-/* Центрируем блок кнопок по всей ширине родителя */
-.header-buttons {
-    position: absolute; /* Вырываем из потока */
-    left: 50%;          /* Смещаем левый край блока в центр */
-    transform: translateX(-50%); /* Сдвигаем сам блок влево на половину его ширины */
-    
-    /* Стили для самих кнопок */
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: nowrap;
-}
 
 .header-buttons {
     pointer-events: none; /* сам контейнер не ловит клики */
 }
 .header-buttons > * {
     pointer-events: auto; /* кнопки внутри работают */
-}
-
-
-/* А здесь создаем новое, более точное правило ТОЛЬКО для главного экрана */
-.container > .header-controls {
-    margin-bottom: 50px;
 }
 
 
@@ -354,8 +340,6 @@ body.glass-dark .style-dropdown-content {
     font-size: 1.5em;
     line-height: 1.2;
     flex-shrink: 0;
-    /* Убедимся, что заголовок не мешает кнопкам */
-    z-index: 1; 
 }
 
 
@@ -1518,9 +1502,12 @@ body.glass-dark .advanced-chat-overlay {
 }
 
 .header-controls {
-    display: flex;
-    gap: 15px;
-    align-items: center;
+    display: flex; /* Остается flex-контейнером */
+    align-items: center; /* Выравниваем по центру по вертикали */
+    justify-content: space-between; /* Расталкиваем элементы по краям */
+    padding-top: 15px;
+    gap: 15px; /* Добавляем отступ между заголовком и кнопками */
+    flex-wrap: wrap; /* Разрешаем перенос на мобильных */
 }
 
 #currentUser {
@@ -7546,5 +7533,30 @@ body.glass-dark .parser-tab.active::after {
         justify-content: center;
         /* Можно немного уменьшить отступ для компактности */
         gap: 5px;
+    }
+}
+
+
+/* ======================================================= */
+/* ===    АДАПТИВНОСТЬ ДЛЯ ШАПКИ (ФИНАЛЬНАЯ ВЕРСИЯ)     === */
+/* ======================================================= */
+
+@media (max-width: 600px) {
+    .header-controls {
+        /* Заголовок и блок кнопок будут по центру */
+        justify-content: center;
+    }
+
+    .header-controls h1 {
+        /* Заголовок занимает всю ширину и становится по центру */
+        flex-basis: 100%;
+        text-align: center;
+        margin-bottom: 15px; /* Отступ от кнопок */
+    }
+
+    .header-buttons {
+        /* Блок кнопок тоже занимает всю ширину */
+        flex-basis: 100%;
+        /* Кнопки внутри него уже центрированы благодаря justify-content: center */
     }
 }
