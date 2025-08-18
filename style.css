@@ -1502,12 +1502,13 @@ body.glass-dark .advanced-chat-overlay {
 }
 
 .header-controls {
-    display: flex; /* Остается flex-контейнером */
-    align-items: center; /* Выравниваем по центру по вертикали */
-    justify-content: space-between; /* Расталкиваем элементы по краям */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding-top: 15px;
-    gap: 15px; /* Добавляем отступ между заголовком и кнопками */
-    flex-wrap: wrap; /* Разрешаем перенос на мобильных */
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 60px; /* <<< ДОБАВЬТЕ ЭТУ СТРОКУ */
 }
 
 #currentUser {
@@ -5148,7 +5149,7 @@ body.synthwave-mode .google-signin-btn:hover {
     /* Добавляем плавный переход для высоты */
     transition: max-height 0.3s ease-in-out;
 }
-
+/* --- НАЧАЛО НОВОГО КОДА --- */
 /* Новый класс, который будет "сворачивать" блок с ответом */
 #aiExplanationOutput.collapsed {
     max-height: 100px; /* Небольшая высота, чтобы видеть начало ответа */
@@ -5306,7 +5307,7 @@ body.synthwave-mode .google-signin-btn:hover {
     max-height: 50px; /* Ограничиваем высоту свернутого блока */
     overflow: hidden;
     position: relative; /* Необходимо для позиционирования градиента */
-    padding-bottom: 25px; /* Оставляем место для кнопки "Развернуть" */
+    /* --- УДАЛЕНО: padding-bottom: 25px; --- */
     transition: max-height 0.3s ease-in-out;
 }
 
@@ -5322,10 +5323,6 @@ body.synthwave-mode .google-signin-btn:hover {
     pointer-events: none;
 }
 
-/* 3. Когда блок развернут, убираем ограничение высоты и градиент */
-#aiExplanationQuestion.collapsible.expanded {
-    max-height: 1000px; /* Большая высота для плавной анимации */
-}
 
 #aiExplanationQuestion.collapsible.expanded::after {
     opacity: 0;
@@ -5338,22 +5335,20 @@ body.synthwave-mode .google-signin-btn:hover {
 /* ======================================================= */
 
 .expand-question-btn {
-    position: absolute;
-    bottom: -10px; /* Смещаем вниз, чтобы он находился на границе блока */
-    left: 50%;
-    transform: translateX(-50%);
-    
-    width: 80px;  /* Ширина элемента */
-    height: 20px; /* Высота кликабельной области */
+    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
+    display: block;      /* Делаем блочным элементом */
+    width: 80px;         /* Ширина элемента */
+    height: 20px;        /* Высота кликабельной области */
+    margin: 10px auto 0; /* Центрируем и добавляем отступ сверху */
+    position: relative;  /* Убираем absolute */
+    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     
     background-color: transparent; /* Убираем фон */
     border: none;
-    cursor: ns-resize; /* Курсор "изменение размера по вертикали" - очень интуитивно */
+    cursor: pointer; /* --- ИЗМЕНЕНИЕ: Обычный курсор-рука --- */
     z-index: 10;
     
-    /* Убираем стандартные стили кнопки */
     padding: 0;
-    margin: 0;
     outline: none;
 }
 
@@ -7559,4 +7554,171 @@ body.glass-dark .parser-tab.active::after {
         flex-basis: 100%;
         /* Кнопки внутри него уже центрированы благодаря justify-content: center */
     }
+}
+
+
+/* === СТИЛИ ДЛЯ ИЗОБРАЖЕНИЯ В ОКНЕ ОБЪЯСНЕНИЯ ИИ === */
+
+.ai-explanation-image {
+    display: block;          /* Делаем блочным элементом для управления отступами */
+    max-width: 100%;         /* Гарантируем, что изображение не вылезет за рамки окна */
+    height: auto;            /* Сохраняем пропорции */
+    margin: 0 auto 15px auto;/* Центрируем и добавляем отступ снизу */
+    border-radius: 8px;      /* Скругляем углы */
+    border: 1px solid var(--border-color); /* Добавляем рамку в стиле приложения */
+}
+
+
+/* --- НАЧАЛО НОВОГО КОДА --- */
+/* === СТИЛИ ДЛЯ ВЕРХНЕГО БЛОКА С ВОПРОСОМ В ОКНЕ ИИ === */
+
+#aiExplanationQuestion {
+    overflow-y: auto;  /* <-- Вот оно, главное исправление! Добавляем скроллбар, если нужно. */
+    flex-shrink: 1;    /* Разрешаем этому блоку сжиматься, если не хватает места. */
+    min-height: 0;     /* Технический трюк для правильной работы flex-shrink. */
+    
+    /* Добавляем внутренний отступ справа, чтобы текст не прилипал к скроллбару. */
+    padding-right: 10px; 
+}
+/* --- КОНЕЦ НОВОГО КОДА --- */
+
+/* style.css (добавить в конец) */
+
+/* === СТИЛИ ДЛЯ СТРУКТУРЫ ВОПРОСА В ОКНЕ ИИ === */
+
+.ai-a-text {
+    margin-top: 8px; /* Добавляем небольшой отступ сверху для правильного ответа */
+}
+
+/* style.css (добавить в конец) */
+
+/* === ФИНАЛЬНЫЕ СТИЛИ ДЛЯ БЛОКА ВОПРОСА В ОКНЕ ИИ === */
+
+/* Контейнер для текста вопроса */
+.ai-q-text {
+    margin-bottom: 8px; /* Добавляем отступ между вопросом и ответом */
+}
+
+/* Контейнер для правильного ответа */
+.ai-a-text {
+    /* Стили по умолчанию уже есть, но этот блок нужен для ясности */
+}
+
+
+/* =======================================================================
+   AI Explanation Modal – независимые скроллы (фикс)
+   Дата: 2025-08-19
+   Что решает:
+   1) Делает .modal-content флекс-контейнером с ограничением по высоте
+   2) Включает независимую вертикальную прокрутку для:
+      - #aiExplanationQuestion (вопрос + картинка)
+      - #aiExplanationOutput (ответ ИИ)
+   3) Не даёт «схлопываться» служебным блокам (заголовок, селектор стиля, кнопки)
+   4) Адаптив: ПК и мобильные
+   ======================================================================= */
+
+/* --- БАЗА: делаем модалку вертикальным флекс-контейнером и ограничиваем высоту --- */
+#aiExplanationModal .modal-content {
+  /* компоновка столбцом */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  /* чтобы внутренние области крутились, а сама модалка — нет */
+  overflow: hidden;
+
+  /* удобные границы по размеру окна */
+  max-height: 90vh;
+  width: min(90vw, 700px);
+}
+
+/* Служебные блоки модалки не должны сжиматься/прокручиваться */
+#aiExplanationModal .parser-label-container,
+#aiExplanationModal .settings-group,
+#aiExplanationModal .modal-buttons {
+  flex: 0 0 auto;    /* фиксированная высота по контенту */
+}
+
+/* --- ДВА ГЛАВНЫХ СЕКЦИОННЫХ БЛОКА: независимые вертикальные скроллы --- */
+#aiExplanationQuestion,
+#aiExplanationOutput {
+  /* делим оставшееся пространство между двумя панелями */
+  flex: 1 1 0;
+  min-height: 0;        /* критично для корректной прокрутки во флекс-контейнере */
+  overflow-y: auto;     /* показывать полосу только при нехватке места */
+  overscroll-behavior: contain; /* не «проталкивать» скролл к body (мобильные) */
+}
+
+/* Картинки в вопросе адаптивны и не ломают компоновку */
+#aiExplanationQuestion img,
+#aiExplanationQuestion .ai-explanation-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Когда вопрос развёрнут, снимаем любые внешние ограничения высоты (если были) */
+#aiExplanationQuestion.expanded {
+  max-height: none;
+}
+
+/* Если скрипт сворачивает ответ при развёрнутом вопросе — аккуратно скрываем */
+#aiExplanationOutput.collapsed {
+  max-height: 0;
+  overflow: hidden;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: 0 !important;
+}
+
+/* --- ПК: слегка смещаем баланс в пользу ответа, но оба скроллятся независимо --- */
+@media (min-width: 769px) {
+  #aiExplanationQuestion { flex-basis: 45%; }
+  #aiExplanationOutput  { flex-basis: 55%; }
+
+  /* ширину под ПК вы уже поднимали, закрепим тут */
+  #aiExplanationModal .modal-content {
+    width: 90%;
+    max-width: 700px;
+  }
+}
+
+/* --- МОБИЛЬНАЯ ВЁРСТКА: модалка во весь экран, корректный флекс и обрезка --- */
+@media (max-width: 768px) {
+  #aiExplanationModal {
+    padding: 0; /* оверлей без внутренних отступов */
+  }
+
+  #aiExplanationModal .modal-content {
+    /* полное заполнение экрана */
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+
+    /* безопасные отступы (сверху больше под «шторку») */
+    padding: 40px 15px 15px 15px;
+
+    /* ВАЖНО: именно здесь нужен flex-колонка и обрезка по контейнеру */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    justify-content: flex-start;
+  }
+
+  /* на мобилках обе панели свободно растягиваются/сжимаются и крутятся сами */
+  #aiExplanationQuestion,
+  #aiExplanationOutput {
+    max-height: none;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* кнопки не «схлопываются», прижимаются книзу */
+  #aiExplanationModal .modal-buttons {
+    margin-top: auto;
+    padding-top: 15px;
+    flex-shrink: 0;
+  }
 }

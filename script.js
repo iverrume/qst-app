@@ -12079,6 +12079,7 @@ const mainApp = (function() {
 
 
 
+
     /**
      * НОВАЯ ФУНКЦИЯ-ПОМОЩНИК
      * Проверяет высоту блока с вопросом в модальном окне ИИ и добавляет/убирает
@@ -12088,32 +12089,47 @@ const mainApp = (function() {
     function setupAIQuestionCollapser(questionElement) {
         if (!questionElement) return;
 
-        // Сначала всегда убираем старую кнопку и классы, чтобы начать с чистого листа
-        const oldBtn = questionElement.querySelector('.expand-question-btn');
-        if (oldBtn) oldBtn.remove();
+        // 1. Ищем кнопку РЯДОМ с блоком вопроса, а не внутри него, и удаляем ее, чтобы избежать дублирования.
+        const oldBtn = questionElement.nextElementSibling;
+        if (oldBtn && oldBtn.classList.contains('expand-question-btn')) {
+            oldBtn.remove();
+        }
+
+        // 2. Сбрасываем классы, чтобы начать проверку с чистого листа.
         questionElement.classList.remove('collapsible', 'expanded');
         
-        // Даем браузеру мгновение на перерисовку после изменения innerHTML
+        // 3. Используем setTimeout(0), чтобы браузер успел рассчитать реальную высоту контента.
         setTimeout(() => {
-            const MAX_HEIGHT = 120; // Максимальная высота
-            // Проверяем, превышает ли реальная высота текста максимальную
+            const MAX_HEIGHT = 80; // Максимальная высота свернутого блока
+            
+            // 4. Если реальная высота контента больше максимальной, то нам нужна кнопка.
             if (questionElement.scrollHeight > MAX_HEIGHT) {
+                // Добавляем класс, который "свернет" блок с помощью CSS.
                 questionElement.classList.add('collapsible');
+                
+                // Создаем саму кнопку.
                 const expandBtn = document.createElement('button');
                 expandBtn.className = 'expand-question-btn';
                 
-                // Обработчик клика
+                // 5. Назначаем "умный" обработчик клика.
                 expandBtn.onclick = (e) => {
                     e.stopPropagation();
+                    // Переключаем класс 'expanded' на блоке вопроса (разворачиваем/сворачиваем его).
                     questionElement.classList.toggle('expanded');
+                    
+                    // Находим блок с ответом ИИ.
                     const outputEl = getEl('aiExplanationOutput');
                     if (outputEl) {
+                        // Синхронно переключаем класс 'collapsed' на блоке ответа.
+                        // Если вопрос развернут (has 'expanded'), то ответ сворачивается (gets 'collapsed').
                         outputEl.classList.toggle('collapsed', questionElement.classList.contains('expanded'));
                     }
                 };
-                questionElement.appendChild(expandBtn);
+
+                // 6. Вставляем кнопку ПОСЛЕ блока с вопросом, а не внутрь него.
+                questionElement.insertAdjacentElement('afterend', expandBtn);
             }
-        }, 0); // setTimeout с 0 задержкой - это стандартный трюк для ожидания рендеринга
+        }, 0);
     }
 
 
@@ -12186,6 +12202,9 @@ const mainApp = (function() {
     }
 
 
+
+// script.js
+
     function updateAIModalQuestionText() {
         const questionEl = getEl('aiExplanationQuestion');
         const toggleBtn = getEl('aiExplanationTranslateBtn');
@@ -12193,26 +12212,34 @@ const mainApp = (function() {
 
         let questionToDisplay;
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Новая, надежная логика ---
         if (isAIModalShowingTranslation && currentAITranslation) {
-            // Если сейчас показан ПЕРЕВОД
             questionToDisplay = currentAITranslation;
-            // то кнопка должна предлагать показать ОРИГИНАЛ
             toggleBtn.textContent = _('ai_show_original_button');
         } else {
-            // Если сейчас показан ОРИГИНАЛ
             questionToDisplay = currentAIQuestion;
-            // то кнопка должна предлагать показать ПЕРЕВОД
             toggleBtn.textContent = _('ai_show_translation_button');
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         if (!questionToDisplay) return;
-
-        // Обновляем HTML-содержимое
-        questionEl.innerHTML = `<strong>${_('ai_explanation_question')}:</strong> ${escapeHTML(questionToDisplay.text)}<br><strong>${_('ai_explanation_correct_answer')}:</strong> ${escapeHTML(questionToDisplay.options[questionToDisplay.correctAnswerIndex].text)}`;
         
-        // СРАЗУ ЖЕ ПОСЛЕ ОБНОВЛЕНИЯ вызываем нашу новую функцию-помощник!
+        let imageHTML = '';
+        if (currentAIQuestion && currentAIQuestion.image) {
+            imageHTML = `<img src="${currentAIQuestion.image}" alt="Изображение к вопросу" class="ai-explanation-image">`;
+        }
+
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+        // Обновляем HTML, оборачивая каждую часть в свой div
+        questionEl.innerHTML = `
+            ${imageHTML} 
+            <div class="ai-q-text">
+                <strong>${_('ai_explanation_question')}:</strong> ${escapeHTML(questionToDisplay.text)}
+            </div>
+            <div class="ai-a-text">
+                <strong>${_('ai_explanation_correct_answer')}:</strong> ${escapeHTML(questionToDisplay.options[questionToDisplay.correctAnswerIndex].text)}
+            </div>
+        `;
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+        
         setupAIQuestionCollapser(questionEl);
     }
 
@@ -12897,7 +12924,8 @@ const mainApp = (function() {
         explainBtn.textContent = _('ai_explain_button');
         explainBtn.className = 'explain-btn';
         const incorrectAnswerText = !answerState.correct ? question.options[answerState.selectedOptionIndex].text : null;
-        explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText);
+        //           ⬇⬇⬇ ДОБАВЛЯЕМ ТРЕТИЙ АРГУМЕНТ ЗДЕСЬ ⬇⬇⬇
+        explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText, question.image);
 
         feedbackAreaEl.innerHTML = '';
         feedbackAreaEl.appendChild(textNode);
