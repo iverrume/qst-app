@@ -301,14 +301,23 @@ body.glass-dark .style-dropdown-content {
     -webkit-backdrop-filter: blur(75px);
 }
 
-.header-controls {
-    position: relative; /* Это важно, оставляем */
+/* Центрируем блок кнопок по всей ширине родителя */
+.header-buttons {
+    position: absolute; /* Вырываем из потока документа */
+    left: 50%;          /* Смещаем левый край блока в центр родителя */
+    transform: translateX(-50%); /* Сдвигаем сам блок влево на половину его собственной ширины */
+    
+    /* Стили для самих кнопок внутри контейнера */
     display: flex;
+    gap: 10px;
     align-items: center;
-    padding-top: 15px;
-    z-index: 100; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
+    flex-wrap: nowrap; /* По умолчанию запрещаем перенос */
 }
-
+/* --- ДОБАВЬТЕ ЭТОТ НОВЫЙ БЛОК --- */
+/* Создаем правило ТОЛЬКО для шапки на главном экране */
+.container > .header-controls {
+    margin-bottom: 50px;
+}
 
 /* Центрируем блок кнопок по всей ширине родителя */
 .header-buttons {
@@ -6886,40 +6895,6 @@ body.glass-dark .question-actions .add-to-favorites-btn {
 }
 
 
-/* ======================================================= */
-/* === Адаптивность для кнопок в основной шапке приложения === */
-/* ======================================================= */
-@media (max-width: 600px) { /* Начинаем изменения на более широких экранах */
-    .header-controls {
-        /* Делаем контейнер гибким и разрешаем перенос */
-        flex-wrap: wrap;
-        justify-content: space-between; /* Заголовок слева, кнопки справа */
-        gap: 10px;
-    }
-
-    .header-controls h1 {
-        /* Заголовок теперь занимает всю доступную ширину в своей строке */
-        width: 100%; 
-        order: -1; /* Гарантирует, что заголовок всегда будет первым */
-        text-align: left; /* Выравниваем по левому краю */
-    }
-
-    .header-buttons {
-        /* Убираем абсолютное позиционирование */
-        position: static;
-        transform: none;
-        width: 100%; /* Растягиваем на всю ширину */
-        justify-content: flex-end; /* Выравниваем кнопки по правому краю */
-    }
-
-    /* Уменьшаем сами кнопки */
-    .header-buttons button, 
-    .header-buttons .dropdown button,
-    .header-buttons .translate-engine-container button {
-        padding: 4px 6px;
-        font-size: 1.1em;
-    }
-}
 
 
 
@@ -7558,4 +7533,18 @@ body.glass-dark .parser-tab.active::after {
     border-radius: 8px;
     box-shadow: 0 4px 15px var(--shadow-color);
     border: 1px solid var(--border-color);
+}
+
+/* --- ДОБАВЬТЕ ЭТОТ НОВЫЙ БЛОК В КОНЕЦ ФАЙЛА --- */
+
+/* Адаптивность для очень узких экранов (шириной 380px и меньше) */
+@media (max-width: 380px) {
+    .header-buttons {
+        /* Разрешаем кнопкам переноситься на новую строку */
+        flex-wrap: wrap;
+        /* Центрируем строки кнопок внутри их контейнера */
+        justify-content: center;
+        /* Можно немного уменьшить отступ для компактности */
+        gap: 5px;
+    }
 }
