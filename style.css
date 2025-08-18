@@ -7520,3 +7520,42 @@ body.glass-dark .parser-tab.active::after {
     transform: rotate(360deg);
   }
 }
+
+
+
+/* Стили для изображения в вопросе */
+.question-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 20px auto; /* Центрирование и отступ снизу */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+
+
+/* Стили для изображения в вопросе */
+.question-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 20px auto; /* Центрирование и отступ снизу */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+/* style.css (добавить в конец файла) */
+
+/* Стили для изображения в вопросе */
+.question-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 20px auto; /* Центрирование и отступ снизу */
+    border-radius: 8px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}

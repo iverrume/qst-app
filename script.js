@@ -5371,7 +5371,7 @@ const mainApp = (function() {
             find_button: 'Найти',
             searching_in_db: 'Идет поиск по базе...',
             or_divider: '-- или --',
-            choose_file: 'Выберите .qst либо .txt файл с устройства:',
+            choose_file: 'Выберите .qst|.txt|.pdf файл с устройства:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
             parser_button_main: 'Перевести',
@@ -5642,6 +5642,8 @@ const mainApp = (function() {
             server_connection_error_alert: "Не удалось связаться с сервером для проверки ключа. Проверьте интернет-соединение.",
             ai_from_text_description: "Вставьте текст в поле ниже, и ИИ создаст по нему тест с вопросами и ответами.",
             ai_parser_input_placeholder: "Вставьте сюда текст для анализа ИИ...",
+            parser_pattern_trilingual: "Блок \"Вопрос No\" (многоязычный)",
+            language_filter_label: 'Язык вопросов:',
             checking_access: "Проверка..."
         },
         kk: {
@@ -5659,7 +5661,7 @@ const mainApp = (function() {
             find_button: 'Іздеу',
             searching_in_db: 'Дерекқордан іздеу жүріп жатыр...',
             or_divider: '-- немесе --',
-            choose_file: 'Құрылғыдан .qst немесе .txt файлын таңдаңыз:',
+            choose_file: 'Құрылғыдан .qst|.txt|.pdf файлын таңдаңыз:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
             parser_button_main: 'Мәтінді',
@@ -5976,7 +5978,9 @@ const mainApp = (function() {
             server_connection_error_alert: "Кілті тексеру үшін сервермен байланысу мүмкін болмады. Интернет қосылымын тексеріңіз.",
             checking_access: "Тексеру...",
             ai_from_text_description: "Төмендегі өріске мәтінді қойыңыз, сонда ЖИ сол бойынша сұрақтар мен жауаптары бар тест жасайды.",
-            ai_parser_input_placeholder: "ЖИ талдауы үшін мәтінді осында қойыңыз...",
+            parser_pattern_trilingual: "\"Сұрақ No\" блогы (көптілді)",
+            language_filter_label: 'Сұрақтардың тілі:',
+            ai_parser_input_placeholder: "ЖИ талдауы үшін мәтінді осында қойыңыз..."
 
         },
         en: {
@@ -5994,7 +5998,7 @@ const mainApp = (function() {
             find_button: 'Search',
             searching_in_db: 'Searching database...',
             or_divider: '-- or --',
-            choose_file: 'Select a .qst or .txt file from your device:',
+            choose_file: 'Select a .qst|.txt|.pdf file from your device:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
             parser_button_main: 'Convert',
@@ -6316,7 +6320,9 @@ const mainApp = (function() {
             server_connection_error_alert: "Could not contact the server to verify the key. Please check your internet connection.",
             checking_access: "Checking...",
             ai_from_text_description: "Paste text into the field below, and the AI will create a test with questions and answers based on it.",
-            ai_parser_input_placeholder: "Paste text here for AI analysis...",
+            parser_pattern_trilingual: "\"Question No\" block (multilingual)",
+            language_filter_label: 'Question Language:',
+            ai_parser_input_placeholder: "Paste text here for AI analysis..."
         }
 
 
@@ -8191,16 +8197,429 @@ const mainApp = (function() {
         }
     }
 
-    function handleFileSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            processFile(file.name, e.target.result);
-        };
-        reader.readAsText(file, 'UTF-8');
+
+    async function handleFileSelect(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        // --- НОВАЯ ЛОГИКА ---
+        // Если выбран один PDF-файл, используем новый обработчик с картинками
+        if (files.length === 1 && files[0].name.toLowerCase().endsWith('.pdf')) {
+            showGlobalLoader('Обработка PDF с изображениями...');
+            try {
+                await processPdfWithImages(files[0]);
+            } catch (error) {
+                console.error("Ошибка при обработке PDF с изображениями:", error);
+                alert(`Не удалось обработать PDF: ${error.message}`);
+            } finally {
+                hideGlobalLoader();
+            }
+            return; // Завершаем выполнение
+        }
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
+        // Если выбрано несколько файлов или не PDF, используем старую логику объединения текста
+        showGlobalLoader('Обработка файлов...');
+
+        let combinedText = '';
+        let combinedFileName = files.length > 1 ? 'Combined_Test' : files[0].name;
+
+        for (const file of files) {
+            if (file.name.toLowerCase().endsWith('.pdf')) {
+                try {
+                    const pdfText = await extractTextFromPdf(file);
+                    const formattedPdfText = preformatPddText(pdfText);
+                    combinedText += formattedPdfText + '\n\n';
+                } catch (error) {
+                    console.error(`Ошибка извлечения текста из PDF ${file.name}:`, error);
+                    alert(`Не удалось обработать PDF-файл: ${file.name}`);
+                }
+            } else {
+                try {
+                    const text = await readFileAsText(file);
+                    combinedText += text + '\n\n';
+                } catch (error) {
+                    console.error(`Ошибка чтения файла ${file.name}:`, error);
+                }
+            }
+        }
+        
+        hideGlobalLoader();
+
+        if (combinedText.trim()) {
+            processFile(combinedFileName, combinedText);
+        } else {
+            alert('Не удалось извлечь текст из выбранных файлов.');
+        }
     }
+
+
+
+
+    async function extractImagesFromPage(page) {
+      const images = [];
+
+      // 1) Пытаемся вытащить inline-изображения и XObject через operatorList/commonObjs
+      try {
+        const { fnArray, argsArray } = await page.getOperatorList();
+        const toDataURL = (obj, w, h) => {
+          // Небольшой универсальный конвертер пикселей в dataURL
+          if (!obj) return null;
+          const width = w || obj.width || (obj.bitmap && obj.bitmap.width);
+          const height = h || obj.height || (obj.bitmap && obj.bitmap.height);
+          if (!width || !height) return null;
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          const imageData = ctx.createImageData(width, height);
+          const pixels = imageData.data;
+
+          // Достаём сырой массив пикселей из объекта
+          const sourcePixels =
+            obj?.data || obj?.bitmap?.data || obj?.imageData || obj?.bytes || new Uint8ClampedArray();
+
+          // Популярные форматы: RGBA, RGB, Grayscale
+          if (sourcePixels.length === pixels.length) {
+            // RGBA — копируем как есть
+            pixels.set(sourcePixels);
+          } else if (sourcePixels.length === (pixels.length / 4) * 3) {
+            // RGB -> RGBA
+            let s = 0, d = 0;
+            while (s < sourcePixels.length) {
+              pixels[d++] = sourcePixels[s++]; // R
+              pixels[d++] = sourcePixels[s++]; // G
+              pixels[d++] = sourcePixels[s++]; // B
+              pixels[d++] = 255;               // A
+            }
+          } else if (sourcePixels.length === pixels.length / 4) {
+            // Grayscale -> RGBA
+            let s = 0, d = 0;
+            while (s < sourcePixels.length) {
+              const g = sourcePixels[s++];
+              pixels[d++] = g; pixels[d++] = g; pixels[d++] = g; pixels[d++] = 255;
+            }
+          } else {
+            return null;
+          }
+
+          ctx.putImageData(imageData, 0, 0);
+          return canvas.toDataURL('image/jpeg', 0.9);
+        };
+
+        for (let idx = 0; idx < fnArray.length; idx++) {
+          const fn = fnArray[idx];
+          const args = argsArray[idx];
+
+          // Импорт XObject
+          if (fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintImageXObjectRepeat) {
+            const key = args?.[0];
+            let obj = null;
+
+            // page.objs
+            try {
+              if (page.objs && typeof page.objs.get === 'function') {
+                if (!page.objs.has || page.objs.has(key)) obj = page.objs.get(key);
+              }
+            } catch (_) {}
+
+            // commonObjs
+            if (!obj) {
+              try {
+                if (page.commonObjs && typeof page.commonObjs.get === 'function') {
+                  if (!page.commonObjs.has || page.commonObjs.has(key)) obj = page.commonObjs.get(key);
+                }
+              } catch (_) {}
+            }
+
+            if (obj) {
+              const url = toDataURL(obj);
+              if (url) images.push(url);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('extractImagesFromPage: operatorList недоступен, пойдём в фолбэк.', e);
+      }
+
+      // 2) Фолбэк: отрендерить всю страницу в JPEG, чтобы картинка была всегда
+      if (images.length === 0) {
+        try {
+          const viewport = page.getViewport({ scale: 1.6 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          images.push(canvas.toDataURL('image/jpeg', 0.9));
+        } catch (err) {
+          console.error('extractImagesFromPage: фолбэк-рендер не удался.', err);
+        }
+      }
+
+      return images;
+    }
+
+
+
+
+
+    /**
+     * Специализированный парсер для многоязычных PDF-блоков формата "Вопрос No...".
+     * ФИНАЛЬНАЯ ВЕРСИЯ: Упрощенная и более надежная логика.
+     * @param {string} text - Текст для парсинга (обычно со одной страницы PDF).
+     * @returns {Array<object>} - Массив распознанных объектов вопросов в формате QST.
+     */
+    function parseTrilingualPdfBlock(text) {
+        // Внутренняя функция для парсинга блока одного языка.
+        const parseLanguageBlock = (lines) => {
+            if (!lines || lines.length < 2) return null;
+
+            const optionMarkerRegex = /^\s*\d+[\.\)]\s*/;
+
+            // 1. Находим индекс первой строки, которая является вариантом ответа.
+            const firstOptionIndex = lines.findIndex(line => optionMarkerRegex.test(line.trim()));
+            
+            // Если варианты ответов не найдены, считаем блок невалидным.
+            if (firstOptionIndex === -1) return null;
+
+            // 2. Всё до этого индекса - это строки вопроса.
+            const questionLines = lines.slice(0, firstOptionIndex)
+                .map(line => line.trim())
+                .filter(line => line); // Убираем только пустые строки
+
+            // 3. Всё начиная с этого индекса - это строки с вариантами.
+            const optionLinesRaw = lines.slice(firstOptionIndex);
+            
+            if (questionLines.length === 0 || optionLinesRaw.length === 0) return null;
+
+            // 4. Склеиваем многострочные варианты.
+            const optionLinesProcessed = [];
+            let currentOption = '';
+            for (const line of optionLinesRaw) {
+                if (optionMarkerRegex.test(line.trim())) {
+                    if (currentOption) optionLinesProcessed.push(currentOption);
+                    currentOption = line.trim();
+                } else if (currentOption) {
+                    currentOption += ' ' + line.trim();
+                }
+            }
+            if (currentOption) optionLinesProcessed.push(currentOption);
+
+            // 5. Формируем финальный объект вопроса
+            const questionText = questionLines.join(' ').trim();
+            const options = [];
+            let correctAnswer = null;
+
+            optionLinesProcessed.forEach(line => {
+                let cleanText = line.replace(optionMarkerRegex, '').trim();
+                if (cleanText.endsWith('*')) {
+                    cleanText = cleanText.slice(0, -1).trim();
+                    correctAnswer = cleanText;
+                }
+                options.push(cleanText);
+            });
+
+            if (questionText && correctAnswer) {
+                return { text: questionText, options: options, correctAnswer: correctAnswer };
+            }
+            return null;
+        };
+
+        // Основная логика (остается без изменений, она работает правильно)
+        const russianQuestions = [];
+        const kazakhQuestions = [];
+        const englishQuestions = [];
+
+        const blocks = text.split(/(?=^Вопрос (No|№) \d+)/m).filter(b => b.trim() !== '');
+
+        for (const block of blocks) {
+            const lines = block.split('\n');
+            const kazakhStartRegex = /[әіңғүұқөһ]/i;
+            const englishStartRegex = /\b(is|are|what|when|allowed|prohibited|which|driver|vehicle)\b/i;
+
+            let kazakhStartIndex = lines.findIndex(line => kazakhStartRegex.test(line));
+            if (kazakhStartIndex === -1) kazakhStartIndex = lines.length;
+
+            let englishStartIndex = lines.findIndex((line, index) => index >= kazakhStartIndex && englishStartRegex.test(line));
+            if (englishStartIndex === -1) englishStartIndex = lines.length;
+
+            const russianLines = lines.slice(0, kazakhStartIndex);
+            const kazakhLines = lines.slice(kazakhStartIndex, englishStartIndex);
+            const englishLines = lines.slice(englishStartIndex);
+
+            const rusResult = parseLanguageBlock(russianLines);
+            if (rusResult) russianQuestions.push(rusResult);
+
+            const kazResult = parseLanguageBlock(kazakhLines);
+            if (kazResult) kazakhQuestions.push(kazResult);
+
+            const engResult = parseLanguageBlock(englishLines);
+            if (engResult) englishQuestions.push(engResult);
+        }
+
+        const allQuestions = [...russianQuestions, ...kazakhQuestions, ...englishQuestions];
+        return allQuestions.map(q => ({
+            text: q.text,
+            options: q.options.map(optText => ({
+                text: optText,
+                isCorrect: optText === q.correctAnswer
+            })),
+            correctAnswerIndex: q.options.findIndex(optText => optText === q.correctAnswer)
+        }));
+    }
+
+
+    // ======== НАЧАЛО НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
+    /**
+     * Извлекает РАСТРОВЫЕ изображения со страницы PDF в виде Base64 строк.
+     * Этот метод ищет именно "картинки", игнорируя текст и векторную графику.
+     * ФИНАЛЬНАЯ ВЕРСИЯ: Улучшена обработка цветовых пространств и ошибок.
+     * @param {object} page - Объект страницы из библиотеки pdf.js.
+     * @returns {Promise<string[]>} - Массив с Base64 Data URL изображениями.
+     */
+    async function extractImagesFromPage(page) {
+        const images = [];
+        try {
+            // Получаем список всех операций на странице
+            const operatorList = await page.getOperatorList();
+            const { fnArray, argsArray } = operatorList;
+
+            for (let i = 0; i < fnArray.length; i++) {
+                // Нас интересует только операция отрисовки растрового изображения
+                if (fnArray[i] !== pdfjsLib.OPS.paintImageXObject) {
+                    continue;
+                }
+                
+                const imgKey = argsArray[i][0];
+                // Получаем объект изображения по его ключу
+                const imgData = await page.commonObjs.get(imgKey);
+
+                // Проверяем, что это валидный объект изображения с данными
+                if (!imgData || !imgData.width || !imgData.height || !imgData.data) {
+                    continue;
+                }
+
+                // Создаем временный холст (canvas) для отрисовки
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Оптимизация для чтения данных
+                canvas.width = imgData.width;
+                canvas.height = imgData.height;
+
+                // Создаем объект ImageData, который будем заполнять пикселями
+                const imageData = ctx.createImageData(imgData.width, imgData.height);
+                const pixels = imageData.data;
+                const sourcePixels = imgData.data;
+
+                // === УЛУЧШЕННАЯ ЛОГИКА ОБРАБОТКИ ЦВЕТОВЫХ ПРОСТРАНСТВ ===
+                // 1. Стандартный случай: RGBA (4 компонента на пиксель)
+                if (sourcePixels.length === pixels.length) {
+                    pixels.set(sourcePixels);
+                } 
+                // 2. Частый случай: RGB (3 компонента на пиксель)
+                else if (sourcePixels.length === (pixels.length / 4) * 3) {
+                    let sourceIndex = 0;
+                    let destIndex = 0;
+                    while (sourceIndex < sourcePixels.length) {
+                        pixels[destIndex++] = sourcePixels[sourceIndex++]; // R
+                        pixels[destIndex++] = sourcePixels[sourceIndex++]; // G
+                        pixels[destIndex++] = sourcePixels[sourceIndex++]; // B
+                        pixels[destIndex++] = 255; // Alpha (непрозрачность)
+                    }
+                } 
+                // 3. Редкий случай: Grayscale (1 компонент на пиксель)
+                else if (sourcePixels.length === pixels.length / 4) {
+                     let sourceIndex = 0;
+                     let destIndex = 0;
+                     while (sourceIndex < sourcePixels.length) {
+                        const grayValue = sourcePixels[sourceIndex++];
+                        pixels[destIndex++] = grayValue; // R
+                        pixels[destIndex++] = grayValue; // G
+                        pixels[destIndex++] = grayValue; // B
+                        pixels[destIndex++] = 255;      // Alpha
+                     }
+                }
+                // Если ни один из форматов не подошел, пропускаем изображение
+                else {
+                    console.warn(`Неподдерживаемый формат изображения (размер данных: ${sourcePixels.length}), пропускаем.`);
+                    continue;
+                }
+                
+                // Помещаем обработанные пиксели на холст
+                ctx.putImageData(imageData, 0, 0);
+                
+                // Конвертируем холст в Base64 Data URL (JPEG для лучшего сжатия) и добавляем в массив
+                images.push(canvas.toDataURL("image/jpeg", 0.9));
+            }
+        } catch (error) {
+            console.error("Критическая ошибка при извлечении чистого изображения со страницы:", error);
+        }
+        return images;
+    }
+    // ======== КОНЕЦ НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
+
+
+
+    // Определяем язык вопроса (кэшируем в q.lang, чтобы не считать каждый раз)
+    function getQuestionLang(q) {
+      if (!q.lang) {
+        try { q.lang = typeof detectLanguage === 'function' ? detectLanguage(q.text) : 'ru'; }
+        catch { q.lang = 'ru'; }
+      }
+      return q.lang;
+    }
+
+    // Возвращает массив вопросов для выбранного языка
+    function getQuestionsByLanguage(lang) {
+      return allParsedQuestions.filter(q =>
+        q.type !== 'category' &&
+        (lang === 'all' || getQuestionLang(q) === lang)
+      );
+    }
+
+    // Обновляет «всего вопросов» и слайдеры под выбранный язык
+    function updateUiForLanguage(lang) {
+      const filtered = getQuestionsByLanguage(lang);
+      const total = filtered.length;
+
+      // Обновляем подпись "(всего N вопросов)"
+      if (typeof _ === 'function' && window.maxQuestionsInfoEl) {
+        maxQuestionsInfoEl.textContent =
+          `(${_('total_questions_label')} ${total} ${_('questions_label_for_range')})`;
+      }
+
+      // Переинициализируем диапазон и «случайный набор»
+      if (typeof initDualSlider === 'function')  initDualSlider(total);
+      if (typeof initSingleSlider === 'function') initSingleSlider();
+
+      // Если есть поле «Случайный набор из X», подрежем max под total
+      const rndInput = document.getElementById('randomQuestionsCount');
+      if (rndInput) {
+        const val = Math.min(parseInt(rndInput.value || 50, 10), Math.max(total, 1));
+        rndInput.max = Math.max(total, 1);
+        rndInput.value = val;
+      }
+
+      // Сохраним «рабочий» список на будущее (если старт теста читает отсюда)
+      window.questionsFilteredByLang = filtered;
+    }
+
+    // Навешиваем обработчик на селект языков и делаем первичный пересчёт
+    function attachLanguageFilterBehavior() {
+      const select = document.getElementById('languageFilter');
+      const current = select ? select.value : 'all';
+      updateUiForLanguage(current);
+
+      if (select && !select.__langBound) {
+        select.addEventListener('change', (e) => updateUiForLanguage(e.target.value));
+        select.__langBound = true; // чтобы не привязать дважды
+      }
+    }
+
+
+
 
     function handleReadingModeChange() {
         if (readingModeCheckbox.checked) {
@@ -8216,8 +8635,283 @@ const mainApp = (function() {
         }
     }
 
+    // НОВАЯ ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ для чтения текстовых файлов
+    function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = (e) => reject(e.target.error);
+            reader.readAsText(file, 'UTF-8');
+        });
+    }
 
+    // НОВАЯ УМНАЯ ФУНКЦИЯ для извлечения текста из PDF со структурой
+    async function extractTextFromPdf(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            
+            if (!textContent.items || textContent.items.length === 0) {
+                continue;
+            }
+
+            // Сортируем все текстовые блоки сначала по вертикали, потом по горизонтали
+            const items = textContent.items.sort((a, b) => {
+                const y1 = a.transform[5];
+                const y2 = b.transform[5];
+                if (Math.abs(y1 - y2) > 1) { // Если разница по Y существенна, сортируем по Y
+                    return y2 - y1;
+                }
+                return a.transform[4] - b.transform[4]; // Иначе сортируем по X
+            });
+            
+            let lastY = items[0].transform[5];
+            let pageText = '';
+
+            for (const item of items) {
+                const currentY = item.transform[5];
+                // Если Y-координата сильно изменилась, это новая строка.
+                if (Math.abs(currentY - lastY) > 4) {
+                    pageText += '\n';
+                } else {
+                    pageText += ' '; // Добавляем пробел между элементами на одной строке
+                }
+                pageText += item.str;
+                lastY = currentY;
+            }
+            fullText += pageText + '\n\n'; // Добавляем отступ между страницами
+        }
+        return fullText;
+    }
      
+
+
+
+
+    // === ПОЛНАЯ ЗАМЕНА ===
+    // Извлекает изображения со страницы. Поддерживает inline/XObject.
+    // Если прямых картинок нет или объект "не готов" — делает фолбэк: рендерит всю страницу в JPEG.
+    async function extractImagesFromPage(page) {
+      const images = [];
+
+      // Превращает "сырые" данные (RGBA/RGB/Gray) в dataURL
+      function toDataURL(raw, w, h) {
+        if (!raw || !w || !h) return null;
+        const data =
+          raw.data ||
+          (raw.imgData && raw.imgData.data) ||
+          (raw.bitmap && raw.bitmap.data) ||
+          raw.rgba ||
+          null;
+        if (!data) return null;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const imgData = ctx.createImageData(w, h);
+        const dest = imgData.data;
+
+        if (data.length === dest.length) {
+          // уже RGBA
+          dest.set(data);
+        } else if (data.length === (dest.length / 4) * 3) {
+          // RGB -> RGBA
+          for (let si = 0, di = 0; si < data.length; ) {
+            dest[di++] = data[si++]; // R
+            dest[di++] = data[si++]; // G
+            dest[di++] = data[si++]; // B
+            dest[di++] = 255;        // A
+          }
+        } else if (data.length === dest.length / 4) {
+          // Gray -> RGBA
+          for (let si = 0, di = 0; si < data.length; ) {
+            const g = data[si++];
+            dest[di++] = g; dest[di++] = g; dest[di++] = g; dest[di++] = 255;
+          }
+        } else {
+          return null; // неизвестный формат
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        return canvas.toDataURL('image/jpeg', 0.9);
+      }
+
+      try {
+        const opList = await page.getOperatorList();
+        const fnArray = opList.fnArray;
+        const argsArray = opList.argsArray;
+
+        for (let idx = 0; idx < fnArray.length; idx++) {
+          const fn = fnArray[idx];
+
+          // 1) Inline-изображения: данные сразу в аргументе
+          if (fn === pdfjsLib.OPS.paintInlineImageXObject) {
+            const obj = argsArray[idx][0]; // { width, height, data, ... }
+            const url = toDataURL(obj, obj && obj.width, obj && obj.height);
+            if (url) images.push(url);
+            continue;
+          }
+
+          // 2) Обычные XObject-изображения: ищем в objs/commonObjs
+          if (fn === pdfjsLib.OPS.paintImageXObject) {
+            const key = argsArray[idx][0];
+            let obj = null;
+
+            // Доступ к page.objs — только если объект готов (has/get в try/catch)
+            try {
+              if (page.objs && typeof page.objs.get === 'function') {
+                if (!page.objs.has || page.objs.has(key)) {
+                  obj = page.objs.get(key);
+                }
+              }
+            } catch (_) { /* объект ещё не готов — пропускаем */ }
+
+            // Пробуем commonObjs
+            if (!obj) {
+              try {
+                if (page.commonObjs && typeof page.commonObjs.get === 'function') {
+                  if (!page.commonObjs.has || page.commonObjs.has(key)) {
+                    obj = page.commonObjs.get(key);
+                  }
+                }
+              } catch (_) { /* аналогично */ }
+            }
+
+            if (obj) {
+              const w = obj.width || (obj.bitmap && obj.bitmap.width);
+              const h = obj.height || (obj.bitmap && obj.bitmap.height);
+              const url = toDataURL(obj, w, h);
+              if (url) images.push(url);
+            }
+          }
+        }
+      } catch (e) {
+        // Ничего — пойдём в фолбэк ниже
+        console.warn('extractImagesFromPage: оп-лист недоступен, используем фолбэк.', e);
+      }
+
+      // Фолбэк: рендер страницы в один JPEG (чтобы картинка была всегда)
+      if (images.length === 0) {
+        try {
+          const viewport = page.getViewport({ scale: 1.6 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          images.push(canvas.toDataURL('image/jpeg', 0.9));
+        } catch (err) {
+          console.error('extractImagesFromPage: фолбэк-рендер не удался.', err);
+        }
+      }
+
+      return images;
+    }
+
+
+
+
+
+
+    /**
+     * Обрабатывает PDF-файл постранично, извлекая текст С СОХРАНЕНИЕМ СТРУКТУРЫ и изображения.
+     * @param {File} file - PDF-файл для обработки.
+     */
+    async function processPdfWithImages(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        
+        let allQuestionsWithImages = [];
+        let detectedLangs = new Set(); // Для сбора языков
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            
+            const [textContent, pageImages] = await Promise.all([
+                page.getTextContent(),
+                extractImagesFromPage(page)
+            ]);
+
+            let pageText = '';
+            if (textContent.items && textContent.items.length > 0) {
+                const items = textContent.items.sort((a, b) => {
+                    const y1 = a.transform[5];
+                    const y2 = b.transform[5];
+                    if (Math.abs(y1 - y2) > 1) {
+                        return y2 - y1;
+                    }
+                    return a.transform[4] - b.transform[4];
+                });
+                
+                let lastY = items[0].transform[5];
+
+                for (const item of items) {
+                    const currentY = item.transform[5];
+                    if (Math.abs(currentY - lastY) > 4) {
+                        pageText += '\n';
+                    } else {
+                        pageText += ' ';
+                    }
+                    pageText += item.str;
+                    lastY = currentY;
+                }
+            }
+            
+            const questionsOnPage = parseTrilingualPdfBlock(pageText);
+
+            if (questionsOnPage.length > 0) {
+                const questionsWithImage = questionsOnPage.map(q => {
+                    detectedLangs.add(detectLanguage(q.text)); // Определяем язык каждого вопроса
+                    if (pageImages.length > 0) {
+                        q.image = pageImages[0];
+                    }
+                    return q;
+                });
+                allQuestionsWithImages.push(...questionsWithImage);
+            }
+        }
+        
+        if (allQuestionsWithImages.length > 0) {
+            originalFileNameForReview = file.name;
+            allParsedQuestions = allQuestionsWithImages;
+            
+            fileUploadArea.classList.add('hidden');
+            quizSetupArea.classList.remove('hidden');
+            attachLanguageFilterBehavior();
+            
+            // Логика отображения фильтра языков
+            const langFilterGroup = getEl('languageFilterGroup');
+            const langFilterSelect = getEl('languageFilter');
+            if (detectedLangs.size > 1) {
+                langFilterSelect.innerHTML = `<option value="all">Все языки</option>`;
+                detectedLangs.forEach(lang => {
+                    const langName = { ru: 'Русский', kk: 'Қазақша', en: 'English' }[lang] || lang;
+                    langFilterSelect.innerHTML += `<option value="${lang}">${langName}</option>`;
+                });
+                langFilterGroup.classList.remove('hidden');
+            } else {
+                langFilterGroup.classList.add('hidden');
+            }
+
+            const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
+            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
+            initDualSlider(questionCount);
+            initSingleSlider(); 
+            shuffleNCheckbox.checked = false;
+            handleShuffleNToggle();
+            manageBackButtonInterceptor();
+        } else {
+            alert(`${_('file_empty_or_invalid_part1')}"${file.name}"${_('file_empty_or_invalid_part2')}`);
+        }
+
+    }
+
+
 
 
     /**
@@ -8481,13 +9175,23 @@ const mainApp = (function() {
 
 
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
-        let finalQuizContext = currentQuizContext; 
-        
+        let finalQuizContext = currentQuizContext;
         let sourceArray;
 
-        // --- НОВАЯ ЛОГИКА: Проверяем режим случайного выбора ---
+        // ======== НАЧАЛО НОВОГО КОДА: Фильтрация по языку ========
+        const langFilterGroup = getEl('languageFilterGroup');
+        const langFilterSelect = getEl('languageFilter');
+        let baseQuestions = allParsedQuestions;
+
+        // Если фильтр видим и выбран конкретный язык (не "all")
+        if (!langFilterGroup.classList.contains('hidden') && langFilterSelect.value !== 'all') {
+            const selectedLang = langFilterSelect.value;
+            baseQuestions = allParsedQuestions.filter(q => detectLanguage(q.text) === selectedLang);
+        }
+        // ======== КОНЕЦ НОВОГО КОДА ========
+
         if (shuffleNCheckbox.checked && !isErrorReview) {
-            quizSettings.shuffleQuestions = true; // Принудительно включаем перемешивание
+            quizSettings.shuffleQuestions = true;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
             quizSettings.feedbackMode = feedbackModeCheckbox.checked;
             quizSettings.readingMode = readingModeCheckbox.checked;
@@ -8495,16 +9199,15 @@ const mainApp = (function() {
             quizSettings.timeLimit = parseInt(timeLimitInput.value);
 
             const n = parseInt(shuffleNCountInput.value);
-            const allActualQuestions = allParsedQuestions.filter(q => q.type !== 'category');
-            
+            const allActualQuestions = baseQuestions.filter(q => q.type !== 'category');
+
             if (n > allActualQuestions.length || n < 1) {
                 alert(`Укажите количество от 1 до ${allActualQuestions.length}`);
                 return;
             }
-
-            // --- Сложная логика для случайного выбора с сохранением категорий ---
+            
             const questionMap = new Map();
-            allParsedQuestions.forEach((q, index) => {
+            baseQuestions.forEach((q, index) => {
                 if(q.type !== 'category') {
                     questionMap.set(index, q);
                 }
@@ -8515,14 +9218,13 @@ const mainApp = (function() {
             const selectedIndices = new Set(allQuestionIndices.slice(0, n));
             
             sourceArray = [];
-            allParsedQuestions.forEach((item, index) => {
+            baseQuestions.forEach((item, index) => {
+                const originalGlobalIndex = allParsedQuestions.indexOf(item); // Находим глобальный индекс
                 if (item.type === 'category' || selectedIndices.has(index)) {
-                     // Добавляем к вопросу его оригинальный индекс для кэша переводов
-                    sourceArray.push({ ...item, originalIndex: index });
+                    sourceArray.push({ ...item, originalIndex: originalGlobalIndex });
                 }
             });
 
-            // Очистка пустых категорий
             sourceArray = sourceArray.filter((item, index, arr) => {
                 if (item.type === 'category') {
                     const nextItem = arr[index + 1];
@@ -8532,7 +9234,6 @@ const mainApp = (function() {
             });
 
         } else if (!isErrorReview) {
-            // --- Старая логика для диапазона ---
             quizSettings.timeLimit = parseInt(timeLimitInput.value);
             quizSettings.shuffleQuestions = shuffleQuestionsCheckbox.checked;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
@@ -8540,36 +9241,35 @@ const mainApp = (function() {
             quizSettings.readingMode = readingModeCheckbox.checked;
             quizSettings.flashcardsMode = flashcardsModeCheckbox.checked;
             
-            const totalQuestionsCount = allParsedQuestions.filter(q => q.type !== 'category').length;
+            const totalQuestionsCount = baseQuestions.filter(q => q.type !== 'category').length;
             
             let startRange = parseInt(questionRangeStartInput.value);
             let endRange = parseInt(questionRangeEndInput.value);
 
             if (isNaN(startRange) || startRange < 1) startRange = 1;
             if (isNaN(endRange) || endRange < startRange) endRange = totalQuestionsCount;
-
-            const indices = mapQuestionRangeToIndices(allParsedQuestions, startRange, endRange);
+            
+            // Важно: mapQuestionRangeToIndices теперь работает с отфильтрованным массивом
+            const indices = mapQuestionRangeToIndices(baseQuestions, startRange, endRange);
 
             let finalStartIndex = indices.startIndex;
-            if (indices.startIndex > 0 && allParsedQuestions[indices.startIndex - 1].type === 'category') {
+            if (indices.startIndex > 0 && baseQuestions[indices.startIndex - 1].type === 'category') {
                 finalStartIndex = indices.startIndex - 1;
             }
 
-            sourceArray = allParsedQuestions.slice(finalStartIndex, indices.endIndex + 1)
-                .map((question, localIndex) => ({
+            sourceArray = baseQuestions.slice(finalStartIndex, indices.endIndex + 1)
+                .map((question) => ({
                     ...question,
-                    originalIndex: finalStartIndex + localIndex
+                    originalIndex: allParsedQuestions.indexOf(question) // Находим глобальный индекс
                 }));     
 
         } else {
-            // --- Логика для работы над ошибками (не меняется) ---
             sourceArray = questionsSource;
             quizSettings.timeLimit = 0;
             quizSettings.shuffleQuestions = false;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
         }
         
-        // --- Общая логика обработки выбранных вопросов (не меняется) ---
         if (quizSettings.shuffleQuestions && !isErrorReview) {
             let shuffledQuiz = [];
             let questionGroup = [];
@@ -8639,7 +9339,6 @@ const mainApp = (function() {
         startQuiz(finalQuizContext);
         manageBackButtonInterceptor();
     }
-
 
 
     function startQuiz(quizContext = null) {
@@ -8971,49 +9670,130 @@ const mainApp = (function() {
     }
 
 
-
-
     /**
      * Отображает текущий элемент как стандартный вопрос теста.
-     * (Это, по сути, код из вашей старой функции loadQuestion)
-     * @param {object} question - Объект вопроса.
+     * Показывает и текст, и изображение (если есть), корректно работает с переводом.
+     * @param {object} question
      */
     function displayQuestionAsTest(question) {
-        // Показываем нужные элементы
+        // Показываем/скрываем нужные элементы интерфейса
         feedbackAreaEl.className = 'feedback-area';
         getEl('score').style.visibility = 'visible';
         copyQuestionBtnQuiz?.classList.remove('hidden');
         getEl('favoriteQuestionBtn')?.classList.remove('hidden');
         translateQuestionBtn?.classList.remove('hidden');
         webSearchDropdown?.classList.remove('hidden');
-        
-        const questionNumber = questionsForCurrentQuiz.slice(0, currentQuestionIndex + 1).filter(q => q.type !== 'category').length;
+
+        // Обновляем номер вопроса
+        const questionNumber = questionsForCurrentQuiz
+            .slice(0, currentQuestionIndex + 1)
+            .filter(q => q.type !== 'category').length;
         currentQuestionNumEl.textContent = questionNumber;
 
-        // Логика отображения (перевод или оригинал)
-        if (isTranslateModeEnabled) {
-            displayTranslatedQuestion(question);
-        } else {
-            displayQuestionContent(question, false);
+        // Контейнеры
+        const questionContainer = questionTextEl?.parentElement;
+
+        // Удаляем остатки картинки от предыдущего вопроса
+        if (questionContainer) {
+            const prevImgWrap = questionContainer.querySelector('.question-image-wrapper');
+            if (prevImgWrap) prevImgWrap.remove();
         }
 
-        // Восстановление состояния ответа (если уже отвечали)
+        // Очищаем текстовый контейнер
+        questionTextEl.innerHTML = '';
+
+        // 1) Рендерим текст + варианты (с учётом режима перевода)
+        if (isTranslateModeEnabled) {
+            // Эта функция сама вставит текст и варианты, анимации будут трогать ТОЛЬКО текстовый контейнер
+            displayTranslatedQuestion(question);
+        } else {
+            // Рендерим текст и варианты обычным путём
+            questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+            if (triggerWordModeEnabled) addTriggerClickListeners();
+            displayQuestionOptions(question);
+        }
+
+        // 2) Если у вопроса есть картинка — вставляем ЕЁ ОТДЕЛЬНО (выше текста)
+        if (question.image && questionContainer) {
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'question-image-wrapper';
+
+            const img = document.createElement('img');
+            img.src = question.image;
+            img.alt = 'Изображение к вопросу';
+            img.className = 'question-image';
+
+            imgWrap.appendChild(img);
+            // Вставляем картинку ПЕРЕД текстом, чтобы сверху был рисунок, ниже — текст и варианты
+            questionContainer.insertBefore(imgWrap, questionTextEl);
+        }
+
+        // 3) Восстанавливаем состояние ответа (если уже отвечали)
         const answerState = userAnswers[currentQuestionIndex];
         if (answerState && answerState.answered) {
-            if (answerState.correct) {
-                feedbackAreaEl.textContent = _('feedback_correct');
-                feedbackAreaEl.className = 'feedback-area correct-feedback';
-            } else {
-                feedbackAreaEl.textContent = _('feedback_incorrect');
-                feedbackAreaEl.className = 'feedback-area incorrect-feedback';
-            }
+            const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
+            feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
+
+            const textNode = document.createTextNode(feedbackText);
             const explainBtn = document.createElement('button');
             explainBtn.textContent = _('ai_explain_button');
-            explainBtn.onclick = () => showAIExplanation(question);
+            explainBtn.className = 'explain-btn';
+
+            const incorrectAnswerText = !answerState.correct
+                ? question.options[answerState.selectedOptionIndex].text
+                : null;
+            explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText);
+
+            feedbackAreaEl.innerHTML = '';
+            feedbackAreaEl.appendChild(textNode);
             feedbackAreaEl.appendChild(explainBtn);
         }
     }
 
+
+
+
+    /**
+     * Отображает СОДЕРЖИМОЕ вопроса (текст и варианты) БЕЗ картинки.
+     * @param {object} question - Объект вопроса для отображения.
+     */
+    function displayQuestionContent(question) {
+        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+
+        if (triggerWordModeEnabled) {
+            addTriggerClickListeners();
+        }
+        
+        displayQuestionOptions(question);
+    }
+
+    /**
+     * Отображает только варианты ответов для указанного вопроса.
+     * @param {object} question - Объект вопроса, чьи варианты нужно отобразить.
+     */
+    function displayQuestionOptions(question) {
+        answerOptionsEl.innerHTML = '';
+        const answerState = userAnswers[currentQuestionIndex];
+
+        question.options.forEach((option, index) => {
+            const li = document.createElement('li');
+            li.textContent = option.text;
+            li.dataset.index = index;
+
+            if (answerState && answerState.answered) {
+                li.classList.add('answered');
+                if (index === question.correctAnswerIndex) {
+                    li.classList.add('actual-correct');
+                }
+                if (index === answerState.selectedOptionIndex) {
+                    li.classList.add(answerState.correct ? 'correct' : 'incorrect');
+                }
+            } else {
+                li.addEventListener('click', handleAnswerSelect);
+            }
+            answerOptionsEl.appendChild(li);
+        });
+    }
 
     /**
      * Отображает категорию в виде специальной непереворачиваемой карточки.
@@ -10026,9 +10806,135 @@ const mainApp = (function() {
         return finalWithDelimiter.split('<<<BLOCK_DELIMITER>>>').filter(b => b.trim() !== '');
     }
 
-    // --- НАЧАЛО НОВОГО КОДА: ДВИЖОК ПАРСЕРА ---
+
+
+    // ======== НАЧАЛО НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
+    /**
+     * Специализированный парсер для многоязычных PDF-блоков формата "Вопрос No...".
+     * ФИНАЛЬНАЯ ВЕРСИЯ: Упрощенная и более надежная логика.
+     * @param {string} text - Текст для парсинга (обычно со одной страницы PDF).
+     * @returns {Array<object>} - Массив распознанных объектов вопросов в формате QST.
+     */
+    function parseTrilingualPdfBlock(text) {
+        // Внутренняя функция для парсинга блока одного языка.
+        const parseLanguageBlock = (lines) => {
+            if (!lines || lines.length < 2) return null;
+
+            const optionMarkerRegex = /^\s*\d+[\.\)]\s*/;
+
+            // 1. Находим индекс первой строки, которая является вариантом ответа.
+            const firstOptionIndex = lines.findIndex(line => optionMarkerRegex.test(line.trim()));
+            
+            // Если варианты ответов не найдены, считаем блок невалидным.
+            if (firstOptionIndex === -1) return null;
+
+            // 2. Всё до этого индекса - это строки вопроса.
+            const questionLines = lines.slice(0, firstOptionIndex)
+                .map(line => line.trim())
+                .filter(line => line); // Убираем только пустые строки
+
+            // 3. Всё начиная с этого индекса - это строки с вариантами.
+            const optionLinesRaw = lines.slice(firstOptionIndex);
+            
+            if (questionLines.length === 0 || optionLinesRaw.length === 0) return null;
+
+            // 4. Склеиваем многострочные варианты.
+            const optionLinesProcessed = [];
+            let currentOption = '';
+            for (const line of optionLinesRaw) {
+                if (optionMarkerRegex.test(line.trim())) {
+                    if (currentOption) optionLinesProcessed.push(currentOption);
+                    currentOption = line.trim();
+                } else if (currentOption) {
+                    currentOption += ' ' + line.trim();
+                }
+            }
+            if (currentOption) optionLinesProcessed.push(currentOption);
+
+            // 5. Формируем финальный объект вопроса
+            const questionText = questionLines.join(' ').trim();
+            const options = [];
+            let correctAnswer = null;
+
+            optionLinesProcessed.forEach(line => {
+                let cleanText = line.replace(optionMarkerRegex, '').trim();
+                if (cleanText.endsWith('*')) {
+                    cleanText = cleanText.slice(0, -1).trim();
+                    correctAnswer = cleanText;
+                }
+                options.push(cleanText);
+            });
+
+            if (questionText && correctAnswer) {
+                return { text: questionText, options: options, correctAnswer: correctAnswer };
+            }
+            return null;
+        };
+
+        // Основная логика (остается без изменений, она работает правильно)
+        const russianQuestions = [];
+        const kazakhQuestions = [];
+        const englishQuestions = [];
+
+        const blocks = text.split(/(?=^Вопрос (No|№) \d+)/m).filter(b => b.trim() !== '');
+
+        for (const block of blocks) {
+            const lines = block.split('\n');
+            const kazakhStartRegex = /[әіңғүұқөһ]/i;
+            const englishStartRegex = /\b(is|are|what|when|allowed|prohibited|which|driver|vehicle)\b/i;
+
+            let kazakhStartIndex = lines.findIndex(line => kazakhStartRegex.test(line));
+            if (kazakhStartIndex === -1) kazakhStartIndex = lines.length;
+
+            let englishStartIndex = lines.findIndex((line, index) => index >= kazakhStartIndex && englishStartRegex.test(line));
+            if (englishStartIndex === -1) englishStartIndex = lines.length;
+
+            const russianLines = lines.slice(0, kazakhStartIndex);
+            const kazakhLines = lines.slice(kazakhStartIndex, englishStartIndex);
+            const englishLines = lines.slice(englishStartIndex);
+
+            const rusResult = parseLanguageBlock(russianLines);
+            if (rusResult) russianQuestions.push(rusResult);
+
+            const kazResult = parseLanguageBlock(kazakhLines);
+            if (kazResult) kazakhQuestions.push(kazResult);
+
+            const engResult = parseLanguageBlock(englishLines);
+            if (engResult) englishQuestions.push(engResult);
+        }
+
+        const allQuestions = [...russianQuestions, ...kazakhQuestions, ...englishQuestions];
+        return allQuestions.map(q => ({
+            text: q.text,
+            options: q.options.map(optText => ({
+                text: optText,
+                isCorrect: optText === q.correctAnswer
+            })),
+            correctAnswerIndex: q.options.findIndex(optText => optText === q.correctAnswer)
+        }));
+    }
+    // ======== КОНЕЦ НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
+
+
 
     const PARSER_PATTERNS = [
+// ======== НАЧАЛО НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
+        {
+            id: 'trilingual_numbered_asterisk',
+            langKey: "parser_pattern_trilingual",
+            detector: (text) => /^Вопрос (No|№) \d+/m.test(text) && /^\s*\d+\.\s*/m.test(text) && /\*\s*$/m.test(text),
+            // Теперь процессор просто вызывает нашу новую универсальную функцию
+            processor: (text) => {
+                const questions = parseTrilingualPdfBlock(text);
+                // Процессор для конвертера должен возвращать другой формат, поэтому конвертируем
+                return questions.map(q => ({
+                    text: q.text,
+                    options: q.options.map(opt => opt.text),
+                    correctAnswer: q.options[q.correctAnswerIndex].text
+                }));
+            }
+        },
+// ======== КОНЕЦ НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
         {
             id: 'structured_test_format',
             langKey: "parser_pattern_structured",
@@ -10063,8 +10969,18 @@ const mainApp = (function() {
                     else if (currentQuestion) {
                         if (optionMarkerRegex.test(trimmedLine)) {
                             const optionText = trimmedLine.replace(optionMarkerRegex, '');
-                            const isCorrect = optionText.includes('+');
-                            const cleanOptionText = optionText.replace(/\+/g, '').trim();
+                            
+                            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                            let isCorrect = false;
+                            let cleanOptionText = optionText.trim(); // Сразу убираем лишние пробелы
+
+                            // Проверяем, начинается ли текст ответа со знака "+"
+                            if (cleanOptionText.startsWith('+')) {
+                                isCorrect = true;
+                                // Удаляем только ПЕРВЫЙ "+" в начале строки, а не все подряд
+                                cleanOptionText = cleanOptionText.substring(1).trim();
+                            }
+                            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
                             currentQuestion.options.push(cleanOptionText);
                             if (isCorrect) {
@@ -10088,6 +11004,8 @@ const mainApp = (function() {
             processor: (text) => {
                 const questions = [];
                 const blocks = smartSplitIntoBlocks(text);
+                // Регулярное выражение для поиска и удаления маркеров типа A), B), c. и т.д.
+                const markerRegex = /^\s*[a-zA-Zа-яА-Я][\.\)]\s*/;
 
                 for (const block of blocks) {
                     const lines = block.trim().split('\n');
@@ -10117,13 +11035,23 @@ const mainApp = (function() {
 
                     rawOptionLines.forEach(line => {
                         const trimmedLine = line.trim();
+                        let answer = trimmedLine;
+                        let isCorrect = false;
+
+                        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                         if (trimmedLine.endsWith('+')) {
-                            const answer = trimmedLine.slice(0, -1).trim();
-                            correctAnswer = answer;
-                            optionLines.push(answer);
-                        } else {
-                            optionLines.push(trimmedLine);
+                            answer = trimmedLine.slice(0, -1).trim(); // Удаляем "+" в конце
+                            isCorrect = true;
                         }
+
+                        // Удаляем буквенный маркер, если он есть
+                        answer = answer.replace(markerRegex, '').trim();
+                        
+                        optionLines.push(answer);
+                        if (isCorrect) {
+                            correctAnswer = answer;
+                        }
+                        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     });
 
                     if (questionText && correctAnswer) {
@@ -10230,19 +11158,28 @@ const mainApp = (function() {
 
                     lines.forEach(line => {
                         const trimmedLine = line.trim();
+                        
+                        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
                         if (trimmedLine.startsWith('+')) {
+                            // Удаляем "+" и добавляем в варианты
                             correctAnswer = trimmedLine.substring(1).trim();
                             optionLines.push(correctAnswer);
-                        } else if (/^[a-zA-Zа-яА-Я0-9]/.test(trimmedLine) && correctAnswer !== null) {
+                        } else if (trimmedLine.startsWith('-')) {
+                             // Удаляем "-" и добавляем в варианты
+                            optionLines.push(trimmedLine.substring(1).trim());
+                        } else if (correctAnswer !== null) {
+                            // Если это строка после того, как мы нашли правильный ответ,
+                            // считаем ее тоже вариантом (без маркера)
                             optionLines.push(trimmedLine);
                         } else {
+                            // Иначе это часть вопроса
                             questionLines.push(trimmedLine);
                         }
                     });
 
                     if (questionLines.length > 0 && correctAnswer) {
                         questions.push({
-                            text: questionLines.join(' '),
+                            text: questionLines.join(' ').replace(/^\s*\d+\s*\.?\s*/, '').trim(),
                             options: optionLines,
                             correctAnswer: correctAnswer
                         });
@@ -10411,18 +11348,51 @@ const mainApp = (function() {
 
 
 
-    function handleParserFileInput(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+    async function handleParserFileInput(event) {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            parserInput.value = e.target.result;
+        showGlobalLoader('Обработка файлов...');
+
+        let combinedText = '';
+
+        for (const file of files) {
+            if (file.name.toLowerCase().endsWith('.pdf')) {
+                try {
+                    const pdfText = await extractTextFromPdf(file);
+                    const formattedPdfText = preformatPddText(pdfText);
+                    combinedText += formattedPdfText + '\n\n';
+                } catch (error) {
+                    console.error(`Ошибка извлечения текста из PDF ${file.name}:`, error);
+                    alert(`Не удалось обработать PDF-файл: ${file.name}`);
+                }
+            } else {
+                try {
+                    const text = await readFileAsText(file);
+                    combinedText += text + '\n\n';
+                } catch (error) {
+                    console.error(`Ошибка чтения файла ${file.name}:`, error);
+                }
+            }
+        }
+        
+        hideGlobalLoader();
+
+        if (combinedText.trim()) {
+            parserInput.value = combinedText;
             checkAICharacterLimit();
-        };
-        reader.readAsText(file, 'UTF-8');
+        } else {
+            alert('Не удалось извлечь текст из выбранных файлов.');
+        }
     }
 
+
+    function preformatPddText(rawText) {
+        // Теперь нам нужна только базовая очистка!
+        const lines = rawText.split('\n');
+        const cleanedLines = lines.map(line => line.trim()).filter(line => line.length > 0);
+        return cleanedLines.join('\n');
+    }
 
 
     /**
@@ -11695,56 +12665,124 @@ const mainApp = (function() {
 
 
 
+    function displayQuestionAsTest(question) {
+      // UI
+      feedbackAreaEl.className = 'feedback-area';
+      getEl('score').style.visibility = 'visible';
+      copyQuestionBtnQuiz?.classList.remove('hidden');
+      getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+      translateQuestionBtn?.classList.remove('hidden');
+      webSearchDropdown?.classList.remove('hidden');
 
-    /**
-     * МГНОВЕННО отображает текст вопроса и вариантов без анимации.
-     * ВЕРСИЯ 2.0: Всегда отображает подсветку триггеров,
-     * но делает слова кликабельными только при активном режиме.
-     * @param {object} question - Объект вопроса для отображения.
-     */
-    function displayQuestionContent(question) {
-        // 1. Очищаем старое содержимое, как и раньше.
-        questionTextEl.innerHTML = '';
-        answerOptionsEl.innerHTML = '';
+      // Номер вопроса
+      const questionNumber = questionsForCurrentQuiz
+        .slice(0, currentQuestionIndex + 1)
+        .filter(q => q.type !== 'category').length;
+      currentQuestionNumEl.textContent = questionNumber;
 
-        // 2. ВСЕГДА используем функцию, которая создает HTML с подсветкой.
-        // Это гарантирует, что если у вопроса есть отмеченные слова, они будут красными.
+      // Контейнеры
+      const questionContainer = questionTextEl?.parentElement;
+
+      // Удаляем картинку от прошлого вопроса (если была)
+      if (questionContainer) {
+        const prevImgWrap = questionContainer.querySelector('.question-image-wrapper');
+        if (prevImgWrap) prevImgWrap.remove();
+      }
+
+      // Чистим текст
+      questionTextEl.innerHTML = '';
+
+      // 1) Рендерим текст + варианты (перевод учитываем)
+      if (isTranslateModeEnabled) {
+        displayTranslatedQuestion(question);
+      } else {
         questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+        if (triggerWordModeEnabled) addTriggerClickListeners();
+        displayQuestionOptions(question);
+      }
 
-        // 3. А вот КЛИКАБЕЛЬНОСТЬ добавляем, только если режим триггеров активен.
-        // Это разделяет визуальное отображение и интерактивность.
-        if (triggerWordModeEnabled) {
-            addTriggerClickListeners();
-        }
+      // 2) Если есть картинка — вставляем её ВЫШЕ текста
+      if (question.image && questionContainer) {
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'question-image-wrapper';
 
-        // 4. Код для отображения вариантов ответов остаётся без изменений.
-        if (question.options) {
-            question.options.forEach((option, i) => {
-                const li = document.createElement('li');
-                li.dataset.index = i;
-                li.textContent = option.text;
-                answerOptionsEl.appendChild(li);
-                
-                const answerState = userAnswers[currentQuestionIndex];
-                if (answerState && answerState.answered) {
-                    li.classList.add('answered');
-                    if (i === answerState.selectedOptionIndex) {
-                        li.classList.add(answerState.correct ? 'correct' : 'incorrect');
-                    }
-                    if (!answerState.correct && i === question.correctAnswerIndex) {
-                        li.classList.add('actual-correct');
-                    }
-                } else {
-                    li.addEventListener('click', handleAnswerSelect);
-                }
-            });
-        }
+        const img = document.createElement('img');
+        img.src = question.image;
+        img.alt = 'Изображение к вопросу';
+        img.className = 'question-image';
+
+        imgWrap.appendChild(img);
+        questionContainer.insertBefore(imgWrap, questionTextEl);
+      }
+
+      // 3) Восстановление состояния ответа
+      const answerState = userAnswers[currentQuestionIndex];
+      if (answerState && answerState.answered) {
+        const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
+        feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
+
+        const textNode = document.createTextNode(feedbackText);
+        const explainBtn = document.createElement('button');
+        explainBtn.textContent = _('ai_explain_button');
+        explainBtn.className = 'explain-btn';
+        const incorrectAnswerText = !answerState.correct ? question.options[answerState.selectedOptionIndex].text : null;
+        explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText);
+
+        feedbackAreaEl.innerHTML = '';
+        feedbackAreaEl.appendChild(textNode);
+        feedbackAreaEl.appendChild(explainBtn);
+      }
     }
 
 
 
+    /**
+     * Отображает СОДЕРЖИМОЕ вопроса (текст и варианты) БЕЗ картинки.
+     * Вызывается, когда у вопроса нет связанного изображения.
+     * @param {object} question - Объект вопроса для отображения.
+     */
+    function displayQuestionContent(question) {
+        // Эта функция теперь отвечает ТОЛЬКО за отображение текста и вариантов.
+        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+
+        if (triggerWordModeEnabled) {
+            addTriggerClickListeners();
+        }
+        
+        // Вызываем новую вспомогательную функцию для отображения вариантов ответа.
+        displayQuestionOptions(question);
+    }
+    // ======== КОНЕЦ НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
 
 
+    /**
+     * Отображает только варианты ответов для указанного вопроса.
+     * Вызывается как для вопросов с картинкой, так и без.
+     * @param {object} question - Объект вопроса, чьи варианты нужно отобразить.
+     */
+    function displayQuestionOptions(question) {
+        answerOptionsEl.innerHTML = '';
+        const answerState = userAnswers[currentQuestionIndex];
+
+        question.options.forEach((option, index) => {
+            const li = document.createElement('li');
+            li.textContent = option.text;
+            li.dataset.index = index;
+
+            if (answerState && answerState.answered) {
+                li.classList.add('answered');
+                if (index === question.correctAnswerIndex) {
+                    li.classList.add('actual-correct');
+                }
+                if (index === answerState.selectedOptionIndex) {
+                    li.classList.add(answerState.correct ? 'correct' : 'incorrect');
+                }
+            } else {
+                li.addEventListener('click', handleAnswerSelect);
+            }
+            answerOptionsEl.appendChild(li);
+        });
+    }
 
     // === НАЧАЛО НОВОГО КОДА ===
     function updateDownloadButtonsText() {

@@ -105,8 +105,8 @@
                     <button id="searchButton" data-lang-key="find_button">Найти</button>
                 </div>
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
-                <label for="fileInput" data-lang-key="choose_file">Выберите .qst либо .txt файл с устройства:</label>
-                <input type="file" id="fileInput">
+                <label for="fileInput" data-lang-key="choose_file">Выберите .qst|.txt|.pdf файл с устройства:</label>
+                <input type="file" id="fileInput" accept=".qst,.txt,.pdf" multiple>
                 <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
                 <button id="gradusButton">
                     <span data-lang-key="gradus_button_main">GRADUS</span>
@@ -182,16 +182,33 @@
                         <input type="number" id="questionRangeEnd" min="1" class="range-input">
                     </div>
                 </div>
+
+
+
+
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleNQuestions">
                     <label for="shuffleNQuestions" data-lang-key="shuffle_n_questions">Случайный набор из</label>
                     <input type="number" id="shuffleNQuestionsCount" min="1" value="50" class="range-input" style="width: 70px;">
                     <label for="shuffleNQuestionsCount" data-lang-key="questions_label_for_range">вопросов</label>
                 </div>
+
+                <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                <div class="settings-group hidden" id="languageFilterGroup">
+                    <label for="languageFilter" data-lang-key="language_filter_label">Язык вопросов:</label>
+                    <select id="languageFilter" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
+                        <!-- Опции будут добавлены через JS -->
+                    </select>
+                </div>
+                <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
+
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleQuestions">
                     <label for="shuffleQuestions" data-lang-key="shuffle_questions">Перемешать вопросы</label>
                 </div>
+
+
+
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleAnswers">
                     <label for="shuffleAnswers" data-lang-key="shuffle_answers">Перемешать ответы</label>
@@ -284,7 +301,7 @@
                                 <label for="parserFileInput" data-lang-key="parser_upload_or_paste">Загрузите файл (.txt) или вставьте текст ниже:</label>
                                 <button id="clearParserInputBtn" class="btn-secondary-small" data-lang-key="clear_parser_input">Очистить поле</button>
                             </div>
-                            <input type="file" id="parserFileInput" accept=".txt">
+                            <input type="file" id="parserFileInput" accept=".txt,.pdf" multiple>
                             <textarea id="parserInput" rows="10" placeholder="Или вставьте сюда текст из вашего документа..." data-lang-key="parser_input_placeholder"></textarea>
                         </div>
                         <div class="settings-group">
@@ -529,7 +546,11 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
+    </script>     
+      
     <script src="script.js" defer></script>   
     
     <div id="exitToast" class="exit-toast hidden" data-lang-key="exit_toast_text">
