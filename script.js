@@ -1157,7 +1157,7 @@ const ChatModule = (function() {
                                     </div>
                                 </div>
                             </div>
-                            <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt">
+                            <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt,.pdf">
                             <div class="input-wrapper">
                                 <textarea id="chatInput" placeholder="${_chat('chat_input_placeholder')}"></textarea>
                                 <button id="sendBtn" class="advanced-send-btn">➤</button>
@@ -2398,31 +2398,40 @@ const ChatModule = (function() {
                 <div class="reply-text">${escapeHTML(message.replyTo.textSnippet || '')}</div>
             `;
             replyContainer.appendChild(replyEl);
-        }
-        
+        }      
         // 5. Заполняем основное содержимое в зависимости от типа сообщения
         const contentContainer = messageEl.querySelector('.message-main-content');
         switch (message.type) {
-            case 'file_share':
+            case 'file_share': {
                 messageEl.classList.add('file-share-bubble');
-                const qCount = message.fileInfo.questions;
-                const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
+                const fileInfo = message.fileInfo;
+                const isPdf = fileInfo.type === 'pdf' || fileInfo.name.toLowerCase().endsWith('.pdf');
+                
+                let fileDetailsHTML = '';
+                if (isPdf) {
+                    fileDetailsHTML = `<div class="file-share-info">PDF документ</div>`;
+                } else {
+                    const qCount = fileInfo.questions;
+                    const qText = qCount === 1 ? _chat('file_share_question_1') : (qCount >= 2 && qCount <= 4 ? _chat('file_share_question_2_4') : _chat('file_share_question_5_more'));
+                    fileDetailsHTML = `<div class="file-share-info">${qCount} ${qText}</div>`;
+                }
+
                 const currentChannelData = channels.find(c => c.id === currentChannel);
                 const isTestingChannel = currentChannelData && currentChannelData.isForTesting;
-                
+
                 contentContainer.innerHTML = `
-                    <div class="file-share-content" data-action="show-file-actions" data-file-id="${message.fileInfo.id}" data-file-name="${escape(message.fileInfo.name)}" data-is-testing="${isTestingChannel}">
-                        <div class="file-share-icon">📄</div>
+                    <div class="file-share-content" data-action="show-file-actions" data-file-id="${fileInfo.id}" data-file-name="${escape(fileInfo.name)}" data-is-testing="${isTestingChannel}">
+                        <div class="file-share-icon">${isPdf ? '📕' : '📄'}</div>
                         <div class="file-share-details">
-                            <div class="file-share-name">${escapeHTML(message.fileInfo.name)}</div>
-                            <div class="file-share-info">${qCount} ${qText}</div>
+                            <div class="file-share-name">${escapeHTML(fileInfo.name)}</div>
+                            ${fileDetailsHTML}
                         </div>
                         <div class="file-share-arrow">→</div>
                     </div>
-                    ${isTestingChannel ? `<div class="test-results-action"><button class="results-btn" data-action="show-results" data-file-id="${message.fileInfo.id}" data-channel-id="${message.channelId}">${_chat('results_button')}</button></div>` : ''}
+                    ${isTestingChannel && !isPdf ? `<div class="test-results-action"><button class="results-btn" data-action="show-results" data-file-id="${fileInfo.id}" data-channel-id="${message.channelId}">${_chat('results_button')}</button></div>` : ''}
                 `;
                 break;
-
+            }
             case 'question_link':
                 messageEl.classList.add('question-link-bubble');
                 contentContainer.innerHTML = `
@@ -4227,11 +4236,80 @@ const ChatModule = (function() {
     }
 
 
+    // =================================================================
+    // ====      ИСПРАВЛЕННАЯ ФУНКЦИЯ v2 ДЛЯ ЗАГРУЗКИ ФАЙЛОВ         ====
+    // =================================================================
+
+    function handleChatFileUpload_v2(data, startTime) {
+      const lock = LockService.getScriptLock();
+      lock.waitLock(30000);
+
+      try {
+        const { fileName, fileType, content } = data;
+        console.log(`v2: Загрузка файла из чата: ${fileName}, тип: ${fileType}`);
+
+        if (!fileName || !content || !fileType) {
+          throw new Error('Отсутствуют обязательные параметры: fileName, fileType или content');
+        }
+
+        const chatFolder = DriveApp.getFolderById(CONFIG.CHAT_FILES_FOLDER_ID);
+        const sanitizedFileName = Utils.sanitizeFileName(fileName);
+        
+        let file;
+        
+        // ГЛАВНАЯ ЛОГИКА: Обрабатываем файл в зависимости от его типа
+        if (fileType === 'pdf') {
+          // 1. Декодируем Base64 строку в бинарные данные
+          // Мы отсекаем заголовок "data:application/pdf;base64," если он есть
+          const decodedContent = Utilities.base64Decode(content.split(',')[1] || content);
+          // 2. Создаем Blob с правильным MIME-типом
+          const blob = Utilities.newBlob(decodedContent, MimeType.PDF, sanitizedFileName);
+          // 3. Сохраняем файл в Drive как настоящий PDF
+          file = chatFolder.createFile(blob);
+        } else {
+          // Для txt и qst работаем как раньше, сохраняем как обычный текст
+          file = chatFolder.createFile(sanitizedFileName, content, MimeType.PLAIN_TEXT);
+        }
+        
+        const fileId = file.getId();
+        console.log(`Файл чата сохранен: ${sanitizedFileName}, ID: ${fileId}`);
+        
+        // Если это текстовый файл, добавляем его в поисковый индекс
+        if (fileType !== 'pdf') {
+            const cleanFilesMap = Utils.buildMapFromFolder(DriveApp.getFolderById(CONFIG.CLEAN_ARCHIVE_FOLDER_ID));
+            const wasNewFileAdded = processSingleFile(file, cleanFilesMap);
+            if (wasNewFileAdded) {
+                console.log("Обнаружен новый уникальный файл, запускается перестройка поискового индекса.");
+                ScriptApp.newTrigger('rebuildSearchIndex').timeBased().after(1000).create();
+            }
+        }
+        
+        return Utils.createJsonResponse({
+          success: true,
+          fileId: fileId,
+          fileName: sanitizedFileName,
+          processingTime: Date.now() - startTime
+        });
+
+      } catch (error) {
+        console.error('Ошибка в v2 загрузке файла из чата:', error.stack);
+        return Utils.createJsonResponse({
+          success: false,
+          error: 'Не удалось загрузить файл чата (v2): ' + error.message,
+          processingTime: Date.now() - startTime
+        });
+      } finally {
+        lock.releaseLock();
+      }
+    }
+
+
+    // НОВЫЙ УЧАСТОК КОДА
     function handleChatFileSelected(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        const allowedExtensions = ['.qst', '.txt'];
+        const allowedExtensions = ['.qst', '.txt', '.pdf'];
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
         if (!allowedExtensions.includes(fileExtension)) {
             alert(_chat('error_upload_file_type'));
@@ -4248,33 +4326,35 @@ const ChatModule = (function() {
             sendBtn.innerHTML = ''; 
 
             try {
-                // Считаем количество вопросов на клиенте для отображения
-                const questions = window.mainApp.parseQstContent(fileContent);
-                const questionCount = questions.length;
+                let questionCount = 0;
+                let fileType = 'text';
 
-                // <<-- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Отправляем файл и ждем ответа -->>
+                if (fileExtension === '.pdf') {
+                    fileType = 'pdf';
+                    // Для PDF мы не можем посчитать вопросы на клиенте, сервер сделает это при необходимости
+                    questionCount = 0; 
+                } else {
+                    // Для текстовых файлов считаем вопросы как и раньше
+                    const questions = window.mainApp.parseQstContent(fileContent);
+                    questionCount = questions.length;
+                }
+
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
-                    // Убираем mode: 'no-cors', чтобы можно было прочитать ответ
-                    headers: {
-                        'Content-Type': 'text/plain', // Отправляем как текст, чтобы избежать CORS preflight
-                    },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({
-                        action: 'chatFileUpload',
+                        action: 'chatFileUpload_v2', // Используем нашу новую функцию V2
                         fileName: file.name,
-                        content: fileContent
+                        fileType: fileType,
+                        content: fileContent // Это будет либо текст, либо Base64 DataURL
                     })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Ошибка сервера: ${response.statusText}`);
-                }
-
+                if (!response.ok) throw new Error(`Ошибка сервера: ${response.statusText}`);
                 const result = await response.json();
                 
-                if(result.success && result.fileId){
-                    // Если сервер вернул ID, отправляем сообщение в чат
-                    await sendFileMessage(file.name, result.fileId, questionCount);
+                if (result.success && result.fileId) {
+                    await sendFileMessage(file.name, result.fileId, questionCount, fileType);
                 } else {
                     throw new Error(result.error || _chat('error_fetch_file_id_failed'));
                 }
@@ -4283,19 +4363,26 @@ const ChatModule = (function() {
                 console.error('Ошибка при обработке файла чата:', error);
                 showError(_chat('error_file_process_failed') + ': ' + error.message);
             } finally {
-                // В любом случае возвращаем кнопку в исходное состояние
                 sendBtn.disabled = false;
                 sendBtn.classList.remove('loading');
                 sendBtn.innerHTML = '➤';
             }
         };
-        reader.readAsText(file, 'UTF-8');
-        event.target.value = ''; // Сбрасываем input для повторной загрузки того же файла
+
+        // В зависимости от типа файла, читаем его по-разному
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+            reader.readAsDataURL(file); // Читаем PDF как Base64
+        } else {
+            reader.readAsText(file, 'UTF-8'); // Текстовые файлы читаем как текст
+        }
+        
+        event.target.value = '';
     }
 
 
 
-    async function sendFileMessage(fileName, fileId, questionCount) {
+    // НОВЫЙ УЧАСТОК КОДА
+    async function sendFileMessage(fileName, fileId, questionCount, fileType = 'text') {
         if (!currentUser || !db) return;
 
         const message = {
@@ -4303,11 +4390,12 @@ const ChatModule = (function() {
             authorName: currentUser.displayName || currentUser.email || 'Аноним',
             channelId: currentChannel,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            type: 'file_share', // Новый тип сообщения
+            type: 'file_share',
             fileInfo: {
                 id: fileId,
                 name: fileName,
-                questions: questionCount
+                questions: questionCount,
+                type: fileType // Добавляем тип файла
             }
         };
 
@@ -4315,71 +4403,91 @@ const ChatModule = (function() {
     }
 
 
-// script.js
 
+    // НОВЫЙ УЧАСТОК КОДА (ПОЛНАЯ ЗАМЕНА)
     function showFileActionsModal(fileId, fileName, isTestingChannel = false) {
-        document.getElementById('fileActionsModalTitle').textContent = `${_chat('file_actions_modal_title')} ${decodeURIComponent(fileName)}`;
+        const decodedFileName = decodeURIComponent(fileName);
+        document.getElementById('fileActionsModalTitle').textContent = `${_chat('file_actions_modal_title')} ${decodedFileName}`;
 
         const downloadBtn = document.getElementById('fileActionDownloadBtn');
         const testBtn = document.getElementById('fileActionTestBtn');
+
+        // «Скачать» — всегда
+        downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
+        downloadBtn.style.display = '';
+        downloadBtn.textContent = _chat('file_actions_download');
+
+        // «Пройти тест» — ВСЕГДА видна (включая PDF)
+        testBtn.style.display = '';
+
         const modalButtonsContainer = testBtn.parentElement;
         const closeBtn = modalButtonsContainer.querySelector('button[onclick*="closeModal"]');
 
-        // Удаляем динамически созданную кнопку, если она осталась с прошлого раза
+        // Сносим старую практику, если висит
         const oldPracticeBtn = document.getElementById('fileActionPracticeTestBtn');
-        if (oldPracticeBtn) {
-            oldPracticeBtn.remove();
-        }
-
-        // Сбрасываем порядок кнопок по умолчанию (на случай если он был изменен)
-        modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
-        modalButtonsContainer.insertBefore(testBtn, closeBtn);
-
+        if (oldPracticeBtn) oldPracticeBtn.remove();
 
         if (isTestingChannel) {
-            // --- НОВАЯ ЛОГИКА ДЛЯ КАНАЛОВ ТЕСТИРОВАНИЯ ---
-            
-            // 1. Создаем кнопку "Пробный тест"
             const practiceTestBtn = document.createElement('button');
             practiceTestBtn.id = 'fileActionPracticeTestBtn';
             practiceTestBtn.textContent = _chat('practice_test_button');
             practiceTestBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
 
-            // 2. Настраиваем кнопку "Пройти тест" (основная)
-            testBtn.textContent = _chat('official_test_button'); // Используем новый ключ без скобок
+            testBtn.textContent = _chat('official_test_button');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: false });
 
-            // 3. Устанавливаем ПРАВИЛЬНЫЙ ПОРЯДОК:
-            // Вставляем "Пройти тест" перед кнопкой "Отмена"
-            modalButtonsContainer.insertBefore(testBtn, closeBtn); 
-            // Вставляем "Пробный тест" после "Пройти тест"
+            modalButtonsContainer.insertBefore(testBtn, closeBtn);
             modalButtonsContainer.insertBefore(practiceTestBtn, closeBtn);
-            // Вставляем "Скачать" после "Пробного теста"
             modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
-
         } else {
-            // --- ЛОГИКА ДЛЯ ОБЫЧНЫХ КАНАЛОВ ---
-            // ИЗМЕНЕНИЕ: Используем более общий ключ 'file_actions_test' вместо 'practice_test_button'
-            testBtn.textContent = _chat('file_actions_test'); 
+            testBtn.textContent = _chat('file_actions_test');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
+
+            modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
+            modalButtonsContainer.insertBefore(testBtn, closeBtn);
         }
-        
-        downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
-        
+
         showModal('fileActionsModal');
     }
 
 
 
+
+
+
     async function downloadSharedFile(fileId, fileName) {
+        const decodedFileName = decodeURIComponent(fileName);
+        const isPdf = decodedFileName.toLowerCase().endsWith('.pdf');
+
         try {
             closeModal('fileActionsModal');
-            const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            let url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            if (isPdf) {
+                url += '&asBase64=true'; // Запрашиваем PDF в специальном формате
+            }
+
             const response = await fetch(url);
             const data = await response.json();
             if (!data.success) throw new Error(data.error);
 
-            await window.mainApp.downloadOrShareFile(fileName, data.content, 'text/plain;charset=utf-8', _chat('share_title_generic_file'));
+            if (isPdf) {
+                // Для PDF, преобразуем Base64 обратно в файл
+                const fetchRes = await fetch(data.content);
+                const blob = await fetchRes.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = decodedFileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(objectUrl);
+
+            } else {
+                // Для текстовых файлов используем старую логику
+                await window.mainApp.downloadOrShareFile(decodedFileName, data.content, 'text/plain;charset=utf-8', _chat('share_title_generic_file'));
+            }
         } catch (error) {
             console.error('Ошибка скачивания файла из чата:', error);
             alert(_chat('chat_file_download_failed').replace('{error}', error.message));
@@ -4388,35 +4496,91 @@ const ChatModule = (function() {
 
 
 
+    // НОВЫЙ УЧАСТОК КОДА (ПОЛНАЯ ЗАМЕНА)
     async function startTestFromShare(fileId, fileName, options = { isPractice: true }) {
-         try {
+        const decodedFileName = decodeURIComponent(fileName);
+        const isPdf = decodedFileName.toLowerCase().endsWith('.pdf');
+        const logTag = `[TEST][fromChat] ${decodedFileName}`;
+
+        console.groupCollapsed(`${logTag} — startTestFromShare`);
+        try {
             closeModal('fileActionsModal');
             ChatModule.closeChatModal();
 
-            window.mainApp.showGlobalLoader(`${_chat('global_loader_loading_test')} "${decodeURIComponent(fileName)}"...`);
+            window.mainApp.showGlobalLoader(`${_chat('global_loader_loading_test')} "${decodedFileName}"...`);
 
-            const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            // 1) Тянем содержимое
+            let url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
+            if (isPdf) url += '&asBase64=true'; // сервер вернёт Base64/DataURL
+            console.time(`${logTag} fetch`);
             const response = await fetch(url);
             const data = await response.json();
-            if (!data.success) throw new Error(data.error);
-            
-            // --- НОВЫЙ КОД ---
-            // Сохраняем контекст для записи результатов
-            const quizContext = {
-                fileId: fileId,
-                channelId: currentChannel,
-                isPractice: options.isPractice
-            };
-            // Передаем контекст и режим в следующую функцию
-            window.mainApp.processFile(decodeURIComponent(fileName), data.content, quizContext);
-            // --- КОНЕЦ НОВОГО КОДА ---
+            console.timeEnd(`${logTag} fetch`);
+
+            if (!data.success) throw new Error(data.error || 'Server responded with success=false');
+
+            // 2) Ветвление по типу файла
+            if (!isPdf) {
+                console.log(`${logTag} → текстовый файл: передаём в processFile`);
+                const quizContext = {
+                    fileId,
+                    channelId: currentChannel,
+                    isPractice: options?.isPractice === false ? false : true
+                };
+                window.mainApp.processFile(decodedFileName, data.content, quizContext);
+                console.groupEnd();
+                return;
+            }
+
+            // 3) PDF: Base64/DataURL → Blob → File → processPdfWithImages
+            console.log(`${logTag} → PDF: начинаю конвертацию Base64 → Blob → File`);
+            const content = data.content;
+
+            console.time(`${logTag} toBlob`);
+            let pdfBlob;
+            if (typeof content === 'string' && content.startsWith('data:')) {
+                // DataURL — самый быстрый путь через fetch(dataURL)
+                const fetched = await fetch(content);
+                pdfBlob = await fetched.blob();
+            } else if (typeof content === 'string') {
+                // «Чистая» Base64
+                const base64 = content.replace(/^data:.*;base64,/, '');
+                const byteChars = atob(base64);
+                const byteNumbers = new Array(byteChars.length);
+                for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+                const byteArray = new Uint8Array(byteNumbers);
+                pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+            } else {
+                throw new Error('Неверный формат data.content для PDF');
+            }
+            console.timeEnd(`${logTag} toBlob`);
+            console.log(`${logTag} Blob size:`, pdfBlob.size, 'bytes');
+
+            const pdfFileObject = new File([pdfBlob], decodedFileName, { type: 'application/pdf' });
+
+            // 4) Готово — вызываем правильный обработчик
+            const pdfProcessor = window.mainApp && window.mainApp.processPdfWithImages;
+            if (typeof pdfProcessor !== 'function') {
+                console.error(`${logTag} processPdfWithImages не экспортирован из mainApp`);
+                alert('Обработчик PDF недоступен. Проверь экспорт processPdfWithImages в mainApp.');
+                throw new Error('processPdfWithImages is not a function');
+            }
+
+            console.time(`${logTag} processPdfWithImages`);
+            await pdfProcessor(pdfFileObject);
+            console.timeEnd(`${logTag} processPdfWithImages`);
+            console.log(`${logTag} ✔ обработка PDF завершена`);
 
         } catch (error) {
             console.error('Ошибка запуска теста из чата:', error);
-            window.mainApp.hideGlobalLoader();
             alert(_chat('error_start_test_failed').replace('{error}', error.message));
+        } finally {
+            // На всякий случай скрываем лоадер (processFile тоже прячет его сам, но лишним не будет)
+            window.mainApp.hideGlobalLoader?.();
+            console.groupEnd();
         }
     }
+
 
 
 
@@ -5048,7 +5212,7 @@ const ChatModule = (function() {
     async function saveMessageForSync(message) {
         try {
             // Сохраняем сообщение в IndexedDB через наш менеджер
-            await DBManager.saveKey(message, 'offlineMessages'); // DBManager сам сгенерирует ключ
+            await DBManager.save(message, 'offlineMessages'); // DBManager сам сгенерирует ключ
 
             // Регистрируем событие синхронизации
             if ('serviceWorker' in navigator && 'SyncManager' in window) {
@@ -5193,23 +5357,20 @@ window.ChatModule = ChatModule;
 
 
 
-
-// === НАЧАЛО НОВОГО МОДУЛЯ DBManager ===
+// === НАЧАЛО ЗАМЕНЫ: ОБНОВЛЕННЫЙ МОДУЛЬ DBManager ===
 const DBManager = (function() {
     'use strict';
 
     const DB_NAME = 'QSTiUM_AppDB';
-    const STORE_NAME = 'AppSettings';
+    // Увеличиваем версию, чтобы вызвать onupgradeneeded и создать новые "таблицы"
+    const DB_VERSION = 2; 
     let db = null;
 
-    // 1. Инициализация базы данных
     async function init() {
         return new Promise((resolve, reject) => {
-            if (db) {
-                return resolve(db);
-            }
+            if (db) return resolve(db);
 
-            const request = indexedDB.open(DB_NAME, 1);
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
 
             request.onerror = (event) => {
                 console.error("Ошибка при открытии IndexedDB:", event.target.error);
@@ -5222,63 +5383,88 @@ const DBManager = (function() {
                 resolve(db);
             };
 
-            // Этот обработчик срабатывает, если БД создается впервые или ее версия меняется
             request.onupgradeneeded = (event) => {
                 const dbInstance = event.target.result;
-                // Создаем "таблицу" (хранилище объектов) для наших настроек
-                if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-                    dbInstance.createObjectStore(STORE_NAME, { keyPath: 'key' });
-                    console.log(`Хранилище "${STORE_NAME}" создано.`);
+                console.log(`Обновление IndexedDB до версии ${DB_VERSION}...`);
+
+                // Хранилище для настроек (ключ-значение)
+                if (!dbInstance.objectStoreNames.contains('AppSettings')) {
+                    dbInstance.createObjectStore('AppSettings', { keyPath: 'key' });
+                    console.log(`Хранилище "AppSettings" создано.`);
+                }
+                // Хранилище для сохраненных сессий (ключ - имя файла)
+                if (!dbInstance.objectStoreNames.contains('SavedSessions')) {
+                    dbInstance.createObjectStore('SavedSessions', { keyPath: 'originalFileNameForReview' });
+                     console.log(`Хранилище "SavedSessions" создано.`);
+                }
+                // Хранилище для офлайн-сообщений чата (ключ генерируется автоматически)
+                if (!dbInstance.objectStoreNames.contains('offlineMessages')) {
+                    dbInstance.createObjectStore('offlineMessages', { autoIncrement: true });
+                    console.log(`Хранилище "offlineMessages" создано.`);
                 }
             };
         });
     }
 
-    // 2. Сохранение ключа
-    async function saveKey(keyName, keyValue) {
+    // Сохраняет/обновляет запись. value - это сам объект.
+    async function saveData(value, storeName) {
         if (!db) await init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.put({ key: keyName, value: keyValue });
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.put(value);
 
             request.onsuccess = () => resolve(true);
             request.onerror = (event) => {
-                console.error("Ошибка сохранения ключа в IndexedDB:", event.target.error);
+                console.error(`Ошибка сохранения в "${storeName}":`, event.target.error);
                 reject(event.target.error);
             };
         });
     }
 
-    // 3. Получение ключа
-    async function getKey(keyName) {
+    // Получает запись по ключу
+    async function getData(key, storeName) {
         if (!db) await init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.get(keyName);
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.get(key);
 
-            request.onsuccess = (event) => {
-                resolve(event.target.result ? event.target.result.value : null);
-            };
+            request.onsuccess = (event) => resolve(event.target.result || null);
             request.onerror = (event) => {
-                console.error("Ошибка получения ключа из IndexedDB:", event.target.error);
+                console.error(`Ошибка получения данных из "${storeName}":`, event.target.error);
                 reject(event.target.error);
             };
         });
     }
 
-    // 4. Удаление ключа
-    async function deleteKey(keyName) {
+    // Получает ВСЕ записи из хранилища
+    async function getAllData(storeName) {
         if (!db) await init();
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.delete(keyName);
+            const transaction = db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = (event) => resolve(event.target.result || []);
+            request.onerror = (event) => {
+                console.error(`Ошибка получения всех данных из "${storeName}":`, event.target.error);
+                reject(event.target.error);
+            };
+        });
+    }
+
+    // Удаляет запись по ключу
+    async function deleteData(key, storeName) {
+        if (!db) await init();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.delete(key);
 
             request.onsuccess = () => resolve(true);
             request.onerror = (event) => {
-                console.error("Ошибка удаления ключа из IndexedDB:", event.target.error);
+                console.error(`Ошибка удаления из "${storeName}":`, event.target.error);
                 reject(event.target.error);
             };
         });
@@ -5286,12 +5472,14 @@ const DBManager = (function() {
 
     return {
         init,
-        saveKey,
-        getKey,
-        deleteKey
+        save: saveData,
+        get: getData,
+        getAll: getAllData,
+        delete: deleteData
     };
 })();
-// === КОНЕЦ НОВОГО МОДУЛЯ DBManager ===
+// === КОНЕЦ ЗАМЕНЫ: ОБНОВЛЕННЫЙ МОДУЛЬ DBManager ===
+
 
 
 
@@ -6457,6 +6645,7 @@ const mainApp = (function() {
     let currentFileCacheKey = null; // Уникальный ключ для файла в localStorage
     const AI_INPUT_CHAR_LIMIT = 14000; // Безопасный лимит символов для ИИ
     let currentTranslateEngine = 'google'; // 'google' или 'ai'
+    let isPdfSession = false;
 
 
     
@@ -6740,14 +6929,12 @@ const mainApp = (function() {
         
         setupEventListeners();
 
-        DBManager.init().then(() => {
-            DBManager.getKey('activatedSearchKey').then(activatedKey => {
-                if (activatedKey) {
-                    revalidateSearchKey(activatedKey);
-                } else {
-                    searchActivationContainer.classList.remove('hidden');
-                }
-            });
+        DBManager.get('activatedSearchKey', 'AppSettings').then(result => {
+            if (result && result.value) {
+                revalidateSearchKey(result.value);
+            } else {
+                searchActivationContainer.classList.remove('hidden');
+            }
         });
 
         loadTheme();
@@ -8158,10 +8345,20 @@ const mainApp = (function() {
         await downloadOrShareFile(fileName, generatedCheatSheetContent, 'text/plain;charset=utf-8', _('share_title_cheatsheet'));
     }
 
+
+    // НОВЫЙ УЧАСТОК КОДА
     function saveRecentFile(fileName, fileContent) {
         let recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
         recentFiles = recentFiles.filter(f => f.name !== fileName);
-        recentFiles.unshift({ name: fileName, content: fileContent });
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем тип файла ---
+        const isPdf = fileName.toLowerCase().endsWith('.pdf');
+        // Для PDF сохраняем только имя, а контент делаем пустым, чтобы не забивать localStorage
+        const contentToStore = isPdf ? '' : fileContent; 
+        
+        recentFiles.unshift({ name: fileName, content: contentToStore });
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         if (recentFiles.length > MAX_RECENT_FILES) {
             recentFiles.pop();
         }
@@ -8172,8 +8369,11 @@ const mainApp = (function() {
             localStorage.removeItem(RECENT_FILES_STORAGE_KEY);
         }
         loadRecentFiles();
+
+        // Загрузка на сервер в любом случае происходит с полным контентом
         ChatModule.uploadFileToServer(fileName, fileContent, googleAppScriptUrl); 
     }
+
 
     function loadRecentFiles() {
         const recentFilesData = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
@@ -8183,15 +8383,27 @@ const mainApp = (function() {
             recentFilesData.forEach(fileData => {
                 const li = document.createElement('li');
                 li.textContent = fileData.name;
-                li.title = _('tooltip_load_file').replace('{name}', fileData.name);
-                li.addEventListener('click', () => {
-                    fileInput.value = ''; // Сбрасываем инпут
-                    processFile(fileData.name, fileData.content);
-                });
+                
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ: Проверяем тип файла ---
+                if (fileData.name.toLowerCase().endsWith('.pdf')) {
+                    li.title = 'PDF-файлы нельзя открыть из истории. Пожалуйста, выберите файл заново.';
+                    li.style.opacity = '0.6';
+                    li.style.cursor = 'not-allowed';
+                } else {
+                    li.title = _('tooltip_load_file').replace('{name}', fileData.name);
+                    li.addEventListener('click', () => {
+                        if (!fileData.content) {
+                            alert('Содержимое этого файла не было сохранено. Пожалуйста, выберите его заново.');
+                            return;
+                        }
+                        fileInput.value = ''; // Сбрасываем инпут
+                        processFile(fileData.name, fileData.content);
+                    });
+                }
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                
                 recentFilesListEl.appendChild(li);
             });
-
-
         } else {
             recentFilesArea.classList.add('hidden');
         }
@@ -8823,6 +9035,7 @@ const mainApp = (function() {
      * @param {File} file - PDF-файл для обработки.
      */
     async function processPdfWithImages(file) {
+        isPdfSession = true;
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         
@@ -8924,6 +9137,7 @@ const mainApp = (function() {
      * @param {object|null} quizContext - Дополнительный контекст, передаваемый из чата (для официальных тестов).
      */
     async function processFile(fileName, fileContent, quizContext = null) {
+        isPdfSession = false;
         originalFileNameForReview = fileName;
         
         // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Генерация уникального ключа кэша ---
@@ -9553,10 +9767,6 @@ const mainApp = (function() {
 
 
 
-
-
-
-
     async function displayFlashcard(question) {
         // Устанавливаем правильную видимость кнопок в шапке
         webSearchDropdown?.classList.add('hidden');
@@ -9589,42 +9799,32 @@ const mainApp = (function() {
         `;
         answerOptionsEl.innerHTML = cardHTML;
 
-        // === НАЧАЛО НОВОГО КОДА: ЛОГИКА ИЗМЕНЕНИЯ РАЗМЕРА ===
-        // Получаем ссылки на элементы для анимации и изменения размера
         const cardElement = getEl('currentFlashcard');
         const frontFace = getEl('flashcardFront');
         const backFace = getEl('flashcardBack');
         const frontFaceTextContainer = getEl('flashcardFrontText');
         const backFaceTextContainer = getEl('flashcardBackText');
         
-        // Вспомогательная функция для изменения высоты
         const resizeCard = () => {
             if (!cardElement || !frontFace || !backFace) return;
-            // requestAnimationFrame гарантирует, что браузер успел отрисовать контент
             requestAnimationFrame(() => {
                 const frontHeight = frontFace.scrollHeight;
                 const backHeight = backFace.scrollHeight;
                 const maxHeight = Math.max(frontHeight, backHeight);
-                // Добавляем 40px на внутренние отступы (padding)
                 cardElement.style.height = `${maxHeight + 40}px`;
             });
         };
-        // === КОНЕЦ НОВОГО КОДА ===
 
-// Привязываем событие к кнопке "Объяснить"
-        // Привязываем событие к кнопке "Объяснить"
         const explainBtn = getEl('explainFlashcardBtn');
         if (explainBtn) {
             explainBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
-                // В режиме карточек нет ответа пользователя, передаем null
-                showAIExplanation(question, null);
+                showAIExplanation(question, null, question.image);
             });
         }
         
-        // Логика перевода
         if (isTranslateModeEnabled) {
-            resizeCard(); // <-- Вызываем сразу
+            resizeCard();
             translateQuestionBtn?.classList.add('translating');
             const lang = localStorage.getItem('appLanguage') || 'ru';
             
@@ -9650,15 +9850,14 @@ const mainApp = (function() {
                     backFaceTextContainer.textContent = translatedCorrectAnswerText;
                 }
                 
-                resizeCard(); // <-- И вызываем после перевода
+                resizeCard();
             } else {
                 alert(_('error_flashcard_translation_failed'));
             }
         } else {
-            resizeCard(); // <-- И вызываем, даже если нет перевода
+            resizeCard();
         }
 
-        // Привязываем обработчик для переворота карточки
         if (cardElement) {
             cardElement.addEventListener('click', (e) => {
                 e.currentTarget.classList.toggle('is-flipped');
@@ -9668,6 +9867,9 @@ const mainApp = (function() {
             });
         }
     }
+
+
+
 
 
     /**
@@ -9917,12 +10119,10 @@ const mainApp = (function() {
         explainBtn.className = 'explain-btn';
 
         if (isCorrect) {
-            // При правильном ответе у пользователя нет неверного ответа, передаем null
-            explainBtn.onclick = () => showAIExplanation(originalQuestion, null);
+            explainBtn.onclick = () => showAIExplanation(originalQuestion, null, originalQuestion.image);
         } else {
-            // При неверном ответе передаем именно тот вариант, который выбрал пользователь
             const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
-            explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText);
+            explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText, originalQuestion.image);
         }
         
         // Очищаем старое содержимое и добавляем новые элементы
@@ -9975,7 +10175,9 @@ const mainApp = (function() {
 
 
     async function showResults() {
-        localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
+        if (originalFileNameForReview) {
+            DBManager.delete(originalFileNameForReview, 'SavedSessions');
+        }
         window.removeEventListener('beforeunload', handleBeforeUnload);
         if (timerInterval) clearInterval(timerInterval);
 
@@ -10171,6 +10373,7 @@ const mainApp = (function() {
         originalFileNameForReview = '';
         generatedCheatSheetContent = '';
         triggerWordsUsedInQuiz = false;
+        isPdfSession = false; 
 
         // Правильный сброс аналитики ИИ
         const aiAnalysisResult = getEl('aiAnalysisResult');
@@ -10233,10 +10436,9 @@ const mainApp = (function() {
     }
 
 
-    function saveSessionForLater() {
+    async function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
-        // 1. Создаем объект с данными НОВОЙ сессии
         const newSessionData = {
             questionOrderIndices: questionsForCurrentQuiz.map(q => q.originalIndex),
             userAnswers,
@@ -10249,54 +10451,49 @@ const mainApp = (function() {
             timestamp: new Date().getTime()
         };
 
+        if (isPdfSession) {
+            newSessionData.isPdfSession = true;
+            newSessionData.fullQuestionsData = allParsedQuestions;
+            console.log(`Сохранение PDF сессии в IndexedDB...`);
+        }
+
         try {
-            // 2. Читаем существующий массив сессий (или создаем пустой)
-            const savedSessions = JSON.parse(localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY)) || [];
-
-            // 3. Ищем, есть ли уже сохранение для этого файла
-            const existingSessionIndex = savedSessions.findIndex(
-                session => session.originalFileNameForReview === newSessionData.originalFileNameForReview
-            );
-
-            if (existingSessionIndex > -1) {
-                // Если есть - обновляем его
-                savedSessions[existingSessionIndex] = newSessionData;
-            } else {
-                // Если нет - добавляем новое в массив
-                savedSessions.push(newSessionData);
-            }
-
-            // 4. Сохраняем обновленный массив обратно в localStorage
-            localStorage.setItem(SAVED_SESSIONS_STORAGE_KEY, JSON.stringify(savedSessions));
+            // Используем DBManager вместо localStorage
+            await DBManager.save(newSessionData, 'SavedSessions');
 
             alert(_('session_saved_success'));
             resetQuizForNewFile(false);
 
         } catch (e) {
-            console.error("Ошибка сохранения сессии в localStorage:", e);
-            alert(_('error_session_save_failed'));
+            console.error("Ошибка сохранения сессии в IndexedDB:", e);
+            // Проверяем, является ли ошибка QuotaExceededError
+            if (e.name === 'QuotaExceededError') {
+                 alert(_('error_session_save_failed'));
+            } else {
+                 alert(`Произошла непредвиденная ошибка при сохранении: ${e.message}`);
+            }
         }
     }
 
+    async function loadSavedSession() {
+        // Используем DBManager вместо localStorage
+        const sessions = await DBManager.getAll('SavedSessions');
 
-    function loadSavedSession() {
-        const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
-        const sessions = savedSessionsJSON ? JSON.parse(savedSessionsJSON) : [];
-
-        savedSessionList.innerHTML = ''; // Очищаем контейнер
+        savedSessionList.innerHTML = '';
 
         if (sessions.length === 0) {
             savedSessionArea.classList.add('hidden');
             return;
         }
+        
+        // Сортируем сессии по времени, самые новые вверху
+        sessions.sort((a, b) => b.timestamp - a.timestamp);
 
         const template = getEl('savedSessionCardTemplate');
 
         sessions.forEach(sessionData => {
-            // 1. Клонируем шаблон для каждой сессии
             const cardClone = template.content.cloneNode(true);
-
-            // 2. Находим элементы внутри клона
+            
             const nameEl = cardClone.querySelector('.saved-session-name');
             const progressLabelEl = cardClone.querySelector('.progress-label');
             const timeEl = cardClone.querySelector('.saved-session-time');
@@ -10304,7 +10501,6 @@ const mainApp = (function() {
             const resumeBtn = cardClone.querySelector('.btn-resume');
             const deleteBtn = cardClone.querySelector('.btn-delete');
             
-            // 3. Заполняем данными
             const totalQuestions = sessionData.totalQuestionCount;
             const answeredQuestions = sessionData.userAnswers.filter(a => a && a.answered).length;
             const progress = totalQuestions > 0 ? (answeredQuestions / totalQuestions) * 100 : 0;
@@ -10328,13 +10524,11 @@ const mainApp = (function() {
             deleteBtn.textContent = _('delete_session_button');
             resumeBtn.dataset.filename = sessionData.originalFileNameForReview;
             deleteBtn.dataset.filename = sessionData.originalFileNameForReview;
-
-            // 4. Вставляем готовый клон в DOM
+            
             savedSessionList.appendChild(cardClone);
         });
 
         savedSessionArea.classList.remove('hidden');
-
         savedSessionList.removeEventListener('click', handleSessionCardClick);
         savedSessionList.addEventListener('click', handleSessionCardClick);
     }
@@ -10354,52 +10548,47 @@ const mainApp = (function() {
         }
     }
 
-    function restoreQuizSession(fileName) { // <-- Принимает имя файла
-        const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
-        if (!savedSessionsJSON) return;
-        
-        const sessions = JSON.parse(savedSessionsJSON);
-        const sessionData = sessions.find(s => s.originalFileNameForReview === fileName); // <-- Находим нужную сессию в массиве
+
+    async function restoreQuizSession(fileName) {
+        // Используем DBManager вместо localStorage
+        const sessionData = await DBManager.get(fileName, 'SavedSessions');
         
         if (!sessionData) {
             alert(_('error_session_not_found'));
             return;
         }
 
-        // 1. Находим исходный файл в "Недавно использованных"
-        const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
-        const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
+        if (sessionData.isPdfSession && sessionData.fullQuestionsData) {
+            console.log("Восстановление сессии из PDF-файла напрямую из данных сессии...");
+            allParsedQuestions = sessionData.fullQuestionsData;
+            isPdfSession = true;
+        } else {
+            isPdfSession = false;
+            const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
+            const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
 
-        if (!originalFile) {
-            alert(_('error_session_file_not_found'));
-            deleteSavedSession(); // Удаляем "осиротевшую" сессию
-            return;
+            if (!originalFile || !originalFile.content) {
+                alert(_('error_session_file_not_found'));
+                deleteSavedSession(fileName); 
+                return;
+            }
+            allParsedQuestions = parseQstContent(originalFile.content);
         }
 
-        // 2. Заново парсим исходный файл, чтобы получить полный список вопросов
-        allParsedQuestions = parseQstContent(originalFile.content);
-
-        // 3. Восстанавливаем ТОЧНЫЙ порядок вопросов из сохраненной "карты"
         questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => {
-            // Важно также добавить originalIndex обратно в каждый вопрос
             return { ...allParsedQuestions[originalIndex], originalIndex };
         });
 
-
         if (sessionData.quizSettings && sessionData.quizSettings.shuffleAnswers) {
-            console.log("Восстановление сессии: применяем перемешивание ответов.");
             questionsForCurrentQuiz.forEach(q => {
-                // Применяем ту же логику, что и при старте нового теста
                 if (q.type !== 'category' && q.options) {
                     const correctAnswerObject = q.options[q.correctAnswerIndex];
-                    shuffleArray(q.options); // Используем вашу же функцию перемешивания
+                    shuffleArray(q.options);
                     q.correctAnswerIndex = q.options.findIndex(opt => opt === correctAnswerObject);
                 }
             });
         }
         
-
-        // 4. Восстанавливаем остальное состояние
         userAnswers = sessionData.userAnswers;
         currentQuestionIndex = sessionData.currentQuestionIndex;
         score = sessionData.score;
@@ -10407,20 +10596,17 @@ const mainApp = (function() {
         timeLeftInSeconds = sessionData.timeLeftInSeconds;
         originalFileNameForReview = sessionData.originalFileNameForReview;
 
-        // 5. Переходим на экран теста
         fileUploadArea.classList.add('hidden');
         quizSetupArea.classList.add('hidden');
         quizArea.classList.remove('hidden');
         appTitleHeader?.classList.add('hidden');
 
-        // 6. Запускаем UI теста с восстановленными данными
         totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
         updateScoreDisplay();
         setupTimer();
         generateQuickNav();
         loadQuestion(currentQuestionIndex);
 
-        // 7. Показываем нужные кнопки
         webSearchDropdown?.classList.remove('hidden');
         finishTestButton?.classList.remove('hidden');
         continueLaterButton?.classList.remove('hidden');
@@ -10429,23 +10615,17 @@ const mainApp = (function() {
         languageToggle?.classList.add('hidden');
         quickModeToggle?.classList.remove('hidden');
         triggerWordToggle?.classList.remove('hidden');
+        updateTranslateButtonsVisibility();
 
-        // 8. Добавляем защиту от случайного закрытия вкладки
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
+
+
     
-    function deleteSavedSession(fileName) { // <-- Принимает имя файла
+    async function deleteSavedSession(fileName) {
         if (confirm(_('confirm_delete_session').replace('{fileName}', fileName))) {
-            const savedSessionsJSON = localStorage.getItem(SAVED_SESSIONS_STORAGE_KEY);
-            let sessions = savedSessionsJSON ? JSON.parse(savedSessionsJSON) : [];
-            
-            // Создаем новый массив, отфильтровав удаляемую сессию
-            const updatedSessions = sessions.filter(s => s.originalFileNameForReview !== fileName);
-            
-            // Сохраняем новый массив
-            localStorage.setItem(SAVED_SESSIONS_STORAGE_KEY, JSON.stringify(updatedSessions));
-            
-            // Перерисовываем интерфейс
+            // Используем DBManager вместо localStorage
+            await DBManager.delete(fileName, 'SavedSessions');
             loadSavedSession();
         }
     }
@@ -11938,7 +12118,7 @@ const mainApp = (function() {
 
 
  
-    async function showAIExplanation(question, userIncorrectAnswerText = null) {
+    async function showAIExplanation(question, userIncorrectAnswerText = null, imageBase64 = null) {
         currentAIQuestion = question;
         currentAIUserIncorrectAnswer = userIncorrectAnswerText;
         currentAITranslation = null;
@@ -11970,7 +12150,7 @@ const mainApp = (function() {
         });
         styleTextEl.textContent = _('ai_style_simple');
 
-        showGlobalLoader(_('ai_explanation_title')); // Используем ключ
+        showGlobalLoader(_('ai_explanation_title'));
 
         try {
             if (isTranslateModeEnabled) {
@@ -11995,7 +12175,7 @@ const mainApp = (function() {
             document.body.classList.add('chat-open');
             ChatModule.showModal('aiExplanationModal');
             
-            fetchAndDisplayExplanation('simple', userIncorrectAnswerText);
+            fetchAndDisplayExplanation('simple', userIncorrectAnswerText, imageBase64);
 
         } catch (error) {
             console.error("Ошибка при подготовке окна объяснения:", error);
@@ -12004,8 +12184,6 @@ const mainApp = (function() {
             hideGlobalLoader();
         }
     }
-
-
 
 
     function updateAIModalQuestionText() {
@@ -12078,7 +12256,7 @@ const mainApp = (function() {
 
 
 
-    async function fetchAndDisplayExplanation(style, userIncorrectAnswerText = null) { // <<<--- Добавлен второй параметр
+    async function fetchAndDisplayExplanation(style, userIncorrectAnswerText = null, imageBase64 = null) {
         if (!currentAIQuestion) return;
 
         const styleContentEl = getEl('aiExplanationStyleContent');
@@ -12090,7 +12268,6 @@ const mainApp = (function() {
         outputEl.innerHTML = `<div class="typing-loader-container"><div class="typing-loader">${_('ai_explanation_loading')}</div></div>`;
 
         try {
-            // --- НОВЫЙ ОБЪЕКТ ДЛЯ ОТПРАВКИ ---
             const payload = {
                 action: 'getExplanation',
                 question_text: currentAIQuestion.text,
@@ -12099,18 +12276,17 @@ const mainApp = (function() {
                 targetLanguage: localStorage.getItem('appLanguage') || 'ru'
             };
 
-            // Если неверный ответ был передан, добавляем его в payload
             if (userIncorrectAnswerText) {
-                // Это условие сработает, только если был передан неверный ответ пользователя.
-                // Если пользователь ответил правильно, userIncorrectAnswerText будет null,
-                // и этот ключ просто не будет добавлен в запрос.
                 payload.user_incorrect_answer_text = userIncorrectAnswerText;
             }
-            // ---------------------------------
+            
+            if (imageBase64) {
+                payload.image_base64 = imageBase64;
+            }
 
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                body: JSON.stringify(payload) // Отправляем новый объект
+                body: JSON.stringify(payload)
             });
             const result = await response.json();
 
@@ -12137,20 +12313,15 @@ const mainApp = (function() {
 
 
     function handleExplainClickInSearch(event, rawQuestionText) {
-        event.stopPropagation(); // Предотвращаем срабатывание других кликов
+        event.stopPropagation();
 
-        // Используем наш мощный парсер, чтобы превратить строку в объект
-        // parseQstContent возвращает массив, поэтому берем первый элемент
         const parsedQuestions = parseQstContent(rawQuestionText);
 
         if (parsedQuestions && parsedQuestions.length > 0) {
             const questionObject = parsedQuestions[0];
             
-            // Проверяем, что парсинг прошел успешно и у нас есть все данные
             if (questionObject && questionObject.text && questionObject.options) {
-                // В результатах поиска нет ответа пользователя, поэтому передаем null
-                showAIExplanation(questionObject, null);
-                // === КОНЕЦ ИЗМЕНЕНИЯ ===
+                showAIExplanation(questionObject, null, questionObject.image);
             } else {
                 alert(_('error_cannot_fully_process_question'));
             }
@@ -13298,7 +13469,7 @@ const mainApp = (function() {
 
             if (result.success) {
                 // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
-                await DBManager.saveKey('activatedSearchKey', code); // Сохраняем ключ в IndexedDB
+                await DBManager.save({ key: 'activatedSearchKey', value: code }, 'AppSettings'); // Сохраняем ключ в IndexedDB
                 // === КОНЕЦ ИЗМЕНЕНИЯ ===
                 searchActivationContainer.classList.add('hidden');
                 searchContainer.classList.remove('hidden');
@@ -13337,14 +13508,14 @@ const mainApp = (function() {
                 searchContainer.classList.remove('hidden');
             } else {
                 // Ключ больше не действителен!
-                await DBManager.deleteKey('activatedSearchKey');  // Стираем невалидный ключ
+                await DBManager.delete('activatedSearchKey', 'AppSettings');  // Стираем невалидный ключ
                 searchActivationContainer.classList.remove('hidden');
                 console.warn('Доступ к поиску отозван сервером.');
             }
         } catch (error) {
             // В случае ошибки сети, показываем форму активации (безопасный вариант)
             console.error("Ошибка ревалидации ключа:", error);
-            await DBManager.deleteKey('activatedSearchKey');
+            await DBManager.delete('activatedSearchKey', 'AppSettings');
             searchActivationContainer.classList.remove('hidden');
         } finally {
             searchVerificationContainer.classList.add('hidden'); // Скрываем "Проверка..."
@@ -13359,22 +13530,25 @@ const mainApp = (function() {
         copyToClipboardMain: copyToClipboardMain, 
         parseQstContent: parseQstContent, 
         processFile: processFile,         
+
+        // ⬇⬇⬇ ВАЖНО: экспортируем PDF-обработчик наружу
+        processPdfWithImages: processPdfWithImages,
+
         downloadFile: downloadFileBrowserFallback,
         downloadOrShareFile: downloadOrShareFile,
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,
         handleCopyClickInSearch: handleCopyClickInSearch,
         handleExplainClickInSearch: handleExplainClickInSearch,
-        handleTranslateClickInSearch: handleTranslateClickInSearch,
         showGlobalLoader: showGlobalLoader,
         hideGlobalLoader: hideGlobalLoader,
         manageBackButtonInterceptor: manageBackButtonInterceptor,
         setupExtensionListener: setupExtensionListener,
         animateTextTransformation: animateTextTransformation,
         testMobileDownload: () => {
-            console.log('Тестирование мобильного скачивания...');
+            console.log('Тестирование мобильного скачивания.');
             console.log('detectMobileDevice():', detectMobileDevice());
             downloadOrShareFile('test.txt', 'Тестовое содержимое файла', 'text/plain', 'Тест');
-        }        
+        }         
     };
 })();
 
