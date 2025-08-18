@@ -1510,11 +1510,11 @@ body.glass-dark .advanced-chat-overlay {
     gap: 15px;
     flex-wrap: wrap;
     /* Устанавливаем компактный отступ по умолчанию для всех экранов, включая чат */
-    margin-bottom: 20px; 
+    margin-bottom: 10px; 
 }
 
-/* НОВЫЙ БЛОК: Применяем ваш большой отступ только в режиме теста */
-body.quiz-active .header-controls {
+/* Новый код (применяется только к шапке в основном контейнере): */
+body.quiz-active .container > .header-controls {
     margin-bottom: 60px;
 }
 
