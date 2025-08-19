@@ -893,6 +893,7 @@ const ChatModule = (function() {
     let privateChats = []; // Для хранения активных личных чатов
     let allUsers = new Map(); // Хранит всех пользователей
     let onlineUsers = new Map(); // Используем Map для хранения полной информации
+    let profileListeners = new Map();
     let isInitialized = false;
     let unreadCounts = new Map();
     let replyContext = null;
@@ -3579,8 +3580,9 @@ const ChatModule = (function() {
     function cleanupPresenceSystem() {
         if (presenceListener) presenceListener();
         if (heartbeatInterval) clearInterval(heartbeatInterval);
-        if (pmUnreadListener) pmUnreadListener(); // <-- ДОБАВЛЕНО
-        if (publicUnreadListener) publicUnreadListener(); // <-- ДОБАВЛЕНО
+        if (pmUnreadListener) pmUnreadListener();
+        if (publicUnreadListener) publicUnreadListener();
+        cleanupProfileListeners();                // <-- ВАЖНО: снимаем onSnapshot на users/*
         onlineUsers.clear();
         updateOnlineUsersList();
     }
@@ -3663,6 +3665,7 @@ const ChatModule = (function() {
 
         const userData = userDoc.data();
         const partnerIds = userData?.privateChatPartners || []; 
+        subscribeToUserProfiles(partnerIds);
 
         const privateChatsPromises = partnerIds.map(async (partnerId) => {
             let partnerData = allUsers.get(partnerId);
@@ -3700,28 +3703,70 @@ const ChatModule = (function() {
     }
 
 
+    function subscribeToUserProfiles(userIds) {
+        if (!db) return;
+
+        // Отписываемся от лишних
+        for (const [id, unsub] of profileListeners.entries()) {
+            if (!userIds.includes(id)) {
+                try { unsub(); } catch(_) {}
+                profileListeners.delete(id);
+            }
+        }
+
+        // Подписываемся на нужных
+        userIds.forEach((id) => {
+            if (profileListeners.has(id)) return;
+            const unsub = db.collection('users').doc(id).onSnapshot(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                allUsers.set(id, data);              // держим кэш свежим
+                renderPrivateChatsList();            // перерисовываем список ЛС
+
+                // если открыт приватный канал с этим пользователем — обновим заголовок
+                if (currentChannelType === 'private' && currentChannel && currentChannel.includes(id)) {
+                    const el = document.getElementById('currentChannelName');
+                    if (el) el.textContent = data.username || el.textContent;
+                }
+            }, err => console.error('Ошибка слушателя профиля', id, err));
+            profileListeners.set(id, unsub);
+        });
+    }
+
+    function cleanupProfileListeners() {
+        for (const unsub of profileListeners.values()) {
+            try { unsub(); } catch(_) {}
+        }
+        profileListeners.clear();
+    }
+
+
+
 
      function renderPrivateChatsList() {
         if (!privateChatsList) return;
         privateChatsList.innerHTML = '';
         privateChats.forEach(chatPartner => {
             const channelId = `private_${[currentUser.uid, chatPartner.uid].sort().join('_')}`;
-            const chatEl = document.createElement('div');
-            
+            const chatEl = document.createElement('div');           
             chatEl.dataset.channelId = channelId; // <--- ДОБАВЛЕНО: Присваиваем ID для поиска счетчика
-
             chatEl.className = `channel-item ${channelId === currentChannel && currentChannelType === 'private' ? 'active' : ''}`;
             const isOnline = onlineUsers.has(chatPartner.uid);
-            const unreadCount = unreadCounts.get(channelId) || 0; // <--- ДОБАВЛЕНО: Получаем текущий счетчик
+            const unreadCount = unreadCounts.get(channelId) || 0;
 
-            // ИЗМЕНЕНО: Добавляем HTML-элемент для счетчика
+            // Берём актуальное имя: сначала из presence, потом из users, в конце — запасной вариант
+            const liveName =
+                (onlineUsers.get(chatPartner.uid)?.username)
+             || (allUsers.get(chatPartner.uid)?.username)
+             || chatPartner.username;
+
             chatEl.innerHTML = `
                 <span class="status-indicator ${isOnline ? 'online' : ''}" style="margin-right: 8px;"></span>
-                <span class="channel-name">${escapeHTML(chatPartner.username)}</span>
+                <span class="channel-name">${escapeHTML(liveName)}</span>
                 <span class="unread-channel-badge ${unreadCount > 0 ? '' : 'hidden'}">${unreadCount}</span>
             `;
 
-            chatEl.addEventListener('click', () => switchToChannel(channelId, chatPartner.username, 'private'));
+            chatEl.addEventListener('click', () => switchToChannel(channelId, liveName, 'private'));
             privateChatsList.appendChild(chatEl);
         });
     }
