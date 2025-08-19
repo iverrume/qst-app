@@ -4452,47 +4452,196 @@ const ChatModule = (function() {
 
 
 
+    function createDownloadStatusBubble(fileName){
+      if(!messageArea) return null;
+      const id = 'dl-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+
+      const msg = document.createElement('div');
+      msg.className = 'message mine chat-download';
+      msg.id = id;
+
+      const content = document.createElement('div');
+      content.className = 'message-content';
+
+      const title = document.createElement('div');
+      title.className = 'chat-download-title';
+      title.textContent = 'Подготовка файла к скачиванию…';
+
+      const name = document.createElement('div');
+      name.className = 'chat-download-name';
+      name.textContent = fileName;
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'download-progress';
+      const bar = document.createElement('div');
+      bar.className = 'download-progress-bar';
+      bar.style.width = '0%';
+      barWrap.appendChild(bar);
+
+      const pct = document.createElement('div');
+      pct.className = 'download-progress-text';
+      pct.style.fontSize = '.85em';
+      pct.style.opacity = '.85';
+      pct.style.marginTop = '6px';
+      pct.textContent = '0%';
+
+      content.appendChild(title);
+      content.appendChild(name);
+      content.appendChild(barWrap);
+      content.appendChild(pct);
+      msg.appendChild(content);
+
+      messageArea.appendChild(msg);
+      messageArea.scrollTop = messageArea.scrollHeight;
+      return id;
+    }
+
+
+    function setDownloadProgressBubble(id, percent, label){
+      const el = document.getElementById(id);
+      if(!el) return;
+      const bar = el.querySelector('.download-progress-bar');
+      const txt = el.querySelector('.download-progress-text');
+      if(bar){
+        const p = Math.max(0, Math.min(100, Math.round(percent || 0)));
+        bar.style.width = p + '%';
+        if (txt) txt.textContent = (label || (p + '%'));
+      }
+    }
+
+
+    function updateDownloadStatusBubble(id, state, message){
+      const el = document.getElementById(id);
+      if(!el) return;
+      const title = el.querySelector('.chat-download-title');
+      const progress = el.querySelector('.download-progress');
+      const txt = el.querySelector('.download-progress-text');
+
+      if(state === 'success'){
+        if(title) title.textContent = 'Готово! Скачивание началось.';
+        if(progress) progress.remove();
+        if(txt) txt.remove();
+        el.classList.add('success');
+        setTimeout(()=> el.remove(), 12000);
+      } else if(state === 'error'){
+        if(title) title.textContent = 'Ошибка: ' + (message || 'неизвестная');
+        if(progress) progress.remove();
+        if(txt) txt.remove();
+        el.classList.add('error');
+      }
+    }
+
+
 
 
 
     async function downloadSharedFile(fileId, fileName) {
-        const decodedFileName = decodeURIComponent(fileName);
-        const isPdf = decodedFileName.toLowerCase().endsWith('.pdf');
+      const decodedFileName = decodeURIComponent(fileName || '');
+      const isPdf = /\.pdf$/i.test(decodedFileName);
 
-        try {
-            closeModal('fileActionsModal');
-            let url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
-            if (isPdf) {
-                url += '&asBase64=true'; // Запрашиваем PDF в специальном формате
+      // Закрываем модалку выбора действия и показываем статус-бабл
+      if (typeof closeModal === 'function') closeModal('fileActionsModal');
+      const statusId = typeof createDownloadStatusBubble === 'function'
+        ? createDownloadStatusBubble(decodedFileName)
+        : null;
+
+      try {
+        if (isPdf) {
+          // 1) Стартуем подготовку на GAS
+          const prepRes = await fetch(`${googleAppScriptUrl}?action=prepareDownload&fileId=${encodeURIComponent(fileId)}`);
+          const prep = await prepRes.json();
+          if (!prep.success) throw new Error(prep.error || 'Не удалось запустить подготовку на сервере');
+
+          // Мгновенная готовность (кэш): скачиваем без пуллинга
+          if (prep.ready && prep.downloadUrl) {
+            if (statusId && typeof setDownloadProgressBubble === 'function') {
+              setDownloadProgressBubble(statusId, 100, 'Готово');
             }
-
-            const response = await fetch(url);
-            const data = await response.json();
-            if (!data.success) throw new Error(data.error);
-
-            if (isPdf) {
-                // Для PDF, преобразуем Base64 обратно в файл
-                const fetchRes = await fetch(data.content);
-                const blob = await fetchRes.blob();
-                const objectUrl = URL.createObjectURL(blob);
-                
-                const link = document.createElement('a');
-                link.href = objectUrl;
-                link.download = decodedFileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(objectUrl);
-
-            } else {
-                // Для текстовых файлов используем старую логику
-                await window.mainApp.downloadOrShareFile(decodedFileName, data.content, 'text/plain;charset=utf-8', _chat('share_title_generic_file'));
+            const a = document.createElement('a');
+            a.href = prep.downloadUrl;
+            a.download = decodedFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            if (statusId && typeof updateDownloadStatusBubble === 'function') {
+              updateDownloadStatusBubble(statusId, 'success');
             }
-        } catch (error) {
-            console.error('Ошибка скачивания файла из чата:', error);
-            alert(_chat('chat_file_download_failed').replace('{error}', error.message));
+            return;
+          }
+
+          // 2) Пуллим прогресс
+          const pollOnce = async () => {
+            const r = await fetch(`${googleAppScriptUrl}?action=getDownloadProgress&jobId=${encodeURIComponent(prep.jobId)}`);
+            const d = await r.json();
+            if (!d.success) throw new Error(d.error || 'Подготовка прервалась');
+            const pct = typeof d.progress === 'number' ? Math.max(0, Math.min(100, d.progress)) : 0;
+            const label = (d.message && d.message.trim()) ? `${pct}% — ${d.message}` : `${pct}%`;
+            if (statusId && typeof setDownloadProgressBubble === 'function') {
+              setDownloadProgressBubble(statusId, pct, label);
+            }
+            return d;
+          };
+
+          let state, tries = 0;
+          while (true) {
+            state = await pollOnce();
+            if (state.status === 'ready') break;
+            if (state.status === 'error') throw new Error(state.message || 'Ошибка подготовки');
+            if (tries++ > 600) throw new Error('Таймаут подготовки файла');
+            await new Promise(res => setTimeout(res, 800));
+          }
+
+          // 3) Скачиваем по готовой ссылке
+          if (state.downloadUrl) {
+            const a = document.createElement('a');
+            a.href = state.downloadUrl;
+            a.download = decodedFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } else {
+            // На всякий случай фолбэк (не должен срабатывать для PDF)
+            window.open(`${googleAppScriptUrl}?action=getChatFileContent&fileId=${encodeURIComponent(fileId)}&asBase64=true`, '_blank');
+          }
+
+          if (statusId && typeof updateDownloadStatusBubble === 'function') {
+            updateDownloadStatusBubble(statusId, 'success');
+          }
+
+        } else {
+          // Текстовые файлы: без очереди — сразу вытаскиваем контент и скачиваем
+          const url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${encodeURIComponent(fileId)}`;
+          const response = await fetch(url);
+          const data = await response.json();
+          if (!data.success) throw new Error(data.error || 'Не удалось получить файл');
+
+          await window.mainApp.downloadOrShareFile(
+            decodedFileName,
+            data.content,
+            'text/plain;charset=utf-8',
+            _chat('share_title_generic_file')
+          );
+
+          if (statusId && typeof setDownloadProgressBubble === 'function') {
+            setDownloadProgressBubble(statusId, 100, 'Готово');
+          }
+          if (statusId && typeof updateDownloadStatusBubble === 'function') {
+            updateDownloadStatusBubble(statusId, 'success');
+          }
         }
+      } catch (error) {
+        console.error('Ошибка скачивания файла из чата:', error);
+        if (statusId && typeof updateDownloadStatusBubble === 'function') {
+          updateDownloadStatusBubble(statusId, 'error', error.message);
+        }
+        try {
+          alert(_chat('chat_file_download_failed').replace('{error}', error.message));
+        } catch {
+          alert('Скачивание не удалось: ' + error.message);
+        }
+      }
     }
+
 
 
 
@@ -7115,15 +7264,21 @@ const mainApp = (function() {
             }
         });
         translateEngineToggle?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            translateEngineDropdown.classList.toggle('show');
+          e.stopPropagation();
+          translateEngineDropdown.classList.toggle('show');
+
+          const container = translateEngineToggle.closest('.translate-engine-container');
+          container?.classList.toggle('open', translateEngineDropdown.classList.contains('show'));
         });
+
         translateEngineDropdown?.addEventListener('click', (e) => {
             e.preventDefault();
             const target = e.target.closest('a[data-engine]');
             if (target && target.dataset.engine) {
-                setTranslateEngine(target.dataset.engine);
-                translateEngineDropdown.classList.remove('show');
+              setTranslateEngine(target.dataset.engine);
+              translateEngineDropdown.classList.remove('show');
+              const container = translateEngineToggle?.closest('.translate-engine-container');
+              container?.classList.remove('open');
             }
         });
         window.addEventListener('click', (event) => {
@@ -7134,8 +7289,11 @@ const mainApp = (function() {
                 themeDropdownContent.classList.remove('show');
             }
             if (!event.target.closest('.translate-engine-container') && translateEngineDropdown?.classList.contains('show')) {
-                translateEngineDropdown.classList.remove('show');
+              translateEngineDropdown.classList.remove('show');
+              const container = translateEngineToggle?.closest('.translate-engine-container');
+              container?.classList.remove('open');
             }
+
         });
         languageToggle?.addEventListener('click', toggleLanguage);
         chatToggleBtn?.addEventListener('click', () => {
@@ -12226,16 +12384,19 @@ const mainApp = (function() {
     }
 
 
-
-// script.js
-
     function updateAIModalQuestionText() {
         const questionEl = getEl('aiExplanationQuestion');
-        const toggleBtn = getEl('aiExplanationTranslateBtn');
+        const toggleBtn  = getEl('aiExplanationTranslateBtn');
+        const outputEl   = getEl('aiExplanationOutput');
         if (!questionEl || !toggleBtn) return;
 
-        let questionToDisplay;
+        // 1) Сохраняем текущее состояние до перерисовки
+        const wasExpanded        = questionEl.classList.contains('expanded');
+        const wasOutputCollapsed = outputEl ? outputEl.classList.contains('collapsed') : null;
+        const prevScrollTop      = questionEl.scrollTop;
 
+        // 2) Определяем, какой текст показывать
+        let questionToDisplay;
         if (isAIModalShowingTranslation && currentAITranslation) {
             questionToDisplay = currentAITranslation;
             toggleBtn.textContent = _('ai_show_original_button');
@@ -12243,18 +12404,15 @@ const mainApp = (function() {
             questionToDisplay = currentAIQuestion;
             toggleBtn.textContent = _('ai_show_translation_button');
         }
-
         if (!questionToDisplay) return;
-        
+
+        // 3) Собираем HTML (картинка + вопрос + правильный ответ)
         let imageHTML = '';
         if (currentAIQuestion && currentAIQuestion.image) {
             imageHTML = `<img src="${currentAIQuestion.image}" alt="Изображение к вопросу" class="ai-explanation-image">`;
         }
-
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-        // Обновляем HTML, оборачивая каждую часть в свой div
         questionEl.innerHTML = `
-            ${imageHTML} 
+            ${imageHTML}
             <div class="ai-q-text">
                 <strong>${_('ai_explanation_question')}:</strong> ${escapeHTML(questionToDisplay.text)}
             </div>
@@ -12262,9 +12420,27 @@ const mainApp = (function() {
                 <strong>${_('ai_explanation_correct_answer')}:</strong> ${escapeHTML(questionToDisplay.options[questionToDisplay.correctAnswerIndex].text)}
             </div>
         `;
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-        
-        setupAIQuestionCollapser(questionEl);
+
+        // 4) Пересобираем коллапсер (он может понадобиться из-за иной высоты текста)
+        setupAIQuestionCollapser(questionEl); // эта функция внутри сбрасывает классы :contentReference[oaicite:3]{index=3}
+
+        // 5) Возвращаем предыдущее состояние разворота/свёртки
+        if (wasExpanded) {
+            questionEl.classList.add('expanded');
+        }
+        if (outputEl) {
+            if (typeof wasOutputCollapsed === 'boolean') {
+                outputEl.classList.toggle('collapsed', wasOutputCollapsed);
+            } else {
+                // по умолчанию держим ответ свёрнутым, если вопрос развернут
+                outputEl.classList.toggle('collapsed', questionEl.classList.contains('expanded'));
+            }
+        }
+
+        // 6) Возвращаем прокрутку (если пользователь был внутри развёрнутого вопроса)
+        if (wasExpanded) {
+            questionEl.scrollTop = prevScrollTop;
+        }
     }
 
 

@@ -389,10 +389,10 @@ body.glass-dark .style-dropdown-content {
 #quickModeToggle.active,
 #translateQuestionBtn.active,
 #triggerWordToggle.active,
-#chatTranslateBtn.active { /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
-    background-color: var(--button-primary-bg);
-    color: var(--button-primary-text);
-    border-color: var(--button-primary-bg);
+#chatTranslateBtn.active{
+  background: var(--button-primary-bg);          /* фикс: градиент через background */
+  color: var(--button-primary-text);
+  border-color: var(--theme-toggle-border);      /* нейтральная рамка, без «лома» градиента */
 }
 
 body.dark-mode #quickModeToggle.active,
@@ -1406,23 +1406,24 @@ body.glass-dark .auth-tab.active::after {
 }
 
 .auth-btn {
-    width: 100%;
-    padding: 15px;
-    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+  width: 100%;
+  padding: 15px;
+  background: var(--button-primary-bg);        /* ✅ прямой фон */
+  color: var(--button-primary-text);
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+}
+.auth-btn:hover { 
+  background: var(--button-primary-hover-bg);  /* ✅ ховер */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,123,255,0.4);
 }
 
-.auth-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,123,255,0.4);
-}
 
 .auth-btn:active {
     transform: translateY(0);
@@ -1629,12 +1630,13 @@ body.quiz-active .container > .header-controls {
 }
 
 .tab-item.active {
-    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
-    color: white;
-    border-color: var(--button-primary-bg);
-    font-weight: 600;
-    box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--button-primary-bg);
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0,123,255,0.3);
 }
+
 
 .tab-item.active::before {
     content: '';
@@ -1903,10 +1905,10 @@ body.quiz-active .container > .header-controls {
 }
 
 .message.mine .message-content {
-    background: linear-gradient(135deg, var(--chat-bubble-mine), #0056b3);
-    color: white;
-    border-color: var(--chat-bubble-mine);
-    border-bottom-right-radius: 6px;
+  background: var(--chat-bubble-mine);
+  color: var(--button-primary-text);
+  border-color: var(--chat-bubble-mine);
+  border-bottom-right-radius: 6px;
 }
 
 .message.other .message-content {
@@ -2190,7 +2192,8 @@ body.synthwave-mode .option-vote-btn.correct {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
+    background: var(--button-primary-bg);
+
     color: white;
     border: none;
     transition: all 0.2s ease;
@@ -4680,7 +4683,8 @@ body.claude-mode .channel-item.active {
 
 body.claude-mode .message.mine .message-content {
     /* Сообщение пользователя (было синим) теперь в цветах темы */
-    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
+    background: var(--button-primary-bg);
+
     border-color: transparent;
 }
 
@@ -5309,16 +5313,22 @@ body.synthwave-mode .google-signin-btn:hover {
 /* === СТИЛИ ДЛЯ СВОРАЧИВАНИЯ ДЛИННЫХ ВОПРОСОВ В ОКНЕ ИИ === */
 /* ======================================================= */
 
-/* 1. Стили для блока вопроса, когда он свернут */
 #aiExplanationQuestion.collapsible {
-    max-height: 50px; /* Ограничиваем высоту свернутого блока */
+    /* ровно как в JS-логике */
+    max-height: 80px;
     overflow: hidden;
-    position: relative; /* Необходимо для позиционирования градиента */
-    /* --- УДАЛЕНО: padding-bottom: 25px; --- */
+    position: relative;
     transition: max-height 0.3s ease-in-out;
 }
 
-/* 2. Градиент внизу свернутого блока, намекающий на продолжение */
+/* когда вопрос развёрнут — занимает только высоту контента,
+   не «вытягивая» всю модалку на мобильных */
+#aiExplanationQuestion.expanded {
+    flex: 0 0 auto;
+    max-height: none;
+    overflow: visible;
+}
+
 #aiExplanationQuestion.collapsible::after {
     content: '';
     position: absolute;
@@ -5326,9 +5336,29 @@ body.synthwave-mode .google-signin-btn:hover {
     left: 0;
     right: 0;
     height: 40px;
-    background: linear-gradient(to bottom, transparent, var(--input-bg-color));
+
+    /* ключ: таем в цвет фона контейнера, а не инпута */
+    background: linear-gradient(to bottom, rgba(0,0,0,0), var(--container-bg-color));
+
+    /* чтобы точно быть выше содержимого */
+    z-index: 1;
     pointer-events: none;
+
+    /* плавное исчезновение при развороте */
+    opacity: 1;
+    transition: opacity 0.2s ease;
 }
+
+/* В glass-dark фон полупрозрачный: усиливаем низ градиента,
+   чтобы «подсказка прокрутки» была явно видна */
+body.glass-dark #aiExplanationQuestion.collapsible::after {
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0),
+    rgba(16,16,16,0.92)
+  );
+}
+
 
 
 #aiExplanationQuestion.collapsible.expanded::after {
@@ -5342,22 +5372,31 @@ body.synthwave-mode .google-signin-btn:hover {
 /* ======================================================= */
 
 .expand-question-btn {
-    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
-    display: block;      /* Делаем блочным элементом */
-    width: 80px;         /* Ширина элемента */
-    height: 20px;        /* Высота кликабельной области */
-    margin: 10px auto 0; /* Центрируем и добавляем отступ сверху */
-    position: relative;  /* Убираем absolute */
-    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
-    
-    background-color: transparent; /* Убираем фон */
+    display: block;
+    width: 80px;
+    height: 20px;
+
+    /* ближе к рамке блока вопроса */
+    margin: 4px auto 0;
+    position: relative;
+    top: -8px;
+
+    background-color: transparent;
     border: none;
-    cursor: pointer; /* --- ИЗМЕНЕНИЕ: Обычный курсор-рука --- */
+    cursor: pointer;
     z-index: 10;
-    
     padding: 0;
     outline: none;
 }
+
+/* ещё чуть ближе на мобильных */
+@media (max-width: 768px) {
+  .expand-question-btn {
+    top: -12px;
+    margin-top: 2px;
+  }
+}
+
 
 /* Создаем сам видимый "ползунок" внутри кнопки с помощью псевдо-элемента */
 .expand-question-btn::after {
@@ -6615,7 +6654,8 @@ body.synthwave-mode .question-square {
 
 body.synthwave-mode .question-square.has-votes {
     /* Если есть голоса, делаем его бирюзовым, как кнопки */
-    background: linear-gradient(135deg, var(--button-primary-bg), var(--button-primary-hover-bg));
+    background: var(--button-primary-bg);
+
 }
 
 
@@ -7102,12 +7142,102 @@ input[type="range"]::-moz-range-thumb {
 /* ===         СТИЛИ ДЛЯ ВЫБОРА ДВИЖКА ПЕРЕВОДА        === */
 /* ======================================================= */
 
-/* 1. Контейнер для двух кнопок */
-.translate-engine-container {
-    position: relative;
-    display: flex;
-    align-items: center;
+/* Единая «таблетка» под две половинки */
+.translate-engine-container{
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--input-bg-color);
+  border: 1px solid var(--theme-toggle-border);
+  border-radius: 8px;
+  overflow: visible;      /* нужно для dropdown */
+  z-index: 3;
 }
+
+/* Половинки наследуют внешние скругления */
+.translate-engine-container #translateQuestionBtn{
+  border: none;
+  background: transparent;
+  padding: 6px 10px;
+  line-height: 1;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background-clip: padding-box;
+}
+
+.translate-engine-container #translateEngineToggle{
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+  line-height: 1;
+  border-left: 1px solid var(--theme-toggle-border);
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  background-clip: padding-box;
+
+  position: relative;
+  /* критично: полностью скрываем текстовый символ ▼,
+     чтобы тема его не «перекрашивала» */
+  color: transparent !important;
+  font-size: 0;                 /* железобетонно выключаем глиф */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* псевдо-стрелка */
+.translate-engine-container #translateEngineToggle::before{
+  content: "";
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--text-color);
+  transition: transform .2s ease;
+}
+
+/* glass-dark: делаем стрелку более контрастной */
+body.glass-dark .translate-engine-container #translateEngineToggle::before{
+  border-top-color: rgba(255,255,255,.9);
+}
+
+
+/* Вращаем при открытом меню */
+.translate-engine-container.open #translateEngineToggle::before{
+  transform: rotate(180deg);
+}
+/* по умолчанию меню спрятано полностью */
+#translateEngineDropdown{ display: none; }
+
+/* когда открыто — показываем */
+#translateEngineDropdown.show{ display: block; }
+
+/* остальная стилизация (фон, бордер, тень) как мы делали ранее */
+
+/* Тень и фон у меню движка перевода */
+#translateEngineDropdown{
+  position: absolute;                 /* якорь — контейнер */
+  min-width: 180px;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3000;
+
+  background: var(--container-bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.12), 0 2px 8px rgba(0,0,0,.06);
+}
+
+
+/* Ховер/актив — как единая кнопка */
+.translate-engine-container button:hover{
+  background: var(--theme-toggle-hover-bg);
+}
+.translate-engine-container #translateQuestionBtn.active{
+  background: var(--button-primary-bg);     /* именно background, не background-color */
+  color: var(--button-primary-text);
+}
+
 
 /* 2. Стили для основной кнопки (убираем скругление справа) */
 #translateQuestionBtn {
@@ -7135,14 +7265,16 @@ input[type="range"]::-moz-range-thumb {
     background-color: var(--theme-toggle-hover-bg);
 }
 
-/* 4. Стили для выпадающего меню */
-#translateEngineDropdown {
-    min-width: 180px;
-    top: calc(100% + 5px);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2000;
+#translateEngineDropdown{
+  position: absolute;             /* якорь — контейнер */
+  min-width: 180px;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3000;
 }
+
+
 
 /* 5. Ссылки внутри меню (обычное состояние) */
 #translateEngineDropdown a {
@@ -7150,18 +7282,16 @@ input[type="range"]::-moz-range-thumb {
     display: block; /* Просто делаем ссылку блочной */
 }
 
-/* 6. КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Стиль для активного (выбранного) пункта */
-#translateEngineDropdown a.active {
-    background-color: var(--button-primary-bg); /* Цвет фона как у главной кнопки */
-    color: var(--button-primary-text); /* Цвет текста как у главной кнопки */
-    font-weight: bold; /* Делаем текст жирным для акцента */
+#translateEngineDropdown a.active{
+  background: var(--button-primary-bg);     /* градиент применится корректно */
+  color: var(--button-primary-text);
+  font-weight: 600;
+}
+#translateEngineDropdown a.active:hover{
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
 }
 
-/* 7. Убедимся, что при наведении на активный пункт, он не меняет цвет */
-#translateEngineDropdown a.active:hover {
-    background-color: var(--button-primary-bg);
-    color: var(--button-primary-text);
-}
 
 /* --- Стили для насечек на ползунке --- */
 
@@ -7671,12 +7801,16 @@ body.glass-dark .parser-tab.active::after {
 
 /* Если скрипт сворачивает ответ при развёрнутом вопросе — аккуратно скрываем */
 #aiExplanationOutput.collapsed {
+  /* исключаем влияние на распределение места */
+  flex: 0 0 auto;
+
   max-height: 0;
   overflow: hidden;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   border: 0 !important;
 }
+
 
 /* --- ПК: слегка смещаем баланс в пользу ответа, но оба скроллятся независимо --- */
 @media (min-width: 769px) {
@@ -7739,3 +7873,158 @@ body.glass-dark .parser-tab.active::after {
   object-fit: contain;
   image-rendering: auto; /* сглаживание для тонкого текста/схем */
 }
+
+.translate-engine-container{
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--theme-toggle-border);
+  border-radius: 8px;
+  background: var(--input-bg-color);
+
+  /* ключевые правки */
+  position: relative;   /* якорь для dropdown */
+  overflow: visible;    /* позволяем меню выходить наружу */
+  z-index: 3;           /* поверх соседей в хедере */
+}
+
+
+.translate-engine-container #translateQuestionBtn,
+.translate-engine-container #translateEngineToggle{
+  border: none !important;       /* швов не будет — бордер у контейнера */
+  border-radius: 0 !important;
+  background: transparent;
+  padding: 6px 10px;
+  line-height: 1;
+}
+
+
+/* Тонкий разделитель между половинками */
+.translate-engine-container #translateEngineToggle{
+  border-left: 1px solid var(--theme-toggle-border);
+  min-width: 34px;             /* чтобы стрелка не казалась зажатой */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* Ховеры и активное состояние в логике единой кнопки */
+.translate-engine-container button:hover{
+  background: var(--theme-toggle-hover-bg);
+}
+.translate-engine-container #translateQuestionBtn.active{
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+}
+
+/* Стеклянная тема: лёгкая дымка и корректные контрасты */
+body.glass-dark .translate-engine-container{
+  background: rgba(30,30,30,0.40);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(255,255,255,0.22);
+}
+body.glass-dark .translate-engine-container button:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+/* Безопасные стили для «вторичных» кнопок по умолчанию */
+button.btn, .btn-secondary, .quiz-nav-btn, .question-nav-btn {
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 1px solid var(--button-secondary-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+button.btn:hover, .btn-secondary:hover, .quiz-nav-btn:hover, .question-nav-btn:hover {
+  background: var(--button-secondary-hover-bg);
+}
+
+/* === Тест: кнопки "Предыдущий" / "Следующий" — всегда видимы === */
+#prevQuestionButton,
+#nextButton{
+  /* Вторичный (нейтральный) стиль по умолчанию */
+  background: var(--button-secondary-bg);
+  color: var(--button-secondary-text);
+  border: 1px solid var(--button-secondary-border);
+
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0,0,0,.08);
+  transition: background .2s ease, box-shadow .2s ease, transform .15s ease;
+}
+
+#prevQuestionButton:hover,
+#nextButton:hover{
+  background: var(--button-secondary-hover-bg);
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+  transform: translateY(-1px);
+}
+
+/* На последнем вопросе "Следующий" превращаем в основную (синюю) кнопку */
+#nextButton.finish-test{
+  background: var(--button-primary-bg);      /* ВАЖНО: именно background (градиент), не background-color */
+  color: var(--button-primary-text);
+  border-color: transparent;
+}
+
+/* Отключённые состояния — читаемые, но приглушённые */
+#prevQuestionButton:disabled,
+#nextButton:disabled{
+  background: var(--input-bg-color);
+  color: var(--secondary-text-color);
+  border-color: var(--border-color);
+  box-shadow: none;
+  opacity: .75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* На очень светлых скинах (в т.ч. Claude) делаем тень чуть заметнее */
+body.claude-mode #prevQuestionButton,
+body.claude-mode #nextButton{
+  box-shadow: 0 4px 14px rgba(0,0,0,.10);
+}
+
+/* ==== Chat: статус подготовки скачивания ==== */
+.message.chat-download .message-content{
+  background: var(--container-bg-color);
+  color: var(--text-color);
+  border: 1px dashed var(--border-color);
+}
+
+.message.chat-download.success .message-content{
+  background: var(--feedback-correct-bg);
+  color: var(--feedback-correct-text);
+  border-color: var(--feedback-correct-border);
+}
+
+.message.chat-download.error .message-content{
+  background: var(--feedback-incorrect-bg);
+  color: var(--feedback-incorrect-text);
+  border-color: var(--feedback-incorrect-border);
+}
+
+.message.chat-download .chat-download-title{
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.message.chat-download .chat-download-name{
+  opacity: 0.85;
+  font-size: .9em;
+}
+
+/* тоньше полоса прогресса внутри чат-бабла */
+.message.chat-download .download-progress{
+  height: 3px;
+  margin: 10px 0 0;
+}
+
+.message.chat-download .download-progress-text{
+  text-align: right;
+  letter-spacing: .2px;
+}
+
