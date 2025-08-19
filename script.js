@@ -59,6 +59,10 @@ const ChatModule = (function() {
     // === НАЧАЛО НОВОГО БЛОКА: ПЕРЕВОД ЧАТА ===
     const LANG_PACK_CHAT = {
         ru: {
+            active_quiz_title: 'У вас уже запущен тест',
+            active_quiz_text: 'Что сделать с текущим тестом?',
+            active_quiz_save_and_open: 'Продолжить позже',
+            active_quiz_finish: 'Завершить тест',
             // TABS
             tab_messages: "Сообщения",
             tab_questions: "Вопросы",
@@ -326,6 +330,10 @@ const ChatModule = (function() {
 
         },
         kk: {
+            active_quiz_title: 'Тест қазір жүріп жатыр',
+            active_quiz_text: 'Ағымдағы тестпен не істейміз?',
+            active_quiz_save_and_open: 'Кейін жалғастыру',
+            active_quiz_finish: 'Тестті аяқтау',
             // TABS
             tab_messages: "Хабарламалар",
             tab_questions: "Сұрақтар",
@@ -591,6 +599,11 @@ const ChatModule = (function() {
             results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ."
         },
         en: {
+            active_quiz_title: 'A test is already running',
+            active_quiz_text: 'What do you want to do with the current test?',
+            active_quiz_save_and_open: 'Pause and open new',
+            active_quiz_finish: 'Finish the test',
+
             // TABS
             tab_messages: "Messages",
             tab_questions: "Questions",
@@ -1177,6 +1190,25 @@ const ChatModule = (function() {
         <div id="editMessageModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_message_title')}</h3><textarea id="editMessageInput" rows="4"></textarea><input type="hidden" id="editMessageIdInput"><div class="modal-buttons"><button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button></div></div>
         <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button><button id="fileActionTestBtn">${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="activeQuizModal" class="modal-overlay hidden">
+          <div class="modal">
+            <h3 data-lang-key="active_quiz_title">У вас уже запущен тест</h3>
+            <p data-lang-key="active_quiz_text" class="modal-text">
+              Что сделать с текущим тестом?
+            </p>
+            <div class="modal-actions column">
+              <button id="activeQuizSaveAndOpenBtn" class="btn">
+                Продолжить позже
+              </button>
+              <button id="activeQuizFinishBtn" class="btn btn-danger">
+                Завершить тест
+              </button>
+              <button class="btn btn-secondary" onclick="closeModal('activeQuizModal')">
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div id="aiSummaryModal" class="modal-overlay hidden">
             <div class="modal-content" style="max-width: 600px; text-align: left;">
@@ -1286,6 +1318,16 @@ const ChatModule = (function() {
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon">
                 ${_chat('auth_google_signin')}
             `;
+        }
+        const activeQuiz = getEl('activeQuizModal');
+        if (activeQuiz) {
+          activeQuiz.querySelector('h3').textContent = _chat('active_quiz_title');
+          activeQuiz.querySelector('[data-lang-key="active_quiz_text"]').textContent = _chat('active_quiz_text');
+          const saveBtn = getEl('activeQuizSaveAndOpenBtn');
+          const finBtn  = getEl('activeQuizFinishBtn');
+          if (saveBtn) saveBtn.textContent = _chat('active_quiz_save_and_open');
+          if (finBtn)  finBtn.textContent  = _chat('active_quiz_finish');
+          activeQuiz.querySelector('button[onclick*="closeModal"]').textContent = _chat('modal_cancel_button');
         }
 
         document.getElementById('authCloseButton').textContent = _chat('auth_close_button');
@@ -4085,6 +4127,43 @@ const ChatModule = (function() {
         // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
     }
     
+    function waitFor(predicate, interval = 120, maxTries = 60) {
+      return new Promise(resolve => {
+        let tries = 0;
+        const t = setInterval(() => {
+          if (predicate() || ++tries >= maxTries) {
+            clearInterval(t);
+            resolve();
+          }
+        }, interval);
+      });
+    }
+
+    /** Возвращает 'save' | 'finish' | 'cancel' */
+    function askWhatToDoWithActiveQuiz() {
+      return new Promise(resolve => {
+        const modalId = 'activeQuizModal';
+        const saveBtn   = document.getElementById('activeQuizSaveAndOpenBtn');
+        const finishBtn = document.getElementById('activeQuizFinishBtn');
+        const cancelBtn = document.querySelector(`#${modalId} button[onclick*="closeModal"]`);
+
+        const cleanup = () => {
+          saveBtn?.removeEventListener('click', onSave);
+          finishBtn?.removeEventListener('click', onFinish);
+          cancelBtn?.removeEventListener('click', onCancel);
+          closeModal(modalId);
+        };
+        const onSave   = () => { cleanup(); resolve('save'); };
+        const onFinish = () => { cleanup(); resolve('finish'); };
+        const onCancel = () => { cleanup(); resolve('cancel'); };
+
+        saveBtn?.addEventListener('click', onSave);
+        finishBtn?.addEventListener('click', onFinish);
+        cancelBtn?.addEventListener('click', onCancel);
+
+        showModal(modalId);
+      });
+    }
 
 
 
@@ -4700,6 +4779,37 @@ const ChatModule = (function() {
         try {
             closeModal('fileActionsModal');
             ChatModule.closeChatModal();
+            // Если уже идёт тест — спросим, что делать
+            const quizArea = document.getElementById('quizArea');
+            const quizSetupArea = document.getElementById('quizSetupArea');
+            const testIsVisible = quizArea && !quizArea.classList.contains('hidden');
+
+            if (testIsVisible || document.body.classList.contains('quiz-active')) {
+              const decision = await askWhatToDoWithActiveQuiz();
+
+              if (decision === 'cancel') {
+                // Пользователь передумал — ничего не открываем
+                closeModal('fileActionsModal');
+                return;
+              }
+
+              if (decision === 'save') {
+                // Жмём уже существующую кнопку "Продолжить позже" — она сохраняет сессию и скрывает тест
+                document.getElementById('continueLaterButton')?.click();
+                // Дождёмся, пока тест реально спрячется, чтобы не наслаивались панели
+                await waitFor(() => quizArea?.classList.contains('hidden'));
+              }
+
+              if (decision === 'finish') {
+                // Полное завершение — используем штатный обработчик
+                document.getElementById('finishTestButton')?.click();
+                // В этом сценарии НЕ запускаем новый тест автоматически — пользователь ушёл смотреть результаты
+                closeModal('fileActionsModal');
+                return;
+              }
+            }
+            // дальше идёт твой существующий код:
+
 
             window.mainApp.showGlobalLoader(`${_chat('global_loader_loading_test')} "${decodedFileName}"...`);
 
@@ -4773,6 +4883,8 @@ const ChatModule = (function() {
             window.mainApp.hideGlobalLoader?.();
             console.groupEnd();
         }
+
+
     }
 
 
