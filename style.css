@@ -8028,3 +8028,34 @@ body.claude-mode #nextButton{
   letter-spacing: .2px;
 }
 
+/* Кнопка "Пользователи" с драгоценным камнем */
+#users {
+    background-color: linear-gradient(135deg, #ffcc99, #ff6600);
+    color: gold;
+    border: 2px solid #ffcc00;
+    box-shadow: 0 4px 6px rgba(255, 215, 0, 0.5);
+}
+
+/* Общие кнопки с корой дерева */
+.header-buttons > * {
+    background-color: linear-gradient(135deg, #8B4513, #A0522D);
+    color: white;
+    border: 1px solid #D2691E;
+    padding: 8px 15px;
+    font-size: 1em;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(139, 69, 19, 0.5);
+}
+
+.header-buttons > *:hover {
+    background-color: linear-gradient(135deg, #A0522D, #8B4513);
+    border-color: #D2691E;
+}
+/* Иконка "Каналы" - вместо нее дорожный знак */
+#sidebar_channels {
+    background-image: url('path-to-your-sign-image.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    padding-left: 40px; /* Подгоните в зависимости от размера знака */
+}
