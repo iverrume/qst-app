@@ -8028,34 +8028,138 @@ body.claude-mode #nextButton{
   letter-spacing: .2px;
 }
 
-/* Кнопка "Пользователи" с драгоценным камнем */
-#users {
-    background-color: linear-gradient(135deg, #ffcc99, #ff6600);
-    color: gold;
-    border: 2px solid #ffcc00;
-    box-shadow: 0 4px 6px rgba(255, 215, 0, 0.5);
+/* =========================================================
+   MOBILE COMPACT OVERRIDES (<= 480px)
+   Делает интерфейс заметно компактнее на телефонах
+   ========================================================= */
+@media (max-width: 480px) {
+
+  /* Шапка с иконками: меньше зазоры, горизонтальный скролл, слабее свечение */
+  .header-buttons {
+    gap: 6px !important;
+    padding: 6px 8px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .header-buttons > * {
+    flex: 0 0 auto;
+  }
+
+  /* Сами иконки в шапке: меньше размеры и тени */
+  #quickModeToggle,
+  #translateQuestionBtn,
+  #triggerWordToggle,
+  #chatToggle,
+  #chatTranslateBtn,
+  #aiModeButton {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 6px !important;
+    box-shadow:
+      0 0 0 1px rgba(189,140,96,0.55),
+      0 0 8px rgba(191,128,64,0.25) !important; /* уменьшили «неон» */
+  }
+
+  /* Выпадающий выбор модели ИИ — пониже и уже */
+  #aiModelSelect {
+    height: 36px !important;
+    font-size: 12px !important;
+    padding: 0 28px 0 8px !important; /* место под иконку стрелки */
+  }
+
+  /* Карточка/контейнер теста — компактнее отступы */
+  .container {
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Картинка вопроса — без лишних отступов и безопасные радиусы */
+  #questionImage,
+  #questionImage img,
+  .question-image img {
+    width: 100% !important;
+    height: auto !important;
+    border-radius: 12px !important;
+    display: block;
+  }
+
+  /* Текст вопроса — меньше кегль и плотнее межстрочный */
+  #questionText,
+  .question-text,
+  .test-question-text {
+    font-size: 1.05rem !important;   /* было ~1.2rem */
+    line-height: 1.35 !important;
+    hyphens: auto;
+    word-break: break-word;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Ответы — компактнее, но кликабельные */
+  #answerOptions li,
+  .answer-option,
+  .option,
+  .option-item {
+    font-size: 0.95rem !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+    margin: 8px 0 !important;
+  }
+
+  /* Кнопки «Назад/Дальше» и прочие большие кнопки */
+  .controls .btn,
+  .test-controls .btn,
+  button.primary,
+  .primary-button,
+  .secondary-button {
+    padding: 10px 12px !important;
+    font-size: 0.95rem !important;
+    border-radius: 12px !important;
+  }
+
+  /* Убираем лишнюю тень у всех «квадратиков»-иконок в шапке */
+  .header-buttons button,
+  .header-buttons .button,
+  .header-buttons .icon-button {
+    box-shadow:
+      0 0 0 1px rgba(189,140,96,0.55),
+      0 0 8px rgba(191,128,64,0.25) !important;
+  }
+
+  /* Чуть плотнее общая обёртка */
+  .app-wrapper {
+    padding: 8px !important;
+  }
+
+  /* Лента с режимами — не прыгает в высоту */
+  .mode-row,
+  .top-toolbar,
+  .settings-toolbar {
+    min-height: 44px !important;
+  }
 }
 
-/* Общие кнопки с корой дерева */
-.header-buttons > * {
-    background-color: linear-gradient(135deg, #8B4513, #A0522D);
-    color: white;
-    border: 1px solid #D2691E;
-    padding: 8px 15px;
-    font-size: 1em;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px rgba(139, 69, 19, 0.5);
+/* Ещё чуть компактнее для очень узких экранов (<= 360px) */
+@media (max-width: 360px) {
+  #quickModeToggle,
+  #translateQuestionBtn,
+  #triggerWordToggle,
+  #chatToggle,
+  #chatTranslateBtn,
+  #aiModeButton {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 5px !important;
+  }
+  #aiModelSelect {
+    height: 34px !important;
+    font-size: 11px !important;
+  }
+  #questionText,
+  .question-text,
+  .test-question-text {
+    font-size: 1rem !important;
+    line-height: 1.32 !important;
+  }
 }
 
-.header-buttons > *:hover {
-    background-color: linear-gradient(135deg, #A0522D, #8B4513);
-    border-color: #D2691E;
-}
-/* Иконка "Каналы" - вместо нее дорожный знак */
-#sidebar_channels {
-    background-image: url('path-to-your-sign-image.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    padding-left: 40px; /* Подгоните в зависимости от размера знака */
-}
