@@ -35,17 +35,18 @@
     --theme-toggle-border: #ccc;
     --theme-toggle-hover-bg: #f0f0f0;
     --triggered-word-color: red;
-    --primary: #2c3e50;
-    --accent: #e74c3c;
+    
+    /* === НАЧАЛО ИЗМЕНЕНИЙ === */
+    --primary: #2c3e50; /* Основной темно-серый цвет */
+    --accent: #e74c3c; /* Красный для акцентов */
+    --accent-color: #2c3e50; /* Новый цвет для интерактивных элементов (слайдеры, галочки) */
+    /* === КОНЕЦ ИЗМЕНЕНИЙ === */
 
-    /* === НАЧАЛО НОВОГО КОДА === */
-    --update-notification-bg: #007bff; /* Яркий синий фон */
-    --update-notification-text: #ffffff; /* Белый текст */
-    --update-notification-button-bg: #ffffff; /* Белая кнопка */
-    --update-notification-button-text: #007bff; /* Синий текст на кнопке */
-    /* === КОНЕЦ НОВОГО КОДА === */
+    --update-notification-bg: #007bff;
+    --update-notification-text: #ffffff;
+    --update-notification-button-bg: #ffffff;
+    --update-notification-button-text: #007bff;
 }
-
 
 body.dark-mode {
     --bg-color: #121212;
@@ -87,6 +88,8 @@ body.dark-mode {
     --theme-toggle-border: #555;
     --theme-toggle-hover-bg: #333;
     --triggered-word-color: #ff4d4d;
+
+    --accent-color: #58a6ff; /* Яркий синий для акцентов в темной теме */
 
     /* === НАЧАЛО НОВОГО КОДА === */
     --update-notification-bg: #343a40; /* Темно-серый фон */
@@ -134,6 +137,8 @@ body.claude-mode {
     --theme-toggle-border: #c9c2ba;
     --theme-toggle-hover-bg: #f5f2ee;
     --triggered-word-color: #c54848;
+
+    --accent-color: #8a7d70; /* Используем тот же цвет, что и у кнопок */
 
     /* === НАЧАЛО НОВОГО КОДА === */
     /* Здесь мы просто "наследуем" удачный стиль от кнопок */
@@ -186,6 +191,8 @@ body.synthwave-mode {
     --triggered-word-color: #FACC15; /* Желтый для триггеров */
     --accent: #38BDF8;
 
+    --accent-color: #14B8A6; /* Используем бирюзовый цвет кнопок */
+
     /* === НАЧАЛО НОВОГО КОДА === */
     --update-notification-bg: #14B8A6; /* Бирюзовый фон */
     --update-notification-text: #FFFFFF; /* Белый текст */
@@ -221,6 +228,8 @@ body.glass-dark {
     --feedback-incorrect-bg: rgba(239, 68, 68, 0.15); /* Полупрозрачный красный */
     --feedback-incorrect-text: #F87171;                /* Яркий красный текст */
     --feedback-incorrect-border: rgba(248, 113, 113, 0.4); /* Полупрозрачная красная рамка */
+
+    --accent-color: #4A90E2; /* Яркий синий, хорошо видимый на темном фоне */
     /* === НАЧАЛО НОВОГО КОДА === */
     --update-notification-bg: rgba(74, 74, 74, 0.8); /* Полупрозрачный серый */
     --update-notification-text: #FFFFFF;
@@ -598,7 +607,7 @@ input[type="file"] {
 .settings-group input[type="checkbox"] {
     margin-right: 5px;
     vertical-align: middle;
-    accent-color: var(--button-primary-bg);
+    accent-color: var(--accent-color); /* <-- ИЗМЕНЕНО */
 }
 
 #generateCheatSheetButton,
@@ -1082,7 +1091,7 @@ button:disabled {
 #searchQueryInput:focus,
 #accessCodeInput:focus {
     outline: none;
-    border-color: var(--button-primary-bg);
+    border-color: var(--accent-color); /* <-- ИЗМЕНЕНО */
     box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15); /* Мягкая тень "свечения" */
 }
 
@@ -6998,7 +7007,7 @@ input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 20px;
     height: 20px;
-    background-color: var(--button-primary-bg);
+    background-color: var(--accent-color);
     border-radius: 50%;
     cursor: pointer;
     pointer-events: auto;
@@ -7010,7 +7019,7 @@ input[type="range"]::-webkit-slider-thumb {
 input[type="range"]::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    background-color: var(--button-primary-bg);
+    background-color: var(--accent-color);
     border-radius: 50%;
     cursor: pointer;
     pointer-events: auto;
@@ -7033,7 +7042,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .slider-progress {
-    background-color: var(--button-primary-bg);
+    background-color: var(--accent-color); /* <-- ИЗМЕНЕНО */
     z-index: 1;
 }
 
