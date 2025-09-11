@@ -9854,43 +9854,36 @@ const mainApp = (function() {
 
 
 
-    function loadQuestion(index) {
+    function loadQuestion(index, options = { animateTranslation: true }) { // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
         if (index < 0 || index >= questionsForCurrentQuiz.length) return;
         currentQuestionIndex = index;
         const item = questionsForCurrentQuiz[index];
 
-        // === НОВЫЙ КОД: Запускаем предзагрузку для следующих вопросов ===
+        // Запускаем предзагрузку для следующих вопросов
         if (isTranslateModeEnabled) {
             prefetchNextQuestions(index);
         }
-        // ==========================================================
 
-        // Обновляем общие элементы UI, которые нужны для всех режимов
+        // Обновляем общие элементы UI
         updateNavigationButtons();
         updateQuickNavButtons();
         getEl('score').style.visibility = 'hidden';
         feedbackAreaEl.innerHTML = '';
-        answerOptionsEl.innerHTML = ''; // Полностью очищаем область ответов
-        questionTextEl.innerHTML = ''; // и область вопроса
+        answerOptionsEl.innerHTML = '';
+        questionTextEl.innerHTML = '';
 
-        // Главное ветвление логики
+        // Главное ветвление логики (теперь передаем 'options' дальше)
         if (quizSettings.flashcardsMode) {
-            // Если включен режим карточек...
             if (item.type === 'category') {
-                // ...и это категория, показываем ее как карточку-разделитель
                 displayCategoryAsCard(item);
             } else {
-                // ...а если это вопрос, показываем как обычную флеш-карту
-                displayFlashcard(item);
+                displayFlashcard(item, options); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
             }
         } else {
-            // Если включен обычный режим теста...
             if (item.type === 'category') {
-                // ...и это категория, показываем ее как страницу-заставку, передавая ТОЛЬКО ТЕКСТ
                 displayCategoryPage(item.text);
             } else {
-                // ...а если это вопрос, показываем как стандартный тест
-                displayQuestionAsTest(item);
+                displayQuestionAsTest(item, options); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
             }
         }
     }
@@ -9953,43 +9946,45 @@ const mainApp = (function() {
                 showAIExplanation(question, null, question.image);
             });
         }
-        
+
         // === НАЧАЛО ИЗМЕНЕНИЙ В ЛОГИКЕ ПЕРЕВОДА КАРТОЧЕК ===
         if (isTranslateModeEnabled) {
             const lang = localStorage.getItem('appLanguage') || 'ru';
             const cacheKey = getCacheKey(question.originalIndex, lang);
             
-            // Показываем анимацию загрузки, только если перевода нет в кэше
             if (!currentQuizTranslations.has(cacheKey)) {
                 translateQuestionBtn?.classList.add('translating');
             }
 
-            // Получаем перевод (он может прийти мгновенно из кэша)
             const translationResult = await getCachedOrFetchTranslation(question, question.originalIndex, lang);
             
-            // Убираем анимацию загрузки
             translateQuestionBtn?.classList.remove('translating');
             
-            // Проверяем, что мы все еще на том же вопросе
-            if (currentQuestionIndex !== indexAtRequestTime) {
-                return;
-            }
+            if (currentQuestionIndex !== indexAtRequestTime) return;
 
             if (translationResult) {
                 const translatedQuestion = translationResult.question;
                 const translatedCorrectAnswerText = translatedQuestion.options[translatedQuestion.correctAnswerIndex].text;
 
-                // Запускаем анимацию ВСЕГДА, если перевод получен
-                await Promise.all([
-                    animateTextTransformation(frontFaceTextContainer, question.text, translatedQuestion.text),
-                    animateTextTransformation(backFaceTextContainer, originalCorrectAnswerText, translatedCorrectAnswerText)
-                ]);
-                
-                resizeCard(); // Пересчитываем размер карточки после анимации
+                // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Проверяем, нужна ли анимация ===
+                if (options.animateTranslation) {
+                    await Promise.all([
+                        animateTextTransformation(frontFaceTextContainer, question.text, translatedQuestion.text),
+                        animateTextTransformation(backFaceTextContainer, originalCorrectAnswerText, translatedCorrectAnswerText)
+                    ]);
+                } else {
+                    // Если не нужна - обновляем текст мгновенно
+                    frontFaceTextContainer.textContent = translatedQuestion.text;
+                    backFaceTextContainer.textContent = translatedCorrectAnswerText;
+                }
+                // =======================================================
+
+                resizeCard();
             } else {
                 alert(_('error_flashcard_translation_failed'));
             }
         }
+
         
         // Пересчитываем размер в любом случае
         resizeCard();
@@ -10002,89 +9997,6 @@ const mainApp = (function() {
                     userAnswers[currentQuestionIndex].answered = true;
                 }
             });
-        }
-    }
-
-
-
-
-    /**
-     * Отображает текущий элемент как стандартный вопрос теста.
-     * Показывает и текст, и изображение (если есть), корректно работает с переводом.
-     * @param {object} question
-     */
-    function displayQuestionAsTest(question) {
-        // Показываем/скрываем нужные элементы интерфейса
-        feedbackAreaEl.className = 'feedback-area';
-        getEl('score').style.visibility = 'visible';
-        copyQuestionBtnQuiz?.classList.remove('hidden');
-        getEl('favoriteQuestionBtn')?.classList.remove('hidden');
-        translateQuestionBtn?.classList.remove('hidden');
-        webSearchDropdown?.classList.remove('hidden');
-
-        // Обновляем номер вопроса
-        const questionNumber = questionsForCurrentQuiz
-            .slice(0, currentQuestionIndex + 1)
-            .filter(q => q.type !== 'category').length;
-        currentQuestionNumEl.textContent = questionNumber;
-
-        // Контейнеры
-        const questionContainer = questionTextEl?.parentElement;
-
-        // Удаляем остатки картинки от предыдущего вопроса
-        if (questionContainer) {
-            const prevImgWrap = questionContainer.querySelector('.question-image-wrapper');
-            if (prevImgWrap) prevImgWrap.remove();
-        }
-
-        // Очищаем текстовый контейнер
-        questionTextEl.innerHTML = '';
-
-        // 1) Рендерим текст + варианты (с учётом режима перевода)
-        if (isTranslateModeEnabled) {
-            // Эта функция сама вставит текст и варианты, анимации будут трогать ТОЛЬКО текстовый контейнер
-            displayTranslatedQuestion(question);
-        } else {
-            // Рендерим текст и варианты обычным путём
-            questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
-            if (triggerWordModeEnabled) addTriggerClickListeners();
-            displayQuestionOptions(question);
-        }
-
-        // 2) Если у вопроса есть картинка — вставляем ЕЁ ОТДЕЛЬНО (выше текста)
-        if (question.image && questionContainer) {
-            const imgWrap = document.createElement('div');
-            imgWrap.className = 'question-image-wrapper';
-
-            const img = document.createElement('img');
-            img.src = question.image;
-            img.alt = 'Изображение к вопросу';
-            img.className = 'question-image';
-
-            imgWrap.appendChild(img);
-            // Вставляем картинку ПЕРЕД текстом, чтобы сверху был рисунок, ниже — текст и варианты
-            questionContainer.insertBefore(imgWrap, questionTextEl);
-        }
-
-        // 3) Восстанавливаем состояние ответа (если уже отвечали)
-        const answerState = userAnswers[currentQuestionIndex];
-        if (answerState && answerState.answered) {
-            const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
-            feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
-
-            const textNode = document.createTextNode(feedbackText);
-            const explainBtn = document.createElement('button');
-            explainBtn.textContent = _('ai_explain_button');
-            explainBtn.className = 'explain-btn';
-
-            const incorrectAnswerText = !answerState.correct
-                ? question.options[answerState.selectedOptionIndex].text
-                : null;
-            explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText);
-
-            feedbackAreaEl.innerHTML = '';
-            feedbackAreaEl.appendChild(textNode);
-            feedbackAreaEl.appendChild(explainBtn);
         }
     }
 
@@ -10294,12 +10206,15 @@ const mainApp = (function() {
         loadQuestion(currentQuestionIndex);
     }
 
+
     function loadPreviousQuestion() {
         if (currentQuestionIndex > 0) {
             currentQuestionIndex--;
-            loadQuestion(currentQuestionIndex);
+            // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Передаем флаг для отключения анимации ===
+            loadQuestion(currentQuestionIndex, { animateTranslation: false });
         }
     }
+
 
     function updateNavigationButtons() {
         prevQuestionButton.disabled = currentQuestionIndex === 0;
@@ -13086,133 +13001,121 @@ const mainApp = (function() {
      * Главная функция, которая управляет отображением переведенного вопроса.
      * @param {object} originalQuestion - Исходный (непереведенный) объект вопроса.
      */
-    async function displayTranslatedQuestion(originalQuestion) {
+    async function displayTranslatedQuestion(originalQuestion, options = { animateTranslation: true }) {
         const indexAtRequestTime = currentQuestionIndex;
         const targetLang = localStorage.getItem('appLanguage') || 'ru';
         const cacheKey = getCacheKey(originalQuestion.originalIndex, targetLang);
         const isCached = currentQuizTranslations.has(cacheKey);
 
-        // === ИЗМЕНЕНИЕ №1: Сначала всегда показываем ОРИГИНАЛ ===
-        // Это "начальный кадр" для нашей анимации.
+        // Показываем оригинал как "начальный кадр"
         displayQuestionContent(originalQuestion);
 
-        // === ИЗМЕНЕНИЕ №2: Показываем анимацию загрузки ТОЛЬКО если данных нет в кэше ===
+        // Показываем индикатор загрузки, только если данных нет в кэше
         if (!isCached) {
             translateQuestionBtn?.classList.add('translating');
         }
         
         try {
-            // Получаем перевод (мгновенно из кэша или с ожиданием от сервера)
             const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex, targetLang);
 
-            // Проверяем, не переключил ли пользователь вопрос, пока мы ждали
-            if (indexAtRequestTime !== currentQuestionIndex) {
-                console.log('Анимация для предыдущего вопроса отменена.');
+            if (indexAtRequestTime !== currentQuestionIndex || !result) {
+                if (!result) alert("Не удалось перевести вопрос. Будет показан оригинал.");
                 return;
             }
-            
-            if (result) {
-                const translatedQuestion = result.question;
-                
-                // === ИЗМЕНЕНИЕ №3: Запускаем анимацию ВСЕГДА, а не только при !fromCache ===
-                const allAnimations = [];
-                
-                allAnimations.push(animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text));
 
-                const optionElements = answerOptionsEl.querySelectorAll('li');
-                for (let i = 0; i < optionElements.length; i++) {
-                    const li = optionElements[i];
+            const translatedQuestion = result.question;
+            const optionElements = answerOptionsEl.querySelectorAll('li');
+
+            // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Проверяем, нужна ли анимация ===
+            if (options.animateTranslation) {
+                // Если нужна - запускаем красивую анимацию
+                const allAnimations = [
+                    animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
+                ];
+                optionElements.forEach((li, i) => {
                     const originalOptionText = originalQuestion.options[i]?.text || '';
                     const translatedOptionText = translatedQuestion.options[i]?.text || '';
-                    
                     if (originalOptionText || translatedOptionText) {
-                        // Используем более простую анимацию для вариантов ответа
                         allAnimations.push(animateSingleLine(li, originalOptionText, translatedOptionText));
                     }
-                }
-                
+                });
                 await Promise.all(allAnimations);
-                
             } else {
-                alert("Не удалось перевести вопрос. Будет показан оригинал.");
+                // Если не нужна - мгновенно обновляем текст
+                questionTextEl.innerHTML = renderQuestionTextWithTriggers(translatedQuestion);
+                optionElements.forEach((li, i) => {
+                    li.textContent = translatedQuestion.options[i]?.text || '';
+                });
             }
+            // =======================================================
+            
         } finally {
-            // Убираем анимацию загрузки в любом случае
             translateQuestionBtn?.classList.remove('translating');
         }
     }
 
 
 
+    function displayQuestionAsTest(question, options = { animateTranslation: true }) { // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
+        // UI
+        feedbackAreaEl.className = 'feedback-area';
+        getEl('score').style.visibility = 'visible';
+        copyQuestionBtnQuiz?.classList.remove('hidden');
+        getEl('favoriteQuestionBtn')?.classList.remove('hidden');
+        translateQuestionBtn?.classList.remove('hidden');
+        webSearchDropdown?.classList.remove('hidden');
 
-    function displayQuestionAsTest(question) {
-      // UI
-      feedbackAreaEl.className = 'feedback-area';
-      getEl('score').style.visibility = 'visible';
-      copyQuestionBtnQuiz?.classList.remove('hidden');
-      getEl('favoriteQuestionBtn')?.classList.remove('hidden');
-      translateQuestionBtn?.classList.remove('hidden');
-      webSearchDropdown?.classList.remove('hidden');
+        // Номер вопроса
+        const questionNumber = questionsForCurrentQuiz
+            .slice(0, currentQuestionIndex + 1)
+            .filter(q => q.type !== 'category').length;
+        currentQuestionNumEl.textContent = questionNumber;
 
-      // Номер вопроса
-      const questionNumber = questionsForCurrentQuiz
-        .slice(0, currentQuestionIndex + 1)
-        .filter(q => q.type !== 'category').length;
-      currentQuestionNumEl.textContent = questionNumber;
+        // Контейнеры
+        const questionContainer = questionTextEl?.parentElement;
 
-      // Контейнеры
-      const questionContainer = questionTextEl?.parentElement;
+        if (questionContainer) {
+            const prevImgWrap = questionContainer.querySelector('.question-image-wrapper');
+            if (prevImgWrap) prevImgWrap.remove();
+        }
+        questionTextEl.innerHTML = '';
 
-      // Удаляем картинку от прошлого вопроса (если была)
-      if (questionContainer) {
-        const prevImgWrap = questionContainer.querySelector('.question-image-wrapper');
-        if (prevImgWrap) prevImgWrap.remove();
-      }
+        // Рендерим текст + варианты
+        if (isTranslateModeEnabled) {
+            displayTranslatedQuestion(question, options); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
+        } else {
+            questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+            if (triggerWordModeEnabled) addTriggerClickListeners();
+            displayQuestionOptions(question);
+        }
 
-      // Чистим текст
-      questionTextEl.innerHTML = '';
+        // Вставляем картинку
+        if (question.image && questionContainer) {
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'question-image-wrapper';
+            const img = document.createElement('img');
+            img.src = question.image;
+            img.alt = 'Изображение к вопросу';
+            img.className = 'question-image';
+            imgWrap.appendChild(img);
+            questionContainer.insertBefore(imgWrap, questionTextEl);
+        }
 
-      // 1) Рендерим текст + варианты (перевод учитываем)
-      if (isTranslateModeEnabled) {
-        displayTranslatedQuestion(question);
-      } else {
-        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
-        if (triggerWordModeEnabled) addTriggerClickListeners();
-        displayQuestionOptions(question);
-      }
-
-      // 2) Если есть картинка — вставляем её ВЫШЕ текста
-      if (question.image && questionContainer) {
-        const imgWrap = document.createElement('div');
-        imgWrap.className = 'question-image-wrapper';
-
-        const img = document.createElement('img');
-        img.src = question.image;
-        img.alt = 'Изображение к вопросу';
-        img.className = 'question-image';
-
-        imgWrap.appendChild(img);
-        questionContainer.insertBefore(imgWrap, questionTextEl);
-      }
-
-      // 3) Восстановление состояния ответа
-      const answerState = userAnswers[currentQuestionIndex];
-      if (answerState && answerState.answered) {
-        const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
-        feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
-
-        const textNode = document.createTextNode(feedbackText);
-        const explainBtn = document.createElement('button');
-        explainBtn.textContent = _('ai_explain_button');
-        explainBtn.className = 'explain-btn';
-        const incorrectAnswerText = !answerState.correct ? question.options[answerState.selectedOptionIndex].text : null;
-        //           ⬇⬇⬇ ДОБАВЛЯЕМ ТРЕТИЙ АРГУМЕНТ ЗДЕСЬ ⬇⬇⬇
-        explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText, question.image);
-
-        feedbackAreaEl.innerHTML = '';
-        feedbackAreaEl.appendChild(textNode);
-        feedbackAreaEl.appendChild(explainBtn);
-      }
+        // Восстановление состояния ответа
+        const answerState = userAnswers[currentQuestionIndex];
+        if (answerState && answerState.answered) {
+            const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
+            feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
+            const textNode = document.createTextNode(feedbackText);
+            const explainBtn = document.createElement('button');
+            explainBtn.textContent = _('ai_explain_button');
+            explainBtn.className = 'explain-btn';
+            const incorrectAnswerText = !answerState.correct ? question.options[answerState.selectedOptionIndex].text : null;
+            explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText, question.image);
+            feedbackAreaEl.innerHTML = '';
+            feedbackAreaEl.appendChild(textNode);
+            feedbackAreaEl.appendChild(explainBtn);
+        }
     }
 
 

@@ -11,10 +11,8 @@
     --input-hover-bg-color: #e9e9e9;
     --input-border-color: #ddd;
     --input-hover-border-color: #ccc;
-    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
     --button-primary-bg: linear-gradient(135deg, #34495e, #2c3e50);
     --button-primary-hover-bg: linear-gradient(135deg, #2c3e50, #34495e);
-    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
     --button-primary-text: white;
     --button-secondary-bg: #6c757d;
     --button-secondary-hover-bg: #5a6268;
@@ -31,16 +29,21 @@
     --shadow-color: rgba(0,0,0,0.1);
     --shadow-light-color: rgba(0,0,0,0.05);
     --shadow-hover-color: rgba(0,0,0,0.08);
-    /* --- НАЧАЛО ИЗМЕНЕНИЙ --- */
-    --timer-text-color: #2c3e50; /* Таймер теперь тоже темно-серый */
-    --quick-nav-current-bg: #2c3e50; /* Выбранный вопрос в навигации */
-    /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
+    --timer-text-color: #2c3e50; 
+    --quick-nav-current-bg: #2c3e50;
     --quick-nav-current-text: white;
     --theme-toggle-border: #ccc;
     --theme-toggle-hover-bg: #f0f0f0;
     --triggered-word-color: red;
     --primary: #2c3e50;
     --accent: #e74c3c;
+
+    /* === НАЧАЛО НОВОГО КОДА === */
+    --update-notification-bg: #007bff; /* Яркий синий фон */
+    --update-notification-text: #ffffff; /* Белый текст */
+    --update-notification-button-bg: #ffffff; /* Белая кнопка */
+    --update-notification-button-text: #007bff; /* Синий текст на кнопке */
+    /* === КОНЕЦ НОВОГО КОДА === */
 }
 
 
@@ -84,6 +87,13 @@ body.dark-mode {
     --theme-toggle-border: #555;
     --theme-toggle-hover-bg: #333;
     --triggered-word-color: #ff4d4d;
+
+    /* === НАЧАЛО НОВОГО КОДА === */
+    --update-notification-bg: #343a40; /* Темно-серый фон */
+    --update-notification-text: #f8f9fa; /* Светлый текст */
+    --update-notification-button-bg: #f8f9fa; /* Светлая кнопка */
+    --update-notification-button-text: #343a40; /* Темный текст на кнопке */
+    /* === КОНЕЦ НОВОГО КОДА === */
 }
 
 
@@ -124,6 +134,14 @@ body.claude-mode {
     --theme-toggle-border: #c9c2ba;
     --theme-toggle-hover-bg: #f5f2ee;
     --triggered-word-color: #c54848;
+
+    /* === НАЧАЛО НОВОГО КОДА === */
+    /* Здесь мы просто "наследуем" удачный стиль от кнопок */
+    --update-notification-bg: var(--button-primary-bg);
+    --update-notification-text: var(--button-primary-text);
+    --update-notification-button-bg: #ffffff;
+    --update-notification-button-text: var(--button-primary-bg);
+    /* === КОНЕЦ НОВОГО КОДА === */
 }
 
 
@@ -167,6 +185,13 @@ body.synthwave-mode {
     --theme-toggle-hover-bg: #334155;
     --triggered-word-color: #FACC15; /* Желтый для триггеров */
     --accent: #38BDF8;
+
+    /* === НАЧАЛО НОВОГО КОДА === */
+    --update-notification-bg: #14B8A6; /* Бирюзовый фон */
+    --update-notification-text: #FFFFFF; /* Белый текст */
+    --update-notification-button-bg: #FFFFFF; /* Белая кнопка */
+    --update-notification-button-text: #14B8A6; /* Бирюзовый текст */
+    /* === КОНЕЦ НОВОГО КОДА === */
 }
 
 
@@ -196,6 +221,12 @@ body.glass-dark {
     --feedback-incorrect-bg: rgba(239, 68, 68, 0.15); /* Полупрозрачный красный */
     --feedback-incorrect-text: #F87171;                /* Яркий красный текст */
     --feedback-incorrect-border: rgba(248, 113, 113, 0.4); /* Полупрозрачная красная рамка */
+    /* === НАЧАЛО НОВОГО КОДА === */
+    --update-notification-bg: rgba(74, 74, 74, 0.8); /* Полупрозрачный серый */
+    --update-notification-text: #FFFFFF;
+    --update-notification-button-bg: #FFFFFF;
+    --update-notification-button-text: #333333;
+    /* === КОНЕЦ НОВОГО КОДА === */
 
 }
 
@@ -3984,16 +4015,21 @@ button[onclick*="copyToClipboard"].copied:after {
 }
 
 
-/* --- Новый исправленный код --- */
 @media (max-width: 768px) {
+  /* Общее правило для левосторонних меню, как поиск по сети */
   .dropdown-content {
-    /* Выравниваем меню по левому краю родительского элемента */
     left: 0; 
-    /* Сбрасываем выравнивание по правому краю, чтобы оно не мешало */
     right: auto;
-    /* ВАЖНО: Сбрасываем сдвиг, который центрировал меню на ПК */
     transform: translateX(0); 
   }
+
+  /* === НАЧАЛО ИЗМЕНЕНИЙ === */
+  /* Специальное правило для правосторонних меню (Темы и Переводчик) */
+  #themeDropdownContent, #translateEngineDropdown {
+    left: auto; /* Сбрасываем выравнивание по левому краю */
+    right: 0;   /* Выравниваем правый край меню по правому краю кнопки */
+  }
+  /* === КОНЕЦ ИЗМЕНЕНИЙ === */
 }
 
 
@@ -5631,8 +5667,8 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--button-primary-bg);
-    color: var(--button-primary-text);
+    background-color: var(--update-notification-bg); /* <-- ИЗМЕНЕНО */
+    color: var(--update-notification-text); /* <-- ИЗМЕНЕНО */
     padding: 12px 20px;
     border-radius: 25px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.3);
@@ -5650,19 +5686,14 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
 }
 
 .update-notification button {
-    background-color: var(--button-primary-text);
-    color: var(--button-primary-bg);
+    background-color: var(--update-notification-button-bg); /* <-- ИЗМЕНЕНО */
+    color: var(--update-notification-button-text); /* <-- ИЗМЕНЕНО */
     border: none;
     padding: 8px 16px;
     border-radius: 20px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
-}
-
-.update-notification button:hover {
-    transform: scale(1.05);
-    opacity: 0.9;
 }
 
 /* ======================================================= */
