@@ -2533,8 +2533,15 @@ const ChatModule = (function() {
         `;
         const isAdmin = currentUser?.email === 'iverrum@gmail.com';
         
-        if ((message.authorId === currentUser?.uid || isAdmin) && message.type !== 'question_link' && message.type !== 'file_share') {
+        const isAuthorOrAdmin = message.authorId === currentUser?.uid || isAdmin;
+
+        // Условие для кнопки "Редактировать": только для автора и только для обычных текстовых сообщений.
+        if (isAuthorOrAdmin && message.type !== 'question_link' && message.type !== 'file_share') {
             actionsHTML += `<button title="${_chat('tooltip_edit_message')}" data-action="edit">✏️</button>`;
+        }
+        
+        // Условие для кнопки "Удалить": для автора ЛЮБОГО типа сообщения.
+        if (isAuthorOrAdmin) {
             actionsHTML += `<button title="${_chat('tooltip_delete_message')}" data-action="delete">🗑️</button>`;
         }
         actionsToolbar.innerHTML = actionsHTML;
