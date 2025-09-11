@@ -6959,6 +6959,8 @@ const mainApp = (function() {
     const AI_INPUT_CHAR_LIMIT = 14000; // Безопасный лимит символов для ИИ
     let currentTranslateEngine = 'google'; // 'google' или 'ai'
     let isPdfSession = false;
+    let prefetchedIndices = new Set(); // НОВЫЙ КОД: Хранит индексы вопросов, которые уже в очереди на перевод.
+    const PREFETCH_WINDOW_SIZE = 5;    // НОВЫЙ КОД: Сколько вопросов "вперед" мы смотрим.
 
 
     
@@ -8789,104 +8791,104 @@ const mainApp = (function() {
     }
 
 
-
-
+    // Извлекает изображения со страницы. Поддерживает inline/XObject.
+    // Если прямых картинок нет или объект "не готов" — делает фолбэк: рендерит всю страницу в PNG.
+    // ВОЗВРАЩАЕТ: { images: string[], isFallback: boolean }
     async function extractImagesFromPage(page) {
       const images = [];
+      let isFallbackRender = false; // Флаг, который покажет, использовали ли мы "запасной план"
 
-      // 1) Пытаемся вытащить inline-изображения и XObject через operatorList/commonObjs
-      try {
-        const { fnArray, argsArray } = await page.getOperatorList();
-        const toDataURL = (obj, w, h) => {
-          // Небольшой универсальный конвертер пикселей в dataURL
-          if (!obj) return null;
-          const width = w || obj.width || (obj.bitmap && obj.bitmap.width);
-          const height = h || obj.height || (obj.bitmap && obj.bitmap.height);
-          if (!width || !height) return null;
+      // Превращает "сырые" данные (RGBA/RGB/Gray) в dataURL
+      function toDataURL(raw, w, h) {
+        if (!raw || !w || !h) return null;
+        const data =
+          raw.data ||
+          (raw.imgData && raw.imgData.data) ||
+          (raw.bitmap && raw.bitmap.data) ||
+          raw.rgba ||
+          null;
+        if (!data) return null;
 
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          const imageData = ctx.createImageData(width, height);
-          const pixels = imageData.data;
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const imgData = ctx.createImageData(w, h);
+        const dest = imgData.data;
 
-          // Достаём сырой массив пикселей из объекта
-          const sourcePixels =
-            obj?.data || obj?.bitmap?.data || obj?.imageData || obj?.bytes || new Uint8ClampedArray();
-
-          // Популярные форматы: RGBA, RGB, Grayscale
-          if (sourcePixels.length === pixels.length) {
-            // RGBA — копируем как есть
-            pixels.set(sourcePixels);
-          } else if (sourcePixels.length === (pixels.length / 4) * 3) {
-            // RGB -> RGBA
-            let s = 0, d = 0;
-            while (s < sourcePixels.length) {
-              pixels[d++] = sourcePixels[s++]; // R
-              pixels[d++] = sourcePixels[s++]; // G
-              pixels[d++] = sourcePixels[s++]; // B
-              pixels[d++] = 255;               // A
-            }
-          } else if (sourcePixels.length === pixels.length / 4) {
-            // Grayscale -> RGBA
-            let s = 0, d = 0;
-            while (s < sourcePixels.length) {
-              const g = sourcePixels[s++];
-              pixels[d++] = g; pixels[d++] = g; pixels[d++] = g; pixels[d++] = 255;
-            }
-          } else {
-            return null;
+        if (data.length === dest.length) {
+          // уже RGBA
+          dest.set(data);
+        } else if (data.length === (dest.length / 4) * 3) {
+          // RGB -> RGBA
+          for (let si = 0, di = 0; si < data.length; ) {
+            dest[di++] = data[si++]; // R
+            dest[di++] = data[si++]; // G
+            dest[di++] = data[si++]; // B
+            dest[di++] = 255;        // A
           }
+        } else if (data.length === dest.length / 4) {
+          // Gray -> RGBA
+          for (let si = 0, di = 0; si < data.length; ) {
+            const g = data[si++];
+            dest[di++] = g; dest[di++] = g; dest[di++] = g; dest[di++] = 255;
+          }
+        } else {
+          return null; // неизвестный формат
+        }
 
-          ctx.putImageData(imageData, 0, 0);
-          return canvas.toDataURL('image/png');
-        };
+        ctx.putImageData(imgData, 0, 0);
+        return canvas.toDataURL('image/png');
+      }
+
+      try {
+        const opList = await page.getOperatorList();
+        const { fnArray, argsArray } = opList;
 
         for (let idx = 0; idx < fnArray.length; idx++) {
           const fn = fnArray[idx];
-          const args = argsArray[idx];
 
-          // Импорт XObject
-          if (fn === pdfjsLib.OPS.paintImageXObject || fn === pdfjsLib.OPS.paintImageXObjectRepeat) {
-            const key = args?.[0];
+          if (fn === pdfjsLib.OPS.paintInlineImageXObject) {
+            const obj = argsArray[idx][0];
+            const url = toDataURL(obj, obj && obj.width, obj && obj.height);
+            if (url) images.push(url);
+            continue;
+          }
+
+          if (fn === pdfjsLib.OPS.paintImageXObject) {
+            const key = argsArray[idx][0];
             let obj = null;
-
-            // page.objs
             try {
-              if (page.objs && typeof page.objs.get === 'function') {
-                if (!page.objs.has || page.objs.has(key)) obj = page.objs.get(key);
+              if (page.objs && typeof page.objs.get === 'function' && (!page.objs.has || page.objs.has(key))) {
+                obj = page.objs.get(key);
               }
             } catch (_) {}
-
-            // commonObjs
             if (!obj) {
               try {
-                if (page.commonObjs && typeof page.commonObjs.get === 'function') {
-                  if (!page.commonObjs.has || page.commonObjs.has(key)) obj = page.commonObjs.get(key);
+                if (page.commonObjs && typeof page.commonObjs.get === 'function' && (!page.commonObjs.has || page.commonObjs.has(key))) {
+                  obj = page.commonObjs.get(key);
                 }
               } catch (_) {}
             }
-
             if (obj) {
-              const url = toDataURL(obj);
+              const w = obj.width || (obj.bitmap && obj.bitmap.width);
+              const h = obj.height || (obj.bitmap && obj.bitmap.height);
+              const url = toDataURL(obj, w, h);
               if (url) images.push(url);
             }
           }
         }
       } catch (e) {
-        console.warn('extractImagesFromPage: operatorList недоступен, пойдём в фолбэк.', e);
+        console.warn('extractImagesFromPage: не удалось получить список операторов, используется fallback.', e);
       }
 
-      // 2) Фолбэк: отрендерить всю страницу в JPEG, чтобы картинка была всегда
+      // Фолбэк: рендер страницы в PNG, если "настоящих" картинок не найдено
       if (images.length === 0) {
+        isFallbackRender = true; // Устанавливаем флаг, что это запасной вариант
         try {
-          // Базовый viewport при scale:1
           const baseViewport = page.getViewport({ scale: 1 });
-          // Целевая ширина показа (подгони под свой UI при желании)
           const TARGET_CSS_WIDTH = Math.min(1200, Math.floor(window.innerWidth * 0.9));
           const DPR = Math.max(1, window.devicePixelRatio || 1);
-          // Масштаб под ретину и реальную ширину
           const scale = Math.max(2, (TARGET_CSS_WIDTH * DPR) / baseViewport.width);
           const viewport = page.getViewport({ scale });
 
@@ -8898,17 +8900,15 @@ const mainApp = (function() {
           ctx.imageSmoothingQuality = 'high';
 
           await page.render({ canvasContext: ctx, viewport }).promise;
-          // lossless
           images.push(canvas.toDataURL('image/png'));
-
         } catch (err) {
           console.error('extractImagesFromPage: фолбэк-рендер не удался.', err);
+          isFallbackRender = false; // Сбрасываем флаг, если даже фолбэк не сработал
         }
       }
 
-      return images;
+      return { images: images, isFallback: isFallbackRender };
     }
-
 
 
 
@@ -9019,93 +9019,6 @@ const mainApp = (function() {
     }
 
 
-    // ======== НАЧАЛО НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
-    /**
-     * Извлекает РАСТРОВЫЕ изображения со страницы PDF в виде Base64 строк.
-     * Этот метод ищет именно "картинки", игнорируя текст и векторную графику.
-     * ФИНАЛЬНАЯ ВЕРСИЯ: Улучшена обработка цветовых пространств и ошибок.
-     * @param {object} page - Объект страницы из библиотеки pdf.js.
-     * @returns {Promise<string[]>} - Массив с Base64 Data URL изображениями.
-     */
-    async function extractImagesFromPage(page) {
-        const images = [];
-        try {
-            // Получаем список всех операций на странице
-            const operatorList = await page.getOperatorList();
-            const { fnArray, argsArray } = operatorList;
-
-            for (let i = 0; i < fnArray.length; i++) {
-                // Нас интересует только операция отрисовки растрового изображения
-                if (fnArray[i] !== pdfjsLib.OPS.paintImageXObject) {
-                    continue;
-                }
-                
-                const imgKey = argsArray[i][0];
-                // Получаем объект изображения по его ключу
-                const imgData = await page.commonObjs.get(imgKey);
-
-                // Проверяем, что это валидный объект изображения с данными
-                if (!imgData || !imgData.width || !imgData.height || !imgData.data) {
-                    continue;
-                }
-
-                // Создаем временный холст (canvas) для отрисовки
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Оптимизация для чтения данных
-                canvas.width = imgData.width;
-                canvas.height = imgData.height;
-
-                // Создаем объект ImageData, который будем заполнять пикселями
-                const imageData = ctx.createImageData(imgData.width, imgData.height);
-                const pixels = imageData.data;
-                const sourcePixels = imgData.data;
-
-                // === УЛУЧШЕННАЯ ЛОГИКА ОБРАБОТКИ ЦВЕТОВЫХ ПРОСТРАНСТВ ===
-                // 1. Стандартный случай: RGBA (4 компонента на пиксель)
-                if (sourcePixels.length === pixels.length) {
-                    pixels.set(sourcePixels);
-                } 
-                // 2. Частый случай: RGB (3 компонента на пиксель)
-                else if (sourcePixels.length === (pixels.length / 4) * 3) {
-                    let sourceIndex = 0;
-                    let destIndex = 0;
-                    while (sourceIndex < sourcePixels.length) {
-                        pixels[destIndex++] = sourcePixels[sourceIndex++]; // R
-                        pixels[destIndex++] = sourcePixels[sourceIndex++]; // G
-                        pixels[destIndex++] = sourcePixels[sourceIndex++]; // B
-                        pixels[destIndex++] = 255; // Alpha (непрозрачность)
-                    }
-                } 
-                // 3. Редкий случай: Grayscale (1 компонент на пиксель)
-                else if (sourcePixels.length === pixels.length / 4) {
-                     let sourceIndex = 0;
-                     let destIndex = 0;
-                     while (sourceIndex < sourcePixels.length) {
-                        const grayValue = sourcePixels[sourceIndex++];
-                        pixels[destIndex++] = grayValue; // R
-                        pixels[destIndex++] = grayValue; // G
-                        pixels[destIndex++] = grayValue; // B
-                        pixels[destIndex++] = 255;      // Alpha
-                     }
-                }
-                // Если ни один из форматов не подошел, пропускаем изображение
-                else {
-                    console.warn(`Неподдерживаемый формат изображения (размер данных: ${sourcePixels.length}), пропускаем.`);
-                    continue;
-                }
-                
-                // Помещаем обработанные пиксели на холст
-                ctx.putImageData(imageData, 0, 0);
-                
-                // Конвертируем холст в Base64 Data URL (JPEG для лучшего сжатия) и добавляем в массив
-                images.push(canvas.toDataURL("image/png"));
-            }
-        } catch (error) {
-            console.error("Критическая ошибка при извлечении чистого изображения со страницы:", error);
-        }
-        return images;
-    }
-    // ======== КОНЕЦ НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
 
 
 
@@ -9236,144 +9149,6 @@ const mainApp = (function() {
     }
      
 
-
-
-
-    // === ПОЛНАЯ ЗАМЕНА ===
-    // Извлекает изображения со страницы. Поддерживает inline/XObject.
-    // Если прямых картинок нет или объект "не готов" — делает фолбэк: рендерит всю страницу в JPEG.
-    async function extractImagesFromPage(page) {
-      const images = [];
-
-      // Превращает "сырые" данные (RGBA/RGB/Gray) в dataURL
-      function toDataURL(raw, w, h) {
-        if (!raw || !w || !h) return null;
-        const data =
-          raw.data ||
-          (raw.imgData && raw.imgData.data) ||
-          (raw.bitmap && raw.bitmap.data) ||
-          raw.rgba ||
-          null;
-        if (!data) return null;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const imgData = ctx.createImageData(w, h);
-        const dest = imgData.data;
-
-        if (data.length === dest.length) {
-          // уже RGBA
-          dest.set(data);
-        } else if (data.length === (dest.length / 4) * 3) {
-          // RGB -> RGBA
-          for (let si = 0, di = 0; si < data.length; ) {
-            dest[di++] = data[si++]; // R
-            dest[di++] = data[si++]; // G
-            dest[di++] = data[si++]; // B
-            dest[di++] = 255;        // A
-          }
-        } else if (data.length === dest.length / 4) {
-          // Gray -> RGBA
-          for (let si = 0, di = 0; si < data.length; ) {
-            const g = data[si++];
-            dest[di++] = g; dest[di++] = g; dest[di++] = g; dest[di++] = 255;
-          }
-        } else {
-          return null; // неизвестный формат
-        }
-
-        ctx.putImageData(imgData, 0, 0);
-        return canvas.toDataURL('image/png');
-      }
-
-      try {
-        const opList = await page.getOperatorList();
-        const fnArray = opList.fnArray;
-        const argsArray = opList.argsArray;
-
-        for (let idx = 0; idx < fnArray.length; idx++) {
-          const fn = fnArray[idx];
-
-          // 1) Inline-изображения: данные сразу в аргументе
-          if (fn === pdfjsLib.OPS.paintInlineImageXObject) {
-            const obj = argsArray[idx][0]; // { width, height, data, ... }
-            const url = toDataURL(obj, obj && obj.width, obj && obj.height);
-            if (url) images.push(url);
-            continue;
-          }
-
-          // 2) Обычные XObject-изображения: ищем в objs/commonObjs
-          if (fn === pdfjsLib.OPS.paintImageXObject) {
-            const key = argsArray[idx][0];
-            let obj = null;
-
-            // Доступ к page.objs — только если объект готов (has/get в try/catch)
-            try {
-              if (page.objs && typeof page.objs.get === 'function') {
-                if (!page.objs.has || page.objs.has(key)) {
-                  obj = page.objs.get(key);
-                }
-              }
-            } catch (_) { /* объект ещё не готов — пропускаем */ }
-
-            // Пробуем commonObjs
-            if (!obj) {
-              try {
-                if (page.commonObjs && typeof page.commonObjs.get === 'function') {
-                  if (!page.commonObjs.has || page.commonObjs.has(key)) {
-                    obj = page.commonObjs.get(key);
-                  }
-                }
-              } catch (_) { /* аналогично */ }
-            }
-
-            if (obj) {
-              const w = obj.width || (obj.bitmap && obj.bitmap.width);
-              const h = obj.height || (obj.bitmap && obj.bitmap.height);
-              const url = toDataURL(obj, w, h);
-              if (url) images.push(url);
-            }
-          }
-        }
-      } catch (e) {
-        // Ничего — пойдём в фолбэк ниже
-        console.warn('extractImagesFromPage: оп-лист недоступен, используем фолбэк.', e);
-      }
-
-      // Фолбэк: рендер страницы в один JPEG (чтобы картинка была всегда)
-      if (images.length === 0) {
-        try {
-          const baseViewport = page.getViewport({ scale: 1 });
-          const TARGET_CSS_WIDTH = Math.min(1200, Math.floor(window.innerWidth * 0.9));
-          const DPR = Math.max(1, window.devicePixelRatio || 1);
-          const scale = Math.max(2, (TARGET_CSS_WIDTH * DPR) / baseViewport.width);
-          const viewport = page.getViewport({ scale });
-
-          const canvas = document.createElement('canvas');
-          canvas.width  = Math.ceil(viewport.width);
-          canvas.height = Math.ceil(viewport.height);
-          const ctx = canvas.getContext('2d', { alpha: false });
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-
-          await page.render({ canvasContext: ctx, viewport }).promise;
-          images.push(canvas.toDataURL('image/png'));
-
-        } catch (err) {
-          console.error('extractImagesFromPage: фолбэк-рендер не удался.', err);
-        }
-      }
-
-      return images;
-    }
-
-
-
-
-
-
     /**
      * Обрабатывает PDF-файл постранично, извлекая текст С СОХРАНЕНИЕМ СТРУКТУРЫ и изображения.
      * @param {File} file - PDF-файл для обработки.
@@ -9389,7 +9164,8 @@ const mainApp = (function() {
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             
-            const [textContent, pageImages] = await Promise.all([
+            // === ИЗМЕНЕНИЕ №1: Получаем объект с результатом, а не просто массив ===
+            const [textContent, imageExtractionResult] = await Promise.all([
                 page.getTextContent(),
                 extractImagesFromPage(page)
             ]);
@@ -9424,9 +9200,14 @@ const mainApp = (function() {
             if (questionsOnPage.length > 0) {
                 const questionsWithImage = questionsOnPage.map(q => {
                     detectedLangs.add(detectLanguage(q.text)); // Определяем язык каждого вопроса
-                    if (pageImages.length > 0) {
-                        q.image = pageImages[0];
+                    
+                    // === ИЗМЕНЕНИЕ №2: Умное добавление картинки ===
+                    // Картинка добавляется, только если она есть И это не fallback-рендер всей страницы
+                    if (imageExtractionResult.images.length > 0 && !imageExtractionResult.isFallback) {
+                        q.image = imageExtractionResult.images[0];
                     }
+                    // ===============================================
+                    
                     return q;
                 });
                 allQuestionsWithImages.push(...questionsWithImage);
@@ -9439,7 +9220,6 @@ const mainApp = (function() {
             
             fileUploadArea.classList.add('hidden');
             quizSetupArea.classList.remove('hidden');
-            attachLanguageFilterBehavior();
             
             // Логика отображения фильтра языков
             const langFilterGroup = getEl('languageFilterGroup');
@@ -9454,6 +9234,8 @@ const mainApp = (function() {
             } else {
                 langFilterGroup.classList.add('hidden');
             }
+            // Вызываем attachLanguageFilterBehavior ПОСЛЕ заполнения select
+            attachLanguageFilterBehavior();
 
             const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
@@ -9465,7 +9247,6 @@ const mainApp = (function() {
         } else {
             alert(`${_('file_empty_or_invalid_part1')}"${file.name}"${_('file_empty_or_invalid_part2')}`);
         }
-
     }
 
 
@@ -10078,6 +9859,12 @@ const mainApp = (function() {
         currentQuestionIndex = index;
         const item = questionsForCurrentQuiz[index];
 
+        // === НОВЫЙ КОД: Запускаем предзагрузку для следующих вопросов ===
+        if (isTranslateModeEnabled) {
+            prefetchNextQuestions(index);
+        }
+        // ==========================================================
+
         // Обновляем общие элементы UI, которые нужны для всех режимов
         updateNavigationButtons();
         updateQuickNavButtons();
@@ -10099,16 +9886,15 @@ const mainApp = (function() {
         } else {
             // Если включен обычный режим теста...
             if (item.type === 'category') {
-                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
                 // ...и это категория, показываем ее как страницу-заставку, передавая ТОЛЬКО ТЕКСТ
                 displayCategoryPage(item.text);
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             } else {
                 // ...а если это вопрос, показываем как стандартный тест
                 displayQuestionAsTest(item);
             }
         }
     }
+
 
 
 
@@ -10168,40 +9954,46 @@ const mainApp = (function() {
             });
         }
         
+        // === НАЧАЛО ИЗМЕНЕНИЙ В ЛОГИКЕ ПЕРЕВОДА КАРТОЧЕК ===
         if (isTranslateModeEnabled) {
-            resizeCard();
-            translateQuestionBtn?.classList.add('translating');
             const lang = localStorage.getItem('appLanguage') || 'ru';
+            const cacheKey = getCacheKey(question.originalIndex, lang);
             
+            // Показываем анимацию загрузки, только если перевода нет в кэше
+            if (!currentQuizTranslations.has(cacheKey)) {
+                translateQuestionBtn?.classList.add('translating');
+            }
+
+            // Получаем перевод (он может прийти мгновенно из кэша)
             const translationResult = await getCachedOrFetchTranslation(question, question.originalIndex, lang);
             
+            // Убираем анимацию загрузки
+            translateQuestionBtn?.classList.remove('translating');
+            
+            // Проверяем, что мы все еще на том же вопросе
             if (currentQuestionIndex !== indexAtRequestTime) {
-                translateQuestionBtn?.classList.remove('translating');
                 return;
             }
-            translateQuestionBtn?.classList.remove('translating');
 
             if (translationResult) {
                 const translatedQuestion = translationResult.question;
                 const translatedCorrectAnswerText = translatedQuestion.options[translatedQuestion.correctAnswerIndex].text;
 
-                if (!translationResult.fromCache) {
-                    await Promise.all([
-                        animateTextTransformation(frontFaceTextContainer, question.text, translatedQuestion.text),
-                        animateTextTransformation(backFaceTextContainer, originalCorrectAnswerText, translatedCorrectAnswerText)
-                    ]);
-                } else {
-                    frontFaceTextContainer.textContent = translatedQuestion.text;
-                    backFaceTextContainer.textContent = translatedCorrectAnswerText;
-                }
+                // Запускаем анимацию ВСЕГДА, если перевод получен
+                await Promise.all([
+                    animateTextTransformation(frontFaceTextContainer, question.text, translatedQuestion.text),
+                    animateTextTransformation(backFaceTextContainer, originalCorrectAnswerText, translatedCorrectAnswerText)
+                ]);
                 
-                resizeCard();
+                resizeCard(); // Пересчитываем размер карточки после анимации
             } else {
                 alert(_('error_flashcard_translation_failed'));
             }
-        } else {
-            resizeCard();
         }
+        
+        // Пересчитываем размер в любом случае
+        resizeCard();
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
         if (cardElement) {
             cardElement.addEventListener('click', (e) => {
@@ -10212,7 +10004,6 @@ const mainApp = (function() {
             });
         }
     }
-
 
 
 
@@ -10697,7 +10488,6 @@ const mainApp = (function() {
 
 
 
-
     function resetQuizForNewFile(clearInput = true) {
         document.body.classList.remove('quiz-active');
         appTitleHeader?.classList.remove('hidden');
@@ -10733,6 +10523,7 @@ const mainApp = (function() {
         updateTranslateModeToggleVisual();
         
         currentQuizTranslations.clear();
+        prefetchedIndices.clear(); // <-- НОВЫЙ КОД: Очищаем очередь предзагрузки
         currentFileCacheKey = null;
         
         const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea];
@@ -12938,6 +12729,7 @@ const mainApp = (function() {
     // ====      НОВЫЕ ФУНКЦИИ ДЛЯ ПЕРЕВОДА ВОПРОСА (v1.0)        ====
     // =================================================================
 
+
     /**
      * Переключает режим перевода, сохраняет состояние и обновляет интерфейс.
      */
@@ -12945,11 +12737,18 @@ const mainApp = (function() {
         isTranslateModeEnabled = !isTranslateModeEnabled;
         localStorage.setItem('isTranslateModeEnabled', isTranslateModeEnabled);
         updateTranslateModeToggleVisual();
+        
         // Немедленно перезагружаем текущий вопрос, чтобы применить/отменить перевод
         if (!quizArea.classList.contains('hidden') && questionsForCurrentQuiz.length > 0) {
+            // === НОВЫЙ КОД: Запускаем предзагрузку при включении режима ===
+            if (isTranslateModeEnabled) {
+                prefetchNextQuestions(currentQuestionIndex);
+            }
+            // ==========================================================
             loadQuestion(currentQuestionIndex);
         }
     }
+
 
     /**
      * Обновляет внешний вид кнопки-переключателя перевода.
@@ -13226,6 +13025,61 @@ const mainApp = (function() {
 
 
 
+    /**
+     * Асинхронно запрашивает переводы для следующих N вопросов, если их еще нет в кэше.
+     * Работает в фоновом режиме, не блокируя интерфейс.
+     * @param {number} startIndex - Индекс текущего вопроса в массиве questionsForCurrentQuiz.
+     */
+    function prefetchNextQuestions(startIndex) {
+        if (!isTranslateModeEnabled || questionsForCurrentQuiz.length === 0) {
+            return;
+        }
+
+        const lang = localStorage.getItem('appLanguage') || 'ru';
+
+        // Проходим по "окну" следующих вопросов
+        for (let i = 0; i < PREFETCH_WINDOW_SIZE; i++) {
+            const questionIndex = startIndex + i;
+
+            // Проверяем, что мы не вышли за пределы теста
+            if (questionIndex >= questionsForCurrentQuiz.length) {
+                break;
+            }
+
+            const question = questionsForCurrentQuiz[questionIndex];
+
+            // Пропускаем категории
+            if (question.type === 'category') {
+                continue;
+            }
+            
+            const originalIndex = question.originalIndex;
+            const cacheKey = getCacheKey(originalIndex, lang);
+
+            // ГЛАВНАЯ ПРОВЕРКА: если перевод уже есть ИЛИ он уже в очереди на загрузку, пропускаем
+            if (currentQuizTranslations.has(cacheKey) || prefetchedIndices.has(originalIndex)) {
+                continue;
+            }
+
+            // Помечаем, что мы начали загрузку для этого вопроса
+            prefetchedIndices.add(originalIndex);
+            console.log(`🚀 Предзагрузка перевода для вопроса #${originalIndex}`);
+
+            // Запускаем получение перевода, но НЕ ждем его завершения (fire-and-forget)
+            // Он сам добавится в кэш, когда будет готов.
+            getCachedOrFetchTranslation(question, originalIndex, lang)
+                .catch(err => {
+                    // Если произошла ошибка, выводим ее в консоль, но не беспокоим пользователя
+                    console.error(`Ошибка предзагрузки для вопроса #${originalIndex}:`, err);
+                })
+                .finally(() => {
+                    // Вне зависимости от результата, убираем вопрос из очереди,
+                    // чтобы его можно было попробовать загрузить снова, если понадобится.
+                    prefetchedIndices.delete(originalIndex);
+                });
+        }
+    }
+
 
 
     /**
@@ -13234,64 +13088,57 @@ const mainApp = (function() {
      */
     async function displayTranslatedQuestion(originalQuestion) {
         const indexAtRequestTime = currentQuestionIndex;
-        
-        // ИЗМЕНЕНИЕ: Определяем целевой язык в самом начале.
         const targetLang = localStorage.getItem('appLanguage') || 'ru';
         const cacheKey = getCacheKey(originalQuestion.originalIndex, targetLang);
+        const isCached = currentQuizTranslations.has(cacheKey);
 
-        // ИЗМЕНЕНИЕ: Проверяем наличие кэша для КОНКРЕТНОГО ЯЗЫКА.
-        const isCachedForThisLang = currentQuizTranslations.has(cacheKey);
+        // === ИЗМЕНЕНИЕ №1: Сначала всегда показываем ОРИГИНАЛ ===
+        // Это "начальный кадр" для нашей анимации.
+        displayQuestionContent(originalQuestion);
 
-        if (isCachedForThisLang) {
-            // Если перевод для нужного языка уже есть, просто отображаем его.
-            const translatedQuestion = currentQuizTranslations.get(cacheKey);
-            displayQuestionContent(translatedQuestion, false);
-        } else {
-            // Если перевода для этого языка нет, начинаем процесс с анимацией.
-            displayQuestionContent(originalQuestion, false);
+        // === ИЗМЕНЕНИЕ №2: Показываем анимацию загрузки ТОЛЬКО если данных нет в кэше ===
+        if (!isCached) {
             translateQuestionBtn?.classList.add('translating');
-            
-            try {
-                // ИЗМЕНЕНИЕ: Передаем целевой язык в функцию.
-                const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex, targetLang);
+        }
+        
+        try {
+            // Получаем перевод (мгновенно из кэша или с ожиданием от сервера)
+            const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex, targetLang);
 
-                if (indexAtRequestTime !== currentQuestionIndex) {
-                    console.log('Перевод для предыдущего вопроса отменен.');
-                    return;
+            // Проверяем, не переключил ли пользователь вопрос, пока мы ждали
+            if (indexAtRequestTime !== currentQuestionIndex) {
+                console.log('Анимация для предыдущего вопроса отменена.');
+                return;
+            }
+            
+            if (result) {
+                const translatedQuestion = result.question;
+                
+                // === ИЗМЕНЕНИЕ №3: Запускаем анимацию ВСЕГДА, а не только при !fromCache ===
+                const allAnimations = [];
+                
+                allAnimations.push(animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text));
+
+                const optionElements = answerOptionsEl.querySelectorAll('li');
+                for (let i = 0; i < optionElements.length; i++) {
+                    const li = optionElements[i];
+                    const originalOptionText = originalQuestion.options[i]?.text || '';
+                    const translatedOptionText = translatedQuestion.options[i]?.text || '';
+                    
+                    if (originalOptionText || translatedOptionText) {
+                        // Используем более простую анимацию для вариантов ответа
+                        allAnimations.push(animateSingleLine(li, originalOptionText, translatedOptionText));
+                    }
                 }
                 
-                if (result && !result.fromCache) {
-                    const translatedQuestion = result.question;
-                    const allAnimations = [];
-                    
-                    allAnimations.push(animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text));
-
-                    const optionElements = answerOptionsEl.querySelectorAll('li');
-                    for (let i = 0; i < optionElements.length; i++) {
-                        const li = optionElements[i];
-                        const originalOptionText = originalQuestion.options[i]?.text || '';
-                        const translatedOptionText = translatedQuestion.options[i]?.text || '';
-                        
-                        if (originalOptionText || translatedOptionText) {
-                            allAnimations.push(
-                                new Promise(resolve => {
-                                    setTimeout(async () => {
-                                        await animateSingleLine(li, originalOptionText, translatedOptionText);
-                                        resolve();
-                                    }, i * 100); 
-                                })
-                            );
-                        }
-                    }
-                    
-                    await Promise.all(allAnimations);
-                    
-                } else if (!result) {
-                    alert("Не удалось перевести вопрос. Будет показан оригинал.");
-                }
-            } finally {
-                translateQuestionBtn?.classList.remove('translating');
+                await Promise.all(allAnimations);
+                
+            } else {
+                alert("Не удалось перевести вопрос. Будет показан оригинал.");
             }
+        } finally {
+            // Убираем анимацию загрузки в любом случае
+            translateQuestionBtn?.classList.remove('translating');
         }
     }
 
