@@ -12953,30 +12953,53 @@ const mainApp = (function() {
      * @returns {Promise<object|null>} - Промис с переведенным объектом вопроса или null в случае ошибки.
      */
     async function getTranslatedQuestion(questionObject, targetLang) {
-        // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
-        // 1. Определяем, какую 'action' отправить на сервер, в зависимости от выбора пользователя.
-        const action = currentTranslateEngine === 'ai' ? 'aiTranslateQuestion' : 'translateQuestion';
-        // === КОНЕЦ ИЗМЕНЕНИЯ ===
+        const initialEngine = currentTranslateEngine;
+        const action = initialEngine === 'ai' ? 'aiTranslateQuestion' : 'translateQuestion';
 
         try {
+            console.log(`Попытка перевода через движок: ${initialEngine}`);
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: action, // Используем переменную action
+                    action: action,
                     questionObject: questionObject,
                     targetLang: targetLang
                 })
             });
             const result = await response.json();
             if (result.success) {
-                return result.translatedQuestion;
+                // === ИЗМЕНЕНИЕ: Возвращаем объект с результатом и названием движка ===
+                return { question: result.translatedQuestion, engine: initialEngine };
             } else {
-                console.error('Ошибка перевода на сервере:', result.error);
-                return null;
+                console.error(`Ошибка перевода на сервере (${initialEngine}):`, result.error);
+                throw new Error(result.error);
             }
         } catch (error) {
-            console.error('Сетевая ошибка при переводе:', error);
-            return null;
+            console.warn(`Перевод через ${initialEngine} не удался.`, error);
+
+            if (initialEngine === 'ai') {
+                console.log("Автоматический переход на Google Translate...");
+                try {
+                    const fallbackResponse = await fetch(googleAppScriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'translateQuestion',
+                            questionObject: questionObject,
+                            targetLang: targetLang
+                        })
+                    });
+                    const fallbackResult = await fallbackResponse.json();
+                    if (fallbackResult.success) {
+                        console.log("✅ Fallback на Google Translate успешен.");
+                        // === ИЗМЕНЕНИЕ: Возвращаем результат fallback'а с правильным названием движка ===
+                        return { question: fallbackResult.translatedQuestion, engine: 'google' };
+                    }
+                } catch (fallbackError) {
+                    console.error("❌ Fallback на Google Translate также не удался:", fallbackError);
+                }
+            }
+            
+            return null; // Возвращаем null, если все попытки провалились
         }
     }
 
@@ -12993,35 +13016,40 @@ const mainApp = (function() {
      * @returns {Promise<{question: object, fromCache: boolean}|null>} - Объект с результатом или null.
      */
     async function getCachedOrFetchTranslation(questionObject, originalIndex, targetLang) {
-        // ИЗМЕНЕНИЕ: Используем новый, комбинированный ключ.
         const cacheKey = getCacheKey(originalIndex, targetLang);
 
-        // 1. Проверяем кэш сессии по новому ключу.
         if (currentQuizTranslations.has(cacheKey)) {
             return { question: currentQuizTranslations.get(cacheKey), fromCache: true };
         }
 
-        // 2. Если в кэше нет, запрашиваем перевод с сервера.
-        const translatedQuestion = await getTranslatedQuestion(questionObject, targetLang);
+        // 1. Получаем результат, который теперь содержит и перевод, и движок
+        const translationResult = await getTranslatedQuestion(questionObject, targetLang);
 
-        // 3. Если перевод успешен, сохраняем его ВЕЗДЕ.
-        if (translatedQuestion) {
-            // ИЗМЕНЕНИЕ: Сохраняем в кэш сессии с новым ключом.
-            currentQuizTranslations.set(cacheKey, translatedQuestion);
+        if (translationResult) {
+            // === НАЧАЛО ГЛАВНОГО ИЗМЕНЕНИЯ ===
+            // 2. Кэшируем результат, ТОЛЬКО ЕСЛИ он был получен от ВЫБРАННОГО пользователем движка
+            if (translationResult.engine === currentTranslateEngine) {
+                console.log(`Кэширование результата от ${translationResult.engine} для вопроса #${originalIndex}`);
+                currentQuizTranslations.set(cacheKey, translationResult.question);
 
-            // Сохраняем в постоянный кэш localStorage
-            if (currentFileCacheKey) {
-                try {
-                    const serializedCache = JSON.stringify(Array.from(currentQuizTranslations.entries()));
-                    localStorage.setItem(currentFileCacheKey, serializedCache);
-                } catch (e) {
-                    console.error("Ошибка сохранения кэша в localStorage (возможно, нет места):", e);
+                if (currentFileCacheKey) {
+                    try {
+                        const serializedCache = JSON.stringify(Array.from(currentQuizTranslations.entries()));
+                        localStorage.setItem(currentFileCacheKey, serializedCache);
+                    } catch (e) {
+                        console.error("Ошибка сохранения кэша в localStorage (возможно, нет места):", e);
+                    }
                 }
+            } else {
+                // Если сработал fallback, мы показываем результат, но не кэшируем его
+                console.log(`Использован Fallback-перевод (${translationResult.engine}). Результат НЕ будет кэширован.`);
             }
-            return { question: translatedQuestion, fromCache: false };
+            // === КОНЕЦ ГЛАВНОГО ИЗМЕНЕНИЯ ===
+
+            // 3. Возвращаем сам объект вопроса для отображения
+            return { question: translationResult.question, fromCache: false };
         }
 
-        // 4. Если перевод не удался, возвращаем null.
         return null;
     }
 
