@@ -10782,11 +10782,14 @@ const mainApp = (function() {
     }
 
 
+
     async function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
+        // НОВЫЙ КОД: Сохраняем ВЕСЬ массив с текущим состоянием квиза.
+        // Это включает порядок вопросов, порядок ответов и правильные индексы.
         const newSessionData = {
-            questionOrderIndices: questionsForCurrentQuiz.map(q => q.originalIndex),
+            quizState: questionsForCurrentQuiz, // <--- ГЛАВНОЕ ИЗМЕНЕНИЕ
             userAnswers,
             currentQuestionIndex,
             score,
@@ -10912,8 +10915,7 @@ const mainApp = (function() {
             return;
         }
 
-        // === НАЧАЛО НОВОГО КОДА ===
-        // Восстанавливаем состояние переводчика и кэш ПЕРЕД загрузкой вопросов.
+        // === Восстанавливаем состояние переводчика и кэш ПЕРЕД загрузкой вопросов. ===
         isTranslateModeEnabled = sessionData.isTranslateModeEnabled || false;
         if (sessionData.translations && Array.isArray(sessionData.translations)) {
             // Восстанавливаем Map из сохраненного массива.
@@ -10924,45 +10926,58 @@ const mainApp = (function() {
         }
         // Обновляем вид кнопки-переключателя.
         updateTranslateModeToggleVisual();
-        // === КОНЕЦ НОВОГО КОДА ===
+        
 
+        // =======================================================
+        // === НАЧАЛО НОВОГО, ИСПРАВЛЕННОГО БЛОКА ВОССТАНОВЛЕНИЯ ===
+        // =======================================================
 
-        if (sessionData.isPdfSession && sessionData.fullQuestionsData) {
-            console.log("Восстановление сессии из PDF-файла напрямую из данных сессии...");
-            allParsedQuestions = sessionData.fullQuestionsData;
-            isPdfSession = true;
+        // Проверяем, есть ли в сессии новый ключ 'quizState'.
+        // Это сессии, сохраненные ПОСЛЕ нашего исправления.
+        if (sessionData.quizState) {
+            // Если да - это идеальный сценарий! Просто берем сохраненное состояние.
+            console.log("Восстановление сессии из полного состояния (quizState).");
+            questionsForCurrentQuiz = sessionData.quizState;
+
+            // Нам все еще нужно загрузить `allParsedQuestions`, если это была PDF сессия,
+            // чтобы корректно работали функции, которые могут на них ссылаться.
+            if (sessionData.isPdfSession && sessionData.fullQuestionsData) {
+                 allParsedQuestions = sessionData.fullQuestionsData;
+                 isPdfSession = true;
+            } else {
+                 isPdfSession = false;
+            }
+
         } else {
-            isPdfSession = false;
+            // Если нет - это старый формат сессии. Используем старую логику как fallback,
+            // но с ключевым исправлением (убираем повторное перемешивание).
+            console.warn("Обнаружен старый формат сессии. Используется fallback-логика восстановления.");
+            isPdfSession = false; // Старые сессии не могли быть PDF
             const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
             const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
-
             if (!originalFile || !originalFile.content) {
-                alert(_('error_session_file_not_found'));
-                deleteSavedSession(fileName); 
-                return;
+                 alert(_('error_session_file_not_found'));
+                 deleteSavedSession(fileName);
+                 return;
             }
             allParsedQuestions = parseQstContent(originalFile.content);
-        }
 
-        questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => {
-            // --- ИЗМЕНЕНИЕ: Добавляем проверку на случай, если originalIndex равен undefined ---
-            const originalQuestion = allParsedQuestions[originalIndex];
-            if (!originalQuestion) {
-                console.warn(`Не найден вопрос с индексом ${originalIndex} при восстановлении сессии.`);
-                return null; // Возвращаем null для некорректных записей
-            }
-            return { ...originalQuestion, originalIndex };
-        }).filter(q => q !== null); // Отфильтровываем некорректные записи
-
-        if (sessionData.quizSettings && sessionData.quizSettings.shuffleAnswers) {
-            questionsForCurrentQuiz.forEach(q => {
-                if (q.type !== 'category' && q.options) {
-                    const correctAnswerObject = q.options[q.correctAnswerIndex];
-                    shuffleArray(q.options);
-                    q.correctAnswerIndex = q.options.findIndex(opt => opt === correctAnswerObject);
+            // Восстанавливаем порядок вопросов, как он был сохранен.
+            questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => {
+                const originalQuestion = allParsedQuestions[originalIndex];
+                if (!originalQuestion) {
+                    console.warn(`Не найден вопрос с индексом ${originalIndex} при восстановлении сессии.`);
+                    return null;
                 }
-            });
+                return { ...originalQuestion, originalIndex };
+            }).filter(q => q !== null);
+
+            // !!! ГЛАВНОЕ ИСПРАВЛЕНИЕ ДЛЯ СТАРОГО ФОРМАТА !!!
+            // Блок, который повторно перемешивал ответы, УДАЛЕН отсюда.
         }
+        // =====================================================
+        // === КОНЕЦ НОВОГО, ИСПРАВЛЕННОГО БЛОКА ВОССТАНОВЛЕНИЯ ===
+        // =====================================================
         
         userAnswers = sessionData.userAnswers;
         currentQuestionIndex = sessionData.currentQuestionIndex;
@@ -10994,7 +11009,6 @@ const mainApp = (function() {
 
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
-
 
     
     async function deleteSavedSession(fileName) {
