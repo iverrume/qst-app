@@ -10787,7 +10787,14 @@ const mainApp = (function() {
             timeLeftInSeconds,
             originalFileNameForReview,
             totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length,
-            timestamp: new Date().getTime()
+            timestamp: new Date().getTime(),
+            
+            // === НАЧАЛО НОВОГО КОДА ===
+            // Сохраняем состояние переводчика и сам кэш.
+            // Преобразуем Map в массив для корректной JSON-сериализации.
+            isTranslateModeEnabled: isTranslateModeEnabled,
+            translations: Array.from(currentQuizTranslations.entries())
+            // === КОНЕЦ НОВОГО КОДА ===
         };
 
         if (isPdfSession) {
@@ -10813,6 +10820,7 @@ const mainApp = (function() {
             }
         }
     }
+
 
     async function loadSavedSession() {
         // Используем DBManager вместо localStorage
@@ -10897,6 +10905,21 @@ const mainApp = (function() {
             return;
         }
 
+        // === НАЧАЛО НОВОГО КОДА ===
+        // Восстанавливаем состояние переводчика и кэш ПЕРЕД загрузкой вопросов.
+        isTranslateModeEnabled = sessionData.isTranslateModeEnabled || false;
+        if (sessionData.translations && Array.isArray(sessionData.translations)) {
+            // Восстанавливаем Map из сохраненного массива.
+            currentQuizTranslations = new Map(sessionData.translations);
+            console.log(`Восстановлен кэш переводов из сессии: ${currentQuizTranslations.size} записей.`);
+        } else {
+            currentQuizTranslations.clear();
+        }
+        // Обновляем вид кнопки-переключателя.
+        updateTranslateModeToggleVisual();
+        // === КОНЕЦ НОВОГО КОДА ===
+
+
         if (sessionData.isPdfSession && sessionData.fullQuestionsData) {
             console.log("Восстановление сессии из PDF-файла напрямую из данных сессии...");
             allParsedQuestions = sessionData.fullQuestionsData;
@@ -10915,8 +10938,14 @@ const mainApp = (function() {
         }
 
         questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => {
-            return { ...allParsedQuestions[originalIndex], originalIndex };
-        });
+            // --- ИЗМЕНЕНИЕ: Добавляем проверку на случай, если originalIndex равен undefined ---
+            const originalQuestion = allParsedQuestions[originalIndex];
+            if (!originalQuestion) {
+                console.warn(`Не найден вопрос с индексом ${originalIndex} при восстановлении сессии.`);
+                return null; // Возвращаем null для некорректных записей
+            }
+            return { ...originalQuestion, originalIndex };
+        }).filter(q => q !== null); // Отфильтровываем некорректные записи
 
         if (sessionData.quizSettings && sessionData.quizSettings.shuffleAnswers) {
             questionsForCurrentQuiz.forEach(q => {
