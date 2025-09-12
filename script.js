@@ -9513,7 +9513,18 @@ const mainApp = (function() {
     }
 
 
+
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
+        // ======== НАЧАЛО ИСПРАВЛЕНИЯ: Гарантированная очистка кэша ========
+        // Для любого нового теста (не для работы над ошибками) мы принудительно
+        // очищаем кэш переводов от предыдущих сессий. Это предотвращает
+        // "перетекание" переводов из одного теста в другой, как в описанном баге.
+        if (!isErrorReview) {
+            currentQuizTranslations.clear();
+            prefetchedIndices.clear();
+        }
+        // ======== КОНЕЦ ИСПРАВЛЕНИЯ ========
+
         let finalQuizContext = currentQuizContext;
         let sourceArray;
 
@@ -9678,6 +9689,7 @@ const mainApp = (function() {
         startQuiz(finalQuizContext);
         manageBackButtonInterceptor();
     }
+
 
 
     function startQuiz(quizContext = null) {
@@ -10492,10 +10504,16 @@ const mainApp = (function() {
     async function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
-        // НОВЫЙ КОД: Сохраняем ВЕСЬ массив с текущим состоянием квиза.
-        // Это включает порядок вопросов, порядок ответов и правильные индексы.
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Сохраняем полный набор данных ---
         const newSessionData = {
-            quizState: questionsForCurrentQuiz, // <--- ГЛАВНОЕ ИЗМЕНЕНИЕ
+            // Состояние текущего квиза (с перемешиванием и диапазоном)
+            quizState: questionsForCurrentQuiz,
+            // Полный, оригинальный набор вопросов из файла
+            fullQuestionsData: allParsedQuestions,
+            // Флаг, указывающий, была ли это PDF-сессия
+            isPdfSession: isPdfSession,
+            
+            // Остальные данные, как и раньше
             userAnswers,
             currentQuestionIndex,
             score,
@@ -10505,22 +10523,13 @@ const mainApp = (function() {
             totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length,
             timestamp: new Date().getTime(),
             
-            // === НАЧАЛО НОВОГО КОДА ===
-            // Сохраняем состояние переводчика и сам кэш.
-            // Преобразуем Map в массив для корректной JSON-сериализации.
+            // Состояние переводчика
             isTranslateModeEnabled: isTranslateModeEnabled,
             translations: Array.from(currentQuizTranslations.entries())
-            // === КОНЕЦ НОВОГО КОДА ===
         };
-
-        if (isPdfSession) {
-            newSessionData.isPdfSession = true;
-            newSessionData.fullQuestionsData = allParsedQuestions;
-            console.log(`Сохранение PDF сессии в IndexedDB...`);
-        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         try {
-            // Используем DBManager вместо localStorage
             await DBManager.save(newSessionData, 'SavedSessions');
 
             alert(_('session_saved_success'));
@@ -10528,7 +10537,6 @@ const mainApp = (function() {
 
         } catch (e) {
             console.error("Ошибка сохранения сессии в IndexedDB:", e);
-            // Проверяем, является ли ошибка QuotaExceededError
             if (e.name === 'QuotaExceededError') {
                  alert(_('error_session_save_failed'));
             } else {
@@ -10613,7 +10621,6 @@ const mainApp = (function() {
 
 
     async function restoreQuizSession(fileName) {
-        // Используем DBManager вместо localStorage
         const sessionData = await DBManager.get(fileName, 'SavedSessions');
         
         if (!sessionData) {
@@ -10621,69 +10628,39 @@ const mainApp = (function() {
             return;
         }
 
-        // === Восстанавливаем состояние переводчика и кэш ПЕРЕД загрузкой вопросов. ===
+        // Восстанавливаем состояние переводчика и кэш
         isTranslateModeEnabled = sessionData.isTranslateModeEnabled || false;
-        if (sessionData.translations && Array.isArray(sessionData.translations)) {
-            // Восстанавливаем Map из сохраненного массива.
-            currentQuizTranslations = new Map(sessionData.translations);
-            console.log(`Восстановлен кэш переводов из сессии: ${currentQuizTranslations.size} записей.`);
-        } else {
-            currentQuizTranslations.clear();
-        }
-        // Обновляем вид кнопки-переключателя.
+        currentQuizTranslations = sessionData.translations ? new Map(sessionData.translations) : new Map();
         updateTranslateModeToggleVisual();
         
+        // --- НАЧАЛО ИСПРАВЛЕНИЙ: Новая логика восстановления ---
 
-        // =======================================================
-        // === НАЧАЛО НОВОГО, ИСПРАВЛЕННОГО БЛОКА ВОССТАНОВЛЕНИЯ ===
-        // =======================================================
-
-        // Проверяем, есть ли в сессии новый ключ 'quizState'.
-        // Это сессии, сохраненные ПОСЛЕ нашего исправления.
-        if (sessionData.quizState) {
-            // Если да - это идеальный сценарий! Просто берем сохраненное состояние.
-            console.log("Восстановление сессии из полного состояния (quizState).");
+        // Проверяем, есть ли в сессии полный набор вопросов (новый формат)
+        if (sessionData.fullQuestionsData && sessionData.quizState) {
+            console.log("Восстановление сессии из автономных данных (новый формат).");
+            // Восстанавливаем все необходимые данные напрямую из объекта сессии
+            allParsedQuestions = sessionData.fullQuestionsData;
             questionsForCurrentQuiz = sessionData.quizState;
-
-            // Нам все еще нужно загрузить `allParsedQuestions`, если это была PDF сессия,
-            // чтобы корректно работали функции, которые могут на них ссылаться.
-            if (sessionData.isPdfSession && sessionData.fullQuestionsData) {
-                 allParsedQuestions = sessionData.fullQuestionsData;
-                 isPdfSession = true;
-            } else {
-                 isPdfSession = false;
-            }
-
+            isPdfSession = sessionData.isPdfSession || false;
         } else {
-            // Если нет - это старый формат сессии. Используем старую логику как fallback,
-            // но с ключевым исправлением (убираем повторное перемешивание).
-            console.warn("Обнаружен старый формат сессии. Используется fallback-логика восстановления.");
-            isPdfSession = false; // Старые сессии не могли быть PDF
+            // Fallback для старых сессий, которые зависят от localStorage
+            console.warn("Обнаружен старый формат сессии. Попытка восстановления из localStorage.");
             const recentFiles = JSON.parse(localStorage.getItem(RECENT_FILES_STORAGE_KEY)) || [];
             const originalFile = recentFiles.find(f => f.name === sessionData.originalFileNameForReview);
+
             if (!originalFile || !originalFile.content) {
-                 alert(_('error_session_file_not_found'));
-                 deleteSavedSession(fileName);
-                 return;
+                alert(_('error_session_file_not_found'));
+                deleteSavedSession(fileName);
+                return;
             }
             allParsedQuestions = parseQstContent(originalFile.content);
-
-            // Восстанавливаем порядок вопросов, как он был сохранен.
-            questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => {
-                const originalQuestion = allParsedQuestions[originalIndex];
-                if (!originalQuestion) {
-                    console.warn(`Не найден вопрос с индексом ${originalIndex} при восстановлении сессии.`);
-                    return null;
-                }
-                return { ...originalQuestion, originalIndex };
-            }).filter(q => q !== null);
-
-            // !!! ГЛАВНОЕ ИСПРАВЛЕНИЕ ДЛЯ СТАРОГО ФОРМАТА !!!
-            // Блок, который повторно перемешивал ответы, УДАЛЕН отсюда.
+            questionsForCurrentQuiz = sessionData.questionOrderIndices.map(originalIndex => ({
+                ...allParsedQuestions[originalIndex],
+                originalIndex
+            }));
+            isPdfSession = false; // В старых сессиях не было PDF
         }
-        // =====================================================
-        // === КОНЕЦ НОВОГО, ИСПРАВЛЕННОГО БЛОКА ВОССТАНОВЛЕНИЯ ===
-        // =====================================================
+        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
         
         userAnswers = sessionData.userAnswers;
         currentQuestionIndex = sessionData.currentQuestionIndex;
@@ -13500,13 +13477,32 @@ const mainApp = (function() {
         updateSliderVisuals();
     }
     
-    /**
-     * Включает/отключает блок выбора диапазона в зависимости от чекбокса "Случайный набор".
-     */
     function handleShuffleNToggle() {
-        const isDisabled = shuffleNCheckbox.checked;
-        questionRangeGroup.classList.toggle('disabled', isDisabled);
-        shuffleNCountInput.disabled = !isDisabled;
+        const isRandomModeActive = shuffleNCheckbox.checked;
+
+        // --- Существующая логика (остается без изменений) ---
+        // Включает/отключает блок выбора диапазона
+        questionRangeGroup.classList.toggle('disabled', isRandomModeActive);
+        shuffleNCountInput.disabled = !isRandomModeActive;
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ БАГА ---
+        if (isRandomModeActive) {
+            // Если "Случайный набор" ВКЛЮЧЕН:
+            // 1. Принудительно ставим галочку "Перемешать вопросы", так как это обязательное поведение.
+            shuffleQuestionsCheckbox.checked = true;
+            // 2. Блокируем этот чекбокс, чтобы пользователь не мог его отключить.
+            shuffleQuestionsCheckbox.disabled = true;
+        } else {
+            // Если "Случайный набор" ВЫКЛЮЧЕН:
+            // 1. Снимаем галочку "Перемешать вопросы", возвращая к состоянию по умолчанию.
+            shuffleQuestionsCheckbox.checked = false;
+            // 2. Снова делаем чекбокс активным, НО только если его не блокирует "Режим чтения".
+            //    Это предотвращает конфликты с другой логикой.
+            if (!readingModeCheckbox.checked) {
+                shuffleQuestionsCheckbox.disabled = false;
+            }
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ БАГА ---
     }
 
     /**
