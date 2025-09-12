@@ -6145,7 +6145,18 @@ const mainApp = (function() {
             ai_parser_input_placeholder: "Вставьте сюда текст для анализа ИИ...",
             parser_pattern_trilingual: "Блок \"Вопрос No\" (многоязычный)",
             language_filter_label: 'Язык вопросов:',
-            checking_access: "Проверка..."
+            checking_access: "Проверка...",
+
+            category_filter_label: "Фильтр по категориям:",
+            select_all_btn: "Все",
+            deselect_all_btn: "Снять",
+            category_filter_note: "Если ни одна категория не выбрана, в тест войдут вопросы из всех категорий.",
+
+            session_conflict_title: "Сессия уже существует",
+            session_conflict_text: 'Для файла "{fileName}" уже есть сохраненный прогресс. Что вы хотите сделать?',
+            session_overwrite_button: "Перезаписать",
+            session_save_new_button: "Сохранить как новую"
+
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -6481,7 +6492,17 @@ const mainApp = (function() {
             ai_from_text_description: "Төмендегі өріске мәтінді қойыңыз, сонда ЖИ сол бойынша сұрақтар мен жауаптары бар тест жасайды.",
             parser_pattern_trilingual: "\"Сұрақ No\" блогы (көптілді)",
             language_filter_label: 'Сұрақтардың тілі:',
-            ai_parser_input_placeholder: "ЖИ талдауы үшін мәтінді осында қойыңыз..."
+            ai_parser_input_placeholder: "ЖИ талдауы үшін мәтінді осында қойыңыз...",
+
+            category_filter_label: "Санаттар бойынша сүзгі:",
+            select_all_btn: "Барлығы",
+            deselect_all_btn: "Алу",
+            category_filter_note: "Егер бірде-бір санат таңдалмаса, тестке барлық санаттағы сұрақтар кіреді.",
+
+            session_conflict_title: "Сессия сақталған",
+            session_conflict_text: '"{fileName}" файлы үшін сақталған үлгерім бар. Не істегіңіз келеді?',
+            session_overwrite_button: "Қайта жазу",
+            session_save_new_button: "Жаңа ретінде сақтау"
 
         },
         en: {
@@ -6823,7 +6844,17 @@ const mainApp = (function() {
             ai_from_text_description: "Paste text into the field below, and the AI will create a test with questions and answers based on it.",
             parser_pattern_trilingual: "\"Question No\" block (multilingual)",
             language_filter_label: 'Question Language:',
-            ai_parser_input_placeholder: "Paste text here for AI analysis..."
+            ai_parser_input_placeholder: "Paste text here for AI analysis...",
+
+            category_filter_label: "Filter by Categories:",
+            select_all_btn: "All",
+            deselect_all_btn: "None",
+            category_filter_note: "If no categories are selected, questions from all categories will be included.",
+
+            session_conflict_title: "Session Already Exists",
+            session_conflict_text: 'There is already saved progress for the file "{fileName}". What would you like to do?',
+            session_overwrite_button: "Overwrite",
+            session_save_new_button: "Save as New"
         }
 
 
@@ -6867,7 +6898,8 @@ const mainApp = (function() {
         questionTextEl, answerOptionsEl, feedbackAreaEl, prevQuestionButton,
         nextButton, restartButton, startQuizButton, currentQuestionNumEl,
         totalQuestionsNumEl, correctAnswersCountEl, finalCorrectEl, finalTotalEl,
-        finalPercentageEl, timeLimitInput, timeLimitValueDisplay,
+        finalPercentageEl, timeLimitInput, timeLimitSlider, timeSliderProgress, 
+        timeSliderTicks, timeSliderValueBubble,
         questionRangeStartInput, questionRangeEndInput, maxQuestionsInfoEl,
         shuffleQuestionsCheckbox, shuffleAnswersCheckbox, feedbackModeCheckbox,
         timerDisplayEl, timeLeftEl, quickNavPanel, quickNavButtonsContainer,
@@ -6914,12 +6946,15 @@ const mainApp = (function() {
         searchResultCardsContainer, continueLaterButton, savedSessionArea, 
         savedSessionList, appTitleHeader, translateEngineToggle, translateEngineDropdown,
         rangeSliderStart, rangeSliderEnd, sliderProgress, questionRangeGroup,
-        shuffleNCheckbox, shuffleNCountInput, sliderTicks, timeSliderTicks,
+        shuffleNCheckbox, shuffleNCountInput, sliderTicks,
         themeDropdownContainer, themeDropdownButton, themeDropdownContent, themeIcon,
         exitConfirmationModal, confirmExitBtn, cancelExitBtn,
         updateNotification, updateBtn, translateQuestionBtn,
         downloadTranslatedTxtButton, downloadTranslatedQstButton,
-        flashcardsModeCheckbox;
+        flashcardsModeCheckbox, categoryFilterGroup, categoryCheckboxesContainer,
+        selectAllCategoriesBtn, deselectAllCategoriesBtn, sessionConflictModal, 
+        sessionConflictText, overwriteSessionBtn,
+        saveNewSessionBtn, cancelConflictBtn;
 
 
 
@@ -7083,6 +7118,19 @@ const mainApp = (function() {
         themeDropdownContent = getEl('themeDropdownContent');
         themeIcon = getEl('themeIcon');
 
+        // Элементы фильтра категорий
+        categoryFilterGroup = getEl('categoryFilterGroup');
+        categoryCheckboxesContainer = getEl('categoryCheckboxes');
+        selectAllCategoriesBtn = getEl('selectAllCategoriesBtn');
+        deselectAllCategoriesBtn = getEl('deselectAllCategoriesBtn');
+
+        // Элементы модального окна конфликта сессий
+        sessionConflictModal = getEl('sessionConflictModal');
+        sessionConflictText = getEl('sessionConflictText');
+        overwriteSessionBtn = getEl('overwriteSessionBtn');
+        saveNewSessionBtn = getEl('saveNewSessionBtn');
+        cancelConflictBtn = getEl('cancelConflictBtn');
+
         // Элементы экрана теста (Quiz Area)
         questionTextEl = getEl('questionText');
         answerOptionsEl = getEl('answerOptions');
@@ -7115,8 +7163,13 @@ const mainApp = (function() {
 
         // Элементы экрана настроек (Setup Area)
         startQuizButton = getEl('startQuizButton');
-        timeLimitInput = getEl('timeLimit');
-        timeLimitValueDisplay = getEl('timeLimitValue');
+
+        timeLimitInput = getEl('timeLimitInput');
+        timeLimitSlider = getEl('timeLimitSlider');
+        timeSliderProgress = getEl('timeSliderProgress');
+        timeSliderTicks = getEl('timeSliderTicks');
+        timeSliderValueBubble = getEl('timeSliderValueBubble');
+
         questionRangeStartInput = getEl('questionRangeStart');
         questionRangeEndInput = getEl('questionRangeEnd');
         maxQuestionsInfoEl = getEl('maxQuestionsInfo');
@@ -7134,7 +7187,9 @@ const mainApp = (function() {
         shuffleNCheckbox = getEl('shuffleNQuestions');
         shuffleNCountInput = getEl('shuffleNQuestionsCount');
         sliderTicks = getEl('sliderTicks');
-        timeSliderTicks = getEl('timeSliderTicks');
+
+
+
         
         // Шпаргалка (Cheat Sheet)
         cheatSheetResultArea = getEl('cheatSheetResultArea');
@@ -7413,10 +7468,8 @@ const mainApp = (function() {
         triggerWordToggle?.addEventListener('click', toggleTriggerWordMode);
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
         readingModeCheckbox?.addEventListener('change', handleReadingModeChange);
-        timeLimitInput.addEventListener('input', () => {
-            timeLimitValueDisplay.textContent = timeLimitInput.value;
-            updateSingleSliderVisuals();
-        });
+
+
         themeDropdownButton?.addEventListener('click', (event) => {
             event.stopPropagation();
             themeDropdownContent.classList.toggle('show');
@@ -7509,6 +7562,13 @@ const mainApp = (function() {
                 fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
             }
         });
+                // Обработчики для кнопок фильтра категорий
+        selectAllCategoriesBtn?.addEventListener('click', () => toggleAllCategories(true));
+        deselectAllCategoriesBtn?.addEventListener('click', () => toggleAllCategories(false));
+
+        // Обработчик для самих чекбоксов категорий
+        categoryCheckboxesContainer?.addEventListener('change', updateQuestionCountForFilters);
+
         window.addEventListener('click', () => {
             const dropdown = getEl('aiExplanationStyleDropdown');
             if (dropdown && dropdown.classList.contains('open')) {
@@ -7516,9 +7576,96 @@ const mainApp = (function() {
                 getEl('aiExplanationStyleContent').classList.add('hidden');
             }
         });
+
+        // --- НАЧАЛО НОВОГО БЛОКА: Обработчики для лимита времени ---
+        if (timeLimitInput && timeLimitSlider) {
+            // Слушатель для числового поля
+            timeLimitInput.addEventListener('input', (e) => {
+                updateTimeControls(e.target.value, timeLimitInput);
+            });
+
+            // Слушатель для колесика мыши на числовом поле
+            timeLimitInput.addEventListener('wheel', (event) => {
+                event.preventDefault();
+                const direction = event.deltaY < 0 ? 1 : -1;
+                adjustTimeLimit(direction);
+            });
+
+            // Слушатель для ползунка
+            timeLimitSlider.addEventListener('input', (e) => {
+                const rawValue = parseInt(e.target.value, 10);
+                const snappedValue = snapTimeValue(rawValue);
+
+                if (rawValue !== snappedValue) {
+                    timeLimitSlider.value = snappedValue;
+                }
+                updateTimeControls(timeLimitSlider.value, timeLimitSlider);
+            });
+        }
+        // --- КОНЕЦ НОВОГО БЛОКА ---
+
     }
 
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Выбирает или снимает выбор со всех чекбоксов категорий.
+     * @param {boolean} select - true, чтобы выбрать все, false - чтобы снять выбор.
+     */
+      function toggleAllCategories(select) {
+          if (categoryCheckboxesContainer) {
+              const checkboxes = categoryCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
+              checkboxes.forEach(checkbox => checkbox.checked = select);
+              // Вызываем пересчет после изменения всех чекбоксов
+              updateQuestionCountForFilters();
+          }
+      }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Пересчитывает и обновляет UI диапазона вопросов
+     * на основе выбранных фильтров (категории, язык).
+     */
+    function updateQuestionCountForFilters() {
+        if (!categoryFilterGroup || allParsedQuestions.length === 0) return;
+
+        let baseQuestions = allParsedQuestions;
+
+        // Сначала фильтруем по языку, если этот фильтр активен
+        const langFilterGroup = getEl('languageFilterGroup');
+        const langFilterSelect = getEl('languageFilter');
+        if (!langFilterGroup.classList.contains('hidden') && langFilterSelect.value !== 'all') {
+            const selectedLang = langFilterSelect.value;
+            baseQuestions = baseQuestions.filter(q => detectLanguage(q.text) === selectedLang);
+        }
+        
+        // Затем фильтруем по выбранным категориям
+        const selectedCategories = Array.from(categoryCheckboxesContainer.querySelectorAll('input:checked')).map(input => input.value);
+        
+        let questionsInFilter = [];
+        if (selectedCategories.length > 0) {
+            let includeCurrentSection = false;
+            baseQuestions.forEach(item => {
+                if (item.type === 'category') {
+                    includeCurrentSection = selectedCategories.includes(item.text);
+                } else if (includeCurrentSection) {
+                    questionsInFilter.push(item);
+                }
+            });
+        } else {
+            // Если ни одна категория не выбрана, считаем все вопросы
+            questionsInFilter = baseQuestions.filter(item => item.type !== 'category');
+        }
+
+        const questionCount = questionsInFilter.length;
+
+        // Обновляем UI
+        maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount > 0 ? questionCount : '0'} ${_('questions_label_for_range')})`;
+        initDualSlider(questionCount > 0 ? questionCount : 1); // Передаем 1, если 0, чтобы слайдер не сломался
+        shuffleNCountInput.max = questionCount;
+        if (parseInt(shuffleNCountInput.value) > questionCount) {
+            shuffleNCountInput.value = questionCount;
+        }
+    }
 
     function handleBackButton(event) {
         const chatOverlay = document.getElementById('chatOverlay');
@@ -9069,13 +9216,16 @@ const mainApp = (function() {
     // Навешиваем обработчик на селект языков и делаем первичный пересчёт
     function attachLanguageFilterBehavior() {
       const select = document.getElementById('languageFilter');
-      const current = select ? select.value : 'all';
-      updateUiForLanguage(current);
-
       if (select && !select.__langBound) {
-        select.addEventListener('change', (e) => updateUiForLanguage(e.target.value));
-        select.__langBound = true; // чтобы не привязать дважды
+        select.addEventListener('change', (e) => {
+            updateUiForLanguage(e.target.value);
+            // Добавляем вызов для пересчета диапазона
+            updateQuestionCountForFilters(); 
+        });
+        select.__langBound = true;
       }
+      // Первичный вызов
+      updateUiForLanguage(select ? select.value : 'all');
     }
 
 
@@ -9265,27 +9415,19 @@ const mainApp = (function() {
         isPdfSession = false;
         originalFileNameForReview = fileName;
         
-        // --- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Генерация уникального ключа кэша ---
-        // 1. Асинхронно генерируем хэш из содержимого файла. Это гарантирует уникальность.
         const contentHash = await generateContentHash(fileContent);
-        // 2. Создаем ключ, который теперь зависит не от размера файла, а от его содержимого.
         currentFileCacheKey = `translation_cache_${fileName}_${contentHash}`;
-        // ----------------------------------------------------------------
-
-        // Гарантированно очищаем кэш от предыдущих сессий
+        
         currentQuizTranslations.clear();
         
-        // Пытаемся загрузить сохраненные переводы для этого конкретного файла из localStorage
         const storedTranslations = localStorage.getItem(currentFileCacheKey);
         if (storedTranslations) {
             try {
-                // Проверяем, что кэш имеет новый, правильный формат (массив массивов)
                 const parsedData = JSON.parse(storedTranslations);
                 if (Array.isArray(parsedData) && (parsedData.length === 0 || Array.isArray(parsedData[0]))) {
                     currentQuizTranslations = new Map(parsedData);
                     console.log(`Загружен кэш переводов для файла "${fileName}" (${currentQuizTranslations.size} записей).`);
                 } else {
-                    console.log("Обнаружен старый формат кэша. Создается новый.");
                     currentQuizTranslations = new Map();
                 }
             } catch (e) {
@@ -9293,40 +9435,52 @@ const mainApp = (function() {
                 currentQuizTranslations = new Map();
             }
         } else {
-            // Если кэша нет, просто создаем пустой Map
             currentQuizTranslations = new Map();
         }
 
-        // Парсим вопросы из содержимого файла
         allParsedQuestions = parseQstContent(fileContent);
         currentQuizContext = quizContext; 
-        hideGlobalLoader(); // Скрываем глобальный индикатор загрузки, если он был
+        hideGlobalLoader();
 
         if (allParsedQuestions.length > 0) {
-            // Если вопросы найдены, сохраняем файл в "Недавно использованные"
             saveRecentFile(fileName, fileContent);
             
-            // Переключаем интерфейс на экран настроек теста
             fileUploadArea.classList.add('hidden');
             searchResultsContainer.classList.add('hidden');
             quizSetupArea.classList.remove('hidden');
             
-            // Считаем только реальные вопросы (исключая категории)
+            // --- НАЧАЛО ИЗМЕНЕНИЙ: ЛОГИКА ОТОБРАЖЕНИЯ КАТЕГОРИЙ ---
+            const categories = allParsedQuestions.filter(item => item.type === 'category').map(item => item.text);
+
+            if (categories.length > 0) {
+                // Если категории найдены, создаем для них чекбоксы
+                categoryCheckboxesContainer.innerHTML = categories.map(category => `
+                    <label class="category-checkbox-label">
+                        <input type="checkbox" name="category" value="${escapeHTML(category)}">
+                        <span>${escapeHTML(category)}</span>
+                    </label>
+                `).join('');
+                categoryFilterGroup.classList.remove('hidden');
+                // Первичный вызов для установки правильного состояния
+                updateQuestionCountForFilters();
+            } else {
+                // Если категорий нет, скрываем блок
+                categoryFilterGroup.classList.add('hidden');
+                categoryCheckboxesContainer.innerHTML = '';
+            }
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            
             const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
             
-            // Обновляем UI на экране настроек
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
-            shuffleNCountInput.max = questionCount; // Устанавливаем макс. для случайного выбора
+            shuffleNCountInput.max = questionCount;
             
-            // Инициализируем интерактивные элементы управления
             initDualSlider(questionCount);
             initSingleSlider(); 
             
-            // Сбрасываем состояние чекбокса случайного выбора
             shuffleNCheckbox.checked = false;
             handleShuffleNToggle();
 
-            // Если это официальный тест из чата, блокируем некоторые настройки
             if (quizContext && !quizContext.isPractice) {
                 shuffleQuestionsCheckbox.checked = true;
                 shuffleAnswersCheckbox.checked = true;
@@ -9339,7 +9493,6 @@ const mainApp = (function() {
                 questionRangeStartInput.disabled = true;
                 questionRangeEndInput.disabled = true;
             } else {
-                // Для обычных тестов все настройки доступны
                 shuffleQuestionsCheckbox.disabled = false;
                 shuffleAnswersCheckbox.disabled = false;
                 readingModeCheckbox.disabled = false;
@@ -9348,10 +9501,8 @@ const mainApp = (function() {
                 questionRangeEndInput.disabled = false;
             }
         } else {
-            // Если вопросы не найдены, сообщаем пользователю
             alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
         }
-        // Обновляем обработчик кнопки "назад"
         manageBackButtonInterceptor();
     }
 
@@ -9515,30 +9666,51 @@ const mainApp = (function() {
 
 
     function applySettingsAndStartQuiz(isErrorReview = false, questionsSource = null) {
-        // ======== НАЧАЛО ИСПРАВЛЕНИЯ: Гарантированная очистка кэша ========
-        // Для любого нового теста (не для работы над ошибками) мы принудительно
-        // очищаем кэш переводов от предыдущих сессий. Это предотвращает
-        // "перетекание" переводов из одного теста в другой, как в описанном баге.
         if (!isErrorReview) {
             currentQuizTranslations.clear();
             prefetchedIndices.clear();
         }
-        // ======== КОНЕЦ ИСПРАВЛЕНИЯ ========
 
         let finalQuizContext = currentQuizContext;
         let sourceArray;
-
-        // ======== НАЧАЛО НОВОГО КОДА: Фильтрация по языку ========
+        
         const langFilterGroup = getEl('languageFilterGroup');
         const langFilterSelect = getEl('languageFilter');
         let baseQuestions = allParsedQuestions;
 
-        // Если фильтр видим и выбран конкретный язык (не "all")
         if (!langFilterGroup.classList.contains('hidden') && langFilterSelect.value !== 'all') {
             const selectedLang = langFilterSelect.value;
             baseQuestions = allParsedQuestions.filter(q => detectLanguage(q.text) === selectedLang);
         }
-        // ======== КОНЕЦ НОВОГО КОДА ========
+
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: ИСПРАВЛЕННАЯ ЛОГИКА ФИЛЬТРАЦИИ ПО КАТЕГОРИЯМ ---
+        if (!isErrorReview && !categoryFilterGroup.classList.contains('hidden')) {
+            const selectedCategories = Array.from(categoryCheckboxesContainer.querySelectorAll('input:checked')).map(input => input.value);
+            
+            if (selectedCategories.length > 0) {
+                const filteredWithCategories = [];
+                let currentCategory = null;
+                let includeCurrentSection = false;
+
+                baseQuestions.forEach(item => {
+                    if (item.type === 'category') {
+                        currentCategory = item.text;
+                        // Проверяем, нужно ли включать эту секцию
+                        includeCurrentSection = selectedCategories.includes(currentCategory);
+                        if (includeCurrentSection) {
+                            // Если нужно, ДОБАВЛЯЕМ САМУ КАТЕГОРИЮ в итоговый массив
+                            filteredWithCategories.push(item);
+                        }
+                    } else if (includeCurrentSection) {
+                        // Если секция включена, добавляем вопрос
+                        filteredWithCategories.push(item);
+                    }
+                });
+                // Заменяем исходный массив отфильтрованным (вместе с категориями)
+                baseQuestions = filteredWithCategories;
+            }
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         if (shuffleNCheckbox.checked && !isErrorReview) {
             quizSettings.shuffleQuestions = true;
@@ -9546,7 +9718,7 @@ const mainApp = (function() {
             quizSettings.feedbackMode = feedbackModeCheckbox.checked;
             quizSettings.readingMode = readingModeCheckbox.checked;
             quizSettings.flashcardsMode = flashcardsModeCheckbox.checked;
-            quizSettings.timeLimit = parseInt(timeLimitInput.value);
+            quizSettings.timeLimit = parseInt(timeLimitInput.value, 10);
 
             const n = parseInt(shuffleNCountInput.value);
             const allActualQuestions = baseQuestions.filter(q => q.type !== 'category');
@@ -9569,7 +9741,7 @@ const mainApp = (function() {
             
             sourceArray = [];
             baseQuestions.forEach((item, index) => {
-                const originalGlobalIndex = allParsedQuestions.indexOf(item); // Находим глобальный индекс
+                const originalGlobalIndex = allParsedQuestions.indexOf(item);
                 if (item.type === 'category' || selectedIndices.has(index)) {
                     sourceArray.push({ ...item, originalIndex: originalGlobalIndex });
                 }
@@ -9584,7 +9756,7 @@ const mainApp = (function() {
             });
 
         } else if (!isErrorReview) {
-            quizSettings.timeLimit = parseInt(timeLimitInput.value);
+            quizSettings.timeLimit = parseInt(timeLimitInput.value, 10);
             quizSettings.shuffleQuestions = shuffleQuestionsCheckbox.checked;
             quizSettings.shuffleAnswers = shuffleAnswersCheckbox.checked;
             quizSettings.feedbackMode = feedbackModeCheckbox.checked;
@@ -9599,7 +9771,6 @@ const mainApp = (function() {
             if (isNaN(startRange) || startRange < 1) startRange = 1;
             if (isNaN(endRange) || endRange < startRange) endRange = totalQuestionsCount;
             
-            // Важно: mapQuestionRangeToIndices теперь работает с отфильтрованным массивом
             const indices = mapQuestionRangeToIndices(baseQuestions, startRange, endRange);
 
             let finalStartIndex = indices.startIndex;
@@ -9610,7 +9781,7 @@ const mainApp = (function() {
             sourceArray = baseQuestions.slice(finalStartIndex, indices.endIndex + 1)
                 .map((question) => ({
                     ...question,
-                    originalIndex: allParsedQuestions.indexOf(question) // Находим глобальный индекс
+                    originalIndex: allParsedQuestions.indexOf(question)
                 }));     
 
         } else {
@@ -9691,7 +9862,6 @@ const mainApp = (function() {
     }
 
 
-
     function startQuiz(quizContext = null) {
         document.body.classList.add('quiz-active');
         appTitleHeader?.classList.add('hidden');
@@ -9701,9 +9871,11 @@ const mainApp = (function() {
         score = 0;
         userAnswers = new Array(questionsForCurrentQuiz.length).fill(null).map(() => ({ answered: false, correct: null, selectedOptionIndex: null }));
         incorrectlyAnsweredQuestionsData = [];
+        currentQuizErrorData = [];
         totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
         updateScoreDisplay();
-        setupTimer();
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        setupTimer(quizSettings.timeLimit); // Передаем значение напрямую
         generateQuickNav();
 
         // --- НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ ОТОБРАЖЕНИЯ КНОПОК ---
@@ -9748,24 +9920,23 @@ const mainApp = (function() {
         window.addEventListener('beforeunload', handleBeforeUnload);
     }
 
-
-    function setupTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-        if (quizSettings.timeLimit > 0) {
-            timeLeftInSeconds = quizSettings.timeLimit * 60;
-            timerDisplayEl.classList.remove('hidden');
-            updateTimerDisplay();
-            timerInterval = setInterval(() => {
-                timeLeftInSeconds--;
-                updateTimerDisplay();
-                if (timeLeftInSeconds <= 0) {
-                    clearInterval(timerInterval);
-                    showResults();
-                }
-            }, 1000);
-        } else {
-            timerDisplayEl.classList.add('hidden');
-        }
+    function setupTimer(timeLimitInMinutes) {
+       if (timerInterval) clearInterval(timerInterval);
+       if (timeLimitInMinutes > 0) {
+           timeLeftInSeconds = timeLimitInMinutes * 60;
+           timerDisplayEl.classList.remove('hidden');
+           updateTimerDisplay();
+           timerInterval = setInterval(() => {
+               timeLeftInSeconds--;
+               updateTimerDisplay();
+               if (timeLeftInSeconds <= 0) {
+                   clearInterval(timerInterval);
+                   showResults();
+               }
+           }, 1000);
+       } else {
+           timerDisplayEl.classList.add('hidden');
+       }
     }
 
     function updateTimerDisplay() {
@@ -10453,8 +10624,14 @@ const mainApp = (function() {
         prefetchedIndices.clear(); // <-- НОВЫЙ КОД: Очищаем очередь предзагрузки
         currentFileCacheKey = null;
         
-        const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea];
+
+
+        const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea, categoryFilterGroup];
         screensToHide.forEach(el => el?.classList.add('hidden'));
+
+
+
+
         fileUploadArea?.classList.remove('hidden');
         
         timerDisplayEl?.classList.add('hidden');
@@ -10500,41 +10677,51 @@ const mainApp = (function() {
     }
 
 
-
     async function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Сохраняем полный набор данных ---
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Проверка на существующую сессию ---
+        const existingSession = await DBManager.get(originalFileNameForReview, 'SavedSessions');
+        let finalFileName = originalFileNameForReview;
+        let userAction = 'save'; // Действие по умолчанию
+
+        if (existingSession) {
+            // Если сессия найдена, показываем модальное окно и ждем выбора
+            const choice = await showSessionConflictModal(originalFileNameForReview);
+            userAction = choice;
+
+            if (choice === 'cancel') {
+                return; // Пользователь нажал "Отмена", ничего не делаем
+            }
+            if (choice === 'save_new') {
+                // Если пользователь хочет сохранить как новую, генерируем новое имя
+                finalFileName = await getNewSessionName(originalFileNameForReview);
+            }
+            // Если choice === 'overwrite', finalFileName остается прежним, и старая запись будет перезаписана
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
         const newSessionData = {
-            // Состояние текущего квиза (с перемешиванием и диапазоном)
             quizState: questionsForCurrentQuiz,
-            // Полный, оригинальный набор вопросов из файла
             fullQuestionsData: allParsedQuestions,
-            // Флаг, указывающий, была ли это PDF-сессия
             isPdfSession: isPdfSession,
-            
-            // Остальные данные, как и раньше
             userAnswers,
             currentQuestionIndex,
             score,
             quizSettings,
             timeLeftInSeconds,
-            originalFileNameForReview,
+            // --- ИЗМЕНЕНИЕ: Используем финальное имя файла ---
+            originalFileNameForReview: finalFileName,
             totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length,
             timestamp: new Date().getTime(),
-            
-            // Состояние переводчика
             isTranslateModeEnabled: isTranslateModeEnabled,
             translations: Array.from(currentQuizTranslations.entries())
         };
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         try {
             await DBManager.save(newSessionData, 'SavedSessions');
-
             alert(_('session_saved_success'));
             resetQuizForNewFile(false);
-
         } catch (e) {
             console.error("Ошибка сохранения сессии в IndexedDB:", e);
             if (e.name === 'QuotaExceededError') {
@@ -10543,6 +10730,57 @@ const mainApp = (function() {
                  alert(`Произошла непредвиденная ошибка при сохранении: ${e.message}`);
             }
         }
+    }
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Показывает модальное окно конфликта сессий и возвращает выбор пользователя.
+     * @param {string} fileName - Имя файла, вызвавшего конфликт.
+     * @returns {Promise<'overwrite'|'save_new'|'cancel'>} - Промис, который разрешается выбором пользователя.
+     */
+    function showSessionConflictModal(fileName) {
+        return new Promise(resolve => {
+            sessionConflictText.textContent = _('session_conflict_text').replace('{fileName}', fileName);
+            sessionConflictModal.classList.remove('hidden');
+
+            const cleanup = (choice) => {
+                sessionConflictModal.classList.add('hidden');
+                overwriteSessionBtn.onclick = null;
+                saveNewSessionBtn.onclick = null;
+                cancelConflictBtn.onclick = null;
+                resolve(choice);
+            };
+
+            overwriteSessionBtn.onclick = () => cleanup('overwrite');
+            saveNewSessionBtn.onclick = () => cleanup('save_new');
+            cancelConflictBtn.onclick = () => cleanup('cancel');
+        });
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Генерирует новое уникальное имя для сессии.
+     * Например, если "test.txt" существует, вернет "test.txt (2)".
+     * @param {string} baseFileName - Исходное имя файла.
+     * @returns {Promise<string>} - Промис с новым уникальным именем.
+     */
+    async function getNewSessionName(baseFileName) {
+        const allSessions = await DBManager.getAll('SavedSessions');
+        const baseName = baseFileName.replace(/\s\(\d+\)$/, ''); // Убираем старый суффикс, если он есть
+        let counter = 1;
+        let newName;
+        
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            counter++;
+            newName = `${baseName} (${counter})`;
+            // Проверяем, существует ли уже сессия с таким именем
+            const nameExists = allSessions.some(session => session.originalFileNameForReview === newName);
+            if (!nameExists) {
+                break; // Нашли свободное имя
+            }
+        }
+        return newName;
     }
 
 
@@ -10676,7 +10914,12 @@ const mainApp = (function() {
 
         totalQuestionsNumEl.textContent = questionsForCurrentQuiz.filter(q => q.type !== 'category').length;
         updateScoreDisplay();
-        setupTimer();
+        setupTimer(sessionData.quizSettings.timeLimit);
+                // Обновляем состояние ползунка времени при восстановлении
+        if (timeLimitSlider) {
+            timeLimitSlider.value = sessionData.quizSettings.timeLimit || 0;
+            updateSingleSliderVisuals();
+        }
         generateQuickNav();
         loadQuestion(currentQuestionIndex);
 
@@ -13476,6 +13719,9 @@ const mainApp = (function() {
         
         updateSliderVisuals();
     }
+
+
+
     
     function handleShuffleNToggle() {
         const isRandomModeActive = shuffleNCheckbox.checked;
@@ -13504,6 +13750,145 @@ const mainApp = (function() {
         }
         // --- КОНЕЦ ИСПРАВЛЕНИЯ БАГА ---
     }
+
+
+    /**
+     * Инициализирует одиночный ползунок (например, для времени).
+     */
+    function initSingleSlider() {
+        if (!timeLimitSlider) return;
+        generateTimeSliderTicks();
+        updateSingleSliderVisuals(); // Устанавливаем начальное положение
+    }
+
+
+
+    /**
+     * Обновляет все визуальные элементы слайдера времени: прогресс-бар и всплывающую подсказку.
+     * Включает логику "залипания" подсказки у краев.
+     */
+    function updateSingleSliderVisuals() {
+        if (!timeLimitSlider || !timeSliderProgress || !timeSliderValueBubble) return;
+
+        const value = parseInt(timeLimitSlider.value, 10);
+        const min = parseInt(timeLimitSlider.min, 10);
+        const max = parseInt(timeLimitSlider.max, 10);
+
+        // 1. Обновляем текст в подсказке
+        timeSliderValueBubble.textContent = `${value} мин`;
+
+        // 2. Рассчитываем позицию в процентах
+        const percent = (max > min) ? ((value - min) / (max - min)) * 100 : 0;
+        
+        // 3. Обновляем прогресс-бар
+        timeSliderProgress.style.width = `${percent}%`;
+
+        // 4. "Магия" позиционирования подсказки с учетом краев
+        const sliderWidth = timeLimitSlider.offsetWidth;
+        const bubbleWidth = timeSliderValueBubble.offsetWidth;
+        
+        // Позиция центра шарика в пикселях
+        const thumbPosition = sliderWidth * (percent / 100);
+        
+        // Идеальная позиция левого края подсказки (чтобы она была по центру)
+        let bubbleLeft = thumbPosition - (bubbleWidth / 2);
+
+        // "Залипание" у левого края
+        if (bubbleLeft < 0) {
+            bubbleLeft = 0;
+        }
+        // "Залипание" у правого края
+        if (bubbleLeft + bubbleWidth > sliderWidth) {
+            bubbleLeft = sliderWidth - bubbleWidth;
+        }
+
+        timeSliderValueBubble.style.left = `${bubbleLeft}px`;
+    }
+    
+    /**
+     * "Дирижер": Синхронизирует ползунок времени, числовое поле и все визуальные элементы.
+     * @param {number} newValue - Новое значение времени.
+     * @param {HTMLElement} sourceElement - Элемент, который инициировал изменение.
+     */
+    function updateTimeControls(newValue, sourceElement) {
+        const value = Math.max(0, Math.min(180, parseInt(newValue, 10) || 0));
+
+        if (sourceElement !== timeLimitInput) {
+            timeLimitInput.value = value;
+        }
+        if (sourceElement !== timeLimitSlider) {
+            timeLimitSlider.value = value;
+        }
+        
+        updateSingleSliderVisuals();
+    }
+
+    /**
+     * Изменяет значение лимита времени с динамическим шагом (для стрелок и колесика).
+     * @param {number} direction - 1 для увеличения, -1 для уменьшения.
+     */
+    function adjustTimeLimit(direction) {
+        let currentValue = parseInt(timeLimitInput.value, 10);
+        if (isNaN(currentValue)) currentValue = 0;
+
+        let step;
+        if (direction > 0) { // Логика для увеличения
+            if (currentValue < 10) step = 1;
+            else step = 5;
+        } else { // Логика для уменьшения
+            if (currentValue <= 10) step = 1;
+            else step = 5;
+        }
+        
+        let newValue = currentValue + (step * direction);
+
+        if (direction < 0 && currentValue > 10 && newValue < 10) {
+            newValue = 10;
+        }
+        
+        updateTimeControls(newValue, timeLimitInput);
+    }
+
+    function generateTimeSliderTicks() {
+        if (!timeSliderTicks || !timeLimitSlider) return;
+        timeSliderTicks.innerHTML = '';
+        const max = parseInt(timeLimitSlider.max, 10);
+
+        // --- Используем улучшенную логику из прошлого шага ---
+        const tickPoints = [5, 10, 15, 20, 25];
+        const labelPoints = [0, 30, 60, 90, 120, 150, 180];
+
+        // Создаем маленькие насечки
+        tickPoints.forEach(value => {
+            const positionPercent = (value / max) * 100;
+            const tick = document.createElement('div');
+            tick.className = 'tick';
+            tick.style.left = `${positionPercent}%`;
+            timeSliderTicks.appendChild(tick);
+        });
+
+        // Создаем большие насечки с подписями
+        labelPoints.forEach(value => {
+            if (value > 0 && value < max && !tickPoints.includes(value)) {
+                 const positionPercent = (value / max) * 100;
+                 const tick = document.createElement('div');
+                 tick.className = 'tick';
+                 tick.style.left = `${positionPercent}%`;
+                 timeSliderTicks.appendChild(tick);
+            }
+            const positionPercent = (value / max) * 100;
+            const label = document.createElement('span');
+            label.className = 'tick-label';
+            label.textContent = value;
+            label.style.left = `${positionPercent}%`;
+            timeSliderTicks.appendChild(label);
+        });
+    }
+
+
+
+
+
 
     /**
      * Генерирует и отображает насечки (ticks) под двойным ползунком.
@@ -13544,55 +13929,11 @@ const mainApp = (function() {
     }
 
 
-    /**
-     * Инициализирует одиночный ползунок (например, для времени).
-     */
-    function initSingleSlider() {
-        if (!timeLimitInput) return;
-        generateTimeSliderTicks();
-        updateSingleSliderVisuals(); // Устанавливаем начальное положение
-    }
 
-    /**
-     * Обновляет визуальное состояние прогресс-бара одиночного ползунка.
-     */
-    function updateSingleSliderVisuals() {
-        const progressEl = getEl('timeSliderProgress');
-        if (!progressEl || !timeLimitInput) return;
-        
-        const value = parseInt(timeLimitInput.value);
-        const max = parseInt(timeLimitInput.max);
-        const percent = (max > 0) ? (value / max) * 100 : 0;
-        
-        progressEl.style.width = `${percent}%`;
-    }
 
-    /**
-     * Генерирует насечки для ползунка выбора времени.
-     */
-    function generateTimeSliderTicks() {
-        if (!timeSliderTicks) return;
-        timeSliderTicks.innerHTML = '';
-        const max = parseInt(timeLimitInput.max);
-        const step = 30; // Насечки каждые 30 минут
 
-        for (let i = 0; i <= max; i += step) {
-             const positionPercent = (i / max) * 100;
-             
-             const tick = document.createElement('div');
-             tick.className = 'tick';
-             tick.style.left = `${positionPercent}%`;
-             timeSliderTicks.appendChild(tick);
 
-             if (i > 0 && i < max) {
-                const label = document.createElement('span');
-                label.className = 'tick-label';
-                label.textContent = i;
-                label.style.left = `${positionPercent}%`;
-                timeSliderTicks.appendChild(label);
-             }
-        }
-    }
+
 
 
     /**
@@ -13614,7 +13955,22 @@ const mainApp = (function() {
     }
 
 
-    // НОВЫЙ КОД
+    /**
+     * НОВАЯ ФУНКЦИЯ: "Примагничивает" значение времени к нужным интервалам.
+     * Шаг 1 до 10 минут, шаг 5 после 10 минут.
+     * @param {number} value - Текущее значение.
+     * @returns {number} - "Примагниченное" значение.
+     */
+    function snapTimeValue(value) {
+        if (value <= 10) {
+            // От 0 до 10 возвращаем целое число
+            return Math.round(value);
+        }
+        // После 10 округляем до ближайшего числа, кратного 5
+        return Math.round(value / 5) * 5;
+    }
+
+
     /**
      * Генерирует и отображает насечки (ticks) под двойным ползунком.
      * @param {number} totalQuestions - Общее количество вопросов.

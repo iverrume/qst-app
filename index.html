@@ -151,18 +151,27 @@
 
             <div id="quizSetupArea" class="hidden">
                 <h2 data-lang-key="quiz_settings_title">Настройки теста</h2>
+
                 <div class="settings-group">
-                    <label for="timeLimit" data-lang-key="time_limit">Лимит времени (минуты, 0 - без лимита):</label>
-                    <div class="single-slider-container">
-                        <div id="timeSliderTrack" class="slider-track"></div>
-                        <div id="timeSliderTicks" class="slider-ticks"></div>
-                        <div id="timeSliderProgress" class="slider-progress"></div>
-                        <input type="range" id="timeLimit" min="0" max="180" value="0" step="10">
-                    </div>
-                    <div class="range-inputs-container" style="justify-content: flex-end;">
-                         <span id="timeLimitValue">0</span> <span data-lang-key="time_limit_minutes">мин</span>
+                    <label for="timeLimitSlider" data-lang-key="time_limit">Лимит времени (минуты, 0 - без лимита):</label>
+                    <div class="time-limit-wrapper">
+                        <!-- Поле для ручного ввода -->
+                        <div class="range-inputs-container time-limit-input-container">
+                             <input type="number" id="timeLimitInput" min="0" max="180" value="0" class="range-input">
+                             <span data-lang-key="time_limit_minutes">мин</span>
+                        </div>
+                        <!-- Улучшенный слайдер с подсказкой -->
+                        <div class="single-slider-container time-slider-modern">
+                            <div id="timeSliderValueBubble" class="slider-value-bubble">0 мин</div>
+                            <div id="timeSliderTrack" class="slider-track"></div>
+                            <div id="timeSliderTicks" class="slider-ticks"></div>
+                            <div id="timeSliderProgress" class="slider-progress"></div>
+                            <input type="range" id="timeLimitSlider" min="0" max="180" value="0" step="1">
+                        </div>
                     </div>
                 </div>
+
+
                 <div class="settings-group" id="questionRangeGroup">
                     <div class="range-label-container">
                         <label for="questionRangeStart" data-lang-key="question_range">Диапазон вопросов:</label>
@@ -201,6 +210,24 @@
                     </select>
                 </div>
                 <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
+
+                <!-- ======== НАЧАЛО БЛОКА ФИЛЬТРА КАТЕГОРИЙ ======== -->
+                <div class="settings-group hidden" id="categoryFilterGroup">
+                    <div class="category-filter-header">
+                        <label data-lang-key="category_filter_label">Фильтр по категориям:</label>
+                        <div>
+                            <button id="selectAllCategoriesBtn" class="btn-secondary-small" data-lang-key="select_all_btn">Все</button>
+                            <button id="deselectAllCategoriesBtn" class="btn-secondary-small" data-lang-key="deselect_all_btn">Снять</button>
+                        </div>
+                    </div>
+                    <div id="categoryCheckboxes" class="category-checkboxes-container">
+                        <!-- Чекбоксы с категориями будут вставлены сюда через JS -->
+                    </div>
+                    <p class="category-filter-note" data-lang-key="category_filter_note">
+                        Если ни одна категория не выбрана, в тест войдут вопросы из всех категорий.
+                    </p>
+                </div>
+                <!-- ======== КОНЕЦ БЛОКА ФИЛЬТРА КАТЕГОРИЙ ======== -->
 
                 <div class="settings-group">
                     <input type="checkbox" id="shuffleQuestions">
@@ -497,6 +524,22 @@
         
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
     </div> 
+
+    <!-- ======== НАЧАЛО МОДАЛЬНОГО ОКНА КОНФЛИКТА СЕССИЙ ======== -->
+    <div id="sessionConflictModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 data-lang-key="session_conflict_title">Сессия уже существует</h3>
+            <p id="sessionConflictText" style="margin: 20px 0; line-height: 1.6;" data-lang-key="session_conflict_text">
+                Для файла "{fileName}" уже есть сохраненный прогресс. Что вы хотите сделать?
+            </p>
+            <div class="modal-buttons vertical">
+                <button id="overwriteSessionBtn" class="btn btn-danger" data-lang-key="session_overwrite_button">Перезаписать</button>
+                <button id="saveNewSessionBtn" class="btn" data-lang-key="session_save_new_button">Сохранить как новую</button>
+                <button id="cancelConflictBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- ======== КОНЕЦ МОДАЛЬНОГО ОКНА КОНФЛИКТА СЕССИЙ ======== -->
     
     <div id="testResultsModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 600px;">
