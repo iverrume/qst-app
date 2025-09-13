@@ -11102,11 +11102,24 @@ const mainApp = (function() {
 
     
     async function deleteSavedSession(fileName) {
-        if (confirm(_('confirm_delete_session').replace('{fileName}', fileName))) {
-            // Используем DBManager вместо localStorage
+        // === НАЧАЛО ИЗМЕНЕНИЙ ===
+
+        // 1. Формируем текст сообщения, вставляя в него имя файла.
+        const confirmationMessage = _('confirm_delete_session').replace('{fileName}', fileName);
+
+        // 2. Вызываем наше красивое модальное окно вместо уродливого confirm().
+        const confirmed = await showConfirmationModal(
+            'confirm_action_title', // Ключ для заголовка "Подтверждение действия"
+            confirmationMessage,      // Уже готовый текст сообщения
+            'confirm_button_delete' // Ключ для красной кнопки "Удалить"
+        );
+
+        // 3. Если пользователь нажал "Удалить", выполняем действие.
+        if (confirmed) {
             await DBManager.delete(fileName, 'SavedSessions');
             loadSavedSession();
         }
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
     }
 
  
@@ -13464,7 +13477,7 @@ const mainApp = (function() {
 
 
 
-    function displayQuestionAsTest(question, options = { animateTranslation: true }) { // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
+    function displayQuestionAsTest(question, options = { animateTranslation: true }) {
         // UI
         feedbackAreaEl.className = 'feedback-area';
         getEl('score').style.visibility = 'visible';
@@ -13490,7 +13503,7 @@ const mainApp = (function() {
 
         // Рендерим текст + варианты
         if (isTranslateModeEnabled) {
-            displayTranslatedQuestion(question, options); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
+            displayTranslatedQuestion(question, options);
         } else {
             questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
             if (triggerWordModeEnabled) addTriggerClickListeners();
@@ -13514,15 +13527,27 @@ const mainApp = (function() {
         if (answerState && answerState.answered) {
             const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
             feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
+            
+            // === НАЧАЛО ИСПРАВЛЕНИЯ ===
             const textNode = document.createTextNode(feedbackText);
             const explainBtn = document.createElement('button');
-            explainBtn.textContent = _('ai_explain_button');
+            
+            // 1. Создаем кнопку точно так же, как в `handleAnswerSelect`, с тегом иконки
+            explainBtn.innerHTML = `<i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}`;
             explainBtn.className = 'explain-btn';
+            
             const incorrectAnswerText = !answerState.correct ? question.options[answerState.selectedOptionIndex].text : null;
             explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText, question.image);
+            
             feedbackAreaEl.innerHTML = '';
             feedbackAreaEl.appendChild(textNode);
             feedbackAreaEl.appendChild(explainBtn);
+            
+            // 2. Сразу после добавления кнопки в DOM, вызываем Lucide для её отрисовки
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
         }
     }
 

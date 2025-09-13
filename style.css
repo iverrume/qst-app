@@ -4548,13 +4548,17 @@ button[onclick*="copyToClipboard"].copied:after {
     gap: 5px; /* Устанавливаем единый отступ */
 }
 
-/* Стили для плашки-заголовка категории */
+
+
+/* --- Стили для плашки-заголовка категории --- */
 .quick-nav-category {
     /* Растягиваем на всю ширину, чтобы она была на отдельной строке */
     flex-basis: 100%; 
     width: 100%;
     
-    background-color: var(--button-primary-bg);
+    /* === КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Используем 'background' вместо 'background-color' === */
+    background: var(--button-primary-bg); 
+    
     color: var(--button-primary-text);
     padding: 8px 10px;
     margin-top: 10px; /* Отступ сверху */
@@ -4565,6 +4569,8 @@ button[onclick*="copyToClipboard"].copied:after {
     font-size: 0.95em;
     box-shadow: 0 2px 5px var(--shadow-light-color);
 }
+
+
 
 /* Для первой категории убираем верхний отступ */
 .quick-nav-category:first-child {
