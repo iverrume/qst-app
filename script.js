@@ -69,7 +69,7 @@ const ChatModule = (function() {
             tab_favorites: "Избранное",
             tab_users: "Пользователи",
             // Auth
-            auth_title: "🔐 Авторизация",
+            auth_title: "Авторизация",
             auth_login_tab: "Вход",
             auth_register_tab: "Регистрация",
             auth_login_placeholder: "Имя пользователя или Email",
@@ -89,31 +89,31 @@ const ChatModule = (function() {
             forgot_password_email_placeholder: "Ваш Email",
             forgot_password_send_button: "Отправить",
             // Main Chat
-            chat_header_title: "💬 Чат",
+            chat_header_title: "Чат",
             guest_user: "Гость",
             generic_user: "Пользователь",
-            edit_profile_link: "✏️ Редактировать профиль",
-            logout_link: "🚪 Выйти",
+            edit_profile_link: "Редактировать профиль",
+            logout_link: "Выйти",
             notifications_title: "Уведомления",
-            sidebar_sections: "📂 Разделы",
-            sidebar_channels: "📋 Каналы",
+            sidebar_sections: "Разделы",
+            sidebar_channels: "Каналы",
             sidebar_create_channel: "+ Создать канал",
-            sidebar_private_messages: "✉️ Личные сообщения",
-            sidebar_online: "👥 Онлайн",
+            sidebar_private_messages: "Личные сообщения",
+            sidebar_online: "Онлайн",
             channel_general: "# Общий",
-            search_placeholder: "🔍 Поиск...",
+            search_placeholder: "Поиск...",
             pinned_toggle_title: "Закрепленные",
             reply_panel_title: "Ответ на сообщение:",
             emoji_button_title: "Эмодзи",
             create_question_button_title: "Создать вопрос",
             attach_file_button_title: "Прикрепить файл",
             chat_input_placeholder: "Введите сообщение...",
-            download_qst_button: "📥 Скачать .qst",
-            download_txt_button: "📥 Скачать .txt",
-            add_to_favorites_button: "⭐ В избранное",
-            copy_question_button: "📋 Копировать",
-            delete_question_button: "🗑️ Удалить вопрос",
-            clear_favorites_button: "🗑️", 
+            download_qst_button: "Скачать .qst",
+            download_txt_button: "Скачать .txt",
+            add_to_favorites_button: "В избранное",
+            copy_question_button: "Копировать",
+            delete_question_button: "Удалить вопрос",
+            clear_favorites_button: "Очистить", 
             question_label: "Вопрос:",
             author_label: "Автор:",
             date_label: "Дата:",
@@ -147,10 +147,10 @@ const ChatModule = (function() {
             edit_profile_title: "Редактировать профиль",
             edit_profile_name_placeholder: "Ваше имя",
             edit_profile_new_password_placeholder: "Новый пароль (оставьте пустым, если не меняете)",
-            delete_account_button: "🗑️ Удалить аккаунт",
+            delete_account_button: "Удалить аккаунт",
             file_actions_title: "Действия с файлом",
-            file_actions_download: "📥 Скачать",
-            file_actions_test: "⚡️ Пройти тест",
+            file_actions_download: "Скачать",
+            file_actions_test: "Пройти тест",
             // JS Messages & Alerts
             auth_system_unavailable: "Система аутентификации не доступна",
             fill_all_fields: "Заполните все поля",
@@ -181,6 +181,7 @@ const ChatModule = (function() {
             confirm_kick_user: "Вы уверены, что хотите удалить этого участника из канала?",
             confirm_delete_channel: "Вы уверены, что хотите удалить этот канал? Все сообщения в нем будут потеряны. Это действие необратимо.",
             confirm_delete_account: "Вы уверены, что хотите удалить свой аккаунт? Это действие НЕОБРАТИМО.",
+
             confirm_clear_favorites: "Вы уверены, что хотите удалить ВСЕ элементы из избранного? Это действие необратимо.",
             profile_updated_success: "Профиль успешно обновлен!",
             channel_name_empty: "Название канала не может быть пустым.",
@@ -218,23 +219,29 @@ const ChatModule = (function() {
             question_card_date_label: "Дата:",
             question_card_anonymous: "Аноним",
             testing_channel_option: "Канал для тестирования (с записью результатов)",
-            results_button: "📊 Результаты",
-            practice_test_button: "⚡️ Пробный тест",
-            official_test_button: "🏆 Пройти тест",
+            results_button: "Результаты",
+            practice_test_button: "Пробный тест",
+            official_test_button: "Пройти тест",
             results_modal_title: "Результаты по тесту",
             results_table_header_num: "#",
             results_table_header_user: "Пользователь",
             results_table_header_accuracy: "Точность",
             results_table_header_time: "Время",
             results_empty_state: "По этому тесту пока нет результатов.",
+            // === НАЧАЛО НОВОГО КОДА ===
+            channel_password_modal_title: "Требуется пароль",
+            channel_password_modal_text: "Канал «{channelName}» защищен. Пожалуйста, введите пароль для доступа.",
+            channel_password_placeholder: "Пароль от канала",
+            modal_confirm_button: "Войти",
+            // === КОНЕЦ НОВОГО КОДА ===
             file_actions_modal_title: "Файл:",
             ai_helper_title: "AI-помощник",
             ai_summarize_from_selection: "Сводка с выбранного сообщения",
             ai_summarize_all: "Краткая сводка по всему каналу",
             ai_selection_banner_text: "Выберите сообщение, с которого начать сводку",
             ai_selection_cancel: "Отмена",
-            ai_summary_title_selection: "💡 Сводка с выбранного сообщения:",
-            ai_summary_title_all: "💡 Общая сводка по каналу:",
+            ai_summary_title_selection: "Сводка с выбранного сообщения:",
+            ai_summary_title_all: "Общая сводка по каналу:",
             password_reset_email_sent: "Письмо для сброса пароля отправлено! Пожалуйста, проверьте вашу почту (включая папку 'Спам').",
             error_user_not_found_for_reset: "Пользователь с таким email не найден.",
             ai_analyzing_chat: 'ИИ анализирует переписку...',
@@ -244,7 +251,7 @@ const ChatModule = (function() {
             ai_error_summary_generic: 'Не удалось получить сводку. Попробуйте еще раз.',
             ai_error_summary_server: 'Не удалось получить сводку: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
             smart_timestamp_yesterday: 'Вчера',
-            delete_favorite_button: '🗑️',
+            delete_favorite_button: 'Delete',
             error_no_messages_to_select: 'В этом канале еще нет сообщений для выбора.',
             chat_online_list_empty: 'В сети никого нет',
             chat_user_actions_for: 'Действия для пользователя {userName}',
@@ -317,7 +324,7 @@ const ChatModule = (function() {
             sidebar_search_placeholder: 'Поиск каналов...',
             error_add_to_favorites_failed: "Не удалось добавить в избранное.",
             auth_required_to_view: 'Войдите для просмотра',
-            ai_summary_modal_title: '💡 Сводка от ИИ',
+            ai_summary_modal_title: 'Сводка от ИИ',
 
             reauth_wrong_password: "Неверный пароль. Попробуйте еще раз.",
             results_modal_title: "Результаты по тесту",
@@ -340,7 +347,7 @@ const ChatModule = (function() {
             tab_favorites: "Таңдаулылар",
             tab_users: "Пайдаланушылар",
             // Auth
-            auth_title: "🔐 Авторизация",
+            auth_title: "Авторизация",
             auth_login_tab: "Кіру",
             auth_register_tab: "Тіркелу",
             auth_login_placeholder: "Пайдаланушы аты немесе Email",
@@ -360,31 +367,31 @@ const ChatModule = (function() {
             forgot_password_email_placeholder: "Сіздің Email",
             forgot_password_send_button: "Жіберу",
             // Main Chat
-            chat_header_title: "💬 Чат",
+            chat_header_title: "Чат",
             guest_user: "Қонақ",
             generic_user: "Пайдаланушы",
-            edit_profile_link: "✏️ Профильді өңдеу",
-            logout_link: "🚪 Шығу",
+            edit_profile_link: "Профильді өңдеу",
+            logout_link: "Шығу",
             notifications_title: "Хабарландырулар",
-            sidebar_sections: "📂 Бөлімдер",
-            sidebar_channels: "📋 Арналар",
+            sidebar_sections: "Бөлімдер",
+            sidebar_channels: "Арналар",
             sidebar_create_channel: "+ Арна құру",
-            sidebar_private_messages: "✉️ Жеке хабарламалар",
-            sidebar_online: "👥 Желіде",
+            sidebar_private_messages: "Жеке хабарламалар",
+            sidebar_online: "Желіде",
             channel_general: "# Жалпы",
-            search_placeholder: "🔍 Іздеу...",
+            search_placeholder: "Іздеу...",
             pinned_toggle_title: "Бекітілгендер",
             reply_panel_title: "Жауап беру:",
             emoji_button_title: "Эмодзи",
             create_question_button_title: "Сұрақ құру",
             attach_file_button_title: "Файлды тіркеу",
             chat_input_placeholder: "Хабарлама енгізіңіз...",
-            download_qst_button: "📥 .qst жүктеп алу",
-            download_txt_button: "📥 .txt жүктеп алу",
-            add_to_favorites_button: "⭐ Таңдаулыларға қосу",
-            copy_question_button: "📋 Көшіру",
-            delete_question_button: "🗑️ Сұрақты жою",
-            clear_favorites_button: "🗑️",
+            download_qst_button: ".qst жүктеп алу",
+            download_txt_button: ".txt жүктеп алу",
+            add_to_favorites_button: "Таңдаулыларға қосу",
+            copy_question_button: "Көшіру",
+            delete_question_button: "Сұрақты жою",
+            clear_favorites_button: "Clear All",
             question_label: "Сұрақ:",
             author_label: "Авторы:",
             date_label: "Күні:",
@@ -405,7 +412,7 @@ const ChatModule = (function() {
             channel_members_title: "Арна мүшелері",
             channel_members_loading: "Жүктелуде...",
             modal_save_button: "Сақтау",
-            delete_channel_button: "🗑️ Арнаны жою",
+            delete_channel_button: "Арнаны жою",
             create_channel_title: "Жаңа арна құру",
             channel_create_name_placeholder: "Арна атауы",
             channel_create_password_placeholder: "Құпия сөз (жалпыға ортақ үшін бос қалдырыңыз)",
@@ -418,10 +425,10 @@ const ChatModule = (function() {
             edit_profile_title: "Профильді өңдеу",
             edit_profile_name_placeholder: "Сіздің атыңыз",
             edit_profile_new_password_placeholder: "Жаңа құпия сөз (өзгертпесеңіз бос қалдырыңыз)",
-            delete_account_button: "🗑️ Аккаунтты жою",
+            delete_account_button: "Аккаунтты жою",
             file_actions_title: "Файл әрекеттері",
-            file_actions_download: "📥 Жүктеп алу",
-            file_actions_test: "⚡️ Тест өту",
+            file_actions_download: "Жүктеп алу",
+            file_actions_test: "Тест өту",
             // JS Messages & Alerts
             auth_system_unavailable: "Авторизация жүйесі қолжетімсіз",
             fill_all_fields: "Барлық өрістерді толтырыңыз",
@@ -489,23 +496,29 @@ const ChatModule = (function() {
             question_card_date_label: "Күні:",
             question_card_anonymous: "Аноним",
             testing_channel_option: "Тестілеу арнасы (нәтижелерді жазумен)",
-            results_button: "📊 Нәтижелер",
-            practice_test_button: "⚡️ Сынақ тесті",
-            official_test_button: "🏆 Тестті өту",
+            results_button: "Нәтижелер",
+            practice_test_button: "Сынақ тесті",
+            official_test_button: "Тестті өту",
             results_modal_title: "Тест нәтижелері",
             results_table_header_num: "#",
             results_table_header_user: "Пайдаланушы",
             results_table_header_accuracy: "Дәлдік",
             results_table_header_time: "Уақыт",
             results_empty_state: "Бұл тест бойынша әзірге нәтиже жоқ.",
+            // === НАЧАЛО НОВОГО КОДА ===
+            channel_password_modal_title: "Құпия сөз қажет",
+            channel_password_modal_text: "«{channelName}» арнасы қорғалған. Кіру үшін құпия сөзді енгізіңіз.",
+            channel_password_placeholder: "Арнаның құпия сөзі",
+            modal_confirm_button: "Кіру",
+            // === КОНЕЦ НОВОГО КОДА ===
             file_actions_modal_title: "Файл:",
             ai_helper_title: "AI-көмекші",
             ai_summarize_from_selection: "Таңдалған хабарламадан қорытынды",
             ai_summarize_all: "Бүкіл арнаның қысқаша түйіндемесі",
             ai_selection_cancel: "Болдырмау",
-            ai_summary_title_selection: "💡 Таңдалған хабарламадан бастап түйіндеме:",
+            ai_summary_title_selection: "Таңдалған хабарламадан бастап түйіндеме:",
             ai_selection_banner_text: "Қорытындыны бастайтын хабарламаны таңдаңыз",
-            ai_summary_title_all: "💡 Арна бойынша жалпы түйіндеме:",
+            ai_summary_title_all: "Арна бойынша жалпы түйіндеме:",
             password_reset_email_sent: "Құпия сөзді қалпына келтіру хаты жіберілді! Поштаңызды тексеріңіз ('Спам' қалтасын қоса).",
             error_user_not_found_for_reset: "Бұл email-мен пайдаланушы табылмады.",
             ai_analyzing_chat: 'ЖИ хат алмасуды талдауда...',
@@ -515,7 +528,7 @@ const ChatModule = (function() {
             ai_error_summary_generic: 'Түйіндемені алу мүмкін болмады. Қайталап көріңіз.',
             ai_error_summary_server: 'Түйіндемені алу мүмкін болмады: Серверде уақытша қате пайда болды. Кейінірек қайталап көріңіз.',
             smart_timestamp_yesterday: 'Кеше',
-            delete_favorite_button: '🗑️',
+            delete_favorite_button: 'Жою',
             error_no_messages_to_select: 'Бұл арнада таңдау үшін хабарламалар әлі жоқ.',
             chat_online_list_empty: 'Желіде ешкім жоқ',
             chat_user_actions_for: '{userName} пайдаланушысы үшін әрекеттер',
@@ -588,7 +601,7 @@ const ChatModule = (function() {
             error_download_auth_required: 'Жүктеп алу үшін чатқа кіруіңіз қажет.',
             sidebar_search_placeholder: 'Арналарды іздеу...',
             auth_required_to_view: 'Көру үшін кіріңіз',
-            ai_summary_modal_title: '💡 ЖИ түйіндемесі',
+            ai_summary_modal_title: 'ЖИ түйіндемесі',
 
             reauth_wrong_password: "Қате құпия сөз. Қайталап көріңіз.",
             results_modal_title: "Тест нәтижелері",
@@ -610,7 +623,7 @@ const ChatModule = (function() {
             tab_favorites: "Favorites",
             tab_users: "Users",
             // Auth
-            auth_title: "🔐 Authorization",
+            auth_title: "Authorization",
             auth_login_tab: "Login",
             auth_register_tab: "Register",
             auth_login_placeholder: "Username or Email",
@@ -630,31 +643,31 @@ const ChatModule = (function() {
             forgot_password_email_placeholder: "Your Email",
             forgot_password_send_button: "Send",
             // Main Chat
-            chat_header_title: "💬 Chat",
+            chat_header_title: "Chat",
             guest_user: "Guest",
             generic_user: "User",
-            edit_profile_link: "✏️ Edit Profile",
-            logout_link: "🚪 Logout",
+            edit_profile_link: "Edit Profile",
+            logout_link: "Logout",
             notifications_title: "Notifications",
-            sidebar_sections: "📂 Sections",
-            sidebar_channels: "📋 Channels",
+            sidebar_sections: "Sections",
+            sidebar_channels: "Channels",
             sidebar_create_channel: "+ Create Channel",
-            sidebar_private_messages: "✉️ Private Messages",
-            sidebar_online: "👥 Online",
+            sidebar_private_messages: "Private Messages",
+            sidebar_online: "Online",
             channel_general: "# General",
-            search_placeholder: "🔍 Search...",
+            search_placeholder: "Search...",
             pinned_toggle_title: "Pinned",
             reply_panel_title: "Replying to:",
             emoji_button_title: "Emoji",
             create_question_button_title: "Create Question",
             attach_file_button_title: "Attach File",
             chat_input_placeholder: "Enter a message...",
-            download_qst_button: "📥 Download .qst",
-            download_txt_button: "📥 Download .txt",
-            add_to_favorites_button: "⭐ Add to Favorites",
-            copy_question_button: "📋 Copy",
-            delete_question_button: "🗑️ Delete Question",
-            clear_favorites_button: "🗑️",
+            download_qst_button: "Download .qst",
+            download_txt_button: "Download .txt",
+            add_to_favorites_button: "Add to Favorites",
+            copy_question_button: "Copy",
+            delete_question_button: "Delete Question",
+            clear_favorites_button: "Тазарту",
             question_label: "Question:",
             author_label: "Author:",
             date_label: "Date:",
@@ -675,7 +688,7 @@ const ChatModule = (function() {
             channel_members_title: "Channel Members",
             channel_members_loading: "Loading...",
             modal_save_button: "Save",
-            delete_channel_button: "🗑️ Delete Channel",
+            delete_channel_button: "Delete Channel",
             create_channel_title: "Create New Channel",
             channel_create_name_placeholder: "Channel name",
             channel_create_password_placeholder: "Password (leave empty for public)",
@@ -688,10 +701,10 @@ const ChatModule = (function() {
             edit_profile_title: "Edit Profile",
             edit_profile_name_placeholder: "Your name",
             edit_profile_new_password_placeholder: "New password (leave empty if not changing)",
-            delete_account_button: "🗑️ Delete Account",
+            delete_account_button: "Delete Account",
             file_actions_title: "File Actions",
-            file_actions_download: "📥 Download",
-            file_actions_test: "⚡️ Take Test",
+            file_actions_download: "Download",
+            file_actions_test: "Take Test",
             // JS Messages & Alerts
             auth_system_unavailable: "Authentication system is not available",
             fill_all_fields: "Please fill in all fields",
@@ -759,23 +772,29 @@ const ChatModule = (function() {
             question_card_date_label: "Date:",
             question_card_anonymous: "Anonymous",
             testing_channel_option: "Testing channel (with result tracking)",
-            results_button: "📊 Results",
-            practice_test_button: "⚡️ Practice Test",
-            official_test_button: "🏆 Take Test",
+            results_button: "Results",
+            practice_test_button: "Practice Test",
+            official_test_button: "Take Test",
             results_modal_title: "Test Results",
             results_table_header_num: "#",
             results_table_header_user: "User",
             results_table_header_accuracy: "Accuracy",
             results_table_header_time: "Time",
             results_empty_state: "There are no results for this test yet.",
+            // === НАЧАЛО НОВОГО КОДА ===
+            channel_password_modal_title: "Password Required",
+            channel_password_modal_text: "The channel '{channelName}' is protected. Please enter the password to access it.",
+            channel_password_placeholder: "Channel password",
+            modal_confirm_button: "Enter",
+            // === КОНЕЦ НОВОГО КОДА ===
             file_actions_modal_title: "File:",
             ai_helper_title: "AI Assistant",
             ai_summarize_from_selection: "Summarize from selection",
             ai_summarize_all: "Summarize entire channel",
             ai_selection_banner_text: "Select a message to start the summary from",
             ai_selection_cancel: "Cancel",
-            ai_summary_title_selection: "💡 Summary from selected message:",
-            ai_summary_title_all: "💡 General channel summary:",
+            ai_summary_title_selection: "Summary from selected message:",
+            ai_summary_title_all: "General channel summary:",
             password_reset_email_sent: "Password reset email sent! Please check your inbox (including the spam folder).",
             error_user_not_found_for_reset: "User with this email not found.",
             ai_analyzing_chat: 'AI is analyzing the chat...',
@@ -785,7 +804,7 @@ const ChatModule = (function() {
             ai_error_summary_generic: 'Failed to get summary. Please try again.',
             ai_error_summary_server: 'Failed to get summary: A temporary server error occurred. Please try again later.',
             smart_timestamp_yesterday: 'Yesterday',
-            delete_favorite_button: '🗑️',
+            delete_favorite_button: 'Удалить',
             error_no_messages_to_select: 'There are no messages in this channel to select yet.',
             chat_online_list_empty: 'No one is online',
             chat_user_actions_for: 'Actions for user {userName}',
@@ -859,7 +878,7 @@ const ChatModule = (function() {
             error_download_auth_required: 'You must be logged in to download from the chat.',
             sidebar_search_placeholder: 'Search channels...',
             auth_required_to_view: 'Login to view',
-            ai_summary_modal_title: '💡 AI Summary',
+            ai_summary_modal_title: 'AI Summary',
 
             reauth_wrong_password: "Incorrect password. Please try again.",
             results_modal_title: "Test Results",
@@ -1038,7 +1057,7 @@ const ChatModule = (function() {
         <!-- СИСТЕМА АУТЕНТИФИКАЦИИ -->
         <div id="authOverlay" class="auth-overlay hidden">
             <div class="auth-modal">
-                <h2 style="margin-bottom: 20px; color: var(--primary);">${_chat('auth_title')}</h2>
+                <h2 style="margin-bottom: 20px; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 10px;"><i data-lucide="lock"></i>${_chat('auth_title')}</h2>
                 <div class="auth-tabs">
                     <button class="auth-tab active" data-tab="login">${_chat('auth_login_tab')}</button>
                     <button class="auth-tab" data-tab="register">${_chat('auth_register_tab')}</button>
@@ -1047,7 +1066,7 @@ const ChatModule = (function() {
                     <input type="text" class="auth-input" id="loginUsername" placeholder="${_chat('auth_login_placeholder')}" required>
                     <div class="password-wrapper">
                         <input type="password" class="auth-input" id="loginPassword" placeholder="${_chat('auth_password_placeholder')}" required>
-                        <span class="toggle-password">👁️</span>
+                        <span class="toggle-password"><i data-lucide="eye"></i></span>
                     </div>
                     <a href="#" id="forgotPasswordLink" class="forgot-password-link">${_chat('auth_forgot_password')}</a>
                     <button type="submit" class="auth-btn">${_chat('auth_login_button')}</button>
@@ -1057,11 +1076,11 @@ const ChatModule = (function() {
                     <input type="email" class="auth-input" id="registerEmail" placeholder="${_chat('auth_register_email_placeholder')}" required>
                     <div class="password-wrapper">
                         <input type="password" class="auth-input" id="registerPassword" placeholder="${_chat('auth_register_password_placeholder')}" required>
-                        <span class="toggle-password">👁️</span>
+                        <span class="toggle-password"><i data-lucide="eye"></i></span>
                     </div>
                     <div class="password-wrapper">
                         <input type="password" class="auth-input" id="registerPasswordConfirm" placeholder="${_chat('auth_register_confirm_placeholder')}" required>
-                        <span class="toggle-password">👁️</span>
+                        <span class="toggle-password"><i data-lucide="eye"></i></span>
                     </div>
                     <button type="submit" class="auth-btn">${_chat('auth_register_button')}</button>
                 </form>
@@ -1088,17 +1107,17 @@ const ChatModule = (function() {
                         <h3 id="chatHeaderTitle">${_chat('chat_header_title')}</h3>
                         <span id="unreadBadge" class="unread-badge hidden">0</span>
                     </div>
-                    <button id="sidebarToggleBtn" class="sidebar-toggle-btn">☰</button>
+                    <button id="sidebarToggleBtn" class="sidebar-toggle-btn"><i data-lucide="menu"></i></button>
                     <div class="header-controls">
                         <div class="user-menu-container">
                             <span id="currentUser">${_chat('guest_user')}</span>
                             <div id="userDropdown" class="user-dropdown hidden">
-                                <a href="#" onclick="ChatModule.showProfileModal()">${_chat('edit_profile_link')}</a>
-                                <a href="#" onclick="ChatModule.logout()">${_chat('logout_link')}</a>
+                                <a href="#" onclick="ChatModule.showProfileModal()"><i data-lucide="pencil"></i>${_chat('edit_profile_link')}</a>
+                                <a href="#" onclick="ChatModule.logout()"><i data-lucide="log-out"></i>${_chat('logout_link')}</a>
                             </div>
                         </div>
-                        <button id="notificationToggle" class="notification-toggle" title="${_chat('notifications_title')}">🔔</button>
-                        <button onclick="ChatModule.closeChatModal()" class="close-btn">×</button>
+                        <button id="notificationToggle" class="notification-toggle" title="${_chat('notifications_title')}"><i data-lucide="bell"></i></button>
+                        <button onclick="ChatModule.closeChatModal()" class="close-btn"><i data-lucide="x"></i></button>
                     </div>
                 </div>
                 
@@ -1110,24 +1129,24 @@ const ChatModule = (function() {
                             <div class="sidebar-section">
                                 <h4>${_chat('sidebar_sections')}</h4>
                                 <div id="chatTabsList" class="tabs-list">
-                                    <div class="tab-item active" data-tab="messages"><span class="tab-icon">💬</span><span class="tab-name">${_chat('tab_messages')}</span><span class="tab-counter" id="messagesCount">0</span></div>
-                                    <div class="tab-item" data-tab="questions"><span class="tab-icon">❓</span><span class="tab-name">${_chat('tab_questions')}</span><span class="tab-counter" id="questionsCount">0</span></div>
-                                    <div class="tab-item" data-tab="favorites"><span class="tab-icon">⭐</span><span class="tab-name">${_chat('tab_favorites')}</span><span class="tab-counter" id="favoritesCount">0</span></div>
-                                    <div class="tab-item" data-tab="users"><span class="tab-icon">👥</span><span class="tab-name">${_chat('tab_users')}</span><span class="tab-counter" id="usersCount">0</span></div>
+                                    <div class="tab-item active" data-tab="messages"><span class="tab-icon"><i data-lucide="message-square"></i></span><span class="tab-name">${_chat('tab_messages')}</span><span class="tab-counter" id="messagesCount">0</span></div>
+                                    <div class="tab-item" data-tab="questions"><span class="tab-icon"><i data-lucide="help-circle"></i></span><span class="tab-name">${_chat('tab_questions')}</span><span class="tab-counter" id="questionsCount">0</span></div>
+                                    <div class="tab-item" data-tab="favorites"><span class="tab-icon"><i data-lucide="star"></i></span><span class="tab-name">${_chat('tab_favorites')}</span><span class="tab-counter" id="favoritesCount">0</span></div>
+                                    <div class="tab-item" data-tab="users"><span class="tab-icon"><i data-lucide="users"></i></span><span class="tab-name">${_chat('tab_users')}</span><span class="tab-counter" id="usersCount">0</span></div>
                                 </div>
                             </div>
                             <div class="sidebar-section">
-                                <h4>${_chat('sidebar_channels')}</h4>
+                                <h4><i data-lucide="hash"></i>${_chat('sidebar_channels')}</h4>
                                 <div class="sidebar-search-container"><input type="text" id="channelSearchInput" class="sidebar-search-input" placeholder="${_chat('sidebar_search_placeholder')}"></div>
                                 <div id="channelsList" class="channels-list"></div>
                                 <button id="createChannelBtn" class="create-btn">${_chat('sidebar_create_channel')}</button>
                             </div>
                             <div class="sidebar-section" id="privateChatsSection">
-                                <h4>${_chat('sidebar_private_messages')}</h4>
+                                <h4><i data-lucide="send"></i>${_chat('sidebar_private_messages')}</h4>
                                 <div id="privateChatsList" class="channels-list"></div>
                             </div>                            
                             <div class="sidebar-section">
-                                <h4><span class="online-label">${_chat('sidebar_online')}</span> (<span id="onlineCount">0</span>)</h4>
+                                <h4><span class="online-label"><i data-lucide="user-check"></i>${_chat('sidebar_online')}</span> (<span id="onlineCount">0</span>)</h4>
                                 <div id="onlineUsersList" class="online-users-list"></div>
                             </div>
                         </div>
@@ -1137,9 +1156,8 @@ const ChatModule = (function() {
                     <div class="chat-main-content">
                         <div class="chat-top-bar">
                             <h4 id="currentChannelName" style="margin: 0; flex-grow: 1; text-align: left; color: var(--heading-color);">${_chat('channel_general')}</h4>
-                            <button id="chatSearchToggleBtn" class="chat-search-toggle">🔍</button>
+                            <button id="chatSearchToggleBtn" class="chat-search-toggle"><i data-lucide="search"></i></button>
                             <input type="text" id="chatSearchInput" placeholder="${_chat('search_placeholder')}" />
-                            <!-- Кнопка "Закрепить" ПОЛНОСТЬЮ УДАЛЕНА ОТСЮДА -->
                         </div>
                         <div id="aiSelectionBanner" class="ai-selection-banner hidden">
                             <span>${_chat('ai_selection_banner_text')}</span>
@@ -1150,22 +1168,19 @@ const ChatModule = (function() {
                         <div class="chat-input-area">
                             <div id="replyingToPanel" class="replying-to-panel hidden">
                                 <div class="reply-info"><span>${_chat('reply_panel_title')}</span><p id="replyingToText"></p></div>
-                                <button onclick="ChatModule.cancelReply()" class="cancel-reply-btn">×</button>
+                                <button onclick="ChatModule.cancelReply()" class="cancel-reply-btn"><i data-lucide="x"></i></button>
                             </div>
 
 
                             <div class="input-actions-top">
-                                <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}">😊</button>
-                                <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}">❓</button>
-                                <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}">📎</button>
-                                <button id="togglePinnedBtn" class="input-action-btn" title="${_chat('pinned_toggle_title')}">📌</button>
-                                <button id="chatTranslateBtn" class="input-action-btn" title="Перевести чат">अ|а</button>
+                                <button id="emojiBtn" class="input-action-btn" title="${_chat('emoji_button_title')}"><i data-lucide="smile"></i></button>
+                                <button id="questionBtn" class="input-action-btn" title="${_chat('create_question_button_title')}"><i data-lucide="help-circle"></i></button>
+                                <button id="uploadFileBtn" class="input-action-btn" title="${_chat('attach_file_button_title')}"><i data-lucide="paperclip"></i></button>
+                                <button id="togglePinnedBtn" class="input-action-btn" title="${_chat('pinned_toggle_title')}"><i data-lucide="pin"></i></button>
+                                <button id="chatTranslateBtn" class="input-action-btn" title="Перевести чат"><i data-lucide="languages"></i></button>
                                 <div class="ai-helper-container">
-                                    <button id="aiChatHelperBtn" class="input-action-btn" title="${_chat('ai_helper_title')}">🤖</button>
+                                    <button id="aiChatHelperBtn" class="input-action-btn" title="${_chat('ai_helper_title')}"><i data-lucide="brain-circuit"></i></button>
                                     <div id="aiChatHelperMenu" class="ai-helper-menu hidden">
-
-
-
                                         <a href="#" data-action="summarize-from-selection">${_chat('ai_summarize_from_selection')}</a>
                                         <a href="#" data-action="summarize-all">${_chat('ai_summarize_all')}</a>
                                     </div>
@@ -1174,7 +1189,7 @@ const ChatModule = (function() {
                             <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt,.pdf">
                             <div class="input-wrapper">
                                 <textarea id="chatInput" placeholder="${_chat('chat_input_placeholder')}"></textarea>
-                                <button id="sendBtn" class="advanced-send-btn">➤</button>
+                                <button id="sendBtn" class="advanced-send-btn"><i data-lucide="send"></i></button>
                             </div>
                         </div>    
                     </div>
@@ -1183,13 +1198,13 @@ const ChatModule = (function() {
         </div>
 
         <!-- MODALS -->
-        <div id="userActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="userActionsModalTitle">${_chat('user_actions_title')}</h3><p id="userActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="userActionsChatBtn">${_chat('user_actions_chat_button')}</button><button id="userActionsEmailBtn">${_chat('user_actions_email_button')}</button><button onclick="ChatModule.closeModal('userActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
-        <div id="channelEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('channel_settings_title')}</h3><input type="hidden" id="editChannelId"><input type="text" id="editChannelNameInput" placeholder="${_chat('channel_edit_name_placeholder')}" required /><input type="password" id="editChannelPasswordInput" placeholder="${_chat('channel_edit_password_placeholder')}" /><textarea id="editChannelDescInput" placeholder="${_chat('channel_edit_desc_placeholder')}"></textarea><div id="channelMembersSection" class="channel-members-section hidden"><h4>${_chat('channel_members_title')}</h4><ul id="channelMembersList" class="channel-members-list"><li>${_chat('channel_members_loading')}</li></ul></div><div class="modal-buttons"><button onclick="ChatModule.saveChannelEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('channelEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteChannelBtn" class="delete-btn" onclick="ChatModule.deleteChannel()" style="margin-top: 15px;">${_chat('delete_channel_button')}</button></div></div>
+        <div id="userActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="userActionsModalTitle">${_chat('user_actions_title')}</h3><p id="userActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="userActionsChatBtn"><i data-lucide="message-circle"></i>${_chat('user_actions_chat_button')}</button><button id="userActionsEmailBtn"><i data-lucide="mail"></i>${_chat('user_actions_email_button')}</button><button onclick="ChatModule.closeModal('userActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="channelEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('channel_settings_title')}</h3><input type="hidden" id="editChannelId"><input type="text" id="editChannelNameInput" placeholder="${_chat('channel_edit_name_placeholder')}" required /><input type="password" id="editChannelPasswordInput" placeholder="${_chat('channel_edit_password_placeholder')}" /><textarea id="editChannelDescInput" placeholder="${_chat('channel_edit_desc_placeholder')}"></textarea><div id="channelMembersSection" class="channel-members-section hidden"><h4>${_chat('channel_members_title')}</h4><ul id="channelMembersList" class="channel-members-list"><li>${_chat('channel_members_loading')}</li></ul></div><div class="modal-buttons"><button onclick="ChatModule.saveChannelEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('channelEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteChannelBtn" class="delete-btn" onclick="ChatModule.deleteChannel()" style="margin-top: 15px;"><i data-lucide="trash-2"></i>${_chat('delete_channel_button')}</button></div></div>
         <div id="channelCreateModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('create_channel_title')}</h3><input type="text" id="channelNameInput" placeholder="${_chat('channel_create_name_placeholder')}" required /><input type="password" id="channelPasswordInput" placeholder="${_chat('channel_create_password_placeholder')}" /><textarea id="channelDescInput" placeholder="${_chat('channel_create_desc_placeholder')}"></textarea><div class="settings-group" style="text-align: left; margin-top: 15px;"><input type="checkbox" id="channelIsForTesting"><label for="channelIsForTesting" data-lang-key="testing_channel_option">${_chat('testing_channel_option')}</label></div><div class="modal-buttons"><button onclick="ChatModule.createChannel()">${_chat('modal_create_button')}</button><button onclick="ChatModule.closeModal('channelCreateModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="questionCreateModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('create_question_title')}</h3><textarea id="questionTextInput" placeholder="${_chat('create_question_placeholder')}" rows="4"></textarea><div class="modal-buttons"><button onclick="ChatModule.createQuestion()">${_chat('create_question_modal_button')}</button><button onclick="ChatModule.closeModal('questionCreateModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="editMessageModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_message_title')}</h3><textarea id="editMessageInput" rows="4"></textarea><input type="hidden" id="editMessageIdInput"><div class="modal-buttons"><button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button></div></div></div>
-        <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;">${_chat('delete_account_button')}</button></div></div>
-        <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn">${_chat('file_actions_download')}</button><button id="fileActionTestBtn">${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;"><i data-lucide="trash-2"></i>${_chat('delete_account_button')}</button></div></div>
+        <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn"><i data-lucide="download"></i>${_chat('file_actions_download')}</button><button id="fileActionTestBtn"><i data-lucide="play-circle"></i>${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="activeQuizModal" class="modal-overlay hidden">
           <div class="modal">
             <h3 data-lang-key="active_quiz_title">У вас уже запущен тест</h3>
@@ -1212,7 +1227,7 @@ const ChatModule = (function() {
 
         <div id="aiSummaryModal" class="modal-overlay hidden">
             <div class="modal-content" style="max-width: 600px; text-align: left;">
-                <h3 id="aiSummaryModalTitle">${_chat('ai_summary_modal_title')}</h3>
+                <h3 id="aiSummaryModalTitle" style="display: flex; align-items: center; gap: 8px;"><i data-lucide="lightbulb"></i>${_chat('ai_summary_modal_title')}</h3>
                 <div id="aiSummaryOutput" style="max-height: 60vh; overflow-y: auto; line-height: 1.6;">
                     <!-- Сюда будет вставляться сводка или спиннер -->
                 </div>
@@ -1222,7 +1237,7 @@ const ChatModule = (function() {
             </div>
         </div>
 
-        <div id="forgotPasswordModal" class="modal-overlay hidden">  <!-- <== ТЕПЕРЬ ЭТОТ БЛОК НАХОДИТСЯ НА ПРАВИЛЬНОМ УРОВНЕ -->
+        <div id="forgotPasswordModal" class="modal-overlay hidden">
             <div class="modal-content">
                 <h3 data-lang-key="forgot_password_modal_title">${_chat('forgot_password_modal_title')}</h3>
                 <p style="margin-bottom: 20px;" data-lang-key="forgot_password_modal_text">${_chat('forgot_password_modal_text')}</p>
@@ -1236,6 +1251,9 @@ const ChatModule = (function() {
         `;
 
         document.body.insertAdjacentHTML('beforeend', chatHTML);
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
  
@@ -1614,19 +1632,23 @@ const ChatModule = (function() {
         // Делегирование клика для переключения видимости пароля
         document.body.addEventListener('click', function(event) {
             // Проверяем, был ли клик именно по нашей иконке
-            if (event.target.classList.contains('toggle-password')) {
-                const icon = event.target;
+            const iconContainer = event.target.closest('.toggle-password');
+            if (iconContainer) {
                 // Находим соседний элемент - наше поле ввода
-                const passwordInput = icon.previousElementSibling;
+                const passwordInput = iconContainer.previousElementSibling;
 
                 if (passwordInput && passwordInput.type === 'password') {
                     // Если поле скрыто - показываем
                     passwordInput.type = 'text';
-                    icon.textContent = '🙈'; // Меняем иконку на "открытый глаз"
+                    iconContainer.innerHTML = '<i data-lucide="eye-off"></i>';
                 } else if (passwordInput && passwordInput.type === 'text') {
                     // Если поле видно - скрываем
                     passwordInput.type = 'password';
-                    icon.textContent = '👁️'; // Возвращаем иконку "закрытого глаза"
+                    iconContainer.innerHTML = '<i data-lucide="eye"></i>';
+                }
+                // Перерисовываем новую иконку
+                if (window.lucide) {
+                    lucide.createIcons();
                 }
             }
         });
@@ -2287,6 +2309,7 @@ const ChatModule = (function() {
         
         messageArea.style.scrollBehavior = 'auto';
         scrollToBottom();
+        if (window.lucide) lucide.createIcons();
         setTimeout(() => { messageArea.style.scrollBehavior = 'smooth'; }, 100);
 
         // --- НАЧАЛО НОВОЙ "УМНОЙ" ЛОГИКИ ---
@@ -2464,12 +2487,12 @@ const ChatModule = (function() {
 
                 contentContainer.innerHTML = `
                     <div class="file-share-content" data-action="show-file-actions" data-file-id="${fileInfo.id}" data-file-name="${escape(fileInfo.name)}" data-is-testing="${isTestingChannel}">
-                        <div class="file-share-icon">${isPdf ? '📕' : '📄'}</div>
+                        <div class="file-share-icon">${isPdf ? '<i data-lucide="file-text"></i>' : '<i data-lucide="file-question"></i>'}</div>
                         <div class="file-share-details">
                             <div class="file-share-name">${escapeHTML(fileInfo.name)}</div>
                             ${fileDetailsHTML}
                         </div>
-                        <div class="file-share-arrow">→</div>
+                        <div class="file-share-arrow"><i data-lucide="arrow-right"></i></div>
                     </div>
                     ${isTestingChannel && !isPdf ? `<div class="test-results-action"><button class="results-btn" data-action="show-results" data-file-id="${fileInfo.id}" data-channel-id="${message.channelId}">${_chat('results_button')}</button></div>` : ''}
                 `;
@@ -2479,9 +2502,9 @@ const ChatModule = (function() {
                 messageEl.classList.add('question-link-bubble');
                 contentContainer.innerHTML = `
                     <div class="question-link-content" data-action="navigate-to-question" data-question-id="${message.questionId}" data-message-id="${message.id}">
-                        <span class="question-link-icon">❓</span>
+                        <span class="question-link-icon"><i data-lucide="help-circle"></i></span>
                         <div class="question-link-text"><strong>${_chat('new_question_notification')}</strong><p>${escapeHTML(message.text.substring(0, 80))}...</p></div>
-                        <span class="question-link-arrow">→</span>
+                        <span class="question-link-arrow"><i data-lucide="arrow-right"></i></span>
                     </div>
                 `;
                 break;
@@ -2503,7 +2526,7 @@ const ChatModule = (function() {
                 }
                 
                 const editedIndicator = message.editedAt ? `<span class="edited-indicator">${_chat('edited_indicator')}</span>` : '';
-                const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закреплено">📌</span>` : '';
+                const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закреплено"><i data-lucide="pin" style="width:12px; height:12px;"></i></span>` : '';
                 contentDiv.innerHTML = `${pinnedIcon} ${escapeHTML(messageText.trim())} ${editedIndicator}`;
                 contentContainer.appendChild(contentDiv);
                 break;
@@ -2524,12 +2547,12 @@ const ChatModule = (function() {
             });
         }
 
-        // 7. Формируем и вставляем панель действий
+        // 7. Формируем и вставляем панель действий (ИЗМЕНЕНО)
         const actionsToolbar = messageEl.querySelector('.message-actions-toolbar');
         let actionsHTML = `
-            <button title="${_chat('tooltip_reply')}" data-action="reply">↩️</button>
-            <button title="${_chat('tooltip_add_reaction')}" data-action="show-reaction-picker">😊</button>
-            <button title="${message.isPinned ? _chat('tooltip_unpin') : _chat('tooltip_pin')}" data-action="toggle-pin">📌</button>
+            <button title="${_chat('tooltip_reply')}" data-action="reply"><i data-lucide="reply"></i></button>
+            <button title="${_chat('tooltip_add_reaction')}" data-action="show-reaction-picker"><i data-lucide="smile-plus"></i></button>
+            <button title="${message.isPinned ? _chat('tooltip_unpin') : _chat('tooltip_pin')}" data-action="toggle-pin"><i data-lucide="pin"></i></button>
         `;
         const isAdmin = currentUser?.email === 'iverrum@gmail.com';
         
@@ -2537,12 +2560,12 @@ const ChatModule = (function() {
 
         // Условие для кнопки "Редактировать": только для автора и только для обычных текстовых сообщений.
         if (isAuthorOrAdmin && message.type !== 'question_link' && message.type !== 'file_share') {
-            actionsHTML += `<button title="${_chat('tooltip_edit_message')}" data-action="edit">✏️</button>`;
+            actionsHTML += `<button title="${_chat('tooltip_edit_message')}" data-action="edit"><i data-lucide="pencil"></i></button>`;
         }
         
         // Условие для кнопки "Удалить": для автора ЛЮБОГО типа сообщения.
         if (isAuthorOrAdmin) {
-            actionsHTML += `<button title="${_chat('tooltip_delete_message')}" data-action="delete">🗑️</button>`;
+            actionsHTML += `<button title="${_chat('tooltip_delete_message')}" data-action="delete"><i data-lucide="trash-2"></i></button>`;
         }
         actionsToolbar.innerHTML = actionsHTML;
 
@@ -2568,7 +2591,6 @@ const ChatModule = (function() {
         // 9. Возвращаем полностью собранный DOM-элемент
         return messageEl;
     }
-
 
 
 
@@ -2607,7 +2629,10 @@ const ChatModule = (function() {
             }
 
             await Promise.all(updatePromises);
-            alert(_chat('chat_profile_update_success'));
+
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            window.mainApp.showToast(_chat('chat_profile_update_success'), 'success');
+
             updateUserUI();
 
             if (newName && newName !== currentUser.displayName) {
@@ -2749,20 +2774,19 @@ const ChatModule = (function() {
             }
 
             messageArea.appendChild(questionEl);
+            if (window.lucide) lucide.createIcons();
         });
     }
 
 
-
-
-    function createQuestionElement(question) {
+    function createQuestionElement(question, context = 'default') { // <-- 1. Добавлен параметр 'context'
         const questionEl = document.createElement('div');
         questionEl.className = 'question-bubble';
         questionEl.id = `question-${question.id}`; 
 
         const timestamp = question.createdAt?.toDate?.() || new Date();
-        const currentLocale = LOCALE_MAP[currentChatLang] || 'ru-RU'; // Получаем текущую локаль
-        const timeStr = timestamp.toLocaleString(currentLocale); // Используем ее
+        const currentLocale = LOCALE_MAP[currentChatLang] || 'ru-RU';
+        const timeStr = timestamp.toLocaleString(currentLocale);
 
         if (question.options && Array.isArray(question.options)) {
             
@@ -2779,7 +2803,6 @@ const ChatModule = (function() {
                     buttonClass += ' voted-by-user';
                 }
 
-                // Важно: По умолчанию ставим голосование за ОРИГИНАЛ
                 return `
                     <button class="${buttonClass}" onclick="ChatModule.voteForOption('${question.id}', ${index})">
                         <span class="option-text">${escapeHTML(option.text)}</span>
@@ -2791,13 +2814,17 @@ const ChatModule = (function() {
             const totalVotes = question.options.reduce((sum, opt) => sum + (Array.isArray(opt.votedBy) ? opt.votedBy.length : 0), 0);
             
             let actionsHTML = `
-                <button class="add-to-favorites-btn">${_chat('add_to_favorites_button')}</button>
-                <button class="copy-question-btn">${_chat('copy_question_button')}</button> 
+                <button class="add-to-favorites-btn" title="${_chat('add_to_favorites_button')}"><i data-lucide="star"></i></button>
+                <button class="copy-question-btn" title="${_chat('copy_question_button')}"><i data-lucide="copy"></i></button> 
             `;
 
-            if (currentUser && question.authorId === currentUser?.uid) {
-                actionsHTML += `<button class="delete-question-btn" onclick="ChatModule.deleteQuestion('${question.id}')">${_chat('delete_question_button')}</button>`;
+            const isAdmin = currentUser?.email === 'iverrum@gmail.com';
+            // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+            // 2. Кнопка удаления добавляется, только если context НЕ 'favorites'
+            if (context !== 'favorites' && currentUser && (question.authorId === currentUser.uid || isAdmin)) {
+                actionsHTML += `<button class="delete-question-btn" title="${_chat('delete_question_button')}" onclick="ChatModule.deleteQuestion('${question.id}')"><i data-lucide="trash-2"></i></button>`;
             }
+            // === КОНЕЦ ИЗМЕНЕНИЯ ===
 
             questionEl.innerHTML = `
                 <div style="display: flex; align-items: flex-start; gap: 15px;">
@@ -2821,7 +2848,6 @@ const ChatModule = (function() {
     }
 
 
-
     function loadFavorites() {
         if (!currentUser || !db) return;
 
@@ -2838,7 +2864,7 @@ const ChatModule = (function() {
                 const favoriteItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 
                 if (favoriteItems.length === 0) {
-                    messageArea.innerHTML = `<div class="empty-state">${_chat('chat_favorites_empty')}</div>`;
+                    messageArea.innerHTML = `<div class="empty-state">${_chat('favorites_empty')}</div>`;
                     return;
                 }
 
@@ -2850,7 +2876,7 @@ const ChatModule = (function() {
                         const contentData = { id: favoriteInfo.id, ...favoriteInfo.content };
 
                         if (favoriteInfo.type === 'question') {
-                            renderedElement = createQuestionElement(contentData);
+                            renderedElement = createQuestionElement(contentData, 'favorites');
                             
                             const voteButtons = renderedElement.querySelectorAll('.option-vote-btn');
                             voteButtons.forEach((btn, index) => {
@@ -2870,7 +2896,9 @@ const ChatModule = (function() {
                         
                         const deleteButton = document.createElement('button');
                         deleteButton.className = 'remove-favorite';
-                        deleteButton.innerHTML = _chat('delete_favorite_button');
+                        // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+                        deleteButton.innerHTML = `<i data-lucide="x-circle"></i>`; // Используем иконку "крестик в круге"
+                        deleteButton.title = _chat('delete_favorite_button');
                         deleteButton.onclick = () => ChatModule.removeFromFavorites(favoriteInfo.id);
 
                         const actionsContainer = renderedElement.querySelector('.question-actions, .message-actions-toolbar');
@@ -2885,13 +2913,16 @@ const ChatModule = (function() {
                         messageArea.appendChild(renderedElement);
                     }
                 });
+                // Перерисовываем все созданные иконки
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
 
             }, error => {
                 console.error('Ошибка загрузки избранного:', error);
-                messageArea.innerHTML = `<div class="empty-state">${_chat('chat_favorites_loading_error')}</div>`;
+                messageArea.innerHTML = `<div class="empty-state">${_chat('favorites_loading_error')}</div>`;
             });
     }
-
 
     function updateTabCounter(tabId, count) {
         if (tabCounters[tabId]) {
@@ -3302,12 +3333,17 @@ const ChatModule = (function() {
     async function deleteMessage(messageId) {
         if (!currentUser || !db) return;
 
-        if (confirm(_chat('confirm_delete_message'))) {
+        const confirmed = await window.mainApp.showConfirmationModal(
+            'confirm_action_title',
+            'confirm_delete_message',
+            'confirm_button_delete' // <-- ИЗМЕНЕНИЕ: Добавляем правильный ключ для кнопки
+        );
+
+        if (confirmed) {
             const messageRef = db.collection('messages').doc(messageId);
             try {
                 const isAdmin = currentUser.email === 'iverrum@gmail.com';
                 const doc = await messageRef.get();
-                // Проверяем, существует ли сообщение, и является ли пользователь автором ИЛИ администратором
                 if (doc.exists && (doc.data().authorId === currentUser.uid || isAdmin)) {
                     await messageRef.delete();
                 } else {
@@ -3323,7 +3359,13 @@ const ChatModule = (function() {
     async function deleteQuestion(questionId) {
         if (!currentUser || !db) return;
 
-        if (confirm(_chat('confirm_delete_question'))) {
+        const confirmed = await window.mainApp.showConfirmationModal(
+            'confirm_action_title',
+            'confirm_delete_question',
+            'confirm_button_delete' // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
+        );
+
+        if (confirmed) {
             const questionRef = db.collection('questions').doc(questionId);
             try {
                 const isAdmin = currentUser.email === 'iverrum@gmail.com';
@@ -3339,7 +3381,6 @@ const ChatModule = (function() {
             }
         }
     }
-
 
 
     // --- ВСТАВЬТЕ КОД ПАРСЕРА СЮДА ---
@@ -3393,7 +3434,6 @@ const ChatModule = (function() {
 
 
     async function createQuestionFromMessage(rawText) {
-        // Используем наш новый парсер и здесь!
         const questionsToCreate = parseMultipleQstBlocks(rawText);
 
         if (questionsToCreate.length === 0) {
@@ -3402,9 +3442,7 @@ const ChatModule = (function() {
         }
 
         try {
-            // Перебираем все распознанные вопросы
             for (const question of questionsToCreate) {
-                // 1. Создаем сам вопрос в коллекции 'questions'
                 const questionPayload = {
                     text: question.text,
                     options: question.options,
@@ -3415,7 +3453,6 @@ const ChatModule = (function() {
                 };
                 const newQuestionRef = await db.collection('questions').add(questionPayload);
 
-                // 2. Создаем для него сообщение-ссылку в чате
                 const questionLinkMessage = {
                     authorId: currentUser.uid,
                     authorName: currentUser.displayName || currentUser.email || 'Аноним',
@@ -3427,7 +3464,9 @@ const ChatModule = (function() {
                 };
                 await db.collection('messages').add(questionLinkMessage);
             }
-             alert(`${_chat('questions_added_from_chat_success')} ${questionsToCreate.length}`);
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            const message = `${_chat('questions_added_from_chat_success')} ${questionsToCreate.length}`;
+            window.mainApp.showToast(message, 'success');
 
         } catch (error) {
             console.error('Ошибка создания вопроса из сообщения:', error);
@@ -3435,12 +3474,13 @@ const ChatModule = (function() {
         }
     }
 
-    // --- ЗАМЕНИТЕ СТАРУЮ ФУНКЦИЮ НА ЭТУ ---
+
+
+
     async function createQuestion() {
         const rawText = document.getElementById('questionTextInput').value.trim();
         if (!rawText || !currentUser || !db) return;
 
-        // Используем наш новый мощный парсер
         const questionsToCreate = parseMultipleQstBlocks(rawText);
 
         if (questionsToCreate.length === 0) {
@@ -3449,7 +3489,6 @@ const ChatModule = (function() {
         }
 
         try {
-            // Создаем массив промисов для всех вопросов
             const creationPromises = questionsToCreate.map(q => {
                 const questionPayload = {
                     text: q.text,
@@ -3462,10 +3501,12 @@ const ChatModule = (function() {
                 return db.collection('questions').add(questionPayload);
             });
             
-            // Ждем, пока все вопросы будут созданы
             await Promise.all(creationPromises);
             
-            alert(`${_chat('questions_added_success')} ${questionsToCreate.length}`);
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            const message = `${_chat('questions_added_success')} ${questionsToCreate.length}`;
+            window.mainApp.showToast(message, 'success');
+
             document.getElementById('questionTextInput').value = '';
             closeModal('questionCreateModal');
 
@@ -3474,6 +3515,8 @@ const ChatModule = (function() {
             showError(_chat('error_create_question_failed'));
         }
     }
+
+
 
     async function voteForOption(questionId, optionIndex) {
         if (!currentUser || !db) return;
@@ -3562,18 +3605,15 @@ const ChatModule = (function() {
             return;
         }
         try {
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            // Создаем объект, который будет сохранен в Firestore
             const favorite = {
                 userId: currentUser.uid,
-                content: itemObject, // Содержимое, которое пришло в функцию
-                type: type,          // Тип элемента ('question')
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() // Время создания
+                content: itemObject, 
+                type: type,          
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-            await db.collection('favorites').add(favorite); // Теперь используем созданный объект
-            alert(_chat('add_to_favorites_success'));
+            await db.collection('favorites').add(favorite);
+            window.mainApp.showToast(_chat('add_to_favorites_success'), 'success'); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
 
         } catch (error) {
             console.error('Ошибка добавления в избранное:', error);
@@ -3686,23 +3726,30 @@ const ChatModule = (function() {
             const isOwner = channel.createdBy === currentUser.uid;
             const channelEl = document.createElement('div');
             // Добавляем data-атрибут для легкого доступа
-            channelEl.dataset.channelId = channel.id; // <-- ДОБАВЛЕНО
+            channelEl.dataset.channelId = channel.id;
             channelEl.className = `channel-item ${channel.id === currentChannel && currentChannelType === 'public' ? 'active' : ''}`;
 
-            const lockIcon = channel.hasPassword ? '🔒 ' : '';
-            const settingsIcon = isOwner ? `<button class="channel-settings-btn" onclick="event.stopPropagation(); ChatModule.showChannelEditModal('${channel.id}')">⚙️</button>` : '';
-            const unreadCount = unreadCounts.get(channel.id) || 0; // <-- ДОБАВЛЕНО
+            // === ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ===
+            // Вместо смайлика '🔒 ' вставляем тег иконки Lucide
+            const lockIcon = channel.hasPassword ? '<i data-lucide="lock"></i>' : '';
+            
+            const settingsIcon = isOwner ? `<button class="channel-settings-btn" onclick="event.stopPropagation(); ChatModule.showChannelEditModal('${channel.id}')"><i data-lucide="settings"></i></button>` : '';
+            const unreadCount = unreadCounts.get(channel.id) || 0;
 
             // Добавляем HTML для счетчика
             channelEl.innerHTML = `
                 <span class="channel-name">${lockIcon}# ${escapeHTML(channel.name)}</span>
                 <span class="unread-channel-badge ${unreadCount > 0 ? '' : 'hidden'}">${unreadCount}</span>
                 ${settingsIcon}
-            `; // <-- ИЗМЕНЕНО
+            `;
 
             channelEl.addEventListener('click', () => handleChannelClick(channel));
             channelsList.appendChild(channelEl);
         });
+        // Перерисовываем новые иконки
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
 
 
@@ -4012,13 +4059,73 @@ const ChatModule = (function() {
         return hashHex;
     }
 
-    async function handleChannelClick(channel) {
-        // --- НАЧАЛО НОВОГО КОДА ---
 
+    /**
+     * Показывает кастомное модальное окно для ввода пароля и возвращает Promise.
+     * @param {string} channelName - Имя защищенного канала.
+     * @returns {Promise<string|null>} - Promise, который разрешается введенным паролем или null, если пользователь нажал отмену.
+     */
+    function promptForPassword(channelName) {
+        return new Promise(resolve => {
+            const modal = getEl('channelPasswordModal');
+            const titleEl = getEl('channelPasswordModalTitle');
+            const textEl = getEl('channelPasswordModalText');
+            const inputEl = getEl('channelPasswordInputModal');
+            const confirmBtn = getEl('channelPasswordConfirmBtn');
+            const cancelBtn = getEl('channelPasswordCancelBtn');
+
+            // Заполняем тексты из словаря
+            titleEl.textContent = _chat('channel_password_modal_title');
+            textEl.textContent = _chatFormat('channel_password_modal_text', { channelName });
+            inputEl.placeholder = _chat('channel_password_placeholder');
+            confirmBtn.textContent = _chat('modal_confirm_button');
+            cancelBtn.textContent = _chat('modal_cancel_button');
+            
+            inputEl.value = ''; // Очищаем поле
+
+            // Функция для закрытия окна и очистки обработчиков
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                // Снимаем обработчик с Enter
+                inputEl.onkeydown = null;
+                resolve(result);
+            };
+
+            const onConfirm = () => {
+                cleanup(inputEl.value);
+            };
+
+            const onCancel = () => {
+                cleanup(null);
+            };
+
+            // Назначаем обработчики
+            confirmBtn.onclick = onConfirm;
+            cancelBtn.onclick = onCancel;
+            
+            // Добавляем обработку нажатия Enter в поле ввода
+            inputEl.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onConfirm();
+                }
+            };
+
+            // Показываем окно и ставим фокус на поле ввода
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons(); // Перерисовываем иконку глаза
+            inputEl.focus();
+        });
+    }
+    // === КОНЕЦ НОВОГО КОДА ===
+
+
+
+    async function handleChannelClick(channel) {
         // Функция-помощник для входа в канал и добавления в участники
         const enterChannel = async () => {
-            // РЕШЕНИЕ ПРОБЛЕМЫ №2: Добавляем пользователя в участники при входе
-            // Проверяем, что это не основной канал и что пользователь еще не участник
             if (channel.id !== 'general' && (!channel.members || !channel.members.includes(currentUser.uid))) {
                 try {
                     const channelRef = db.collection('channels').doc(channel.id);
@@ -4030,50 +4137,45 @@ const ChatModule = (function() {
                     console.error("Ошибка добавления пользователя в участники:", error);
                 }
             }
-            // Переключаемся на канал
             switchToChannel(channel.id, channel.name, 'public');
         };
 
         // Если канал защищен паролем
         if (channel.hasPassword) {
-            // РЕШЕНИЕ ПРОБЛЕМЫ №1: Проверяем, является ли пользователь все еще участником
             const isMember = channel.members && channel.members.includes(currentUser.uid);
 
-            // Если пользователь НЕ участник (или списка участников нет), то ключ недействителен
             if (!isMember) {
-                // Если он был удален, но ключ остался в браузере - аннулируем ключ
                 if (unlockedChannels.has(channel.id)) {
                     unlockedChannels.delete(channel.id);
                     localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
                     console.log(`Локальный ключ для канала "${channel.name}" аннулирован, так как пользователь был удален.`);
                 }
             }
-
-            // Теперь стандартная проверка: если канал все еще не разблокирован, запрашиваем пароль
+            
+            // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Заменяем prompt на наше новое окно ===
             if (!unlockedChannels.has(channel.id)) {
-                            const password = prompt(_chatFormat('channel_enter_password_prompt', {
-                                channelName: channel.name
-                            }));
+                // Ждем результат от кастомного модального окна
+                const password = await promptForPassword(channel.name);
+
+                // Если пользователь нажал "Отмена", password будет null
                 if (password === null) return;
 
                 const enteredPasswordHash = await hashPassword(password);
                 if (enteredPasswordHash === channel.passwordHash) {
-                    // Если пароль верный, разблокируем и входим
                     unlockedChannels.add(channel.id);
                     localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
                     await enterChannel();
                 } else {
-                    alert(_chat('invalid_channel_password'));
+                    // === ВОТ ОНО, ИСПРАВЛЕНИЕ! ===
+                    window.mainApp.showToast(_chat('invalid_channel_password'), 'error');
                 }
             } else {
-                // Если ключ есть и он действителен (пользователь все еще участник), просто входим
                 await enterChannel();
             }
         } else {
             // Если канал публичный (без пароля), просто входим
             await enterChannel();
         }
-        // --- КОНЕЦ НОВОГО КОДА ---
     }
     
 
@@ -4937,7 +5039,6 @@ const ChatModule = (function() {
 
 
 
-
     function toggleNotifications() {
         notificationsEnabled = !notificationsEnabled;
 
@@ -4947,7 +5048,10 @@ const ChatModule = (function() {
             notificationBtn.title = notificationsEnabled ? _chat('notifications_title_enabled') : _chat('notifications_title_disabled');
         }
 
-        alert(notificationsEnabled ? _chat('notifications_enabled') : _chat('notifications_disabled'));
+        // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+        const message = notificationsEnabled ? _chat('notifications_enabled') : _chat('notifications_disabled');
+        window.mainApp.showToast(message, 'info'); // Используем тип 'info' для нейтральных сообщений
+
         console.log(`Статус уведомлений: ${notificationsEnabled}`);
     }
 
@@ -5092,33 +5196,37 @@ const ChatModule = (function() {
 
 
     
-    // === НАЧАЛО НОВЫХ ФУНКЦИЙ ДЛЯ КНОПОК ===
-    
     function setupTabActions(tabId) {
         const container = document.getElementById('tabActionsContainer');
         if (!container) return;
         
         container.innerHTML = ''; 
         container.classList.remove('hidden');
-    
+
         if (tabId === 'questions' || tabId === 'favorites') {
             const downloadQstBtn = document.createElement('button');
             downloadQstBtn.textContent = _chat('download_qst_button'); // ИЗМЕНЕНО
             downloadQstBtn.onclick = () => handleDownload(tabId, 'qst');
             container.appendChild(downloadQstBtn);
-    
+
             const downloadTxtBtn = document.createElement('button');
             downloadTxtBtn.textContent = _chat('download_txt_button'); // ИЗМЕНЕНО
             downloadTxtBtn.onclick = () => handleDownload(tabId, 'txt');
             container.appendChild(downloadTxtBtn);
         }
-    
+
         if (tabId === 'favorites') {
             const clearBtn = document.createElement('button');
-            clearBtn.textContent = _chat('clear_favorites_button'); // ИЗМЕНЕНО
+            // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
+            clearBtn.innerHTML = `<i data-lucide="trash-2"></i>`; 
+            clearBtn.title = _chat('clear_favorites_button'); // Добавляем всплывающую подсказку
             clearBtn.classList.add('btn-danger'); 
             clearBtn.onclick = () => clearAllFavorites();
             container.appendChild(clearBtn);
+        }
+        // Перерисовываем новые иконки
+        if (window.lucide) {
+            lucide.createIcons();
         }
     }
 
@@ -5204,38 +5312,44 @@ const ChatModule = (function() {
     
 
 
-
     async function clearAllFavorites() {
         if (!currentUser || !db) return;
-    
-        if (!confirm("Вы уверены, что хотите удалить ВСЕ элементы из избранного? Это действие необратимо.")) {
+
+        const confirmed = await window.mainApp.showConfirmationModal(
+            'confirm_action_title',
+            'confirm_clear_favorites',
+            'confirm_button_delete' // <-- ИЗМЕНЕНИЕ: Добавляем тот же универсальный ключ
+        );
+
+        if (!confirmed) {
             return;
         }
-    
+
         try {
             const querySnapshot = await db.collection('favorites')
                 .where('userId', '==', currentUser.uid)
                 .get();
-    
+
             if (querySnapshot.empty) {
-                alert(_chat('chat_favorites_empty_to_clear'));
+                window.mainApp.showToast(_chat('chat_favorites_empty_to_clear'), 'info');
                 return;
             }
-    
+
             const batch = db.batch();
             querySnapshot.docs.forEach(doc => {
                 batch.delete(doc.ref);
             });
             await batch.commit();
-    
-            alert("Избранное успешно очищено.");
+
+            window.mainApp.showToast("Избранное успешно очищено.", 'success');
             loadFavorites(); 
-    
+
         } catch (error) {
             console.error("Ошибка при очистке избранного:", error);
             showError(_chat('error_clear_favorites_failed'));
         }
     }
+
 
 
 
@@ -5493,6 +5607,7 @@ const ChatModule = (function() {
     }
 
 
+
     async function handlePasswordReset() {
         if (!auth) {
             showError(_chat('auth_system_unavailable'));
@@ -5511,7 +5626,8 @@ const ChatModule = (function() {
             await auth.sendPasswordResetEmail(email);
             closeModal('forgotPasswordModal');
             emailInput.value = ''; // Очищаем поле после отправки
-            alert(_chat('password_reset_email_sent'));
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            window.mainApp.showToast(_chat('password_reset_email_sent'), 'success');
         } catch (error) {
             console.error("Ошибка сброса пароля:", error);
             if (error.code === 'auth/user-not-found') {
@@ -5521,6 +5637,7 @@ const ChatModule = (function() {
             }
         }
     }
+
 
     async function saveMessageForSync(message) {
         try {
@@ -5854,7 +5971,7 @@ const mainApp = (function() {
     // Создаём единый массив для порядка переключения.
     const LANG_CYCLE = ['ru', 'en', 'kk'];
 
-    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
+
 // --- СЛОВАРЬ ПЕРЕВОДОВ ---
     const LANG_PACK = {
         ru: {
@@ -5897,7 +6014,7 @@ const mainApp = (function() {
             questions_label_for_range: 'вопросов',
             shuffle_questions: 'Перемешать вопросы',
             shuffle_answers: 'Перемешать ответы',
-            feedback_mode: 'Режим обратной связи (🤖ИИ анализ + пройти неверные)',
+            feedback_mode: 'Режим обратной связи (ИИ анализ + пройти неверные)',
             reading_mode: 'Режим чтения (первый вариант верный)',
             start_quiz_button: 'Начать тест',
             generate_cheat_sheet_button: 'Создать шпору',
@@ -5933,18 +6050,23 @@ const mainApp = (function() {
             parser_result_title: 'Результат:',
             download_parsed_button: 'Скачать .qst файл',
             back_button: 'Назад',
-
-
-
-
-
+            // === НАЧАЛО ИЗМЕНЕНИЙ: Добавленные ключи для модальных окон ===
+            modal_cancel_button: 'Отмена',
+            confirm_delete_message: 'Вы уверены, что хотите удалить это сообщение?',
+            confirm_delete_question: 'Вы уверены, что хотите удалить этот вопрос? Это действие необратимо.',
+            confirm_delete_channel: 'Вы уверены, что хотите удалить этот канал? Все сообщения в нем будут потеряны. Это действие необратимо.',
+            confirm_delete_account: 'Вы уверены, что хотите удалить свой аккаунт? Это действие НЕОБРАТИМО.',
+            confirm_clear_favorites: 'Вы уверены, что хотите удалить ВСЕ элементы из избранного? Это действие необратимо.',
+            confirm_kick_user: 'Вы уверены, что хотите удалить этого участника из канала?',
+            // === КОНЕЦ ИЗМЕНЕНИЙ ===
             // Кнопки в шапке (ДОБАВЛЕНО для единообразия)
             copy_question_title: 'Копировать текущий вопрос',
             search_web_title: 'Найти в интернете',
-            chat_button_title: '💬',
+            chat_button_title: 'Чат',
+            confirm_action_title: 'Подтверждение действия',
             quick_mode_title: 'Быстрый режим (Автопереход)',
             trigger_words_title: 'Триггер-слова',
-            theme_button_title: '🌗',
+            theme_button_title: 'Сменить тему',
             language_toggle_title: 'Сменить язык',
             favorite_button_title: 'Добавить в избранное',
             translate_question_title: 'Перевести текущий вопрос',
@@ -5957,15 +6079,12 @@ const mainApp = (function() {
             copy_button: "Копировать",
             search_provider_db: "База данных",
             relevance_tag: "Релевантность:",
-            copy_button: "Копировать",
             copy_question_tooltip: "Копировать вопрос",
             favorite_question_tooltip: "Добавить в избранное",
-
-            ai_explanation_title: '💡 Объяснение от ИИ',
+            ai_explanation_title: 'Объяснение от ИИ',
             ai_explanation_style_label: 'Стиль объяснения:',
-            ai_explain_button: 'Объяснить💡',
+            ai_explain_button: ' Объяснить',
             ai_explanation_loading: 'ИИ готовит объяснение...',
-
             ai_error_text_empty: 'Пожалуйста, вставьте текст для анализа.',
             ai_error_generation: 'Произошла ошибка при генерации теста.',
             ai_question_count_label: 'Укажите количество вопросов для ИИ:',
@@ -5976,12 +6095,13 @@ const mainApp = (function() {
             ai_style_stepbystep: "Пошагово",
             ai_style_practical: "Практично",
             ai_style_visual: "Наглядно",
-            ai_answer_count_label: 'Укажите количество вариантов ответа:', 
-            ai_auto_category_label: 'Автоматически создавать категории', 
+            ai_answer_count_label: 'Укажите количество вариантов ответа:',
+            ai_auto_category_label: 'Автоматически создавать категории',
             exit_modal_title: 'Подтверждение',
             exit_modal_text: 'Вы уверены, что хотите выйти из приложения?',
             exit_modal_confirm: 'Выйти',
             exit_modal_cancel: 'Остаться',
+            confirm_button_delete: 'Удалить',
             update_available_text: 'Доступна новая версия!',
             update_button_text: 'Обновить',
             ai_explain_button_title: 'Объяснить с помощью ИИ',
@@ -5999,12 +6119,10 @@ const mainApp = (function() {
             ai_error_generic: 'Не удалось сгенерировать объяснение. Попробуйте, пожалуйста, еще раз.',
             ai_error_server: 'Не удалось сгенерировать объяснение: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
             parser_overwrite_warning: 'Поле с результатом уже содержит текст. Вы уверены, что хотите перезаписать его?',
-            ai_error_generation: 'Произошла ошибка при генерации теста.',
             ai_error_server_generation: 'Ошибка генерации теста: Произошла временная ошибка на сервере. Пожалуйста, повторите попытку позже.',
             ai_char_limit_exceeded: 'Лимит символов превышен ({current}/{max})',
-
             tab_converter: "Конвертер из текста",
-            tab_ai_from_text: "ИИ-генератор из текста", 
+            tab_ai_from_text: "ИИ-генератор из текста",
             tab_ai_generator: "ИИ-генератор по теме",
             ai_from_text_title: "🤖 Создать тест из вашего текста (ИИ)",
             ai_generate_from_text_button: "Сгенерировать тест из текста",
@@ -6016,7 +6134,6 @@ const mainApp = (function() {
             ai_generate_from_topic_button: "🤖 Создать тест по теме (ИИ)",
             ai_thinking_topic: "ИИ-генератор размышляет над вашей темой...",
             ai_topic_auto_category_label: "Автоматически создавать категории",
-            parser_auto_detect: '-- Автоматическое определение --',
             filter_variants_button: '⚙️ Фильтр по вариантам',
             filter_variants_header: 'Выберите кол-во вариантов:',
             filter_apply_button: 'Применить',
@@ -6037,7 +6154,7 @@ const mainApp = (function() {
             parser_conversion_summary_alert: 'Операция завершена.\n\nРаспознано вопросов: {parsed}\nОбнаружено ошибок форматирования: {errors}',
             ai_topic_empty_alert: 'Пожалуйста, введите тему для генерации теста.',
             ai_explanation_prepare_error: 'Не удалось подготовить окно объяснения.',
-            ai_analyzing_errors_button: 'ИИ анализирует... 🧠', 
+            ai_analyzing_errors_button: 'ИИ анализирует... 🧠',
             ai_error_analysis_button: '🤖 Аналитика ошибок от ИИ',
             search_engine_google: 'Google',
             search_engine_yandex: 'Яндекс',
@@ -6072,54 +6189,39 @@ const mainApp = (function() {
             mobile_download_fallback_p2: 'Скопируйте содержимое файла',
             mobile_download_copy_button: '📋 Копировать',
             session_saved_success: 'Тест сохранён! Вы можете продолжить его в любой момент с главного экрана.',
-
             download_txt_question_label: 'Вопрос',
             download_txt_answer_label: 'Правильный ответ',
-
             quick_mode_title_on: "Быстрый режим ВКЛ (Автопереход)",
             quick_mode_title_off: "Быстрый режим ВЫКЛ (Ручной переход)",
             trigger_mode_title_on: "Триггер-слова ВКЛ (Кликните на слово в вопросе)",
             trigger_mode_title_off: "Триггер-слова ВЫКЛ",
-
             share_title_cheatsheet: "Шпора",
             share_title_errors: "Ошибки",
             share_title_triggered_quiz: "Тест с триггерами",
             share_title_converted_test: "Сконвертированный тест",
-
             error_review_questions_not_found: "Не удалось сформировать вопросы для работы над ошибками.",
             error_flashcard_translation_failed: "Не удалось перевести карточку. Будет показан оригинал.",
-
             error_load_file_first: "Сначала загрузите файл с вопросами.",
-
             manual_copy_title: "📋 Ручное копирование",
             manual_copy_p1: "Автоматическое копирование не сработало. Пожалуйста, выделите и скопируйте текст ниже:",
             manual_copy_close_button: "Закрыть",
-
-
             error_no_current_question: "Не удалось определить текущий вопрос.",
             error_session_save_failed: "Не удалось сохранить сессию. Возможно, в браузере закончилось место.",
             error_analysis_no_data: "Нет данных об ошибках для анализа.",
             error_no_question_for_explanation: "Не удалось распознать структуру вопроса для объяснения.",
             error_cannot_fully_process_question: "Не удалось полностью обработать вопрос для объяснения.",
-
             error_download_generic_with_filename: 'Не удалось скачать файл "{fileName}". Попробуйте еще раз.',
             mobile_download_preparing: 'Подготовка файла для скачивания...',
-
             tooltip_open_folder: 'Открыть папку "{name}"',
             tooltip_start_test: 'Запустить тест "{name}"',
             tooltip_load_file: 'Загрузить {name}',
-
             share_title_translated_test_txt: "Переведенный тест",
             share_title_translated_test_qst: "Переведенный тест (QST)",
-
             error_translation_failed: "Не удалось получить перевод.",
             ai_option_default: "(стандарт)",
-
-
             error_firebase_init: "Не удалось инициализировать Firebase. Чат будет недоступен. Ошибка:",
             copy_success_short: '✓ Скопировано!',
             ai_analyzing_text: "ИИ анализирует ваш текст...",
-
             parser_pattern_structured: "Структурированный тест (1. Вопрос, А) Ответ+)",
             parser_pattern_plus_at_end: "Ответ с '+' в конце строки",
             parser_pattern_no_markers: "Без маркеров (первый ответ - верный)",
@@ -6127,12 +6229,9 @@ const mainApp = (function() {
             parser_pattern_plus_at_start: "Ответ с '+' в начале строки",
             parser_pattern_tags_cyrillic: "Теги <Вопрос> и <вариант>",
             parser_pattern_tags_latin: "Теги <question> и <variant>",
-
             shuffle_n_questions: "Случайный набор из",
-
             translate_engine_google: "Google Переводчик",
             translate_engine_ai: "AI Переводчик",
-            ai_generate_from_text_button: "Сгенерировать тест из текста",
             ai_generating_button: "🤖 Генерация...",
             activation_label: "Активация:",
             activation_placeholder: "Введите ваш одноразовый ключ...",
@@ -6146,17 +6245,23 @@ const mainApp = (function() {
             parser_pattern_trilingual: "Блок \"Вопрос No\" (многоязычный)",
             language_filter_label: 'Язык вопросов:',
             checking_access: "Проверка...",
-
             category_filter_label: "Фильтр по категориям:",
             select_all_btn: "Все",
             deselect_all_btn: "Снять",
             category_filter_note: "Если ни одна категория не выбрана, в тест войдут вопросы из всех категорий.",
-
             session_conflict_title: "Сессия уже существует",
             session_conflict_text: 'Для файла "{fileName}" уже есть сохраненный прогресс. Что вы хотите сделать?',
             session_overwrite_button: "Перезаписать",
+            // === НАЧАЛО НОВОГО КОДА ===
+            confirm_exit_quiz_title: "Завершить текущий тест?",
+            confirm_exit_quiz_text: "Ваш текущий прогресс будет потерян. Вы уверены, что хотите выйти?",
+            confirm_exit_quiz_confirm_button: "Завершить",
+            // === КОНЕЦ НОВОГО КОДА ===
+            // === НАЧАЛО НОВОГО КОДА ===
+            confirm_finish_with_unanswered_title: "Завершить тест?",
+            confirm_finish_with_unanswered_text: "У вас остались неотвеченные вопросы. Вы уверены, что хотите завершить тест сейчас?",
+            // === КОНЕЦ НОВОГО КОДА ===
             session_save_new_button: "Сохранить как новую"
-
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -6198,7 +6303,7 @@ const mainApp = (function() {
             questions_label_for_range: 'сұрақ',
             shuffle_questions: 'Сұрақтарды араластыру',
             shuffle_answers: 'Жауаптарды араластыру',
-            feedback_mode: 'Кері байланыс режимі (🤖ЖИ талдауы + қателермен жұмыс)',
+            feedback_mode: 'Кері байланыс режимі (ЖИ талдауы + қателермен жұмыс)',
             reading_mode: 'Оқу режимі (бірінші жауап дұрыс)',
             start_quiz_button: 'Тестті бастау',
             generate_cheat_sheet_button: 'Шпаргалка жасау',
@@ -6234,6 +6339,15 @@ const mainApp = (function() {
             parser_result_title: 'Нәтиже:',
             download_parsed_button: '.qst файлын жүктеу',
             back_button: 'Артқа',
+            // === НАЧАЛО НОВОГО КОДА ДЛЯ kk ===
+            modal_cancel_button: 'Болдырмау',
+            confirm_delete_message: 'Осы хабарламаны жойғыңыз келетініне сенімдісіз бе?',
+            confirm_delete_question: 'Осы сұрақты жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті қайтару мүмкін емес.',
+            confirm_delete_channel: 'Осы арнаны жойғыңыз келетініне сенімдісіз бе? Ондағы барлық хабарламалар жоғалады. Бұл әрекетті қайтару мүмкін емес.',
+            confirm_delete_account: 'Аккаунтыңызды жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті ҚАЙТАРУ МҮМКІН ЕМЕС.',
+            confirm_clear_favorites: 'Таңдаулылардан БАРЛЫҚ элементтерді жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті қайтару мүмкін емес.',
+            confirm_kick_user: 'Осы мүшені арнадан алғыңыз келетініне сенімдісіз бе?',
+            // === КОНЕЦ НОВОГО КОДА ДЛЯ kk ===
             copy_success_short: '✓ Көшірілді!',
 
 
@@ -6242,10 +6356,11 @@ const mainApp = (function() {
             // Header Buttons
             copy_question_title: 'Ағымдағы сұрақты көшіру',
             search_web_title: 'Интернеттен іздеу',
-            chat_button_title: '💬',
+            chat_button_title: 'Чат',
+            confirm_action_title: 'Әрекетті растау', 
             quick_mode_title: 'Жылдам режим (Автоматты өту)',
             trigger_words_title: 'Триггер-сөздер',
-            theme_button_title: '🌗',
+            theme_button_title: 'Теманы өзгерту',
             language_toggle_title: 'Тілді өзгерту',
             favorite_button_title: 'Таңдаулыларға қосу',
             translate_question_title: 'Ағымдағы сұрақты аудару',
@@ -6263,9 +6378,9 @@ const mainApp = (function() {
             favorite_question_tooltip: "Таңдаулыларға қосу",
 
             copy_success: "Мазмұн алмасу буферіне көшірілді!",
-            ai_explanation_title: '💡 ЖИ түсіндірмесі',
+            ai_explanation_title: 'ЖИ түсіндірмесі',
             ai_explanation_style_label: 'Түсіндіру стилі:',
-            ai_explain_button: 'Түсіндіру💡',
+            ai_explain_button: ' Түсіндіру',
             ai_explanation_loading: 'ЖИ түсіндірме дайындауда...',
             ai_generating_button: '🤖 Генерация...',
             ai_error_text_empty: 'Талдау үшін мәтінді енгізіңіз.',
@@ -6284,6 +6399,7 @@ const mainApp = (function() {
             exit_modal_text: 'Қосымшадан шыққыңыз келетініне сенімдісіз бе?',
             exit_modal_confirm: 'Шығу',
             exit_modal_cancel: 'Қалу',
+            confirm_button_delete: 'Жою',
             update_available_text: 'Жаңа нұсқасы қолжетімді!',
             update_button_text: 'Жаңарту',
             ai_explain_button_title: 'ЖИ арқылы түсіндіру',
@@ -6368,7 +6484,7 @@ const mainApp = (function() {
             search_web_title: 'Интернеттен іздеу',
             quick_mode_title: 'Жылдам режим (Автоматты өту)',
             trigger_words_title: 'Триггер-сөздер',
-            theme_button_title: '🌗',
+            theme_button_title: 'Теманы өзгерту',
             language_toggle_title: 'Тілді өзгерту',
             favorite_button_title: 'Таңдаулыларға қосу',
             translate_question_title: 'Ағымдағы сұрақты аудару',
@@ -6502,6 +6618,15 @@ const mainApp = (function() {
             session_conflict_title: "Сессия сақталған",
             session_conflict_text: '"{fileName}" файлы үшін сақталған үлгерім бар. Не істегіңіз келеді?',
             session_overwrite_button: "Қайта жазу",
+            // === НАЧАЛО НОВОГО КОДА ===
+            confirm_exit_quiz_title: "Ағымдағы тестті аяқтайсыз ба?",
+            confirm_exit_quiz_text: "Сіздің үлгеріміңіз жоғалады. Шыққыңыз келетініне сенімдісіз бе?",
+            confirm_exit_quiz_confirm_button: "Аяқтау",
+            // === КОНЕЦ НОВОГО КОДА ===
+            // === НАЧАЛО НОВОГО КОДА ===
+            confirm_finish_with_unanswered_title: "Тестті аяқтайсыз ба?",
+            confirm_finish_with_unanswered_text: "Сізде жауап берілмеген сұрақтар қалды. Тестті қазір аяқтағыңыз келетініне сенімдісіз бе?",
+            // === КОНЕЦ НОВОГО КОДА ===
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -6545,7 +6670,7 @@ const mainApp = (function() {
             questions_label_for_range: 'questions',
             shuffle_questions: 'Shuffle questions',
             shuffle_answers: 'Shuffle answers',
-            feedback_mode: 'Feedback Mode (🤖AI analysis + review incorrect answers)',
+            feedback_mode: 'Feedback Mode (AI analysis + review incorrect answers)',
             reading_mode: 'Reading mode (first option is correct)',
             start_quiz_button: 'Start Quiz',
             generate_cheat_sheet_button: 'Generate Cheat Sheet',
@@ -6581,12 +6706,23 @@ const mainApp = (function() {
             parser_result_title: 'Result:',
             download_parsed_button: 'Download .qst file',
             back_button: 'Back',
+
+            // === НАЧАЛО НОВОГО КОДА ДЛЯ en ===
+            modal_cancel_button: 'Cancel',
+            confirm_delete_message: 'Are you sure you want to delete this message?',
+            confirm_delete_question: 'Are you sure you want to delete this question? This action is irreversible.',
+            confirm_delete_channel: 'Are you sure you want to delete this channel? All messages within it will be lost. This action is irreversible.',
+            confirm_delete_account: 'Are you sure you want to delete your account? This action is IRREVERSIBLE.',
+            confirm_clear_favorites: 'Are you sure you want to delete ALL items from your favorites? This action is irreversible.',
+            confirm_kick_user: 'Are you sure you want to remove this member from the channel?',
+            // === КОНЕЦ НОВОГО КОДА ДЛЯ en ===
+
             // Header Buttons (ПОЛНОСТЬЮ ПЕРЕВЕДЕНО)
             copy_question_title: 'Copy current question',
             search_web_title: 'Search the web',
             quick_mode_title: 'Quick Mode (Auto-advance)',
             trigger_words_title: 'Trigger Words',
-            theme_button_title: '🌗',
+            theme_button_title: 'Change Theme',
             language_toggle_title: 'Change Language',
             favorite_button_title: 'Add to Favorites',
             translate_question_title: 'Translate current question',
@@ -6607,9 +6743,9 @@ const mainApp = (function() {
             ai_error_generation: 'An error occurred while generating the test.',
 
             copy_success: "Content copied to clipboard!",
-            ai_explanation_title: '💡 AI Explanation',
+            ai_explanation_title: 'AI Explanation',
             ai_explanation_style_label: 'Explanation Style:',
-            ai_explain_button: 'Explain💡',
+            ai_explain_button: ' Explain',
             ai_explanation_loading: 'AI is preparing an explanation...',
             ai_generating_button: '🤖 Generating...',
             ai_error_text_empty: 'Please paste text to analyze.',
@@ -6629,6 +6765,7 @@ const mainApp = (function() {
             exit_modal_text: 'Are you sure you want to exit the application?',
             exit_modal_confirm: 'Exit',
             exit_modal_cancel: 'Stay',
+            confirm_button_delete: 'Delete',
             update_available_text: 'A new version is available!',
             update_button_text: 'Update',
             ai_explain_button_title: 'Explain with AI',
@@ -6716,10 +6853,10 @@ const mainApp = (function() {
 
             copy_question_title: 'Copy current question',
             search_web_title: 'Search the web',
-            chat_button_title: '💬',
+            chat_button_title: 'Chat',
+            confirm_action_title: 'Confirm Action', 
             quick_mode_title: 'Quick Mode (Auto-advance)',
             trigger_words_title: 'Trigger Words',
-            theme_button_title: '🌗',
             language_toggle_title: 'Change Language',
             favorite_button_title: 'Add to Favorites',
             translate_question_title: 'Translate current question',
@@ -6854,6 +6991,15 @@ const mainApp = (function() {
             session_conflict_title: "Session Already Exists",
             session_conflict_text: 'There is already saved progress for the file "{fileName}". What would you like to do?',
             session_overwrite_button: "Overwrite",
+            // === НАЧАЛО НОВОГО КОДА ===
+            confirm_exit_quiz_title: "End the current quiz?",
+            confirm_exit_quiz_text: "Your current progress will be lost. Are you sure you want to exit?",
+            confirm_exit_quiz_confirm_button: "End Quiz",
+            // === КОНЕЦ НОВОГО КОДА ===
+            // === НАЧАЛО НОВОГО КОДА ===
+            confirm_finish_with_unanswered_title: "Finish the quiz?",
+            confirm_finish_with_unanswered_text: "You have unanswered questions left. Are you sure you want to finish the quiz now?",
+            // === КОНЕЦ НОВОГО КОДА ===
             session_save_new_button: "Save as New"
         }
 
@@ -7331,8 +7477,7 @@ const mainApp = (function() {
         try {
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(text);
-                // Теперь функция _() здесь доступна!
-                showCopyNotification(_('copy_success')); 
+                showToast(_('copy_success'), 'success'); 
             } else {
                 // Fallback для старых браузеров
                 const textArea = document.createElement('textarea');
@@ -7342,17 +7487,17 @@ const mainApp = (function() {
                 textArea.setSelectionRange(0, 99999);
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showCopyNotification(_('copy_success'));
+                showToast(_('copy_success'), 'success');
             }
         } catch (error) {
             console.error('Ошибка копирования:', error);
-            // Исправляем сообщение об ошибке, чтобы оно тоже переводилось
-            alert(_('copy_error'));
+            showToast(_('copy_error'), 'error'); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
         }
     }
 
 
-    
+
+
     function setupEventListeners() {
         getEl('favoriteQuestionBtn')?.addEventListener('click', handleFavoriteClickInQuiz);
         translateQuestionBtn?.addEventListener('click', toggleTranslateMode);
@@ -7424,25 +7569,15 @@ const mainApp = (function() {
             event.stopPropagation();
             const header = event.target.closest('.parser-output-header');
             if (header) {
-                // Позиционируем выпадающее меню относительно шапки
                 filterVariantsDropdown.style.top = `${header.offsetTop + header.offsetHeight}px`;
-                filterVariantsDropdown.style.right = '0px'; // Прижимаем к правому краю
+                filterVariantsDropdown.style.right = '0px';
             }
             filterVariantsDropdown.classList.toggle('hidden');
         });
 
-
-
         applyVariantFilterBtn?.addEventListener('click', filterByVariantCount);
         resetVariantFilterBtn?.addEventListener('click', resetVariantFilter);
-        window.addEventListener('click', (event) => {
-            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden')) {
-                if (!filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
-                    filterVariantsDropdown.classList.add('hidden');
-                }
-            }
-        });
-
+        
         // Остальные обработчики...
         nextButton.addEventListener('click', handleNextButtonClick);
         prevQuestionButton.addEventListener('click', loadPreviousQuestion);
@@ -7458,22 +7593,23 @@ const mainApp = (function() {
         });
         chooseAnotherFileButton?.addEventListener('click', () => resetQuizForNewFile(true));
         continueLaterButton?.addEventListener('click', saveSessionForLater);
-        finishTestButton?.addEventListener('click', () => {
-            if (confirm(_('confirm_finish_early'))) {
-                if (timerInterval) clearInterval(timerInterval);
-                showResults();
-            }
-        });
+
+        finishTestButton?.addEventListener('click', () => { 
+                    // === ИЗМЕНЕНИЕ: Просто вызываем нашу новую универсальную функцию ===
+                    handleFinishQuizAttempt();
+                });
+
         quickModeToggle?.addEventListener('click', toggleQuickMode);
         triggerWordToggle?.addEventListener('click', toggleTriggerWordMode);
         downloadTriggeredQuizButton?.addEventListener('click', downloadTriggeredQuizFile);
         readingModeCheckbox?.addEventListener('change', handleReadingModeChange);
 
-
+        // <<< ОБРАБОТЧИК КНОПКИ СМЕНЫ ТЕМЫ (САМЫЙ ПРОСТОЙ ВАРИАНТ) >>>
         themeDropdownButton?.addEventListener('click', (event) => {
             event.stopPropagation();
             themeDropdownContent.classList.toggle('show');
         });
+
         themeDropdownContent?.addEventListener('click', (event) => {
             event.preventDefault();
             const target = event.target.closest('a');
@@ -7482,10 +7618,10 @@ const mainApp = (function() {
                 themeDropdownContent.classList.remove('show');
             }
         });
+        
         translateEngineToggle?.addEventListener('click', (e) => {
           e.stopPropagation();
           translateEngineDropdown.classList.toggle('show');
-
           const container = translateEngineToggle.closest('.translate-engine-container');
           container?.classList.toggle('open', translateEngineDropdown.classList.contains('show'));
         });
@@ -7500,7 +7636,12 @@ const mainApp = (function() {
               container?.classList.remove('open');
             }
         });
+
+        // <<< ОБРАБОТЧИК КЛИКА ВНЕ МЕНЮ (ОБЪЕДИНЕННЫЙ) >>>
         window.addEventListener('click', (event) => {
+            if (filterVariantsDropdown && !filterVariantsDropdown.classList.contains('hidden') && !filterVariantsDropdown.contains(event.target) && event.target !== filterVariantsBtn) {
+                filterVariantsDropdown.classList.add('hidden');
+            }
             if (!event.target.closest('#webSearchDropdown') && searchDropdownContent?.classList.contains('show')) {
                 searchDropdownContent.classList.remove('show');
             }
@@ -7512,8 +7653,13 @@ const mainApp = (function() {
               const container = translateEngineToggle?.closest('.translate-engine-container');
               container?.classList.remove('open');
             }
-
+            const aiStyleDropdown = getEl('aiExplanationStyleDropdown');
+            if (aiStyleDropdown && aiStyleDropdown.classList.contains('open') && !aiStyleDropdown.contains(event.target)) {
+                aiStyleDropdown.classList.remove('open');
+                getEl('aiExplanationStyleContent').classList.add('hidden');
+            }
         });
+
         languageToggle?.addEventListener('click', toggleLanguage);
         chatToggleBtn?.addEventListener('click', () => {
             ChatModule.openChatModal();
@@ -7562,49 +7708,31 @@ const mainApp = (function() {
                 fetchAndDisplayExplanation(style, currentAIUserIncorrectAnswer);
             }
         });
-                // Обработчики для кнопок фильтра категорий
         selectAllCategoriesBtn?.addEventListener('click', () => toggleAllCategories(true));
         deselectAllCategoriesBtn?.addEventListener('click', () => toggleAllCategories(false));
-
-        // Обработчик для самих чекбоксов категорий
         categoryCheckboxesContainer?.addEventListener('change', updateQuestionCountForFilters);
 
-        window.addEventListener('click', () => {
-            const dropdown = getEl('aiExplanationStyleDropdown');
-            if (dropdown && dropdown.classList.contains('open')) {
-                dropdown.classList.remove('open');
-                getEl('aiExplanationStyleContent').classList.add('hidden');
-            }
-        });
-
-        // --- НАЧАЛО НОВОГО БЛОКА: Обработчики для лимита времени ---
         if (timeLimitInput && timeLimitSlider) {
-            // Слушатель для числового поля
             timeLimitInput.addEventListener('input', (e) => {
                 updateTimeControls(e.target.value, timeLimitInput);
             });
-
-            // Слушатель для колесика мыши на числовом поле
             timeLimitInput.addEventListener('wheel', (event) => {
                 event.preventDefault();
                 const direction = event.deltaY < 0 ? 1 : -1;
                 adjustTimeLimit(direction);
             });
-
-            // Слушатель для ползунка
             timeLimitSlider.addEventListener('input', (e) => {
                 const rawValue = parseInt(e.target.value, 10);
                 const snappedValue = snapTimeValue(rawValue);
-
                 if (rawValue !== snappedValue) {
                     timeLimitSlider.value = snappedValue;
                 }
                 updateTimeControls(timeLimitSlider.value, timeLimitSlider);
             });
         }
-        // --- КОНЕЦ НОВОГО БЛОКА ---
-
     }
+
+
 
 
     /**
@@ -7827,6 +7955,7 @@ const mainApp = (function() {
         // 4. Очищаем старое содержимое и вставляем готовый клон
         searchResultCardsContainer.innerHTML = '';
         searchResultCardsContainer.appendChild(cardClone);
+        if (window.lucide) lucide.createIcons();
 
         // Логика навигации и отправки сообщения расширению остается без изменений
         resultCounterEl.textContent = `${index + 1} / ${searchResultsData.length}`;
@@ -8368,43 +8497,41 @@ const mainApp = (function() {
     }
 
 
-    // Показ уведомления о копировании
-    function showCopyNotification(message) {
-        // Удаляем предыдущее уведомление, если есть
-        const existingNotification = document.getElementById('copyNotification');
+    /**
+     * Показывает универсальное toast-уведомление.
+     * @param {string} message - Текст сообщения.
+     * @param {'success' | 'error' | 'info'} type - Тип уведомления для стилизации.
+     */
+    function showToast(message, type = 'success') {
+        // Удаляем предыдущее уведомление, чтобы избежать наложения
+        const existingNotification = document.querySelector('.toast-notification');
         if (existingNotification) {
             existingNotification.remove();
         }
-        
+
         const notification = document.createElement('div');
-        notification.id = 'copyNotification';
+        notification.className = `toast-notification ${type}`; // Применяем CSS-классы
         notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #28a745;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-weight: 500;
-            z-index: 10000;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-            animation: slideDown 0.3s ease, fadeOut 0.3s ease 2.7s;
-            pointer-events: none;
-        `;
         
         document.body.appendChild(notification);
-        
-        // Удаляем через 3 секунды
-        setTimeout(() => {
+
+        let timeoutId = null;
+
+        const dismissNotification = () => {
             if (notification.parentNode) {
                 notification.remove();
             }
-        }, 3000);
-    }
+            clearTimeout(timeoutId);
+            window.removeEventListener('click', dismissNotification, true); // Используем capturing, чтобы сработать наверняка
+        };
 
+        timeoutId = setTimeout(dismissNotification, 2000); // Время жизни 2 секунды
+
+        // Используем capturing-фазу, чтобы клик по уведомлению сработал до других возможных кликов
+        setTimeout(() => {
+            window.addEventListener('click', dismissNotification, true);
+        }, 0);
+    }
 
 
     /**
@@ -10074,7 +10201,7 @@ const mainApp = (function() {
 
 
 
-    async function displayFlashcard(question) {
+    async function displayFlashcard(question, options = { animateTranslation: true }) {
         // Устанавливаем правильную видимость кнопок в шапке
         webSearchDropdown?.classList.add('hidden');
         copyQuestionBtnQuiz?.classList.add('hidden');
@@ -10099,12 +10226,13 @@ const mainApp = (function() {
                         <div class="flashcard-answer-text">
                             <div class="flashcard-text-content" id="flashcardBackText">${escapeHTML(originalCorrectAnswerText)}</div>
                         </div>
-                        <button id="explainFlashcardBtn" class="explain-flashcard-btn">💡 ${_('ai_explain_button')}</button>
+                        <button id="explainFlashcardBtn" class="explain-flashcard-btn"><i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}</button>
                     </div>
                 </div>
             </div>
         `;
         answerOptionsEl.innerHTML = cardHTML;
+        if (lucide) lucide.createIcons(); // Важно перерисовать иконку
 
         const cardElement = getEl('currentFlashcard');
         const frontFace = getEl('flashcardFront');
@@ -10346,7 +10474,7 @@ const mainApp = (function() {
         const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
         
         const explainBtn = document.createElement('button');
-        explainBtn.textContent = _('ai_explain_button');
+        explainBtn.innerHTML = `<i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}`;
         explainBtn.className = 'explain-btn';
 
         if (isCorrect) {
@@ -10361,6 +10489,12 @@ const mainApp = (function() {
         const textNode = document.createTextNode(feedbackText);
         feedbackAreaEl.appendChild(textNode);
         feedbackAreaEl.appendChild(explainBtn);
+
+        // === ВОТ ОНО, ИСПРАВЛЕНИЕ! ===
+        // Принудительно перерисовываем иконки Lucide, чтобы наша новая иконка появилась.
+        if (window.lucide) {
+            lucide.createIcons();
+        }
       
         // 7. Обновляем все остальные элементы интерфейса
         updateScoreDisplay();
@@ -10368,7 +10502,7 @@ const mainApp = (function() {
         updateQuickNavButtons();
           
         // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
-        if (quickModeEnabled) {
+        if (quickModeEnabled && currentQuestionIndex < questionsForCurrentQuiz.length - 1) {
             setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
         }
     }
@@ -10379,8 +10513,8 @@ const mainApp = (function() {
         if (currentQuestionIndex < questionsForCurrentQuiz.length - 1) {
             loadNextQuestion();
         } else {
-            if (timerInterval) clearInterval(timerInterval);
-            showResults();
+            // === ИЗМЕНЕНИЕ: Вызываем нашу новую универсальную функцию ===
+            handleFinishQuizAttempt();
         }
     }
     
@@ -10407,8 +10541,38 @@ const mainApp = (function() {
     }
 
 
+    /**
+     * Обрабатывает попытку завершения теста, проверяя наличие неотвеченных вопросов.
+     */
+    async function handleFinishQuizAttempt() {
+        // Проверяем, есть ли в массиве ответов хотя бы один неотвеченный
+        const hasUnanswered = userAnswers.some(answer => answer && !answer.answered);
+
+        let proceedToFinish = true;
+
+        // Если есть неотвеченные, показываем модальное окно
+        if (hasUnanswered) {
+            proceedToFinish = await showConfirmationModal(
+                'confirm_finish_with_unanswered_title',
+                'confirm_finish_with_unanswered_text',
+                'finish_button' // Текст для красной кнопки
+            );
+        }
+
+        // Если подтверждение не требовалось или пользователь его дал, завершаем тест
+        if (proceedToFinish) {
+            if (timerInterval) clearInterval(timerInterval);
+            showResults();
+        }
+    }
+
+
 
     async function showResults() {
+        // === ВОТ ОНО, ИСПРАВЛЕНИЕ! ===
+        // Сразу убираем класс, который говорит, что тест активен.
+        document.body.classList.remove('quiz-active');
+
         if (originalFileNameForReview) {
             DBManager.delete(originalFileNameForReview, 'SavedSessions');
         }
@@ -10530,7 +10694,6 @@ const mainApp = (function() {
     }
 
 
-
     function startErrorReviewQuiz() {
         const errorContent = incorrectlyAnsweredQuestionsData.join('\n');
         const errorQuestions = parseQstContent(errorContent);
@@ -10586,13 +10749,29 @@ const mainApp = (function() {
 
 
 
-    function resetQuizForNewFile(clearInput = true) {
+    async function resetQuizForNewFile(clearInput = true) {
+        // === НАЧАЛО ИЗМЕНЕНИЙ ===
+        // Проверяем, активен ли сейчас тест. Класс 'quiz-active' - наш главный индикатор.
+        if (document.body.classList.contains('quiz-active')) {
+            const confirmed = await showConfirmationModal(
+                'confirm_exit_quiz_title',          // Заголовок окна
+                'confirm_exit_quiz_text',           // Текст сообщения
+                'confirm_exit_quiz_confirm_button'  // Текст для красной кнопки
+            );
+            // Если пользователь нажал "Отмена" (или закрыл окно), прерываем всю функцию.
+            if (!confirmed) {
+                return; 
+            }
+        }
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
         document.body.classList.remove('quiz-active');
         appTitleHeader?.classList.remove('hidden');
         quizSettings = { timeLimit: 0, shuffleQuestions: false, shuffleAnswers: false, questionRangeStart: 1, questionRangeEnd: 0, feedbackMode: false, readingMode: false, flashcardsMode: false };
         quizStartTime = 0;
         if (clearInput) {
-             localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
+             // Этот вызов больше не нужен, т.к. мы перешли на IndexedDB
+             // localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         }
         window.removeEventListener('beforeunload', handleBeforeUnload);
 
@@ -10621,16 +10800,11 @@ const mainApp = (function() {
         updateTranslateModeToggleVisual();
         
         currentQuizTranslations.clear();
-        prefetchedIndices.clear(); // <-- НОВЫЙ КОД: Очищаем очередь предзагрузки
+        prefetchedIndices.clear();
         currentFileCacheKey = null;
         
-
-
         const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea, categoryFilterGroup];
         screensToHide.forEach(el => el?.classList.add('hidden'));
-
-
-
 
         fileUploadArea?.classList.remove('hidden');
         
@@ -10680,26 +10854,18 @@ const mainApp = (function() {
     async function saveSessionForLater() {
         if (questionsForCurrentQuiz.length === 0) return;
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Проверка на существующую сессию ---
         const existingSession = await DBManager.get(originalFileNameForReview, 'SavedSessions');
         let finalFileName = originalFileNameForReview;
-        let userAction = 'save'; // Действие по умолчанию
-
+        
         if (existingSession) {
-            // Если сессия найдена, показываем модальное окно и ждем выбора
             const choice = await showSessionConflictModal(originalFileNameForReview);
-            userAction = choice;
-
             if (choice === 'cancel') {
-                return; // Пользователь нажал "Отмена", ничего не делаем
+                return; 
             }
             if (choice === 'save_new') {
-                // Если пользователь хочет сохранить как новую, генерируем новое имя
                 finalFileName = await getNewSessionName(originalFileNameForReview);
             }
-            // Если choice === 'overwrite', finalFileName остается прежним, и старая запись будет перезаписана
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         const newSessionData = {
             quizState: questionsForCurrentQuiz,
@@ -10710,7 +10876,6 @@ const mainApp = (function() {
             score,
             quizSettings,
             timeLeftInSeconds,
-            // --- ИЗМЕНЕНИЕ: Используем финальное имя файла ---
             originalFileNameForReview: finalFileName,
             totalQuestionCount: questionsForCurrentQuiz.filter(q => q.type !== 'category').length,
             timestamp: new Date().getTime(),
@@ -10720,18 +10885,17 @@ const mainApp = (function() {
 
         try {
             await DBManager.save(newSessionData, 'SavedSessions');
-            alert(_('session_saved_success'));
+            showToast(_('session_saved_success'), 'success'); // <-- ИЗМЕНЕНИЕ ЗДЕСЬ
             resetQuizForNewFile(false);
         } catch (e) {
             console.error("Ошибка сохранения сессии в IndexedDB:", e);
             if (e.name === 'QuotaExceededError') {
-                 alert(_('error_session_save_failed'));
+                 showToast(_('error_session_save_failed'), 'error'); // <-- И ИЗМЕНЕНИЕ ЗДЕСЬ
             } else {
-                 alert(`Произошла непредвиденная ошибка при сохранении: ${e.message}`);
+                 showToast(`Произошла непредвиденная ошибка при сохранении: ${e.message}`, 'error'); // <-- И ИЗМЕНЕНИЕ ЗДЕСЬ
             }
         }
     }
-
 
 
     /**
@@ -10949,9 +11113,8 @@ const mainApp = (function() {
 
     function loadTheme() {
         const currentThemeId = localStorage.getItem('theme') || 'glass-dark';
-        const themeData = THEMES[currentThemeId] || THEMES['glass-dark'];
-
-        // 1. Удаляем ВСЕ возможные классы тем, перебирая ключи объекта THEMES
+        
+        // 1. Удаляем ВСЕ возможные классы тем
         Object.keys(THEMES).forEach(themeKey => {
             document.body.classList.remove(themeKey);
         });
@@ -10961,8 +11124,18 @@ const mainApp = (function() {
             document.body.classList.add(currentThemeId);
         }
 
-        // 3. Обновляем главную кнопку
-        if (themeIcon) themeIcon.textContent = themeData.icon;
+        // 3. Обновляем иконку в главной кнопке
+        if (themeIcon) { // <-- Теперь эта проверка снова работает!
+            const iconName = {
+                'glass-dark': 'gem',
+                'synthwave-mode': 'milestone',
+                'dark-mode': 'moon',
+                'claude-mode': 'cloud-sun',
+                'light': 'sun'
+            }[currentThemeId] || 'sun-moon';
+            
+            themeIcon.innerHTML = `<i data-lucide="${iconName}"></i>`;
+        }
 
         // 4. Обновляем активный пункт в выпадающем списке
         if (themeDropdownContent) {
@@ -10971,7 +11144,13 @@ const mainApp = (function() {
                 link.classList.toggle('active', link.dataset.theme === currentThemeId);
             });
         }
+        
+        // 5. Перерисовываем иконки
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
+
 
 
     function populateThemeDropdown() {
@@ -13227,7 +13406,7 @@ const mainApp = (function() {
         const cacheKey = getCacheKey(originalQuestion.originalIndex, targetLang);
         const isCached = currentQuizTranslations.has(cacheKey);
 
-        // Показываем оригинал как "начальный кадр"
+        // Показываем оригинал как "начальный кадр", чтобы было от чего анимировать
         displayQuestionContent(originalQuestion);
 
         // Показываем индикатор загрузки, только если данных нет в кэше
@@ -13238,6 +13417,7 @@ const mainApp = (function() {
         try {
             const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex, targetLang);
 
+            // Если пользователь переключил вопрос, пока шёл перевод, или перевод не удался - выходим
             if (indexAtRequestTime !== currentQuestionIndex || !result) {
                 if (!result) alert("Не удалось перевести вопрос. Будет показан оригинал.");
                 return;
@@ -13246,9 +13426,8 @@ const mainApp = (function() {
             const translatedQuestion = result.question;
             const optionElements = answerOptionsEl.querySelectorAll('li');
 
-            // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Проверяем, нужна ли анимация ===
-            if (options.animateTranslation) {
-                // Если нужна - запускаем красивую анимацию
+            // Запускаем анимацию только если это новый, некэшированный перевод и опция включена
+            if (options.animateTranslation && !result.fromCache) {
                 const allAnimations = [
                     animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
                 ];
@@ -13260,14 +13439,23 @@ const mainApp = (function() {
                     }
                 });
                 await Promise.all(allAnimations);
-            } else {
-                // Если не нужна - мгновенно обновляем текст
-                questionTextEl.innerHTML = renderQuestionTextWithTriggers(translatedQuestion);
-                optionElements.forEach((li, i) => {
-                    li.textContent = translatedQuestion.options[i]?.text || '';
-                });
             }
-            // =======================================================
+
+            // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+            // Вне зависимости от того, была ли анимация, теперь мы ПЕРЕРИСОВЫВАЕМ финальный результат,
+            // используя функцию, которая добавляет интерактивные <span> для триггеров.
+            questionTextEl.innerHTML = renderQuestionTextWithTriggers(translatedQuestion);
+            
+            // Также обновляем текст вариантов ответов на случай, если анимации не было
+            optionElements.forEach((li, i) => {
+                li.textContent = translatedQuestion.options[i]?.text || '';
+            });
+
+            // И заново привязываем обработчики кликов к новым <span>
+            if (triggerWordModeEnabled) {
+                addTriggerClickListeners();
+            }
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
         } finally {
             translateQuestionBtn?.classList.remove('translating');
@@ -14011,10 +14199,11 @@ const mainApp = (function() {
 
 
 
-    async function handleActivateSearch() { // <-- async уже есть, это хорошо
+    async function handleActivateSearch() {
         const code = accessCodeInput.value.trim();
         if (!code) {
-            alert(_('enter_activation_key_alert'));
+            // === ИЗМЕНЕНИЕ №1: Заменяем alert на toast ===
+            window.mainApp.showToast(_('enter_activation_key_alert'), 'error');
             return;
         }
 
@@ -14033,19 +14222,20 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success) {
-                // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
-                await DBManager.save({ key: 'activatedSearchKey', value: code }, 'AppSettings'); // Сохраняем ключ в IndexedDB
-                // === КОНЕЦ ИЗМЕНЕНИЯ ===
+                await DBManager.save({ key: 'activatedSearchKey', value: code }, 'AppSettings');
                 searchActivationContainer.classList.add('hidden');
                 searchContainer.classList.remove('hidden');
-                alert(_('search_activated_alert'));
+                // === ИЗМЕНЕНИЕ №2: Заменяем главный alert на toast (тип 'success') ===
+                window.mainApp.showToast(_('search_activated_alert'), 'success');
             } else {
-                alert(result.error || _('error_generic_for_alert'));
+                // === ИЗМЕНЕНИЕ №3: Заменяем alert об ошибке на toast (тип 'error') ===
+                window.mainApp.showToast(result.error || _('error_generic_for_alert'), 'error');
             }
 
         } catch (error) {
             console.error("Ошибка при валидации ключа:", error);
-            alert(_('server_connection_error_alert'));
+            // === ИЗМЕНЕНИЕ №4: Заменяем alert об ошибке сети на toast (тип 'error') ===
+            window.mainApp.showToast(_('server_connection_error_alert'), 'error');
         } finally {
             activateSearchBtn.disabled = false;
             activateSearchBtn.textContent = _('activation_button');
@@ -14087,7 +14277,41 @@ const mainApp = (function() {
         }
     }
 
+    /**
+     * Показывает универсальное модальное окно подтверждения.
+     * @param {string} title - Заголовок окна.
+     * @param {string} message - Текст вопроса для подтверждения.
+     * @param {string} confirmTextKey - Ключ перевода для кнопки подтверждения.
+     * @returns {Promise<boolean>} - Promise, который разрешается в true, если пользователь нажал "Подтвердить", иначе false.
+     */
+    function showConfirmationModal(titleKey, messageKey, confirmTextKey = 'exit_modal_confirm') {
+        return new Promise(resolve => {
+            const modal = getEl('confirmModal');
+            const titleEl = getEl('confirmModalTitle');
+            const textEl = getEl('confirmModalText');
+            const yesBtn = getEl('confirmModalYesBtn');
+            const noBtn = getEl('confirmModalNoBtn');
 
+            // === ИСПРАВЛЕНИЕ: Теперь мы переводим заголовок и сообщение ===
+            titleEl.textContent = _(titleKey);
+            textEl.textContent = _(messageKey);
+            
+            yesBtn.textContent = _(confirmTextKey);
+            noBtn.textContent = _('modal_cancel_button');
+
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                yesBtn.onclick = null;
+                noBtn.onclick = null;
+                resolve(result);
+            };
+
+            yesBtn.onclick = () => cleanup(true);
+            noBtn.onclick = () => cleanup(false);
+
+            modal.classList.remove('hidden');
+        });
+    }
 
     // --- Public methods exposed from mainApp ---
     return {
@@ -14099,6 +14323,7 @@ const mainApp = (function() {
         // ⬇⬇⬇ ВАЖНО: экспортируем PDF-обработчик наружу
         processPdfWithImages: processPdfWithImages,
 
+
         downloadFile: downloadFileBrowserFallback,
         downloadOrShareFile: downloadOrShareFile,
         handleFavoriteClickInSearch: handleFavoriteClickInSearch,
@@ -14109,6 +14334,8 @@ const mainApp = (function() {
         manageBackButtonInterceptor: manageBackButtonInterceptor,
         setupExtensionListener: setupExtensionListener,
         animateTextTransformation: animateTextTransformation,
+        showToast: showToast, // <-- ДОБАВЛЕНО: Делаем функцию showToast публичной
+        showConfirmationModal: showConfirmationModal, 
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания.');
             console.log('detectMobileDevice():', detectMobileDevice());

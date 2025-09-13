@@ -926,13 +926,15 @@ button:disabled {
 
 #startQuizButton,
 #downloadErrorsButton,
-#reviewErrorsButton {
+#reviewErrorsButton,
+#restartButton { /* <-- ДОБАВЬТЕ СЕЛЕКТОР СЮДА */
     background-color: var(--button-success-bg);
 }
 
 #startQuizButton:hover,
 #downloadErrorsButton:hover,
-#reviewErrorsButton:hover {
+#reviewErrorsButton:hover,
+#restartButton:hover { /* <-- И СЮДА ДЛЯ ЭФФЕКТА НАВЕДЕНИЯ */
     background-color: var(--button-success-hover-bg);
 }
 
@@ -945,11 +947,11 @@ button:disabled {
 }
 
 #reviewErrorsButton {
-    background-color: var(--button-primary-bg);
+    background: var(--button-primary-bg); /* <-- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: меняем 'background-color' на 'background' */
 }
 
 #reviewErrorsButton:hover {
-    background-color: var(--button-primary-hover-bg);
+    background: var(--button-primary-hover-bg); /* <-- И здесь тоже, для консистентности */
 }
 
 #score {
@@ -1235,16 +1237,18 @@ body.dark-mode footer {
     display: inline-block;
 }
 
+
+/* НОВЫЙ КОД */
 .dropdown-content {
     display: none;
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 50%; /* <-- Возвращаем */
+    transform: translateX(-50%); /* <-- Возвращаем */
     background-color: var(--container-bg-color);
     min-width: 160px;
     box-shadow: 0px 8px 16px 0px var(--shadow-color);
-    z-index: 3000 !important;       /* всегда поверх */
-    pointer-events: auto !important; /* клики проходят */
+    z-index: 3000 !important;
+    pointer-events: auto !important;
     border: 1px solid var(--border-color);
     border-radius: 5px;
 }
@@ -1579,35 +1583,71 @@ body.quiz-active .container > .header-controls {
     transform: scale(1.05);
 }
 
-.header-controls button {
-    /* ИЗМЕНЕНИЕ: Используем адаптивные цвета темы */
+
+
+
+
+/* ======================================================= */
+/* ===   ИСПРАВЛЕНИЕ РАЗМЕРА КНОПОК В ШАПКЕ ЧАТА (v2)  === */
+/* ======================================================= */
+
+/* 1. Задаем единый стиль для ВСЕХ кнопок в шапке чата */
+.advanced-chat-header .header-controls button {
+    /* Убираем старые размеры и паддинги */
+    padding: 0;
+    font-size: inherit; /* Сбрасываем font-size, чтобы не влиял на размер */
+    
+    /* Делаем кнопки квадратными и одинаковыми */
+    width: 40px;
+    height: 40px;
+    
+    /* Центрируем иконку внутри кнопки */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Оставляем общие стили */
     background: var(--input-bg-color);
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 1.1em;
 }
 
-.header-controls button:hover {
-    /* ИЗМЕНЕНИЕ: Используем адаптивные цвета темы */
+/* 2. Эффект при наведении */
+.advanced-chat-header .header-controls button:hover {
     background: var(--input-hover-bg-color);
     border-color: var(--input-hover-border-color);
     transform: scale(1.05);
 }
 
-.notification-toggle.active {
-    background: rgba(255,255,255,0.3);
-    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+/* 3. Отдельно стилизуем иконки ВНУТРИ этих кнопок, чтобы они были одинаковые */
+.advanced-chat-header .header-controls button i[data-lucide] {
+    width: 22px;
+    height: 22px;
 }
 
-.close-btn {
-    font-size: 1.5em !important;
-    padding: 5px 10px !important;
-    line-height: 1;
+/* ======================================================= */
+/* === ИСПРАВЛЕНИЕ АКТИВНОЙ КНОПКИ УВЕДОМЛЕНИЙ (v3)    === */
+/* ======================================================= */
+
+/* Используем более КОНКРЕТНЫЙ селектор, чтобы перебить базовые стили */
+.advanced-chat-header .header-controls .notification-toggle.active {
+    /* Задаем цвет рамки, используя акцентный цвет темы (красный) */
+    border-color: var(--accent);
+    
+    /* Добавляем "свечение" того же акцентного цвета, которое будет видно на любом фоне */
+    box-shadow: 0 0 8px var(--accent);
 }
+
+/* Иконку внутри активной кнопки тоже делаем акцентного цвета */
+.advanced-chat-header .header-controls .notification-toggle.active i[data-lucide] {
+    color: var(--accent);
+}
+
+
+
 
 /* Main body */
 .advanced-chat-body {
@@ -1710,10 +1750,27 @@ body.quiz-active .container > .header-controls {
     text-align: center;
 }
 
+
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ СЧЁТЧИКА АКТИВНОЙ ВКЛАДКИ (v3)    === */
+/* ======================================================= */
+
+/* Базовый стиль для счётчика на АКТИВНОЙ вкладке (для светлых тем) */
 .tab-item.active .tab-counter {
-    background: rgba(255,255,255,0.9);
-    color: var(--button-primary-bg);
+    background-color: var(--button-primary-text); /* Фон будет светлым (белым) */
+    color: var(--heading-color);                  /* Текст будет тёмным (как заголовки) */
+    border: none;                                 /* Убираем рамку по умолчанию */
 }
+
+/* ПЕРЕОПРЕДЕЛЯЕМ стили счётчика ТОЛЬКО для тёмных тем */
+body.dark-mode .tab-item.active .tab-counter,
+body.synthwave-mode .tab-item.active .tab-counter,
+body.glass-dark .tab-item.active .tab-counter {
+    background-color: var(--button-primary-text); /* Фон будет светлым */
+    color: var(--container-bg-color);             /* Текст будет тёмным (как фон контейнера) */
+}
+
 
 /* Channels */
 .channels-list {
@@ -2119,23 +2176,7 @@ body.synthwave-mode .option-vote-btn.correct {
     line-height: 1.5;
 }
 
-.remove-favorite {
-    background: linear-gradient(135deg, var(--chat-accent), #c0392b);
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    margin-top: 10px;
-}
 
-.remove-favorite:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-}
 
 
 
@@ -2161,32 +2202,62 @@ body.synthwave-mode .option-vote-btn.correct {
     gap: 8px;
 }
 
-/* --- НОВЫЙ КОД (ЗАМЕНИТЬ СТАРЫЙ) --- */
+
+
+
+/* --- ФИНАЛЬНАЯ ВЕРСИЯ СТИЛЕЙ ДЛЯ КНОПОК ПАНЕЛИ ВВОДА --- */
 .input-action-btn {
     background: var(--container-bg-color);
     border: 1px solid var(--border-color);
     color: var(--secondary-text-color);
     border-radius: 8px;
-    /* Делаем кнопки квадратными для единообразия */
     width: 40px;
     height: 40px;
-    font-size: 1.3em; /* Немного увеличим иконки */
+    font-size: 1.3em;
     cursor: pointer;
     transition: all 0.2s ease;
-    /* Центрируем иконку внутри кнопки */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Убираем лишние отступы */
+    padding: 0;
 }
 
-/* Добавляем стиль для активной кнопки "Закрепить" */
-#togglePinnedBtn.active {
-    background-color: var(--button-primary-bg);
+/* 
+  УНИВЕРСАЛЬНЫЙ стиль для активных кнопок.
+  КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: используем `background`, а не `background-color`.
+*/
+.input-action-btn.active {
+    background: var(--button-primary-bg); /* <-- ИСПРАВЛЕНО */
     color: var(--button-primary-text);
     border-color: var(--button-primary-bg);
+    box-shadow: 0 0 8px var(--button-primary-bg);
 }
-/* --- КОНЕЦ НОВОГО КОДА --- */
+
+/* 
+  Переопределяем стиль для АКТИВНОЙ кнопки ТОЛЬКО в теме glass-dark,
+  чтобы сделать ее заметной.
+*/
+body.glass-dark .input-action-btn.active {
+    /* Яркая, полупрозрачная подсветка */
+    background: rgba(56, 189, 248, 0.4) !important; 
+    /* Яркая иконка */
+    color: #E2E8F0 !important;
+    /* Светящаяся рамка */
+    border-color: rgba(56, 189, 248, 0.7) !important;
+    /* Голубое свечение */
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+/* 
+  Стиль для темных тем, чтобы активная кнопка не "тухла" при наведении.
+*/
+body.dark-mode .input-action-btn.active:hover,
+body.synthwave-mode .input-action-btn.active:hover {
+    background: var(--button-primary-hover-bg);
+}
+/* --- КОНЕЦ ФИНАЛЬНОЙ ВЕРСИИ --- */
+
+
 
 .input-action-btn:hover {
     background: var(--input-hover-bg-color);
@@ -2743,7 +2814,6 @@ body.dark-mode .reply-text {
 
 
 
-
 /* Реакции */
 .reactions-container {
     display: flex;
@@ -2756,26 +2826,44 @@ body.dark-mode .reply-text {
     justify-content: flex-end;
 }
 
+/* === ИСПРАВЛЕНИЕ: Улучшенный стиль для счётчиков === */
 .reaction-badge {
-    background: var(--input-bg-color);
-    border: 1px solid var(--border-color);
+    /* 1. Стиль по умолчанию (для светлой темы) - делаем его контрастным */
+    background: #e7f3ff; /* Светло-голубой фон */
+    border: 1px solid #b3d7ff; /* Голубая рамка */
+    color: #0056b3; /* Темно-синий текст для читаемости */
+    font-weight: 500;
+
+    /* Остальные стили не меняем */
     border-radius: 12px;
     padding: 2px 8px;
     font-size: 0.8em;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: var(--text-color);
 }
 
 .reaction-badge:hover {
     transform: scale(1.1);
+    border-color: #0056b3;
 }
 
+/* 2. Стиль для реакции, оставленной ТЕКУЩИМ пользователем */
 .reaction-badge.mine {
-    background-color: var(--button-primary-bg);
+    background: var(--button-primary-bg); /* Используем `background` для градиента */
     color: var(--button-primary-text);
     border-color: var(--button-primary-hover-bg);
 }
+
+/* 3. ВОЗВРАЩАЕМ старый вид для всех темных тем, чтобы ничего не сломать */
+body.dark-mode .reaction-badge,
+body.synthwave-mode .reaction-badge,
+body.glass-dark .reaction-badge {
+    background: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-weight: normal;
+}
+/* === КОНЕЦ ИСПРАВЛЕНИЯ === */
 
 
 
@@ -3514,26 +3602,35 @@ body.dark-mode .message.mine.pinned .message-content {
     animation: fadeIn 0.3s;
 }
 
+
+
+
+/* 1. Задаем ОБЩИЙ стиль для всех кнопок в этой панели */
 .tab-actions-container button {
+    height: 36px; /* <-- ЗАДАЕМ ЕДИНУЮ ВЫСОТУ */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center; /* Центрируем контент по умолчанию */
+    
     background-color: var(--button-secondary-bg);
     color: var(--button-secondary-text);
     border: none;
-    padding: 8px 12px;
     font-size: 0.9em;
-    border-radius: 5px;
+    border-radius: 6px; /* Сделаем чуть круглее */
     cursor: pointer;
+    padding: 0 12px; /* Горизонтальные отступы для кнопок с текстом */
+    transition: background-color 0.2s;
 }
 
 .tab-actions-container button:hover {
     background-color: var(--button-secondary-hover-bg);
 }
 
+/* 2. Стиль для КРАСНОЙ кнопки (корзина) */
 .tab-actions-container .btn-danger {
     background-color: var(--chat-accent);
-}
-
-.tab-actions-container .btn-danger:hover {
-    background-color: #c0392b;
+    width: 36px;     /* <-- Делаем ее квадратной (ширина = высота) */
+    padding: 0;      /* Убираем горизонтальные отступы, так как нет текста */
 }
 
 .chat-main-content {
@@ -4032,15 +4129,20 @@ button[onclick*="copyToClipboard"].copied:after {
     transform: translateX(0); 
   }
 
-  /* === НАЧАЛО ИЗМЕНЕНИЙ === */
-  /* Специальное правило для правосторонних меню (Темы и Переводчик) */
-  #themeDropdownContent, #translateEngineDropdown {
+  /* --- НАЧАЛО ИСПРАВЛЕНИЯ --- */
+  /* Возвращаем центрирование для меню тем, переопределяя общее правило */
+  #themeDropdownContent {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  /* --- КОНЕЦ ИСПРАВЛЕНИЯ --- */
+
+  /* Специальное правило для правосторонних меню (теперь только для переводчика) */
+  #translateEngineDropdown {
     left: auto; /* Сбрасываем выравнивание по левому краю */
     right: 0;   /* Выравниваем правый край меню по правому краю кнопки */
   }
-  /* === КОНЕЦ ИЗМЕНЕНИЙ === */
 }
-
 
 
 /* Контейнер для загрузчика */
@@ -6882,15 +6984,16 @@ body.glass-dark .question-actions .add-to-favorites-btn {
     background-color: var(--theme-toggle-hover-bg);
 }
 
-/* 2. Контейнер выпадающего списка */
+
+/* НОВЫЙ КОД */
 .theme-picker-dropdown {
-    padding: 8px; /* Небольшие отступы */
-    /* display: flex;  <-- УДАЛИТЕ ИЛИ ЗАКОММЕНТИРУЙТЕ ЭТУ СТРОКУ */
-    flex-wrap: wrap; /* Разрешаем перенос, если не помещаются */
-    gap: 6px; /* Отступы между иконками */
-    min-width: auto; /* Убираем минимальную ширину */
-    width: max-content; /* Ширина по содержимому */
+    padding: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: auto;
+    width: max-content;
 }
+
 
 /* 3. Элементы (ссылки) в списке */
 .theme-picker-dropdown a {
@@ -8137,3 +8240,375 @@ body.claude-mode #nextButton{
     opacity: 1;
     visibility: visible;
 }
+
+/* ======================================================= */
+/* ===     СТИЛИ ДЛЯ ИКОНОК LUCIDE (v2, ФИНАЛЬНЫЕ)     === */
+/* ======================================================= */
+
+/* Общий стиль для всех иконок, чтобы они не наследовали лишние стили */
+i[data-lucide] {
+    font-size: initial; /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: сбрасываем размер шрифта */
+    display: inline-flex; /* Помогает с выравниванием */
+    align-items: center;
+}
+
+/* Размер иконок в основной шапке приложения */
+.header-buttons i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* Размер иконок в шапке чата (уведомления, закрыть) */
+.advanced-chat-header .header-controls i[data-lucide] {
+    width: 22px;
+    height: 22px;
+}
+
+/* Активное состояние для кнопки уведомлений */
+.notification-toggle.active i[data-lucide] {
+    color: var(--accent);
+    fill: var(--accent);
+}
+
+/* Иконки в панели действий чата (ответить, редактировать и т.д.) */
+.message-actions-toolbar i[data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+/* Иконки в карточке поиска */
+.result-card-actions i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* Иконка в кнопке объяснения в карточке */
+.explain-flashcard-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px; /* Отступ между иконкой и текстом */
+}
+
+.explain-flashcard-btn i[data-lucide] {
+    width: 14px;
+    height: 14px;
+}
+
+/* Кнопка "глаз" для пароля */
+.toggle-password {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ИКОНОК LUCIDE В ЧАТЕ          === */
+/* ======================================================= */
+
+/* Общий размер для большинства иконок */
+i[data-lucide] {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em; /* Легкая коррекция для выравнивания с текстом */
+}
+
+/* Заголовок окна авторизации */
+.auth-modal h2 i[data-lucide] {
+    width: 28px;
+    height: 28px;
+}
+
+/* Иконка глаза в поле пароля */
+.toggle-password i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* Шапка чата */
+.advanced-chat-header .close-btn i[data-lucide],
+.advanced-chat-header .notification-toggle i[data-lucide],
+.advanced-chat-header .sidebar-toggle-btn i[data-lucide] {
+    width: 24px;
+    height: 24px;
+}
+
+/* Меню пользователя */
+.user-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.user-dropdown i[data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+/* Сайдбар */
+.sidebar-section h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sidebar-section h4 i[data-lucide] {
+    width: 18px;
+    height: 18px;
+}
+.tab-icon i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* Кнопки в области ввода */
+.input-action-btn i[data-lucide],
+.advanced-send-btn i[data-lucide] {
+    width: 22px;
+    height: 22px;
+}
+.cancel-reply-btn i[data-lucide] {
+    width: 18px;
+    height: 18px;
+}
+
+/* Модальные окна */
+.modal-buttons button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.modal-buttons i[data-lucide],
+.delete-btn i[data-lucide] {
+    width: 16px;
+    height: 16px;
+}
+
+/* Иконки в сообщениях */
+.file-share-icon i, .question-link-icon i {
+    width: 32px;
+    height: 32px;
+}
+.file-share-arrow i, .question-link-arrow i {
+    width: 24px;
+    height: 24px;
+}
+.pinned-icon i {
+    width: 12px !important;
+    height: 12px !important;
+}
+
+/* ======================================================= */
+/* ===     СТИЛИ ДЛЯ ИКОНОК-ДЕЙСТВИЙ В ЧАТЕ (v2)       === */
+/* ======================================================= */
+
+/* Иконка настроек канала */
+.channel-settings-btn i[data-lucide] {
+    width: 18px;
+    height: 18px;
+}
+
+.tab-actions-container .btn-danger:hover {
+    background-color: #c0392b;
+}
+
+.tab-actions-container .btn-danger i[data-lucide] {
+    width: 18px;
+    height: 18px;
+}
+
+
+
+/* ======================================================= */
+/* ===  КНОПКИ ДЕЙСТВИЙ В КАРТОЧКЕ ВОПРОСА (v4, ФИНАЛ) === */
+/* ======================================================= */
+
+/* 1. ЕДИНЫЙ стиль для ВСЕХ кнопок в панели */
+.question-actions button {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    margin-top: 0; /* <-- КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Убираем любой верхний отступ */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    color: var(--button-primary-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.question-actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* 2. Размер иконок внутри ВСЕХ кнопок */
+.question-actions button i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* 3. Теперь просто раскрашиваем каждую кнопку по её классу */
+.question-actions .add-to-favorites-btn {
+    background-color: var(--button-success-bg);
+}
+.question-actions .add-to-favorites-btn:hover {
+    background-color: var(--button-success-hover-bg);
+}
+
+.question-actions .copy-question-btn {
+    background-color: #3498db; /* Синий */
+}
+.question-actions .copy-question-btn:hover {
+    background-color: #2980b9;
+}
+
+.question-actions .delete-question-btn {
+    background-color: var(--chat-accent); /* Красный */
+}
+.question-actions .delete-question-btn:hover {
+    background-color: #c0392b;
+}
+
+/* Кнопка "Удалить из избранного" наследует все стили, но получает свой цвет */
+.question-actions .remove-favorite {
+    background-color: var(--chat-warning); /* Оранжевый */
+}
+.question-actions .remove-favorite:hover {
+    background-color: #d68910;
+}
+
+/* 4. Стиль для кнопки удаления из избранного ВНЕ карточки вопроса (например, для простых текстовых сообщений) */
+.favorite-actions .remove-favorite {
+    background: transparent;
+    border: none;
+    padding: 2px;
+    color: var(--secondary-text-color);
+    transition: color 0.2s, transform 0.2s;
+}
+.favorite-actions .remove-favorite:hover {
+    color: var(--accent);
+    transform: scale(1.1);
+}
+.favorite-actions .remove-favorite i[data-lucide] {
+    width: 20px;
+    height: 20px;
+}
+
+/* ======================================================= */
+/* ===   ИСПРАВЛЕНИЕ ИКОНКИ ЗАМКА В КАНАЛАХ (v2)      === */
+/* ======================================================= */
+
+/* Делаем контейнер с названием канала гибким для выравнивания */
+.channel-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* <-- ИЗМЕНЕНО: Увеличили отступ для большего "воздуха" */
+}
+
+/* Стилизуем саму иконку замка */
+.channel-name i[data-lucide="lock"] {
+    width: 12px;  /* <-- ИЗМЕНЕНО: Уменьшили размер */
+    height: 12px; /* <-- ИЗМЕНЕНО: Уменьшили размер */
+    color: var(--secondary-text-color);
+    flex-shrink: 0; /* <-- ДОБАВЛЕНО: Гарантирует, что иконка не будет сжиматься, если имя канала длинное */
+}
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ НЕВИДИМЫХ КНОПОК В ТЕМНОЙ ТЕМЕ     === */
+/* ======================================================= */
+
+/* Применяем стили ко всем кнопкам в модальных окнах, кнопке "Конвертировать" и другим */
+body.dark-mode .modal-buttons button,
+body.dark-mode #authCloseButton, /* <-- ДОБАВЛЕНО */
+body.dark-mode #runParserBtn,
+body.dark-mode #backToMainFromParserBtn,
+body.dark-mode .btn-secondary-small,
+body.dark-mode #generateTestFromTextBtn,
+body.dark-mode #generateTestFromTopicBtn {
+    /* Используем фон полей ввода, он чуть светлее основного */
+    background: var(--input-bg-color) !important;
+    color: var(--text-color) !important;
+    /* Добавляем видимую рамку */
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Эффект при наведении */
+body.dark-mode .modal-buttons button:hover,
+body.dark-mode #authCloseButton:hover, /* <-- ДОБАВЛЕНО */
+body.dark-mode #runParserBtn:hover,
+body.dark-mode #backToMainFromParserBtn:hover,
+body.dark-mode .btn-secondary-small:hover,
+body.dark-mode #generateTestFromTextBtn:hover,
+body.dark-mode #generateTestFromTopicBtn:hover {
+    background: var(--input-hover-bg-color) !important;
+    border-color: var(--input-hover-border-color) !important;
+}
+
+/* ======================================================= */
+/* ===         УНИВЕРСАЛЬНЫЕ TOAST-УВЕДОМЛЕНИЯ         === */
+/* ======================================================= */
+
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: slideDown 0.3s ease, fadeOut 0.3s ease 1.7s;
+    cursor: pointer; /* Делаем его кликабельным */
+}
+
+/* Стили для разных типов уведомлений */
+.toast-notification.success {
+    background: #28a745; /* Зеленый */
+}
+.toast-notification.error {
+    background: #dc3545; /* Красный */
+}
+.toast-notification.info {
+    background: #007bff; /* Синий */
+}
+
+/* Анимации (если их еще нет глобально) */
+@keyframes slideDown {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ======================================================= */
+/* ===     СТИЛИ ДЛЯ УНИВЕРСАЛЬНОГО ОКНА ПОДТВЕРЖДЕНИЯ === */
+/* ======================================================= */
+
+#confirmModalYesBtn {
+    background-color: var(--feedback-incorrect-bg);
+    color: var(--feedback-incorrect-text);
+    border: 1px solid var(--feedback-incorrect-border);
+    font-weight: bold;
+}
+
+#confirmModalYesBtn:hover {
+    background-color: var(--accent); /* Обычно красный цвет */
+    color: white;
+    border-color: var(--accent);
+}
+
+/* Стеклянные темы */
+body.glass-dark #confirmModalYesBtn {
+    background-color: var(--feedback-incorrect-bg) !important;
+    color: var(--feedback-incorrect-text) !important;
+    border-color: var(--feedback-incorrect-border) !important;
+}
+body.glass-dark #confirmModalYesBtn:hover {
+     background-color: var(--accent) !important;
+     color: white !important;
+}
+

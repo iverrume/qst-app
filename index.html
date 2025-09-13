@@ -22,6 +22,7 @@
             margin-top: 4px;
         }
     </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -47,24 +48,23 @@
                 <h1 id="appTitleHeader" data-lang-key="app_title">QSTiUM</h1>
  
                 <!-- Контейнер теперь только для кнопок -->
-                <div class="header-buttons">
-                    <button id="copyQuestionBtnQuiz" title="Копировать текущий вопрос" aria-label="Копировать текущий вопрос" class="hidden" data-lang-key="copy_question_title" data-lang-skip-content="true">📋</button> 
-
+                <div class="header-buttons"> 
+                    <button id="copyQuestionBtnQuiz" title="Копировать текущий вопрос" aria-label="Копировать текущий вопрос" class="hidden" data-lang-key="copy_question_title" data-lang-skip-content="true"><i data-lucide="copy"></i></button>
                     <div class="dropdown hidden" id="webSearchDropdown">
-                        <button id="searchWebButton" title="Найти в интернете" aria-label="Найти в интернете" data-lang-key="search_web_title" data-lang-skip-content="true">🌐</button>
+                        <button id="searchWebButton" title="Найти в интернете" aria-label="Найти в интернете" data-lang-key="search_web_title" data-lang-skip-content="true"><i data-lucide="search"></i></button>
                         <div id="searchDropdownContent" class="dropdown-content">
                             <a href="#" data-engine="google" data-lang-key="search_engine_google">Google</a>
                             <a href="#" data-engine="yandex" data-lang-key="search_engine_yandex">Яндекс</a>
                             <a href="#" data-engine="perplexity" data-lang-key="search_engine_perplexity">Perplexity</a>
                         </div>
                     </div>
-                    <button id="chatToggle" title="Открыть чат" aria-label="Открыть чат" data-lang-key="chat_button_title" data-lang-skip-content="true">💬</button>
-                    <button id="quickModeToggle" title="Быстрый режим (Автопереход)" aria-label="Быстрый режим" class="hidden" data-lang-key="quick_mode_title" data-lang-skip-content="true">⚡</button> 
-                    <button id="triggerWordToggle" title="Триггер-слова" aria-label="Триггер-слова" class="hidden" data-lang-key="trigger_words_title" data-lang-skip-content="true">✍️</button>
+                    <button id="chatToggle" title="Открыть чат" aria-label="Открыть чат" data-lang-key="chat_button_title" data-lang-skip-content="true"><i data-lucide="message-circle"></i></button>
+                    <button id="quickModeToggle" title="Быстрый режим (Автопереход)" aria-label="Быстрый режим" class="hidden" data-lang-key="quick_mode_title" data-lang-skip-content="true"><i data-lucide="zap"></i></button>
+                    <button id="triggerWordToggle" title="Триггер-слова" aria-label="Триггер-слова" class="hidden" data-lang-key="trigger_words_title" data-lang-skip-content="true"><i data-lucide="highlighter"></i></button>
 
                     <div class="dropdown" id="themeDropdownContainer">
                         <button id="themeDropdownButton" title="Сменить тему" aria-label="Сменить тему" data-lang-key="theme_button_title" data-lang-skip-content="true">
-                            <span id="themeIcon">🌗</span>
+                            <span id="themeIcon"><i data-lucide="sun-moon"></i></span>
                         </button>
                         <div id="themeDropdownContent" class="dropdown-content theme-picker-dropdown">
                             <!-- Сюда JS вставит иконки тем -->
@@ -72,9 +72,9 @@
                     </div>
 
                     <button id="languageToggle" title="Сменить язык" aria-label="Сменить язык" data-lang-key="language_toggle_title">Рус</button>
-                    <button id="favoriteQuestionBtn" title="Добавить в избранное" aria-label="Добавить в избранное" class="hidden" data-lang-key="favorite_button_title" data-lang-skip-content="true">⭐</button>
+                    <button id="favoriteQuestionBtn" title="Добавить в избранное" aria-label="Добавить в избранное" class="hidden" data-lang-key="favorite_button_title" data-lang-skip-content="true"><i data-lucide="star"></i></button>
                     <div class="translate-engine-container">
-                        <button id="translateQuestionBtn" title="Перевести вопрос" aria-label="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true">अа</button>
+                        <button id="translateQuestionBtn" title="Перевести вопрос" aria-label="Перевести вопрос" class="hidden" data-lang-key="translate_question_title" data-lang-skip-content="true"><i data-lucide="languages"></i></button>
                         <button id="translateEngineToggle" class="hidden" title="Выбрать движок перевода" aria-label="Выбрать движок перевода">▼</button>
                         <div id="translateEngineDropdown" class="dropdown-content">
                             <a href="#" data-engine="google" data-lang-key="translate_engine_google">
@@ -475,10 +475,10 @@
             <div class="result-card">
                 <div class="result-card-header">
                     <div class="result-card-actions">
-                         <button class="explain-search-result-btn" title="Объяснить с помощью ИИ">💡</button>
-                         <button class="copy-search-result-btn" title="Копировать вопрос">📋</button>
-                         <button class="favorite-search-result-btn" title="Добавить в избранное">⭐</button>
-                         <button class="translate-search-result-btn" title="Перевести вопрос">अа</button>
+                        <button class="explain-search-result-btn" title="Объяснить с помощью ИИ"><i data-lucide="brain-circuit"></i></button>
+                        <button class="copy-search-result-btn" title="Копировать вопрос"><i data-lucide="copy"></i></button>
+                        <button class="favorite-search-result-btn" title="Добавить в избранное"><i data-lucide="star"></i></button>
+                        <button class="translate-search-result-btn" title="Перевести вопрос"><i data-lucide="languages"></i></button>
                     </div>
                 </div>
                 <div class="result-card-content">
@@ -595,9 +595,46 @@
     </script>     
       
     <script src="script.js" defer></script>   
-    
+    <script>
+        lucide.createIcons();
+    </script>
     <div id="exitToast" class="exit-toast hidden" data-lang-key="exit_toast_text">
         Нажмите еще раз для выхода
     </div>
+
+    <!-- ======================================================= -->
+    <!-- ===    УНИВЕРСАЛЬНОЕ МОДАЛЬНОЕ ОКНО ПОДТВЕРЖДЕНИЯ   === -->
+    <!-- ======================================================= -->
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 id="confirmModalTitle">Подтвердите действие</h3>
+            <p id="confirmModalText" style="margin: 20px 0; line-height: 1.6;"></p>
+            <div id="confirmModalButtons" class="modal-buttons">
+                <button id="confirmModalNoBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="confirmModalYesBtn" class="btn btn-danger">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА ПАРОЛЯ КАНАЛА   === -->
+    <!-- ======================================================= -->
+    <div id="channelPasswordModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 id="channelPasswordModalTitle"></h3>
+            <p id="channelPasswordModalText" style="margin: 20px 0; line-height: 1.6;"></p>
+            
+            <!-- Используем обертку для иконки "глаза", как в окне авторизации -->
+            <div class="password-wrapper" style="margin-bottom: 25px;">
+                <input type="password" id="channelPasswordInputModal" class="auth-input" placeholder="Введите пароль...">
+                <span class="toggle-password"><i data-lucide="eye"></i></span>
+            </div>
+
+            <div id="channelPasswordModalButtons" class="modal-buttons">
+                <button id="channelPasswordCancelBtn" class="btn btn-secondary">Отмена</button>
+                <button id="channelPasswordConfirmBtn" class="btn">Войти</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
