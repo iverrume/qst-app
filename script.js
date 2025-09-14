@@ -15452,9 +15452,24 @@ const mainApp = (function() {
         try {
             const aiSettings = getAIChatSettings();
             
-            // Теперь мы просто отправляем историю "как есть", без изменений на клиенте.
-            // Сервер сам разберется с контекстом ответа.
-            const historyForAPI = aiChatHistory.slice(0, -1);
+            const historyForAPI = JSON.parse(JSON.stringify(aiChatHistory.slice(0, -1)));
+            const lastMessage = historyForAPI[historyForAPI.length - 1];
+
+            if (lastMessage && lastMessage.role === 'user' && lastMessage.replyTo) {
+                const replyContext = lastMessage.replyTo;
+                const originalMessage = aiChatHistory[replyContext.messageIndex];
+
+                if (originalMessage) {
+                    const newContent = ChatModule._chatFormat('ai_reply_context_prompt', {
+                        authorName: replyContext.authorName,
+                        originalText: originalMessage.content || 'Вложение',
+                        newText: lastMessage.content
+                    });
+                    
+                    lastMessage.content = newContent;
+                    console.log("Отправка с контекстом:", newContent);
+                }
+            }
 
             const requestBody = {
                 action: 'getGeneralChatReply',
@@ -15462,12 +15477,16 @@ const mainApp = (function() {
                 settings: aiSettings,
                 targetLanguage: localStorage.getItem('appLanguage') || 'ru'
             };
+
+            // === НАЧАЛО ИЗМЕНЕНИЙ: Правильно обрабатываем Base64 ===
             if (file) {
                 requestBody.file = {
                     mimeType: file.mimeType,
+                    // Отправляем только саму Base64-строку, отрезая префикс "data:mime/type;base64,"
                     base64Data: file.base64Data.split(',')[1] 
                 };
             }
+            // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',

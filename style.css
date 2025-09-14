@@ -9709,33 +9709,35 @@ body.glass-dark .ai-chat-settings-panel {
     top: 10px;
     bottom: 10px;
     right: 5px;
-    width: 16px;
+    width: 24px; /* <-- ИЗМЕНЕНИЕ: Сделали контейнер шире */
     z-index: 5;
 }
 
-/* 5. Дорожка (трек), по которой будет двигаться ползунок */
+/* 5. Дорожка (трек) с точками - теперь справа */
 .scrollbar-track {
     position: absolute;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    right: 5px; /* <-- ИЗМЕНЕНИЕ: Прижимаем к правому краю контейнера */
+    left: auto;   /* <-- ИЗМЕНЕНИЕ: Убираем привязку к левому краю */
     width: 2px;
     height: 100%;
     background-color: var(--border-color);
     border-radius: 1px;
+    /* Убираем transform, он больше не нужен */
 }
 
-/* 6. Ползунок (ручка) скроллбара */
+/* 6. Ползунок (ручка) скроллбара - теперь слева */
 .scrollbar-thumb {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 5px; /* <-- ИЗМЕНЕНИЕ: Прижимаем к левому краю контейнера */
+    right: auto; /* <-- ИЗМЕНЕНИЕ: Убираем привязку к правому краю */
     width: 8px;
     background-color: var(--secondary-text-color);
     border-radius: 4px;
     cursor: grab;
     opacity: 0.7;
     transition: opacity 0.2s;
+    /* Убираем transform, он больше не нужен */
 }
 .scrollbar-thumb:hover {
     opacity: 1;
