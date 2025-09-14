@@ -898,7 +898,8 @@ const ChatModule = (function() {
     function _chat(key) {
         return LANG_PACK_CHAT[currentChatLang]?.[key] || key;
     }
-/**
+
+    /**
      * Форматирует строку перевода, заменяя плейсхолдеры типа {key} на значения.
      * @param {string} key - Ключ строки в языковом пакете.
      * @param {object} replacements - Объект с заменами, например { channelName: 'VIP' }.
@@ -5657,6 +5658,8 @@ const ChatModule = (function() {
         }
     }
 
+
+
     // ========== PUBLIC METHODS ==========
     return {
         init,
@@ -5771,6 +5774,7 @@ const ChatModule = (function() {
         showModal: showModal, 
         handlePasswordReset,
         closeModal: closeModal,
+        _chatFormat: _chatFormat, // <--- ВОТ ДОБАВЛЕННАЯ СТРОКА
         
         // Getters
         isInitialized: () => isInitialized,
@@ -6265,6 +6269,7 @@ const mainApp = (function() {
             ai_copy_response: "Копировать ответ",
             ai_share_response: "Поделиться",
             ai_regenerate_response: "Перегенерировать ответ",
+            ai_reply_context_prompt: '[В ответ на сообщение от "{authorName}": "{originalText}"]\n\n{newText}',
             session_save_new_button: "Сохранить как новую"
         },
         kk: {
@@ -6635,6 +6640,7 @@ const mainApp = (function() {
             ai_copy_response: "Жауапты көшіру",
             ai_share_response: "Бөлісу",
             ai_regenerate_response: "Жауапты қайта құру",
+            ai_reply_context_prompt: '["{authorName}"-ның мына хабарламасына жауап ретінде: "{originalText}"]\n\n{newText}',
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -7012,6 +7018,7 @@ const mainApp = (function() {
             ai_copy_response: "Copy response",
             ai_share_response: "Share",
             ai_regenerate_response: "Regenerate response",
+            ai_reply_context_prompt: '[In reply to "{authorName}" who said: "{originalText}"]\n\n{newText}',
             session_save_new_button: "Save as New"
         }
 
@@ -14360,50 +14367,768 @@ const mainApp = (function() {
 // Переменные для нового чата
     let aiChatFab, aiChatModal, aiChatModalContent, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn, aiChatResizeBtn;
     let aiChatHistory = [];
+    let attachedFile = null; 
     let isAIResponding = false;
     let isAIChatExpanded = false;
+    let aiReplyContext = null; // Для хранения контекста ответа
+    let aiReplyPanel, aiReplyText, aiCancelReplyBtn; // Для элементов UI
+    // Переменные для кастомного скроллбара
+    let aiCustomScrollbar, aiScrollbarThumb, aiScrollbarDots;
+    let aiScrollbarTooltip;
+
+
 
     /**
      * Инициализирует элементы AI-чата и навешивает слушатели.
-     * Вызывается один раз из initializeApp.
      */
     function initAIChat() {
-        // Находим элементы
+        // 1. Находим все необходимые DOM-элементы
         aiChatFab = getEl('aiChatFab');
         aiChatModal = getEl('aiChatModal');
         aiChatCloseBtn = getEl('aiChatCloseBtn');
         aiChatResizeBtn = getEl('aiChatResizeBtn');
-        // --- ИСПРАВЛЕНИЕ: Используем более конкретный селектор, чтобы точно выбрать нужный элемент для изменения размера ---
         aiChatModalContent = aiChatModal?.querySelector('.ai-chat-modal-content'); 
         aiChatMessages = getEl('aiChatMessages');
         aiChatInput = getEl('aiChatInput');
         aiChatSendBtn = getEl('aiChatSendBtn');
+        // Элементы для ответа на сообщения
+        aiReplyPanel = getEl('aiReplyPanel');
+        aiReplyText = getEl('aiReplyText');
+        aiCancelReplyBtn = getEl('aiCancelReplyBtn');
 
-        // Навешиваем слушатели
-        if (aiChatFab) {
-            makeFabDraggable(aiChatFab);
-            loadFabPosition(aiChatFab);
+        aiScrollbarTooltip = getEl('aiScrollbarTooltip');
+        
+        // Элементы для прикрепления файлов
+        const aiChatAttachBtn = getEl('aiChatAttachBtn');
+        const aiChatFileInput = getEl('aiChatFileInput');
+
+        // Элементы для настроек
+        const aiChatSettingsBtn = getEl('aiChatSettingsBtn');
+        const aiChatSettingsPanel = getEl('aiChatSettingsPanel');
+        const aiCreativitySlider = getEl('aiCreativitySlider');
+        
+        // Элементы модальных окон для предпросмотра файлов
+        const imagePreviewModal = getEl('imagePreviewModal');
+        const closeImagePreviewBtn = imagePreviewModal?.querySelector('.close-image-preview');
+        const textPreviewModal = getEl('textPreviewModal');
+        const closeTextPreviewBtn = textPreviewModal?.querySelector('.close-text-preview');
+        // === НАЧАЛО НОВОГО КОДА ===
+        aiCustomScrollbar = getEl('aiCustomScrollbar');
+        aiScrollbarThumb = getEl('aiScrollbarThumb');
+        aiScrollbarDots = getEl('aiScrollbarDots');
+        // === КОНЕЦ НОВОГО КОДА ===
+
+        // 2. Определяем функции для закрытия модальных окон (ОБЪЯВЛЯЮТСЯ ТОЛЬКО ОДИН РАЗ)
+        const closeImageModal = () => imagePreviewModal?.classList.add('hidden');
+        const closeTextModal = () => textPreviewModal?.classList.add('hidden');
+
+        // 3. Навешиваем все обработчики событий
+        
+        // Обработчики для FAB-кнопки
+        if (aiChatFab) { 
+            makeFabDraggable(aiChatFab); 
+            loadFabPosition(aiChatFab); 
         }
+
+        // Обработчик для отмены ответа
+        aiCancelReplyBtn?.addEventListener('click', cancelAIReply);
+
+        // Обработчики для кнопок в шапке чата
         aiChatCloseBtn?.addEventListener('click', closeAIChat);
         aiChatResizeBtn?.addEventListener('click', toggleAIChatSize);
-        aiChatSendBtn?.addEventListener('click', sendAIChatMessage);
         
+        // Обработчики для прикрепления файлов
+        aiChatAttachBtn?.addEventListener('click', () => aiChatFileInput?.click());
+        aiChatFileInput?.addEventListener('change', handleAIAttachment);
+        
+        // Обработчики для модальных окон предпросмотра
+        imagePreviewModal?.addEventListener('click', (e) => { if (e.target.id === 'imagePreviewModal') closeImageModal(); });
+        closeImagePreviewBtn?.addEventListener('click', closeImageModal);
+        textPreviewModal?.addEventListener('click', (e) => { if (e.target.id === 'textPreviewModal') closeTextModal(); });
+        closeTextPreviewBtn?.addEventListener('click', closeTextModal);
+
+        // "Умный" обработчик для панели настроек
+        aiChatSettingsBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = aiChatSettingsPanel.classList.contains('hidden');
+            if (!isHidden) {
+                aiChatSettingsPanel.classList.add('hidden');
+                return;
+            }
+            const modalRect = aiChatModalContent.getBoundingClientRect();
+            const panelWidth = aiChatSettingsPanel.offsetWidth;
+            const windowWidth = window.innerWidth;
+            const margin = 15;
+            if (modalRect.right + panelWidth + margin > windowWidth) {
+                aiChatSettingsPanel.classList.add('is-inside');
+            } else {
+                aiChatSettingsPanel.classList.remove('is-inside');
+            }
+            aiChatSettingsPanel.classList.remove('hidden');
+        });
+
+        // Обработчик для слайдера креативности
+        aiCreativitySlider?.addEventListener('input', saveAIChatSettings);
+        
+        // Обработчики для поля ввода и кнопки отправки
+        aiChatSendBtn?.addEventListener('click', sendAIChatMessage);
         if (aiChatInput && aiChatSendBtn) {
             aiChatInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    sendAIChatMessage();
-                }
+                if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendAIChatMessage(); }
             });
             aiChatInput.addEventListener('input', () => {
-                const hasText = aiChatInput.value.trim().length > 0;
+                const hasText = aiChatInput.value.trim().length > 0 || attachedFile;
                 aiChatSendBtn.disabled = !hasText;
                 aiChatInput.style.height = 'auto';
                 aiChatInput.style.height = `${aiChatInput.scrollHeight}px`;
             });
             aiChatSendBtn.disabled = true;
         }
+
+        // Делегирование событий для кнопок под сообщениями
+        aiChatMessages?.addEventListener('click', (e) => {
+            const targetButton = e.target.closest('.ai-action-btn');
+            const targetAttachment = e.target.closest('.ai-message-attachment');
+            const targetReply = e.target.closest('.ai-reply-context'); // <<< НОВАЯ СТРОКА
+
+            if (targetButton) {
+                const action = targetButton.dataset.action;
+                const index = parseInt(targetButton.dataset.index, 10);
+                switch(action) {
+                    case 'reply-ai': // <<< НОВЫЙ CASE
+                        startAIReply(index);
+                        break;
+                    case 'copy-ai':
+                    case 'copy-user':
+                        handleCopyAIChat(targetButton);
+                        break;
+                    case 'share-ai':
+                        handleShareAIChat(targetButton);
+                        break;
+                    case 'regenerate-ai':
+                        regenerateLastAIResponse();
+                        break;
+                    case 'edit-user':
+                        startEditUserMessage(index);
+                        break;
+                }
+            } else if (targetAttachment) {
+                e.preventDefault();
+                const index = parseInt(targetAttachment.dataset.index, 10);
+                const message = aiChatHistory[index];
+                if (message && message.attachment) {
+                    openAIAttachment(message.attachment);
+                }
+            } else if (targetReply) { // <<< НОВЫЙ БЛОК
+                const index = parseInt(targetReply.dataset.index, 10);
+                scrollToAIMessage(index);
+            }
+        });
+
+        // Глобальный обработчик для закрытия выпадающих меню
+        window.addEventListener('click', (e) => {
+            if (aiChatSettingsPanel && !aiChatSettingsPanel.classList.contains('hidden') && !aiChatSettingsPanel.contains(e.target) && e.target !== aiChatSettingsBtn) {
+                aiChatSettingsPanel.classList.add('hidden');
+            }
+            document.querySelectorAll('.ai-custom-select.open').forEach(select => {
+                if (!select.contains(e.target)) {
+                    select.classList.remove('open');
+                    select.querySelector('.ai-select-dropdown').classList.add('hidden');
+                }
+            });
+        });
+        initCustomScrollbar();
+        initCustomScrollbarTooltipEvents();
+        // 4. Вызываем функции первоначальной настройки
+        setupCustomSelect('aiModelSelectContainer');
+        setupCustomSelect('aiResponseLengthSelectContainer');
+        loadAIChatSettings();
+
     }
+
+
+    // =======================================================
+    // ===     ЛОГИКА КАСТОМНОГО СКРОЛЛБАРА ДЛЯ AI-ЧАТА     ===
+    // =======================================================
+
+    /**
+     * Инициализирует все слушатели событий для кастомного скроллбара.
+     */
+    function initCustomScrollbar() {
+        if (!aiChatMessages || !aiCustomScrollbar) return;
+
+        // 1. Слушаем скролл в основном окне чата, чтобы двигать ползунок
+        aiChatMessages.addEventListener('scroll', () => {
+            requestAnimationFrame(updateScrollbarThumbPosition);
+        });
+
+        // 2. Слушаем изменение размера окна чата или добавление/удаление сообщений
+        const observer = new ResizeObserver(drawOrUpdateScrollbar);
+        observer.observe(aiChatMessages);
+        const mutationObserver = new MutationObserver(drawOrUpdateScrollbar);
+        mutationObserver.observe(aiChatMessages, { childList: true, subtree: true });
+        
+        // 3. Добавляем логику перетаскивания ползунка
+        let isDraggingThumb = false;
+        let startY, startScrollTop;
+
+        aiScrollbarThumb.addEventListener('mousedown', (e) => {
+            isDraggingThumb = true;
+            startY = e.clientY;
+            startScrollTop = aiChatMessages.scrollTop;
+            aiScrollbarThumb.style.cursor = 'grabbing';
+            document.body.style.cursor = 'grabbing';
+            document.body.style.userSelect = 'none';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDraggingThumb) return;
+            const deltaY = e.clientY - startY;
+            const trackHeight = aiCustomScrollbar.clientHeight;
+            const contentHeight = aiChatMessages.scrollHeight;
+            const scrollDelta = (deltaY / trackHeight) * contentHeight;
+            aiChatMessages.scrollTop = startScrollTop + scrollDelta;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDraggingThumb = false;
+            aiScrollbarThumb.style.cursor = 'grab';
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+        });
+    }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Инициализирует события для показа тултипа при наведении на точки.
+     */
+    function initCustomScrollbarTooltipEvents() {
+        if (!aiScrollbarDots || !aiScrollbarTooltip) return;
+
+        // Используем делегирование событий на контейнере с точками
+        aiScrollbarDots.addEventListener('mouseover', (e) => {
+            // Проверяем, что мы навели именно на точку
+            if (e.target.classList.contains('scrollbar-dot')) {
+                const dot = e.target;
+                const messageIndex = parseInt(dot.dataset.index, 10);
+                const message = aiChatHistory[messageIndex];
+                
+                if (message) {
+                    // 1. Наполняем тултип контентом
+                    const content = message.content || 'Вложение';
+                    aiScrollbarTooltip.textContent = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+
+                    // 2. Позиционируем тултип
+                    const scrollWrapperRect = aiScrollbarDots.getBoundingClientRect();
+                    const dotRect = dot.getBoundingClientRect();
+                    const tooltipHeight = aiScrollbarTooltip.offsetHeight;
+
+                    // Вертикальное позиционирование: по центру точки
+                    let top = (dotRect.top - scrollWrapperRect.top) + (dotRect.height / 2) - (tooltipHeight / 2);
+                    
+                    // Горизонтальное позиционирование: слева от скроллбара
+                    const right = aiCustomScrollbar.offsetWidth + 8; // Ширина скроллбара + отступ
+
+                    // Ограничение, чтобы тултип не вылезал за верхний край
+                    if (top < 0) top = 0;
+                    // Ограничение, чтобы тултип не вылезал за нижний край
+                    if (top + tooltipHeight > scrollWrapperRect.height) {
+                        top = scrollWrapperRect.height - tooltipHeight;
+                    }
+
+                    aiScrollbarTooltip.style.top = `${top}px`;
+                    aiScrollbarTooltip.style.right = `${right}px`;
+
+                    // 3. Показываем тултип
+                    aiScrollbarTooltip.classList.add('visible');
+                }
+            }
+        });
+
+        // Прячем тултип, когда мышь уходит с контейнера точек
+        aiScrollbarDots.addEventListener('mouseout', (e) => {
+            if (e.target.classList.contains('scrollbar-dot')) {
+                aiScrollbarTooltip.classList.remove('visible');
+            }
+        });
+    }
+
+
+    /**
+     * Перерисовывает весь кастомный скроллбар: ползунок и точки.
+     */
+    function drawOrUpdateScrollbar() {
+        if (!aiChatMessages || !aiCustomScrollbar) return;
+
+        const scrollHeight = aiChatMessages.scrollHeight;
+        const clientHeight = aiChatMessages.clientHeight;
+
+        if (scrollHeight <= clientHeight) {
+            aiCustomScrollbar.classList.add('hidden');
+            return;
+        }
+        aiCustomScrollbar.classList.remove('hidden');
+        
+        updateScrollbarThumbPosition();
+
+        aiScrollbarDots.innerHTML = '';
+        const userMessages = Array.from(aiChatMessages.querySelectorAll('.ai-message-container.is-user'));
+
+        // === НАЧАЛО ИЗМЕНЕНИЙ: Связываем точку с сообщением ===
+        userMessages.forEach((msgContainer) => {
+            const dot = document.createElement('div');
+            dot.className = 'scrollbar-dot';
+            
+            // Получаем индекс из ID контейнера
+            const messageIndex = parseInt(msgContainer.id.replace('ai-message-container-', ''), 10);
+            dot.dataset.index = messageIndex; // <-- ВОТ КЛЮЧЕВОЕ ДОБАВЛЕНИЕ
+
+            const messageTop = msgContainer.offsetTop;
+            const dotPositionPercent = (messageTop / scrollHeight) * 100;
+            dot.style.top = `${dotPositionPercent}%`;
+            
+            dot.onclick = () => {
+                msgContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+            
+            aiScrollbarDots.appendChild(dot);
+        });
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
+    }
+
+    /**
+     * Обновляет только позицию и размер ползунка (вызывается при скролле).
+     */
+    function updateScrollbarThumbPosition() {
+        if (!aiChatMessages || !aiScrollbarThumb) return;
+
+        const scrollHeight = aiChatMessages.scrollHeight;
+        const clientHeight = aiChatMessages.clientHeight;
+        const scrollTop = aiChatMessages.scrollTop;
+        const trackHeight = aiCustomScrollbar.clientHeight;
+
+        // Рассчитываем высоту и позицию ползунка
+        const thumbHeight = Math.max(20, (clientHeight / scrollHeight) * trackHeight); // Минимальная высота 20px
+        const thumbPosition = (scrollTop / scrollHeight) * trackHeight;
+
+        aiScrollbarThumb.style.height = `${thumbHeight}px`;
+        aiScrollbarThumb.style.top = `${thumbPosition}px`;
+    }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Начинает процесс ответа на сообщение.
+     * @param {number} index - Индекс сообщения в истории, на которое отвечают.
+     */
+    function startAIReply(index) {
+        const messageToReply = aiChatHistory[index];
+        if (!messageToReply) return;
+
+        const originalText = messageToReply.content || 'Вложение';
+
+        aiReplyContext = {
+            messageIndex: index,
+            authorName: messageToReply.role === 'user' ? 'Вы' : 'AI',
+            textSnippet: originalText.substring(0, 80) + (originalText.length > 80 ? '...' : ''),
+            originalText: originalText // <-- ВОТ ГЛАВНОЕ ДОБАВЛЕНИЕ
+        };
+
+        aiReplyText.textContent = `${aiReplyContext.authorName}: ${aiReplyContext.textSnippet}`;
+        aiReplyPanel.classList.remove('hidden');
+        aiChatInput.focus();
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Отменяет ответ на сообщение.
+     */
+    function cancelAIReply() {
+        aiReplyContext = null;
+        aiReplyPanel.classList.add('hidden');
+    }
+    
+    /**
+     * НОВАЯ ФУНКЦИЯ: Прокручивает к указанному сообщению и подсвечивает его.
+     * @param {number} index - Индекс сообщения в истории.
+     */
+    function scrollToAIMessage(index) {
+        const element = getEl(`ai-message-container-${index}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('highlighted');
+            setTimeout(() => element.classList.remove('highlighted'), 2000);
+        }
+    }
+
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Обрабатывает выбор файла, читает его, создает миниатюру и показывает превью.
+     */
+    async function handleAIAttachment(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Файл слишком большой. Максимальный размер - 10 МБ.');
+            event.target.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const fullDataUrl = e.target.result;
+            let thumbnailDataUrl = null;
+
+            // Если это изображение, создаем миниатюру
+            if (file.type.startsWith('image/')) {
+                try {
+                    thumbnailDataUrl = await createThumbnail(fullDataUrl, 64);
+                } catch (thumbError) {
+                    console.error("Не удалось создать миниатюру:", thumbError);
+                }
+            }
+
+            attachedFile = {
+                name: file.name,
+                mimeType: file.type,
+                base64Data: fullDataUrl,
+                thumbnailDataUrl: thumbnailDataUrl // Будет null для не-изображений
+            };
+            showAttachmentPreview();
+        };
+        reader.onerror = (e) => {
+            console.error("Ошибка чтения файла:", e);
+            alert('Не удалось прочитать файл.');
+        };
+        reader.readAsDataURL(file);
+        
+        event.target.value = '';
+    }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Создает миниатюру изображения.
+     * @param {string} dataUrl - Исходное изображение в формате Data URL.
+     * @param {number} maxSize - Максимальный размер (ширина или высота) миниатюры.
+     * @returns {Promise<string>} - Промис с Data URL миниатюры.
+     */
+    function createThumbnail(dataUrl, maxSize) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                let { width, height } = img;
+
+                if (width > height) {
+                    if (width > maxSize) {
+                        height *= maxSize / width;
+                        width = maxSize;
+                    }
+                } else {
+                    if (height > maxSize) {
+                        width *= maxSize / height;
+                        height = maxSize;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8)); // Сжимаем для экономии места
+            };
+            img.onerror = reject;
+            img.src = dataUrl;
+        });
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Отображает плашку с информацией о прикрепленном файле.
+     */
+    function showAttachmentPreview() {
+        const previewEl = getEl('aiAttachmentPreview');
+        if (!previewEl || !attachedFile) return;
+
+        let previewContent = '';
+        if (attachedFile.thumbnailDataUrl) {
+            // Если есть миниатюра, показываем ее
+            previewContent = `<img src="${attachedFile.thumbnailDataUrl}" alt="Превью">`;
+        } else {
+            // Иначе показываем иконку
+            previewContent = `<i data-lucide="file-text"></i>`;
+        }
+
+        previewEl.innerHTML = `
+            ${previewContent}
+            <span class="ai-attachment-name">${escapeHTML(attachedFile.name)}</span>
+            <button class="ai-attachment-remove-btn" title="Удалить файл"><i data-lucide="x-circle"></i></button>
+        `;
+        
+        // --- ИЗМЕНЕНИЕ: Делаем всю плашку кликабельной ---
+        previewEl.onclick = (e) => {
+            // Предотвращаем открытие файла, если кликнули по кнопке "удалить"
+            if (e.target.closest('.ai-attachment-remove-btn')) return;
+            openAIAttachment(attachedFile);
+        };
+
+        previewEl.querySelector('.ai-attachment-remove-btn').onclick = (e) => {
+            e.stopPropagation(); // Важно, чтобы не сработал клик по всей плашке
+            removeAIAttachment();
+        };
+
+        previewEl.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+        
+        aiChatSendBtn.disabled = false;
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ v4: Открывает прикрепленный файл в соответствующем модальном окне.
+     */
+    async function openAIAttachment(fileObject) {
+        if (!fileObject || !fileObject.base64Data) {
+            console.error("Нет данных файла для открытия.");
+            return;
+        }
+
+        try {
+            const mimeType = fileObject.mimeType;
+
+            if (mimeType.startsWith('image/')) {
+                // Если это изображение, показываем в модальном окне для картинок
+                showImageInModal(fileObject.base64Data);
+
+            } else if (mimeType === 'application/pdf') {
+                // PDF продолжаем открывать в новой вкладке через Blob URL
+                const response = await fetch(fileObject.base64Data);
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                window.open(objectUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(objectUrl), 10000);
+
+            } else {
+                // Для текстовых и других файлов показываем в текстовом модальном окне
+                showTextInModal(fileObject);
+            }
+        } catch (error) {
+            console.error("Ошибка при открытии файла:", error);
+            alert("Не удалось открыть файл. См. консоль для подробностей.");
+        }
+    }
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Показывает изображение в модальном окне.
+     * @param {string} dataUrl - Data URL изображения для показа.
+     */
+    function showImageInModal(dataUrl) {
+        const modal = getEl('imagePreviewModal');
+        const img = getEl('previewImage');
+        if (modal && img) {
+            img.src = dataUrl;
+            modal.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ v4 (супер-надежная): Декодирует текстовый файл, считая ошибки декодирования.
+     * @param {object} fileObject - Объект файла с base64 данными.
+     */
+    function showTextInModal(fileObject) {
+        const modal = getEl('textPreviewModal');
+        const filenameEl = getEl('textPreviewFilename');
+        const bodyEl = getEl('textPreviewBody');
+
+        if (!modal || !filenameEl || !bodyEl) return;
+
+        try {
+            const base64 = fileObject.base64Data.split(',')[1];
+            if (!base64) throw new Error("Некорректный base64 data URL.");
+
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            // --- НОВАЯ УЛУЧШЕННАЯ ЛОГИКА ОПРЕДЕЛЕНИЯ КОДИРОВКИ ---
+
+            // 1. Декодируем как UTF-8 и считаем "мусорные" символы
+            const utf8Decoder = new TextDecoder('utf-8', { fatal: false });
+            const textAsUtf8 = utf8Decoder.decode(bytes);
+            const replacementChar = '\uFFFD'; // Символ замены �
+            const utf8Errors = (textAsUtf8.match(new RegExp(replacementChar, 'g')) || []).length;
+
+            // 2. Декодируем как Windows-1251 и считаем "мусорные" символы
+            const win1251Decoder = new TextDecoder('windows-1251', { fatal: false });
+            const textAsWin1251 = win1251Decoder.decode(bytes);
+            const win1251Errors = (textAsWin1251.match(new RegExp(replacementChar, 'g')) || []).length;
+
+            let finalText;
+            // 3. Выбираем вариант с МЕНЬШИМ количеством ошибок.
+            //    Приоритет отдаем UTF-8, если количество ошибок одинаковое (например, 0).
+            if (utf8Errors <= win1251Errors) {
+                finalText = textAsUtf8;
+                console.log(`Определение кодировки: UTF-8 (ошибок: ${utf8Errors})`);
+            } else {
+                finalText = textAsWin1251;
+                console.log(`Определение кодировки: Windows-1251 (ошибок: ${win1251Errors})`);
+            }
+            // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
+            // 4. Отображаем результат
+            filenameEl.textContent = fileObject.name;
+            bodyEl.textContent = finalText;
+            modal.classList.remove('hidden');
+
+        } catch (error) {
+            console.error("Ошибка декодирования файла:", error);
+            alert("Не удалось прочитать текстовый файл.");
+        }
+    }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Отображает плашку с информацией о прикрепленном файле.
+     */
+    function showAttachmentPreview() {
+        const previewEl = getEl('aiAttachmentPreview');
+        if (!previewEl || !attachedFile) return;
+
+        previewEl.innerHTML = `
+            <span class="ai-attachment-name">${escapeHTML(attachedFile.name)}</span>
+            <button class="ai-attachment-remove-btn" title="Удалить файл"><i data-lucide="x-circle"></i></button>
+        `;
+        
+        previewEl.querySelector('.ai-attachment-remove-btn').onclick = removeAIAttachment;
+        previewEl.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
+        
+        // Активируем кнопку отправки, так как файл прикреплен
+        aiChatSendBtn.disabled = false;
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Удаляет прикрепленный файл и скрывает превью.
+     */
+    function removeAIAttachment() {
+        attachedFile = null;
+        const previewEl = getEl('aiAttachmentPreview');
+        previewEl.classList.add('hidden');
+        previewEl.innerHTML = '';
+        
+        // Деактивируем кнопку отправки, если в поле ввода нет текста
+        if (aiChatInput.value.trim().length === 0) {
+            aiChatSendBtn.disabled = true;
+        }
+    }
+
+
+    // ======== НАЧАЛО НОВЫХ ФУНКЦИЙ ========
+
+    /**
+     * Настраивает логику работы для кастомного выпадающего списка.
+     * @param {string} containerId ID главного контейнера селекта.
+     */
+    function setupCustomSelect(containerId) {
+        const container = getEl(containerId);
+        if (!container) return;
+        
+        const button = container.querySelector('.ai-select-button');
+        const dropdown = container.querySelector('.ai-select-dropdown');
+        const textElement = container.querySelector('span');
+        const options = dropdown.querySelectorAll('a');
+
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            container.classList.toggle('open');
+            dropdown.classList.toggle('hidden');
+        });
+
+        options.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.preventDefault();
+                textElement.textContent = option.textContent;
+                container.dataset.currentValue = option.dataset.value;
+                container.classList.remove('open');
+                dropdown.classList.add('hidden');
+                saveAIChatSettings();
+            });
+        });
+    }
+
+    /**
+     * Загружает настройки AI-чата из localStorage и применяет их к UI.
+     */
+    function loadAIChatSettings() {
+        const settings = JSON.parse(localStorage.getItem('aiChatSettings')) || {
+            model: 'gemini-2.5-flash-lite',
+            length: 'medium',
+            creativity: 1
+        };
+
+        // Настройка модели
+        const modelContainer = getEl('aiModelSelectContainer');
+        if (modelContainer) {
+            modelContainer.dataset.currentValue = settings.model;
+            const selectedOption = modelContainer.querySelector(`a[data-value="${settings.model}"]`);
+            if (selectedOption) {
+                getEl('aiModelSelectText').textContent = selectedOption.textContent;
+            }
+        }
+
+        // Настройка длины ответа
+        const lengthContainer = getEl('aiResponseLengthSelectContainer');
+        if (lengthContainer) {
+            lengthContainer.dataset.currentValue = settings.length;
+            const selectedOption = lengthContainer.querySelector(`a[data-value="${settings.length}"]`);
+            if (selectedOption) {
+                getEl('aiResponseLengthSelectText').textContent = selectedOption.textContent;
+            }
+        }
+
+        // Настройка креативности
+        const creativitySlider = getEl('aiCreativitySlider');
+        const creativityValue = getEl('aiCreativityValue');
+        if (creativitySlider) creativitySlider.value = settings.creativity;
+        if (creativityValue) {
+            const creativityLevels = ['Низкая', 'Средняя', 'Высокая'];
+            creativityValue.textContent = creativityLevels[settings.creativity] || 'Средняя';
+        }
+    }
+
+    /**
+     * Сохраняет текущие настройки AI-чата из UI в localStorage.
+     */
+    function saveAIChatSettings() {
+        const modelContainer = getEl('aiModelSelectContainer');
+        const lengthContainer = getEl('aiResponseLengthSelectContainer');
+        const creativitySlider = getEl('aiCreativitySlider');
+        
+        const settings = {
+            model: modelContainer.dataset.currentValue || 'gemini-2.5-flash-lite',
+            length: lengthContainer.dataset.currentValue || 'medium',
+            creativity: parseInt(creativitySlider.value, 10)
+        };
+        
+        localStorage.setItem('aiChatSettings', JSON.stringify(settings));
+        loadAIChatSettings(); // Перезагружаем для обновления текста "Креативность"
+    }
+
+    /**
+     * Возвращает текущие настройки AI-чата.
+     */
+    function getAIChatSettings() {
+        return JSON.parse(localStorage.getItem('aiChatSettings')) || {
+            model: 'gemini-2.5-flash-lite',
+            length: 'medium',
+            creativity: 1
+        };
+    }
+    // ======== КОНЕЦ НОВЫХ ФУНКЦИЙ ========
+
 
     /**
      * НОВАЯ ФУНКЦИЯ (С ЛОГИРОВАНИЕМ)
@@ -14574,90 +15299,184 @@ const mainApp = (function() {
 
 
     /**
-     * Отображает всю историю чата в модальном окне.
+     * Отображает всю историю чата в модальном окне с "умной" прокруткой.
      */
     function renderAIChatMessages() {
         if (!aiChatMessages) return;
+
+        // 1. ПРОВЕРЯЕМ ПОЛОЖЕНИЕ СКРОЛЛА ПЕРЕД ИЗМЕНЕНИЕМ КОНТЕНТА
+        const scrollThreshold = 100; // Расстояние в пикселях от низа, считающееся "внизу"
+        const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
+
         aiChatMessages.innerHTML = '';
 
         aiChatHistory.forEach((msg, index) => {
-            const messageContainer = document.createElement('div'); // Общая обертка
+            const messageContainer = document.createElement('div');
             messageContainer.className = `ai-message-container is-${msg.role}`;
+            messageContainer.id = `ai-message-container-${index}`; 
+            
+            const replyContextContainer = document.createElement('div');
+            replyContextContainer.className = 'ai-reply-context-container';
+            if (msg.replyTo) {
+                const replyEl = document.createElement('div');
+                replyEl.className = 'ai-reply-context';
+                replyEl.dataset.action = 'scroll-to-ai';
+                replyEl.dataset.index = msg.replyTo.messageIndex;
+                replyEl.innerHTML = `
+                    <div class="ai-reply-author">${escapeHTML(msg.replyTo.authorName || '')}</div>
+                    <div class="ai-reply-text">${escapeHTML(msg.replyTo.textSnippet || '')}</div>
+                `;
+                replyContextContainer.appendChild(replyEl);
+            }
+            messageContainer.appendChild(replyContextContainer);
 
             const messageEl = document.createElement('div');
             messageEl.classList.add('ai-message', msg.role);
             
+            let messageHTML = '';
             if (msg.content === 'typing...') {
-                messageEl.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+                messageHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
             } else {
-                messageEl.innerHTML = window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
+                if (msg.content) {
+                    messageHTML += window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
+                }
+                
+                if (msg.attachment) {
+                    const { name, mimeType, thumbnailDataUrl } = msg.attachment;
+                    const type = mimeType.split('/')[0] || 'файл';
+                    
+                    const previewImage = thumbnailDataUrl 
+                        ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
+                        : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
+
+                    messageHTML += `
+                        <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
+                            ${previewImage}
+                            <div class="ai-attachment-file-info">
+                                <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
+                                <div class="ai-attachment-file-type">${type}</div>
+                            </div>
+                        </a>
+                    `;
+                }
             }
+            messageEl.innerHTML = messageHTML;
             
             messageContainer.appendChild(messageEl);
 
-            // --- НОВЫЙ КОД: Добавляем панель действий для сообщений ИИ ---
             const isLastMessage = index === aiChatHistory.length - 1;
-            if (msg.role === 'model' && msg.content !== 'typing...' && isLastMessage) {
+
+            if (msg.role === 'model' && msg.content !== 'typing...') {
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'ai-message-actions';
                 actionsContainer.innerHTML = `
-                    <button class="ai-action-btn" title="${_('ai_copy_response')}" onclick="mainApp.handleCopyAIChat(this)"><i data-lucide="copy"></i></button>
-                    <button class="ai-action-btn" title="${_('ai_share_response')}" onclick="mainApp.handleShareAIChat(this)"><i data-lucide="share-2"></i></button>
-                    <button class="ai-action-btn" title="${_('ai_regenerate_response')}" onclick="mainApp.regenerateLastAIResponse()"><i data-lucide="refresh-cw"></i></button>
+                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                    <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
+                    <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
+                    ${isLastMessage ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>` : ''}
+                `;
+                messageContainer.appendChild(actionsContainer);
+            } else if (msg.role === 'user') {
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'ai-user-message-actions';
+                actionsContainer.innerHTML = `
+                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                    <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
+                    <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
                 `;
                 messageContainer.appendChild(actionsContainer);
             }
-            // --- КОНЕЦ НОВОГО КОДА ---
             
             aiChatMessages.appendChild(messageContainer);
         });
 
-        // Перерисовываем иконки Lucide, если они были добавлены
         if (window.lucide) {
             lucide.createIcons();
         }
-
-        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+        drawOrUpdateScrollbar();
+        // 2. ПРИМЕНЯЕМ "УМНУЮ" ПРОКРУТКУ
+        if (isScrolledToBottom) {
+            const lastMessage = aiChatMessages.lastElementChild;
+            if (lastMessage) {
+                // Прокручиваем к НАЧАЛУ последнего сообщения, а не в конец всего блока
+                lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } else {
+            console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
+        }
     }
 
 
 
+    /**
+     * Отправляет сообщение пользователя и запускает получение ответа от ИИ.
+     */
+    function sendAIChatMessage() {
+        if (isAIResponding) return;
+        const userInput = aiChatInput.value.trim();
+        if (!userInput && !attachedFile) return;
+
+        const message = { role: 'user', content: userInput };
+        
+        // === НАЧАЛО ИЗМЕНЕНИЙ: Прикрепляем контекст ответа ===
+        if (aiReplyContext) {
+            message.replyTo = aiReplyContext;
+        }
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
+        
+        if (attachedFile) {
+            message.attachment = attachedFile;
+        }
+        aiChatHistory.push(message);
+        
+        aiChatInput.value = '';
+        const fileToSend = attachedFile;
+        removeAIAttachment();
+        cancelAIReply(); // Сбрасываем контекст после отправки
+        
+        getAIResponseForCurrentHistory(fileToSend);
+    }
 
 
     /**
-     * Отправляет сообщение пользователя, получает ответ от ИИ и обновляет чат.
+     * Берет текущую историю, отправляет запрос к ИИ и обновляет UI.
      */
-    async function sendAIChatMessage() {
+    async function getAIResponseForCurrentHistory(file = null) {
         if (isAIResponding) return;
-        const userInput = aiChatInput.value.trim();
-        if (!userInput) return;
-
-        // 1. Добавляем сообщение пользователя в историю и UI
-        aiChatHistory.push({ role: 'user', content: userInput });
-        renderAIChatMessages();
-        aiChatInput.value = '';
-
-        // 2. Показываем индикатор загрузки
         isAIResponding = true;
         aiChatSendBtn.disabled = true;
+        
         aiChatHistory.push({ role: 'model', content: 'typing...' });
         renderAIChatMessages();
 
         try {
-            // 3. Отправляем запрос на сервер
+            const aiSettings = getAIChatSettings();
+            
+            // Теперь мы просто отправляем историю "как есть", без изменений на клиенте.
+            // Сервер сам разберется с контекстом ответа.
+            const historyForAPI = aiChatHistory.slice(0, -1);
+
+            const requestBody = {
+                action: 'getGeneralChatReply',
+                history: historyForAPI,
+                settings: aiSettings,
+                targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+            };
+            if (file) {
+                requestBody.file = {
+                    mimeType: file.mimeType,
+                    base64Data: file.base64Data.split(',')[1] 
+                };
+            }
+
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
-                body: JSON.stringify({
-                    action: 'getGeneralChatReply',
-                    history: aiChatHistory.slice(0, -1), // Отправляем всю историю, кроме "typing..."
-                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const result = await response.json();
-
-            // 4. Убираем "typing..." и добавляем ответ ИИ
-            aiChatHistory.pop(); 
+            
+            aiChatHistory.pop();
             if (result.success && result.reply) {
                 aiChatHistory.push({ role: 'model', content: result.reply });
             } else {
@@ -14665,12 +15484,11 @@ const mainApp = (function() {
             }
         } catch (error) {
             console.error("Ошибка AI-чата:", error);
-            aiChatHistory.pop(); // Убираем "typing..."
+            aiChatHistory.pop();
             aiChatHistory.push({ role: 'model', content: `Произошла ошибка: ${error.message}` });
         } finally {
-            // 5. Обновляем UI и возвращаем кнопку в рабочее состояние
             isAIResponding = false;
-            aiChatSendBtn.disabled = false;
+            aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
             renderAIChatMessages();
         }
     }
@@ -14717,8 +15535,7 @@ const mainApp = (function() {
     }
 
     /**
-     * НОВАЯ ФУНКЦИЯ
-     * Запускает повторную генерацию последнего ответа ИИ.
+     * НОВАЯ ФУНКЦИЯ v2: Запускает повторную генерацию, сохраняя контекст файла.
      */
     async function regenerateLastAIResponse() {
         if (isAIResponding) return;
@@ -14733,42 +15550,106 @@ const mainApp = (function() {
         }
         if (lastUserMessageIndex === -1) return; // Нечего перегенерировать
 
-        // 2. "Откатываем" историю до последнего сообщения пользователя
+        // 2. Получаем само сообщение и проверяем, был ли к нему прикреплен файл
+        const lastUserMessage = aiChatHistory[lastUserMessageIndex];
+        const fileToResend = lastUserMessage.attachment || null; // <--- ВОТ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ
+
+        // 3. "Откатываем" историю до этого сообщения
         aiChatHistory = aiChatHistory.slice(0, lastUserMessageIndex + 1);
 
-        // 3. Запускаем процесс ответа, как в sendAIChatMessage
-        isAIResponding = true;
-        aiChatSendBtn.disabled = true;
-        aiChatHistory.push({ role: 'model', content: 'typing...' });
-        renderAIChatMessages();
+        // 4. Запускаем универсальный обработчик, передавая в него найденный файл
+        getAIResponseForCurrentHistory(fileToResend);
+    }
 
-        try {
-            const response = await fetch(googleAppScriptUrl, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'getGeneralChatReply',
-                    history: aiChatHistory.slice(0, -1),
-                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
-                })
-            });
-            const result = await response.json();
-            aiChatHistory.pop(); // Убираем "typing..."
-            if (result.success && result.reply) {
-                aiChatHistory.push({ role: 'model', content: result.reply });
-            } else {
-                throw new Error(result.error || 'Не удалось получить ответ от ИИ.');
-            }
-        } catch (error) {
-            console.error("Ошибка при перегенерации:", error);
-            aiChatHistory.pop();
-            aiChatHistory.push({ role: 'model', content: `Произошла ошибка: ${error.message}` });
-        } finally {
-            isAIResponding = false;
-            aiChatSendBtn.disabled = false;
-            renderAIChatMessages();
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Превращает сообщение пользователя в поле для редактирования.
+     */
+    function startEditUserMessage(index) {
+        // Если уже что-то редактируется, отменяем
+        const currentlyEditing = document.querySelector('.ai-message-container.editing');
+        if (currentlyEditing) {
+            const oldIndex = parseInt(currentlyEditing.id.replace('ai-message-container-', ''), 10);
+            cancelEditUserMessage(oldIndex);
+        }
+
+        const container = getEl(`ai-message-container-${index}`);
+        if (!container) return;
+
+        const originalText = aiChatHistory[index].content;
+        container.classList.add('editing');
+        container.innerHTML = `
+            <div class="ai-edit-wrapper">
+                <textarea class="ai-edit-textarea">${escapeHTML(originalText)}</textarea>
+                <div class="ai-edit-actions">
+                    <button class="ai-edit-btn-cancel" title="Отмена"><i data-lucide="x"></i></button>
+                    <button class="ai-edit-btn-save" title="Сохранить и отправить"><i data-lucide="check"></i></button>
+                </div>
+            </div>
+        `;
+        
+        const textarea = container.querySelector('.ai-edit-textarea');
+        const saveBtn = container.querySelector('.ai-edit-btn-save');
+        const cancelBtn = container.querySelector('.ai-edit-btn-cancel');
+
+        // Автоматически изменяем высоту textarea
+        const adjustHeight = () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        };
+        textarea.addEventListener('input', adjustHeight);
+        adjustHeight();
+        textarea.focus();
+
+        saveBtn.onclick = () => saveAndResubmitFromIndex(index);
+        cancelBtn.onclick = () => cancelEditUserMessage(index);
+        
+        // ======== ВОТ ОНО, ИСПРАВЛЕНИЕ! ========
+        // После добавления HTML, просим Lucide "нарисовать" новые иконки.
+        if (window.lucide) { lucide.createIcons(); }
+        // =======================================
+    }
+
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Отменяет редактирование и возвращает исходное сообщение.
+     */
+    function cancelEditUserMessage(index) {
+        const container = getEl(`ai-message-container-${index}`);
+        if (container && container.classList.contains('editing')) {
+            container.classList.remove('editing');
+            // Просто перерисовываем все сообщения, это самый надежный способ
+            renderAIChatMessages(); 
         }
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ v2: Сохраняет изменения, сохраняет контекст файла, обрезает историю и отправляет новый запрос.
+     */
+    function saveAndResubmitFromIndex(index) {
+        const container = getEl(`ai-message-container-${index}`);
+        const textarea = container.querySelector('.ai-edit-textarea');
+        const newText = textarea.value.trim();
+        
+        // --- ИЗМЕНЕНИЕ: Теперь можно отправить пустой текст, если есть файл ---
+        const originalMessage = aiChatHistory[index];
+        if (!newText && !originalMessage.attachment) return;
+
+        // 1. Сохраняем информацию о файле, который был в ИСХОДНОМ сообщении
+        const fileToResend = originalMessage.attachment || null;
+
+        // 2. Обновляем ТОЛЬКО текстовую часть сообщения в истории
+        originalMessage.content = newText;
+        
+        // 3. Обрезаем историю, удаляя все, что было после отредактированного сообщения
+        aiChatHistory = aiChatHistory.slice(0, index + 1);
+
+        // 4. Запускаем универсальный обработчик, передавая в него сохраненный файл
+        getAIResponseForCurrentHistory(fileToResend);
+    }
 
 
 

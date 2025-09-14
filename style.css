@@ -4369,13 +4369,8 @@ button[onclick*="copyToClipboard"].copied:after {
     border-bottom: 1px dashed var(--dashed-border-color);
 }
 
-#runParserBtn {
-    background-color: var(--button-primary-bg); /* ИЗМЕНЕНИЕ */
-    width: 50%;
-}
-#runParserBtn:hover {
-    background-color: var(--button-primary-hover-bg); /* ИЗМЕНЕНИЕ */
-}
+
+
 
 #parserOutputArea h3 {
     text-align: center;
@@ -8827,32 +8822,44 @@ body.glass-dark #confirmModalYesBtn:hover {
     gap: 15px;
 }
 
+
+
+
 .ai-message {
-    max-width: 85%;
-    padding: 3px 8px; /* Возвращаем комфортный отступ для сообщений ИИ */
+    /* УБИРАЕМ max-width из общего стиля */
+    padding: 8px 14px; /* Делаем отступы чуть комфортнее */
     border-radius: 18px;
     line-height: 1.5;
     word-wrap: break-word;
+    animation: messageSlideIn 0.3s ease; /* Добавляем плавное появление */
 }
 
-/* === НОВЫЙ КОД: Делаем сообщение пользователя более компактным === */
+/* Сообщение пользователя: прижимаем вправо и ОГРАНИЧИВАЕМ ширину */
 .ai-message.user {
-    padding-top: 6px;    /* Уменьшаем верхний отступ */
-    padding-bottom: 6px; /* Уменьшаем нижний отступ */
+    align-self: flex-end;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-bottom-right-radius: 6px;
+    max-width: 85%; /* <-- Возвращаем ограничение ТОЛЬКО для пользователя */
 }
 
+/* Сообщение ИИ: прижимаем влево, БЕЗ ограничения ширины */
 .ai-message.model {
     align-self: flex-start;
     background: var(--input-bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-bottom-left-radius: 6px;
+    /* max-width здесь не указываем, оно будет занимать доступное место */
 }
 
 /* Стили для Markdown внутри ответа ИИ */
 .ai-message.model p:first-child { margin-top: 0; }
 .ai-message.model p:last-child { margin-bottom: 0; }
 .ai-message.model ul, .ai-message.model ol { padding-left: 20px; }
+
+
+
 
 /* --- Индикатор загрузки "Печатает..." --- */
 .typing-indicator span {
@@ -8874,30 +8881,34 @@ body.glass-dark #confirmModalYesBtn:hover {
 
 
 
+/* ======================================================= */
+/* ===         НОВЫЕ СТИЛИ ДЛЯ ОБЛАСТИ ВВОДА (v2.2)    === */
+/* ======================================================= */
+
 /* --- Область ввода --- */
 .ai-chat-input-area {
     display: flex;
-    padding: 10px 15px;
+    flex-direction: column; /* <-- 1. Главное исправление: располагаем элементы в столбик */
+    padding: 8px 15px;      /* <-- 2. Слегка корректируем отступы для красоты */
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
-    align-items: flex-end;
+    gap: 8px;               /* <-- 3. Добавляем красивый отступ между плашкой и полем ввода */
 }
 
-/* === ФИНАЛЬНЫЕ СТИЛИ ДЛЯ "ПИЛЮЛИ" v2 === */
-
-/* 1. Контейнер-оболочка */
+/* 1. Контейнер-оболочка ("пилюля") */
 .ai-chat-input-container {
     display: flex;
-    align-items: flex-end; /* Выравниваем по низу для многострочного режима */
+    align-items: center; /* Вертикальное выравнивание по центру */
     width: 100%;
     background-color: var(--input-bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 28px; /* <-- ИЗМЕНЕНО: Делаем еще круглее */
-    padding: 5px 8px 5px 15px;
+    border-radius: 28px; /* Сильное скругление для формы "пилюли" */
+    padding: 4px 4px; /* Небольшие отступы внутри */
+    gap: 3px; /* Расстояние между элементами */
     transition: all 0.2s ease;
 }
 
-/* Эффект "свечения" при фокусе */
+/* Эффект "свечения" при фокусе на поле ввода */
 .ai-chat-input-container:focus-within {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
@@ -8905,31 +8916,31 @@ body.glass-dark #confirmModalYesBtn:hover {
 
 /* 2. Иконка "+" слева */
 .ai-chat-input-icon {
-    flex-shrink: 0;
+    flex-shrink: 0; /* Иконка не сжимается */
     color: var(--secondary-text-color);
-    margin-right: 10px;
     width: 22px;
     height: 22px;
-    margin-bottom: 7px; /* Отступ для вертикального выравнивания с текстом */
+    margin-right: 0; /* Убираем старый отступ, теперь используется gap */
+    margin-bottom: 0;
 }
 
 /* 3. Поле для ввода текста (textarea) */
 #aiChatInput {
-    flex-grow: 1;
+    flex-grow: 1; /* Занимает все свободное место */
     resize: none;
-    border: none; /* <-- ГЛАВНОЕ: Убираем собственную рамку */
-    background: transparent; /* Делаем фон прозрачным, чтобы видеть фон контейнера */
-    padding: 8px 10px; /* <-- ИЗМЕНЕНО: Добавляем внутренние отступы для "воздуха" */
+    border: none;
+    background: transparent;
+    padding: 0px 0; /* Убираем лишние отступы */
     font-size: 1em;
     line-height: 1.4;
-    min-height: 24px;
-    max-height: 120px;
+    min-height: 24px; /* Минимальная высота в одну строку */
+    max-height: 180px;
     color: var(--text-color);
     outline: none;
     overflow-y: auto;
 }
 
-/* Стилизация скроллбара */
+/* Стилизация скроллбара внутри textarea */
 #aiChatInput::-webkit-scrollbar {
     width: 4px;
 }
@@ -8940,24 +8951,24 @@ body.glass-dark #confirmModalYesBtn:hover {
 
 /* 4. Кнопка "Отправить" */
 .ai-chat-input-container .advanced-send-btn {
-    width: 38px; /* <-- ИЗМЕНЕНО: Делаем кнопку чуть больше */
-    height: 38px;
-    margin-left: 5px; /* <-- ИЗМЕНЕНО: Уменьшаем отступ */
-    margin-bottom: 2px; /* <-- ДОБАВЛЕНО: Небольшой отступ для выравнивания */
-    flex-shrink: 0;
-    background: var(--button-secondary-bg);
+    width: 34px; /* Уменьшаем размер */
+    height: 34px;
+    margin-left: 0; /* Убираем старые отступы */
+    margin-bottom: 0;
+    flex-shrink: 0; /* Кнопка не сжимается */
+    background: var(--button-secondary-bg); /* Изначально серая */
     color: var(--button-secondary-text);
-    opacity: 0.6;
-    cursor: not-allowed;
+    opacity: 0.6; /* Изначально полупрозрачная */
+    cursor: not-allowed; /* Показываем, что она неактивна */
 }
 
 /* Иконка внутри кнопки */
 .ai-chat-input-container .advanced-send-btn i[data-lucide] {
-    width: 20px; /* <-- ИЗМЕНЕНО */
-    height: 20px; /* <-- ИЗМЕНЕНО */
+    width: 20px;
+    height: 20px;
 }
 
-/* Стили для АКТИВНОГО состояния кнопки */
+/* Стили для АКТИВНОЙ кнопки (когда в поле есть текст) */
 .ai-chat-input-container .advanced-send-btn:not(:disabled) {
     background: var(--button-primary-bg);
     color: var(--button-primary-text);
@@ -9028,4 +9039,793 @@ body.glass-dark .ai-chat-control-btn:hover,
 body.glass-dark .ai-action-btn:hover {
     /* Используем стандартный полупрозрачный фон для наведения */
     background-color: var(--input-hover-bg-color) !important;
+}
+
+
+
+
+/* ======================================================= */
+/* ===    СТИЛИ ДЛЯ НАСТРОЕК AI-ЧАТА (v3, адаптивные)   === */
+/* ======================================================= */
+
+.ai-chat-modal-content {
+    position: relative; /* Делаем модальное окно точкой отсчета для панели */
+}
+
+.ai-chat-settings-panel {
+    position: absolute; /* Позиционируемся относительно .ai-chat-modal-content */
+    width: 300px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px var(--shadow-color);
+    z-index: 10;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    animation: fadeIn 0.2s;
+}
+
+/* --- СОСТОЯНИЕ ПО УМОЛЧАНИЮ (ДЛЯ ПК) --- */
+@media (min-width: 960px) { /* Применяем только на широких экранах */
+    .ai-chat-settings-panel {
+        top: 0;
+        left: 100%; /* Сдвигаем вправо за пределы модального окна */
+        margin-left: 10px; /* Добавляем отступ */
+    }
+}
+
+/* --- СОСТОЯНИЕ "ВНУТРИ" (ДЛЯ МОБИЛЬНЫХ И КОГДА НЕТ МЕСТА) --- */
+@media (max-width: 959px) {
+    .ai-chat-settings-panel {
+        top: 55px; /* Располагаем под шапкой */
+        right: 15px;
+    }
+}
+/* Этот класс будет добавляться через JS, когда места справа не хватает */
+.ai-chat-settings-panel.is-inside {
+    top: 55px !important;
+    right: 15px !important;
+    left: auto !important; /* Отменяем позиционирование слева */
+    margin-left: 0 !important;
+}
+
+
+body.glass-dark .ai-chat-settings-panel {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background-color: rgba(42, 42, 42, 0.85);
+}
+
+.ai-setting-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ai-setting-group label {
+    font-weight: 500;
+    color: var(--text-color);
+    flex-shrink: 0;
+    margin-right: 10px;
+}
+
+.ai-setting-group span {
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+}
+
+.ai-chat-settings-panel input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    background: var(--border-color);
+    outline: none; border-radius: 3px;
+    margin-top: -5px;
+}
+.ai-chat-settings-panel input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px;
+    background: var(--accent); cursor: pointer; border-radius: 50%;
+}
+.ai-chat-settings-panel input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    background: var(--accent); cursor: pointer; border-radius: 50%; border: none;
+}
+
+/* --- Стили для кастомного выпадающего списка --- */
+.ai-custom-select {
+    position: relative;
+    width: 180px;
+}
+.ai-select-button {
+    width: 100%;
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-align: left;
+}
+.ai-select-button i[data-lucide] {
+    width: 16px;
+    height: 16px;
+    color: var(--secondary-text-color);
+    transition: transform 0.2s ease;
+}
+.ai-custom-select.open .ai-select-button i[data-lucide] {
+    transform: rotate(180deg);
+}
+.ai-select-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 5px 15px var(--shadow-light-color);
+    z-index: 11;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.ai-select-dropdown a {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: var(--text-color);
+    font-size: 0.9em;
+}
+.ai-select-dropdown a:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕДАКТИРОВАНИЯ СООБЩЕНИЙ      === */
+/* ======================================================= */
+
+/* Скрываем обычное сообщение, когда идет редактирование */
+.ai-message-container.editing .ai-message,
+.ai-message-container.editing .ai-user-message-actions {
+    display: none;
+}
+
+.ai-edit-wrapper {
+    width: 100%;
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--accent); /* Подсветка рамкой */
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.ai-edit-textarea {
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 1em;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    padding: 4px;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.ai-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.ai-edit-btn-save,
+.ai-edit-btn-cancel {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-edit-btn-cancel {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+}
+.ai-edit-btn-cancel:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+
+.ai-edit-btn-save {
+    background-color: var(--button-success-bg);
+    color: var(--button-primary-text);
+}
+.ai-edit-btn-save:hover {
+    background-color: var(--button-success-hover-bg);
+}
+
+.ai-edit-btn-save i,
+.ai-edit-btn-cancel i {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- Стили для кнопок действий пользователя --- */
+.ai-user-message-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 0 5px;
+    justify-content: flex-end; /* Выравниваем по правому краю */
+    opacity: 0; /* Скрыты по умолчанию */
+    transition: opacity 0.2s ease;
+}
+
+.ai-message-container:hover .ai-user-message-actions {
+    opacity: 1; /* Показываем при наведении */
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ПРИКРЕПЛЕНИЯ ФАЙЛОВ          === */
+/* ======================================================= */
+
+/* 1. Стилизуем кнопку "+" */
+.ai-chat-attach-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* 2. Обертка для поля ввода и превью */
+.ai-chat-textarea-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3. Стили для плашки с превью файла */
+.ai-attachment-preview {
+    background-color: var(--input-hover-bg-color);
+    border-radius: 12px;
+    padding: 5px 10px;
+    margin: 4px 5px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.85em;
+    animation: fadeIn 0.3s;
+}
+
+.ai-attachment-name {
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-attachment-remove-btn {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+}
+
+.ai-attachment-remove-btn:hover {
+    color: var(--accent);
+}
+
+/* ======================================================= */
+/* ===    СТИЛИ ДЛЯ ПРЕВЬЮ ФАЙЛОВ В AI-ЧАТЕ (v2)       === */
+/* ======================================================= */
+
+/* --- Стили для превью в области ввода --- */
+.ai-attachment-preview {
+    align-items: flex-start; /* Выравниваем по верху */
+}
+
+.ai-attachment-preview img {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover; /* Изображение будет красиво обрезано, а не сжато */
+}
+
+/* --- Стили для превью ВНУТРИ отправленного сообщения --- */
+.ai-message-attachment {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: var(--input-hover-bg-color);
+    padding: 8px;
+    border-radius: 12px;
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    text-decoration: none; /* Убираем подчеркивание у ссылки */
+    transition: all 0.2s ease;
+}
+
+.ai-message-attachment:hover {
+    border-color: var(--accent);
+    transform: scale(1.02);
+}
+
+.ai-message.user .ai-message-attachment {
+    /* Для сообщений пользователя делаем превью чуть темнее фона */
+    background-color: rgba(0, 0, 0, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ai-message.user .ai-message-attachment:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.ai-attachment-thumbnail {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.ai-attachment-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--container-bg-color);
+    border-radius: 8px;
+}
+
+.ai-message.user .ai-attachment-icon {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.ai-attachment-file-info {
+    overflow: hidden;
+}
+
+.ai-attachment-file-name {
+    font-weight: 500;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ai-message.user .ai-attachment-file-name {
+    color: var(--button-primary-text);
+}
+
+.ai-attachment-file-type {
+    font-size: 0.8em;
+    color: var(--secondary-text-color);
+}
+
+.ai-message.user .ai-attachment-file-type {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ИЗОБРАЖЕНИЙ   === */
+/* ======================================================= */
+#imagePreviewModal {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10001; /* Поверх всего */
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-preview-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    animation: zoomIn 0.3s ease;
+}
+
+#previewImage {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.close-image-preview {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.close-image-preview:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+@keyframes zoomIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ТЕКСТА        === */
+/* ======================================================= */
+#textPreviewModal .text-preview-content {
+    background-color: var(--container-bg-color);
+    width: 90vw;
+    height: 90vh;
+    max-width: 800px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s;
+}
+
+.text-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.text-preview-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.close-text-preview {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+}
+.close-text-preview:hover {
+    color: var(--text-color);
+}
+
+#textPreviewBody {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px;
+    margin: 0;
+    font-family: monospace;
+    white-space: pre-wrap; /* Позволяет тексту переноситься */
+    word-wrap: break-word; /* Помогает с длинными строками без пробелов */
+    font-size: 0.9em;
+    line-height: 1.5;
+    color: var(--text-color);
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ОТВЕТА НА СООБЩЕНИЯ В AI-ЧАТЕ  === */
+/* ======================================================= */
+
+/* --- Плашка "Ответ на сообщение" над полем ввода --- */
+.ai-reply-panel {
+    background-color: var(--input-hover-bg-color);
+    border-radius: 8px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 3px solid var(--accent);
+    animation: fadeIn 0.3s;
+}
+
+.ai-reply-info {
+    overflow: hidden; /* Чтобы текст не вылезал */
+    flex-grow: 1;
+}
+
+.ai-reply-title {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+}
+
+.ai-reply-snippet {
+    margin: 2px 0 0 0;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Добавляем многоточие, если не помещается */
+    color: var(--text-color);
+}
+
+.ai-cancel-reply-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    padding: 4px;
+    flex-shrink: 0; /* Кнопка не сжимается */
+    margin-left: 10px;
+}
+
+/* --- Контекст ответа над самим сообщением --- */
+.ai-reply-context {
+    background: var(--input-bg-color);
+    padding: 6px 12px;
+    margin-bottom: -5px; /* Слегка наезжает на сообщение */
+    border-radius: 12px 12px 0 0;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    font-size: 0.85em;
+    max-width: 80%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-left: 3px solid var(--accent);
+}
+
+.ai-reply-context:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+/* Выравниваем для сообщений пользователя */
+.ai-message-container.is-user .ai-reply-context {
+    margin-left: auto;
+}
+
+.ai-reply-author {
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.ai-reply-text {
+    color: var(--secondary-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Анимация подсветки для прокрутки к сообщению */
+@keyframes highlight-fade-ai {
+    from { background-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+    to { background-color: transparent; }
+}
+
+.ai-message-container.highlighted {
+    animation: highlight-fade-ai 2s ease-out;
+    border-radius: 12px;
+}
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ КНОПОК В ПАРСЕРЕ ДЛЯ ВСЕХ ТЕМ      === */
+/* ======================================================= */
+
+/* Применяем единый стиль ко всем главным кнопкам в разделе парсера */
+#runParserBtn,
+#generateTestFromTextBtn,
+#generateTestFromTopicBtn {
+    /* Используем `background` для корректной работы с градиентами */
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    
+    /* Общие стили для солидного вида */
+    width: 100%; /* Растягиваем на всю ширину для мобильных */
+    max-width: 350px; /* Ограничиваем ширину на больших экранах */
+    margin: 10px auto; /* Центрируем и добавляем отступы */
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05em;
+    font-weight: 500;
+    box-shadow: 0 2px 5px var(--shadow-light-color);
+    
+    /* Свойства для анимации градиента */
+    background-size: 200% auto;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Эффект при наведении */
+#runParserBtn:hover,
+#generateTestFromTextBtn:hover,
+#generateTestFromTopicBtn:hover {
+    background-position: right center; /* Анимация градиента */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--shadow-color);
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ КАСТОМНОГО СКРОЛЛБАРА AI-ЧАТА   === */
+/* ======================================================= */
+
+/* 1. Обертка, которая будет содержать и чат, и скроллбар */
+.ai-chat-scroll-wrapper {
+    position: relative; /* Делаем ее точкой отсчета для скроллбара */
+    flex-grow: 1;
+    overflow: hidden; /* Важно, чтобы скрыть "вылезающий" контент */
+    display: flex;
+}
+
+/* 2. Область сообщений теперь занимает все место внутри обертки */
+.ai-chat-messages {
+    flex-grow: 1;
+    /* Плавная прокрутка при кликах на точки */
+    scroll-behavior: smooth; 
+}
+
+/* 3. Скрываем стандартный браузерный скроллбар */
+.ai-chat-messages::-webkit-scrollbar {
+    display: none; /* Для Chrome, Safari, Edge */
+}
+.ai-chat-messages {
+    -ms-overflow-style: none;  /* Для IE и Edge (старый) */
+    scrollbar-width: none;  /* Для Firefox */
+}
+
+/* 4. Контейнер для нашего кастомного скроллбара */
+.ai-custom-scrollbar {
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    right: 5px;
+    width: 16px;
+    z-index: 5;
+}
+
+/* 5. Дорожка (трек), по которой будет двигаться ползунок */
+.scrollbar-track {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 100%;
+    background-color: var(--border-color);
+    border-radius: 1px;
+}
+
+/* 6. Ползунок (ручка) скроллбара */
+.scrollbar-thumb {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    background-color: var(--secondary-text-color);
+    border-radius: 4px;
+    cursor: grab;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+.scrollbar-thumb:hover {
+    opacity: 1;
+}
+.scrollbar-thumb:active {
+    cursor: grabbing;
+}
+
+/* 7. Контейнер для точек-маркеров */
+.scrollbar-dots-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+/* 8. Сами точки-маркеры */
+.scrollbar-dot {
+    position: absolute;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    background-color: var(--accent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%); /* Центрируем точку относительно ее top/left */
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scrollbar-dot:hover {
+    transform: translate(-50%, -50%) scale(1.5);
+    box-shadow: 0 0 5px var(--accent);
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ТУЛТИПА НА СКРОЛЛБАРЕ         === */
+/* ======================================================= */
+
+/* 1. Сам тултип (скрыт по умолчанию) */
+.scrollbar-tooltip {
+    position: absolute;
+    z-index: 10;
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    max-width: 250px; /* Ограничиваем ширину */
+    font-size: 0.9em;
+    line-height: 1.4;
+    word-break: break-word; /* Переносим длинные слова */
+    
+    /* Скрываем по умолчанию и готовим к анимации */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    
+    /* Важно: тултип не должен мешать кликать на точки под ним */
+    pointer-events: none; 
+}
+
+/* 2. Класс для отображения тултипа */
+.scrollbar-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+/* 3. Маленький треугольник-указатель */
+.scrollbar-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -6px; /* Выходит за пределы тултипа справа */
+    margin-top: -6px;
+    border-width: 6px;
+    border-style: solid;
+    /* Создаем треугольник, указывающий вправо */
+    border-color: transparent transparent transparent var(--container-bg-color);
+}
+
+/* Добавляем рамку для треугольника, чтобы он выглядел цельным */
+.scrollbar-tooltip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -7px;
+    margin-top: -7px;
+    border-width: 7px;
+    border-style: solid;
+    border-color: transparent transparent transparent var(--border-color);
 }

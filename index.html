@@ -539,20 +539,97 @@
                     <h3><i data-lucide="brain-circuit"></i> AI Помощник</h3>
                     <!-- Новый контейнер для кнопок -->
                     <div class="ai-chat-header-controls">
+                        <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                        <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
+                        <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
                         <button id="aiChatResizeBtn" class="ai-chat-control-btn" title="Развернуть / Свернуть"><i data-lucide="maximize-2"></i></button>
                         <button id="aiChatCloseBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
                     </div>
-                </div>
-                
-                <div id="aiChatMessages" class="ai-chat-messages">
-                    <!-- Сюда будут добавляться сообщения -->
-                </div>
+                    </div> <!-- Закрывающий </div> для .ai-chat-header -->
+
+                    <!-- ======== НАЧАЛО НОВОЙ ПАНЕЛИ НАСТРОЕК ======== -->
+                    <div id="aiChatSettingsPanel" class="ai-chat-settings-panel hidden">
+
+
+                        <div class="ai-setting-group">
+                            <label for="aiModelSelectContainer">Модель ИИ</label>
+                            <div class="ai-custom-select" id="aiModelSelectContainer">
+                                <button class="ai-select-button">
+                                    <span id="aiModelSelectText">Flash (самая умная и быстрая)</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="ai-select-dropdown hidden">
+                                    <a href="#" data-value="gemini-2.5-flash-lite">Flash 2.5 (самая умная)</a>
+                                    <a href="#" data-value="gemma-3-27b-it">Gemma 3.27b (умная)</a>
+                                    <a href="#" data-value="gemma-3-12b-it">Gemma 3.12b (баланс)</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-setting-group">
+                            <label for="aiResponseLengthSelectContainer">Стиль ответа</label>
+                            <div class="ai-custom-select" id="aiResponseLengthSelectContainer">
+                                <button class="ai-select-button">
+                                    <span id="aiResponseLengthSelectText">Обычный</span>
+                                    <i data-lucide="chevron-down"></i>
+                                </button>
+                                <div class="ai-select-dropdown hidden">
+                                    <a href="#" data-value="short">Короткий</a>
+                                    <a href="#" data-value="medium">Обычный</a>
+                                    <a href="#" data-value="long">Развернутый</a>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <div class="ai-setting-group">
+                            <label for="aiCreativitySlider">Креативность</label>
+                            <span id="aiCreativityValue">Средняя</span>
+                        </div>
+                        <input type="range" id="aiCreativitySlider" min="0" max="2" value="1" step="1">
+                    </div>
+
+                    <!-- === НАЧАЛО ИЗМЕНЕНИЙ: Контейнер для скролла === -->
+                    <div class="ai-chat-scroll-wrapper">
+                        <!-- === НАЧАЛО НОВОГО КОДА === -->
+                        <div id="aiScrollbarTooltip" class="scrollbar-tooltip"></div>
+                        <!-- === КОНЕЦ НОВОГО КОДА === -->
+                        <div id="aiChatMessages" class="ai-chat-messages">
+                            <!-- Сюда будут добавляться сообщения -->
+                        </div>
+                        <div id="aiCustomScrollbar" class="ai-custom-scrollbar hidden">
+                            <div id="aiScrollbarTrack" class="scrollbar-track">
+                                <div id="aiScrollbarDots" class="scrollbar-dots-container"></div>
+                            </div>
+                            <div id="aiScrollbarThumb" class="scrollbar-thumb"></div>
+                        </div>
+                    </div>
+                    <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
+
                 <div class="ai-chat-input-area">
+
+                <div id="aiReplyPanel" class="ai-reply-panel hidden">
+                    <div class="ai-reply-info">
+                        <span class="ai-reply-title">Ответ на сообщение:</span>
+                        <p id="aiReplyText" class="ai-reply-snippet"></p>
+                    </div>
+                    <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ"><i data-lucide="x"></i></button>
+                </div>
+
                     <!-- Новый контейнер-оболочка -->
                     <div class="ai-chat-input-container">
-                        <i data-lucide="plus" class="ai-chat-input-icon"></i>
+                        <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                        <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain">
+                        <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
+                            <i data-lucide="plus" class="ai-chat-input-icon"></i>
+                        </button>
+                        <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
 
-                        <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
+                        <div class="ai-chat-textarea-wrapper"> <!-- Новая обертка для textarea и превью -->
+                            <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
+                            <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
+                        </div>
+
 
                         <button id="aiChatSendBtn" class="advanced-send-btn">
                             <i data-lucide="arrow-up"></i>
@@ -675,6 +752,26 @@
             </div>
         </div>
     </div>
-
+    <!-- ======================================================= -->
+    <!-- ===      НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ПРОСМОТРА ИЗОБРАЖЕНИЙ === -->
+    <!-- ======================================================= -->
+    <div id="imagePreviewModal" class="modal-overlay hidden">
+        <div class="image-preview-content">
+            <img id="previewImage" src="" alt="Предпросмотр изображения">
+        </div>
+        <button class="close-image-preview" title="Закрыть"><i data-lucide="x"></i></button>
+    </div>
+    <!-- ======================================================= -->
+    <!-- ===      НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ПРОСМОТРА ТЕКСТА   === -->
+    <!-- ======================================================= -->
+    <div id="textPreviewModal" class="modal-overlay hidden">
+        <div class="text-preview-content">
+            <div class="text-preview-header">
+                <h3 id="textPreviewFilename">Имя файла</h3>
+                <button class="close-text-preview" title="Закрыть"><i data-lucide="x"></i></button>
+            </div>
+            <pre id="textPreviewBody"></pre>
+        </div>
+    </div>
 </body>
 </html>
