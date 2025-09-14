@@ -539,11 +539,12 @@
                     <h3><i data-lucide="brain-circuit"></i> AI Помощник</h3>
                     <!-- Новый контейнер для кнопок -->
                     <div class="ai-chat-header-controls">
-                        <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+
+                        <button id="aiChatHistoryBtn" class="ai-chat-control-btn" title="История чатов"><i data-lucide="history"></i></button>
                         <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
-                        <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
                         <button id="aiChatResizeBtn" class="ai-chat-control-btn" title="Развернуть / Свернуть"><i data-lucide="maximize-2"></i></button>
                         <button id="aiChatCloseBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
+
                     </div>
                     </div> <!-- Закрывающий </div> для .ai-chat-header -->
 
@@ -589,52 +590,64 @@
                         <input type="range" id="aiCreativitySlider" min="0" max="2" value="1" step="1">
                     </div>
 
-                    <!-- === НАЧАЛО ИЗМЕНЕНИЙ: Контейнер для скролла === -->
-                    <div class="ai-chat-scroll-wrapper">
-                        <!-- === НАЧАЛО НОВОГО КОДА === -->
-                        <div id="aiScrollbarTooltip" class="scrollbar-tooltip"></div>
-                        <!-- === КОНЕЦ НОВОГО КОДА === -->
-                        <div id="aiChatMessages" class="ai-chat-messages">
-                            <!-- Сюда будут добавляться сообщения -->
-                        </div>
-                        <div id="aiCustomScrollbar" class="ai-custom-scrollbar hidden">
-                            <div id="aiScrollbarTrack" class="scrollbar-track">
-                                <div id="aiScrollbarDots" class="scrollbar-dots-container"></div>
+                    <!-- === НАЧАЛО ИЗМЕНЕНИЙ: Контейнер для скролла и сайдбара === -->
+                    <div class="ai-chat-body-wrapper">
+                        <!-- ======== САЙДБАР ИСТОРИИ ЧАТОВ ======== -->
+                        <div id="aiChatSidebar" class="ai-chat-sidebar">
+                            <div class="ai-sidebar-header">
+                                <h4>История чатов</h4>
+                                <button id="aiNewChatBtn" class="ai-new-chat-btn" title="Начать новый чат">
+                                    <i data-lucide="plus"></i>
+                                </button>
                             </div>
-                            <div id="aiScrollbarThumb" class="scrollbar-thumb"></div>
+                            <ul id="aiChatHistoryList" class="ai-chat-history-list">
+                                <!-- Сюда будут добавляться чаты из JS -->
+                            </ul>
                         </div>
-                    </div>
+                        <!-- ======== КОНЕЦ САЙДБАРА ======== -->
+
+                        <div class="ai-chat-scroll-wrapper">
+                            <div id="aiScrollbarTooltip" class="scrollbar-tooltip"></div>
+                            <div id="aiChatMessages" class="ai-chat-messages">
+                                <!-- Сюда будут добавляться сообщения -->
+                            </div>
+                            <div id="aiCustomScrollbar" class="ai-custom-scrollbar hidden">
+                                <div id="aiScrollbarTrack" class="scrollbar-track">
+                                    <div id="aiScrollbarDots" class="scrollbar-dots-container"></div>
+                                </div>
+                                <div id="aiScrollbarThumb" class="scrollbar-thumb"></div>
+                            </div>
+                        </div> <!-- <-- ВОТ ОН, ЗАКРЫВАЮЩИЙ ТЕГ ДЛЯ ai-chat-scroll-wrapper -->
+                    </div> <!-- <-- И ВОТ ГЛАВНЫЙ ЗАКРЫВАЮЩИЙ ТЕГ ДЛЯ ai-chat-body-wrapper -->
                     <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
 
-                <div class="ai-chat-input-area">
+                    <div class="ai-chat-input-area">
 
-                <div id="aiReplyPanel" class="ai-reply-panel hidden">
-                    <div class="ai-reply-info">
-                        <span class="ai-reply-title">Ответ на сообщение:</span>
-                        <p id="aiReplyText" class="ai-reply-snippet"></p>
-                    </div>
-                    <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ"><i data-lucide="x"></i></button>
-                </div>
-
-                    <!-- Новый контейнер-оболочка -->
-                    <div class="ai-chat-input-container">
-                        <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
-                        <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain">
-                        <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
-                            <i data-lucide="plus" class="ai-chat-input-icon"></i>
-                        </button>
-                        <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
-
-                        <div class="ai-chat-textarea-wrapper"> <!-- Новая обертка для textarea и превью -->
-                            <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
-                            <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
+                        <div id="aiReplyPanel" class="ai-reply-panel hidden">
+                            <div class="ai-reply-info">
+                                <span class="ai-reply-title">Ответ на сообщение:</span>
+                                <p id="aiReplyText" class="ai-reply-snippet"></p>
+                            </div>
+                            <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ"><i data-lucide="x"></i></button>
                         </div>
 
+                        <!-- Новый контейнер-оболочка -->
+                        <div class="ai-chat-input-container">
+                            <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain">
+                            <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
+                                <i data-lucide="plus" class="ai-chat-input-icon"></i>
+                            </button>
+                            
+                            <div class="ai-chat-textarea-wrapper"> <!-- Новая обертка для textarea и превью -->
+                                <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
+                                <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
+                            </div>
 
-                        <button id="aiChatSendBtn" class="advanced-send-btn">
-                            <i data-lucide="arrow-up"></i>
-                        </button>
-                    </div>
+                            <button id="aiChatSendBtn" class="advanced-send-btn">
+                                <i data-lucide="arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>     
                 </div>
             </div>
         </div>
