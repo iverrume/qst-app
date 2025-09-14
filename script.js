@@ -7467,7 +7467,8 @@ const mainApp = (function() {
         setupExtensionListener();
         setupAnimationObserver();
         updateTranslateEngineUI();
-
+        // === НОВЫЙ ВЫЗОВ ДЛЯ ИНИЦИАЛИЗАЦИИ AI-ЧАТА ===
+        initAIChat();
         // Скрываем индикатор начальной загрузки, когда все готово
         getEl('initial-loader')?.classList.add('hidden');
     }
@@ -14337,6 +14338,145 @@ const mainApp = (function() {
             modal.classList.remove('hidden');
         });
     }
+
+
+    // =======================================================
+    // ===         НОВЫЙ МОДУЛЬ ДЛЯ AI-ЧАТА (FAB)          ===
+    // =======================================================
+
+    // Переменные для нового чата
+    let aiChatFab, aiChatModal, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn;
+    let aiChatHistory = [];
+    let isAIResponding = false;
+
+    /**
+     * Инициализирует элементы AI-чата и навешивает слушатели.
+     * Вызывается один раз из initializeApp.
+     */
+    function initAIChat() {
+        // Находим элементы
+        aiChatFab = getEl('aiChatFab');
+        aiChatModal = getEl('aiChatModal');
+        aiChatCloseBtn = getEl('aiChatCloseBtn');
+        aiChatMessages = getEl('aiChatMessages');
+        aiChatInput = getEl('aiChatInput');
+        aiChatSendBtn = getEl('aiChatSendBtn');
+
+        // Навешиваем слушатели
+        aiChatFab?.addEventListener('click', openAIChat);
+        aiChatCloseBtn?.addEventListener('click', closeAIChat);
+        aiChatSendBtn?.addEventListener('click', sendAIChatMessage);
+        aiChatInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                sendAIChatMessage();
+            }
+        });
+    }
+
+    /**
+     * Открывает модальное окно AI-чата.
+     */
+    function openAIChat() {
+        if (!aiChatModal) return;
+        aiChatModal.classList.remove('hidden');
+        aiChatInput.focus();
+
+        // Если история пуста, добавляем приветственное сообщение
+        if (aiChatHistory.length === 0) {
+            aiChatHistory.push({
+                role: 'model',
+                content: 'Привет! Я ваш AI-помощник. Чем могу помочь?'
+            });
+            renderAIChatMessages();
+        }
+    }
+
+    /**
+     * Закрывает модальное окно AI-чата.
+     */
+    function closeAIChat() {
+        if (!aiChatModal) return;
+        aiChatModal.classList.add('hidden');
+    }
+
+    /**
+     * Отображает всю историю чата в модальном окне.
+     */
+    function renderAIChatMessages() {
+        if (!aiChatMessages) return;
+        aiChatMessages.innerHTML = '';
+
+        aiChatHistory.forEach(msg => {
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('ai-message', msg.role); // role будет 'user' или 'model'
+            
+            if (msg.content === 'typing...') {
+                messageEl.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+            } else {
+                // Используем marked.js для рендеринга Markdown
+                messageEl.innerHTML = window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
+            }
+            aiChatMessages.appendChild(messageEl);
+        });
+
+        // Прокручиваем вниз к последнему сообщению
+        aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+    }
+
+    /**
+     * Отправляет сообщение пользователя, получает ответ от ИИ и обновляет чат.
+     */
+    async function sendAIChatMessage() {
+        if (isAIResponding) return;
+        const userInput = aiChatInput.value.trim();
+        if (!userInput) return;
+
+        // 1. Добавляем сообщение пользователя в историю и UI
+        aiChatHistory.push({ role: 'user', content: userInput });
+        renderAIChatMessages();
+        aiChatInput.value = '';
+
+        // 2. Показываем индикатор загрузки
+        isAIResponding = true;
+        aiChatSendBtn.disabled = true;
+        aiChatHistory.push({ role: 'model', content: 'typing...' });
+        renderAIChatMessages();
+
+        try {
+            // 3. Отправляем запрос на сервер
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'getGeneralChatReply',
+                    history: aiChatHistory.slice(0, -1), // Отправляем всю историю, кроме "typing..."
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                })
+            });
+
+            const result = await response.json();
+
+            // 4. Убираем "typing..." и добавляем ответ ИИ
+            aiChatHistory.pop(); 
+            if (result.success && result.reply) {
+                aiChatHistory.push({ role: 'model', content: result.reply });
+            } else {
+                throw new Error(result.error || 'Не удалось получить ответ от ИИ.');
+            }
+        } catch (error) {
+            console.error("Ошибка AI-чата:", error);
+            aiChatHistory.pop(); // Убираем "typing..."
+            aiChatHistory.push({ role: 'model', content: `Произошла ошибка: ${error.message}` });
+        } finally {
+            // 5. Обновляем UI и возвращаем кнопку в рабочее состояние
+            isAIResponding = false;
+            aiChatSendBtn.disabled = false;
+            renderAIChatMessages();
+        }
+    }
+
+    // === КОНЕЦ НОВОГО МОДУЛЯ ДЛЯ AI-ЧАТА ===
+
 
     // --- Public methods exposed from mainApp ---
     return {

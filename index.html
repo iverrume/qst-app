@@ -522,6 +522,32 @@
             </p>
         </footer>
         
+        <!-- ======================================================= -->
+        <!-- ===      НОВАЯ КНОПКА (FAB) ДЛЯ AI-ЧАТА             === -->
+        <!-- ======================================================= -->
+        <button id="aiChatFab" class="ai-chat-fab" title="AI Помощник">
+            <i data-lucide="bot"></i>
+        </button>
+
+        <!-- ======================================================= -->
+        <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ AI-ЧАТА             === -->
+        <!-- ======================================================= -->
+        <div id="aiChatModal" class="modal-overlay hidden">
+            <div class="modal-content ai-chat-modal-content">
+                <div class="ai-chat-header">
+                    <h3><i data-lucide="brain-circuit"></i> AI Помощник</h3>
+                    <button id="aiChatCloseBtn" class="ai-chat-close-btn"><i data-lucide="x"></i></button>
+                </div>
+                <div id="aiChatMessages" class="ai-chat-messages">
+                    <!-- Сюда будут добавляться сообщения -->
+                </div>
+                <div class="ai-chat-input-area">
+                    <textarea id="aiChatInput" placeholder="Спросите что-нибудь у ИИ..."></textarea>
+                    <button id="aiChatSendBtn" class="advanced-send-btn"><i data-lucide="send"></i></button>
+                </div>
+            </div>
+        </div>
+
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
     </div> 
 
