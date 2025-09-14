@@ -6261,6 +6261,10 @@ const mainApp = (function() {
             confirm_finish_with_unanswered_title: "Завершить тест?",
             confirm_finish_with_unanswered_text: "У вас остались неотвеченные вопросы. Вы уверены, что хотите завершить тест сейчас?",
             // === КОНЕЦ НОВОГО КОДА ===
+            ai_chat_placeholder: "Спросите что-нибудь...",
+            ai_copy_response: "Копировать ответ",
+            ai_share_response: "Поделиться",
+            ai_regenerate_response: "Перегенерировать ответ",
             session_save_new_button: "Сохранить как новую"
         },
         kk: {
@@ -6627,6 +6631,10 @@ const mainApp = (function() {
             confirm_finish_with_unanswered_title: "Тестті аяқтайсыз ба?",
             confirm_finish_with_unanswered_text: "Сізде жауап берілмеген сұрақтар қалды. Тестті қазір аяқтағыңыз келетініне сенімдісіз бе?",
             // === КОНЕЦ НОВОГО КОДА ===
+            ai_chat_placeholder: "Бірдеңе сұраңыз...",
+            ai_copy_response: "Жауапты көшіру",
+            ai_share_response: "Бөлісу",
+            ai_regenerate_response: "Жауапты қайта құру",
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -7000,6 +7008,10 @@ const mainApp = (function() {
             confirm_finish_with_unanswered_title: "Finish the quiz?",
             confirm_finish_with_unanswered_text: "You have unanswered questions left. Are you sure you want to finish the quiz now?",
             // === КОНЕЦ НОВОГО КОДА ===
+            ai_chat_placeholder: "Ask something...",
+            ai_copy_response: "Copy response",
+            ai_share_response: "Share",
+            ai_regenerate_response: "Regenerate response",
             session_save_new_button: "Save as New"
         }
 
@@ -14340,14 +14352,16 @@ const mainApp = (function() {
     }
 
 
-    // =======================================================
-    // ===         НОВЫЙ МОДУЛЬ ДЛЯ AI-ЧАТА (FAB)          ===
-    // =======================================================
 
-    // Переменные для нового чата
-    let aiChatFab, aiChatModal, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn;
+// =======================================================
+// ===         НОВЫЙ МОДУЛЬ ДЛЯ AI-ЧАТА (FAB)          ===
+// =======================================================
+
+// Переменные для нового чата
+    let aiChatFab, aiChatModal, aiChatModalContent, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn, aiChatResizeBtn;
     let aiChatHistory = [];
     let isAIResponding = false;
+    let isAIChatExpanded = false;
 
     /**
      * Инициализирует элементы AI-чата и навешивает слушатели.
@@ -14358,20 +14372,176 @@ const mainApp = (function() {
         aiChatFab = getEl('aiChatFab');
         aiChatModal = getEl('aiChatModal');
         aiChatCloseBtn = getEl('aiChatCloseBtn');
+        aiChatResizeBtn = getEl('aiChatResizeBtn');
+        // --- ИСПРАВЛЕНИЕ: Используем более конкретный селектор, чтобы точно выбрать нужный элемент для изменения размера ---
+        aiChatModalContent = aiChatModal?.querySelector('.ai-chat-modal-content'); 
         aiChatMessages = getEl('aiChatMessages');
         aiChatInput = getEl('aiChatInput');
         aiChatSendBtn = getEl('aiChatSendBtn');
 
         // Навешиваем слушатели
-        aiChatFab?.addEventListener('click', openAIChat);
+        if (aiChatFab) {
+            makeFabDraggable(aiChatFab);
+            loadFabPosition(aiChatFab);
+        }
         aiChatCloseBtn?.addEventListener('click', closeAIChat);
+        aiChatResizeBtn?.addEventListener('click', toggleAIChatSize);
         aiChatSendBtn?.addEventListener('click', sendAIChatMessage);
-        aiChatInput?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                e.preventDefault();
-                sendAIChatMessage();
+        
+        if (aiChatInput && aiChatSendBtn) {
+            aiChatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    e.preventDefault();
+                    sendAIChatMessage();
+                }
+            });
+            aiChatInput.addEventListener('input', () => {
+                const hasText = aiChatInput.value.trim().length > 0;
+                aiChatSendBtn.disabled = !hasText;
+                aiChatInput.style.height = 'auto';
+                aiChatInput.style.height = `${aiChatInput.scrollHeight}px`;
+            });
+            aiChatSendBtn.disabled = true;
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ (С ЛОГИРОВАНИЕМ)
+     * Переключает размер модального окна AI-чата и меняет иконку.
+     */
+    /**
+     * Переключает размер модального окна AI-чата и меняет иконку.
+     */
+    function toggleAIChatSize() {
+        if (!aiChatModalContent || !aiChatResizeBtn) return;
+
+        isAIChatExpanded = !isAIChatExpanded;
+        
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Ищем SVG-элемент вместо тега <i> ---
+        const iconEl = aiChatResizeBtn.querySelector('svg');
+        if (!iconEl) {
+            console.error('Не удалось найти SVG-иконку внутри кнопки разворачивания.');
+            return;
+        }
+        
+        // 1. Переключаем CSS-класс
+        aiChatModalContent.classList.toggle('expanded', isAIChatExpanded);
+        
+        // 2. Меняем иконку, заменяя SVG-элемент новым тегом <i>
+        const newIconName = isAIChatExpanded ? 'minimize-2' : 'maximize-2';
+        aiChatResizeBtn.innerHTML = `<i data-lucide="${newIconName}"></i>`;
+        
+        // 3. Перерисовываем новую иконку
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Делает FAB-кнопку перетаскиваемой и обрабатывает клики/перетаскивания.
+     * @param {HTMLElement} fab - Элемент кнопки.
+     */
+    function makeFabDraggable(fab) {
+        let isDragging = false;
+        let hasDragged = false;
+        let offsetX, offsetY;
+
+        const onDragStart = (e) => {
+            isDragging = true;
+            hasDragged = false;
+            fab.classList.add('dragging');
+            e.preventDefault();
+
+            const rect = fab.getBoundingClientRect();
+            const eventPos = e.touches ? e.touches[0] : e;
+            
+            offsetX = eventPos.clientX - rect.left;
+            offsetY = eventPos.clientY - rect.top;
+
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('touchmove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            window.addEventListener('touchend', onDragEnd);
+        };
+
+        const onDragMove = (e) => {
+            if (!isDragging) return;
+            hasDragged = true;
+
+            const eventPos = e.touches ? e.touches[0] : e;
+            let newLeft = eventPos.clientX - offsetX;
+            let newTop = eventPos.clientY - offsetY;
+
+            // Ограничиваем движение в пределах окна
+            const fabWidth = fab.offsetWidth;
+            const fabHeight = fab.offsetHeight;
+            newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - fabWidth));
+            newTop = Math.max(0, Math.min(newTop, window.innerHeight - fabHeight));
+
+            fab.style.left = `${newLeft}px`;
+            fab.style.top = `${newTop}px`;
+            // Убираем bottom/right, чтобы left/top имели приоритет
+            fab.style.bottom = 'auto';
+            fab.style.right = 'auto';
+        };
+
+        const onDragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            fab.classList.remove('dragging');
+
+            window.removeEventListener('mousemove', onDragMove);
+            window.removeEventListener('touchmove', onDragMove);
+            window.removeEventListener('mouseup', onDragEnd);
+            window.removeEventListener('touchend', onDragEnd);
+
+            if (hasDragged) {
+                // Если было перетаскивание, сохраняем позицию
+                saveFabPosition(fab);
+            } else {
+                // Если перетаскивания не было, это был клик - открываем чат
+                openAIChat();
             }
-        });
+        };
+
+        fab.addEventListener('mousedown', onDragStart);
+        fab.addEventListener('touchstart', onDragStart);
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Загружает и применяет сохраненную позицию FAB-кнопки из localStorage.
+     * @param {HTMLElement} fab - Элемент кнопки.
+     */
+    function loadFabPosition(fab) {
+        const savedPos = localStorage.getItem('aiChatFabPosition');
+        if (savedPos) {
+            try {
+                const pos = JSON.parse(savedPos);
+                if (pos.left && pos.top) {
+                    fab.style.left = pos.left;
+                    fab.style.top = pos.top;
+                    fab.style.bottom = 'auto';
+                    fab.style.right = 'auto';
+                }
+            } catch (e) {
+                console.error("Не удалось загрузить позицию FAB-кнопки:", e);
+            }
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Сохраняет текущую позицию FAB-кнопки в localStorage.
+     * @param {HTMLElement} fab - Элемент кнопки.
+     */
+    function saveFabPosition(fab) {
+        const pos = {
+            left: fab.style.left,
+            top: fab.style.top
+        };
+        localStorage.setItem('aiChatFabPosition', JSON.stringify(pos));
     }
 
     /**
@@ -14400,6 +14570,9 @@ const mainApp = (function() {
         aiChatModal.classList.add('hidden');
     }
 
+
+
+
     /**
      * Отображает всю историю чата в модальном окне.
      */
@@ -14407,22 +14580,49 @@ const mainApp = (function() {
         if (!aiChatMessages) return;
         aiChatMessages.innerHTML = '';
 
-        aiChatHistory.forEach(msg => {
+        aiChatHistory.forEach((msg, index) => {
+            const messageContainer = document.createElement('div'); // Общая обертка
+            messageContainer.className = `ai-message-container is-${msg.role}`;
+
             const messageEl = document.createElement('div');
-            messageEl.classList.add('ai-message', msg.role); // role будет 'user' или 'model'
+            messageEl.classList.add('ai-message', msg.role);
             
             if (msg.content === 'typing...') {
                 messageEl.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
             } else {
-                // Используем marked.js для рендеринга Markdown
                 messageEl.innerHTML = window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
             }
-            aiChatMessages.appendChild(messageEl);
+            
+            messageContainer.appendChild(messageEl);
+
+            // --- НОВЫЙ КОД: Добавляем панель действий для сообщений ИИ ---
+            const isLastMessage = index === aiChatHistory.length - 1;
+            if (msg.role === 'model' && msg.content !== 'typing...' && isLastMessage) {
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'ai-message-actions';
+                actionsContainer.innerHTML = `
+                    <button class="ai-action-btn" title="${_('ai_copy_response')}" onclick="mainApp.handleCopyAIChat(this)"><i data-lucide="copy"></i></button>
+                    <button class="ai-action-btn" title="${_('ai_share_response')}" onclick="mainApp.handleShareAIChat(this)"><i data-lucide="share-2"></i></button>
+                    <button class="ai-action-btn" title="${_('ai_regenerate_response')}" onclick="mainApp.regenerateLastAIResponse()"><i data-lucide="refresh-cw"></i></button>
+                `;
+                messageContainer.appendChild(actionsContainer);
+            }
+            // --- КОНЕЦ НОВОГО КОДА ---
+            
+            aiChatMessages.appendChild(messageContainer);
         });
 
-        // Прокручиваем вниз к последнему сообщению
+        // Перерисовываем иконки Lucide, если они были добавлены
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
         aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
     }
+
+
+
+
 
     /**
      * Отправляет сообщение пользователя, получает ответ от ИИ и обновляет чат.
@@ -14475,7 +14675,101 @@ const mainApp = (function() {
         }
     }
 
-    // === КОНЕЦ НОВОГО МОДУЛЯ ДЛЯ AI-ЧАТА ===
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Копирует текстовое содержимое сообщения ИИ в буфер обмена.
+     * @param {HTMLElement} buttonElement - Кнопка, на которую нажали.
+     */
+    function handleCopyAIChat(buttonElement) {
+        const messageEl = buttonElement.closest('.ai-message-container').querySelector('.ai-message');
+        if (messageEl) {
+            copyToClipboardMain(messageEl.innerText); // Используем innerText для получения чистого текста
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Пытается поделиться ответом ИИ через Web Share API или копирует его.
+     * @param {HTMLElement} buttonElement - Кнопка, на которую нажали.
+     */
+    async function handleShareAIChat(buttonElement) {
+        const messageEl = buttonElement.closest('.ai-message-container').querySelector('.ai-message');
+        if (!messageEl) return;
+
+        const textToShare = messageEl.innerText;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Ответ от AI Помощника',
+                    text: textToShare,
+                });
+            } catch (error) {
+                console.log('Пользователь отменил шеринг или произошла ошибка:', error);
+            }
+        } else {
+            // Fallback для десктопа или браузеров без поддержки
+            copyToClipboardMain(textToShare);
+            showToast('API "Поделиться" не поддерживается. Текст скопирован.', 'info');
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ
+     * Запускает повторную генерацию последнего ответа ИИ.
+     */
+    async function regenerateLastAIResponse() {
+        if (isAIResponding) return;
+
+        // 1. Находим последнее сообщение пользователя
+        let lastUserMessageIndex = -1;
+        for (let i = aiChatHistory.length - 1; i >= 0; i--) {
+            if (aiChatHistory[i].role === 'user') {
+                lastUserMessageIndex = i;
+                break;
+            }
+        }
+        if (lastUserMessageIndex === -1) return; // Нечего перегенерировать
+
+        // 2. "Откатываем" историю до последнего сообщения пользователя
+        aiChatHistory = aiChatHistory.slice(0, lastUserMessageIndex + 1);
+
+        // 3. Запускаем процесс ответа, как в sendAIChatMessage
+        isAIResponding = true;
+        aiChatSendBtn.disabled = true;
+        aiChatHistory.push({ role: 'model', content: 'typing...' });
+        renderAIChatMessages();
+
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'getGeneralChatReply',
+                    history: aiChatHistory.slice(0, -1),
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                })
+            });
+            const result = await response.json();
+            aiChatHistory.pop(); // Убираем "typing..."
+            if (result.success && result.reply) {
+                aiChatHistory.push({ role: 'model', content: result.reply });
+            } else {
+                throw new Error(result.error || 'Не удалось получить ответ от ИИ.');
+            }
+        } catch (error) {
+            console.error("Ошибка при перегенерации:", error);
+            aiChatHistory.pop();
+            aiChatHistory.push({ role: 'model', content: `Произошла ошибка: ${error.message}` });
+        } finally {
+            isAIResponding = false;
+            aiChatSendBtn.disabled = false;
+            renderAIChatMessages();
+        }
+    }
+
+
 
 
     // --- Public methods exposed from mainApp ---
@@ -14501,6 +14795,9 @@ const mainApp = (function() {
         animateTextTransformation: animateTextTransformation,
         showToast: showToast, // <-- ДОБАВЛЕНО: Делаем функцию showToast публичной
         showConfirmationModal: showConfirmationModal, 
+        handleCopyAIChat: handleCopyAIChat,
+        handleShareAIChat: handleShareAIChat,
+        regenerateLastAIResponse: regenerateLastAIResponse,
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания.');
             console.log('detectMobileDevice():', detectMobileDevice());
