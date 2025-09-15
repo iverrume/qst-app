@@ -9591,26 +9591,30 @@ body.glass-dark .ai-chat-settings-panel {
     margin-left: 10px;
 }
 
-/* --- Контекст ответа над самим сообщением --- */
+
+
+/* --- Контекст ответа над самим сообщением (ИСПРАВЛЕНО) --- */
 .ai-reply-context {
     background: var(--input-bg-color);
     padding: 6px 12px;
-    margin-bottom: -5px; /* Слегка наезжает на сообщение */
+    margin-bottom: -5px;
     border-radius: 12px 12px 0 0;
     border: 1px solid var(--border-color);
     border-bottom: none;
     font-size: 0.85em;
-    max-width: 80%;
+    max-width: 100%; /* <-- ИЗМЕНЕНИЕ: Позволяем занимать всю ширину родителя */
+    box-sizing: border-box; /* <-- ДОБАВЛЕНО: Для корректного расчета ширины */
     cursor: pointer;
     transition: background-color 0.2s ease;
     border-left: 3px solid var(--accent);
+    display: flex; /* <-- ДОБАВЛЕНО: Включаем Flexbox */
+    flex-direction: column; /* <-- ДОБАВЛЕНО: Элементы будут в столбик */
 }
 
 .ai-reply-context:hover {
     background-color: var(--input-hover-bg-color);
 }
 
-/* Выравниваем для сообщений пользователя */
 .ai-message-container.is-user .ai-reply-context {
     margin-left: auto;
 }
@@ -9618,14 +9622,19 @@ body.glass-dark .ai-chat-settings-panel {
 .ai-reply-author {
     font-weight: bold;
     color: var(--accent);
+    flex-shrink: 0; /* <-- ДОБАВЛЕНО: Имя автора не должно сжиматься */
 }
 
 .ai-reply-text {
     color: var(--secondary-text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal; /* <-- ГЛАВНОЕ ИЗМЕНЕНИЕ: Разрешаем перенос текста */
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    word-break: break-word; /* <-- ДОБАВЛЕНО: Принудительный перенос длинных слов */
 }
+
+
+
 
 /* Анимация подсветки для прокрутки к сообщению */
 @keyframes highlight-fade-ai {
@@ -9772,72 +9781,60 @@ body.glass-dark .ai-chat-settings-panel {
 }
 
 /* ======================================================= */
-/* ===         СТИЛИ ДЛЯ ТУЛТИПА НА СКРОЛЛБАРЕ         === */
+/* ===  ФИНАЛЬНЫЕ СТИЛИ ДЛЯ ТУЛТИПА НА СКРОЛЛБАРЕ (v2)  === */
 /* ======================================================= */
 
-/* 1. Сам тултип (скрыт по умолчанию) */
 .scrollbar-tooltip {
-    position: absolute;
-    z-index: 10;
+    position: fixed; 
+    z-index: 10002;
+    right: auto; 
+    
     background-color: var(--container-bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     padding: 8px 12px;
     border-radius: 10px;
     box-shadow: 0 4px 15px var(--shadow-color);
-    max-width: 250px; /* Ограничиваем ширину */
+    max-width: 250px;
     font-size: 0.9em;
     line-height: 1.4;
-    word-break: break-word; /* Переносим длинные слова */
+    word-break: break-word;
     
-    /* Скрываем по умолчанию и готовим к анимации */
     opacity: 0;
     visibility: hidden;
-    transform: translateX(10px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: scale(0.95);
+    /* === ИЗМЕНЕНИЕ: Добавляем transition-delay === */
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s; /* Скрываем мгновенно, но с задержкой */
     
-    /* Важно: тултип не должен мешать кликать на точки под ним */
     pointer-events: none; 
 }
 
-/* 2. Класс для отображения тултипа */
 .scrollbar-tooltip.visible {
     opacity: 1;
     visibility: visible;
-    transform: translateX(0);
+    transform: scale(1);
+    transition-delay: 0s; /* Показываем сразу */
 }
 
-/* 3. Маленький треугольник-указатель */
+/* Треугольник-указатель (теперь он слева от тултипа) */
 .scrollbar-tooltip::after {
     content: '';
     position: absolute;
     top: 50%;
-    right: -6px; /* Выходит за пределы тултипа справа */
+    left: 100%; /* На правой границе тултипа */
     margin-top: -6px;
     border-width: 6px;
     border-style: solid;
-    /* Создаем треугольник, указывающий вправо */
     border-color: transparent transparent transparent var(--container-bg-color);
 }
 
-/* Добавляем рамку для треугольника, чтобы он выглядел цельным */
 .scrollbar-tooltip::before {
     content: '';
     position: absolute;
     top: 50%;
-    right: -7px;
+    left: 100%;
     margin-top: -7px;
-    border-width: 7px;
-    border-style: solid;
-    border-color: transparent transparent transparent var(--border-color);
-}
-
-.scrollbar-tooltip::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    right: -7px;
-    margin-top: -7px;
+    margin-left: -1px; /* Сдвигаем чуть левее для идеального совпадения */
     border-width: 7px;
     border-style: solid;
     border-color: transparent transparent transparent var(--border-color);
@@ -9947,11 +9944,19 @@ body.glass-dark .ai-chat-settings-panel {
     background-color: var(--input-hover-bg-color);
 }
 
-/* Активный чат */
+
+/* Активный чат (базовый стиль для всех тем) */
 .ai-chat-history-item.active {
-    background-color: var(--button-primary-bg);
+    background: var(--button-primary-bg); /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: 'background-color' на 'background' */
     color: var(--button-primary-text);
     font-weight: 500;
+}
+
+/* ИСПРАВЛЕНИЕ: Переопределяем цвета для светлой темы Claude (это правило можно оставить, оно не мешает) */
+body.claude-mode .ai-chat-history-item.active {
+    /* Используем цвета вторичной кнопки для лучшего контраста */
+    background-color: var(--button-secondary-bg); /* Светло-бежевый фон */
+    color: var(--button-secondary-text);      /* Темный текст */
 }
 
 .ai-chat-history-title {
@@ -9984,16 +9989,295 @@ body.glass-dark .ai-chat-settings-panel {
         margin-left: 0;
     }
 
-    /* Добавляем затемнение фона */
-    .ai-chat-modal-content.sidebar-open::after {
+}
+
+
+/* ======================================================= */
+/* ===    СОВРЕМЕННАЯ АДАПТИВНАЯ ВЕРСТКА AI-ЧАТА V3     === */
+/* ======================================================= */
+
+/* --- ЕДИНЫЕ СТИЛИ ДЛЯ ВСЕХ РАЗМЕРОВ ЭКРАНА --- */
+
+.ai-chat-body-wrapper {
+    position: relative; /* Важно для позиционирования оверлея */
+    overflow: hidden; /* Скрываем "выезжающее" меню */
+}
+
+.ai-chat-sidebar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px; /* Фиксированная ширина для удобства */
+    max-width: 85%; /* Ограничение для очень узких экранов */
+    z-index: 1001;
+    transform: translateX(-100%); /* Меню всегда скрыто по умолчанию */
+    transition: transform 0.3s ease-in-out;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    /* Добавляем фон, чтобы сайдбар не был прозрачным в стеклянных темах */
+    background-color: var(--container-bg-color); 
+}
+
+/* Класс для показа меню */
+.ai-chat-modal-content.sidebar-open .ai-chat-sidebar {
+    transform: translateX(0);
+}
+
+/* "Ручка" для открытия */
+.ai-sidebar-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%; /* Находится сразу за правой границей сайдбара */
+    width: 20px; /* Ширина области для свайпа/клика */
+    cursor: pointer;
+    z-index: 1002;
+}
+
+/* Визуальный индикатор для ручки */
+.ai-sidebar-handle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 40px;
+    background-color: var(--accent);
+    border-radius: 2px;
+    opacity: 0.3; /* <-- ГЛАВНОЕ ИЗМЕНЕНИЕ: Ручка теперь видна по умолчанию */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Показываем и увеличиваем ручку при наведении на ее область */
+.ai-sidebar-handle:hover::after {
+    opacity: 0.8;
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Оверлей для затемнения фона (появляется только на мобильных) */
+@media (max-width: 800px) {
+    .ai-chat-modal-content.sidebar-open .ai-chat-scroll-wrapper::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 240px; /* Начинается там, где кончается сайдбар */
+        left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 9;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1000;
+        animation: fadeIn 0.3s;
+    }
+    .ai-chat-scroll-wrapper {
+        position: relative;
     }
 }
 
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ В AI-ЧАТЕ       === */
+/* ======================================================= */
+.ai-toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+.ai-toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.ai-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: .3s;
+  border-radius: 24px;
+}
+.ai-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--container-bg-color);
+  transition: .3s;
+  border-radius: 50%;
+}
+.ai-toggle-switch input:checked + .ai-toggle-slider {
+  background-color: var(--accent);
+}
+.ai-toggle-switch input:checked + .ai-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* ======================================================= */
+/* === СТИЛИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ ПОИСКА НАД ПОЛЕМ ВВОДА === */
+/* ======================================================= */
+
+.ai-main-controls {
+    display: flex;
+    justify-content: flex-start; /* <-- ИЗМЕНЕНИЕ: Выравниваем по левому краю */
+    align-items: center;
+    gap: 20px; /* Добавляем отступ между будущими переключателями */
+    padding: 0 5px 8px 5px;
+    border-bottom: 1px solid var(--dashed-border-color); /* Тонкая линия-разделитель */
+    margin-bottom: 8px; /* Внешний отступ */
+}
+
+/* Группа "Лейбл + переключатель" теперь сама становится flex-контейнером */
+.ai-main-controls .ai-setting-group {
+    margin-bottom: 0;
+    display: flex; /* <-- Главное изменение */
+    align-items: center; /* <-- Выравниваем по вертикали */
+    gap: 8px; /* <-- Добавляем отступ между лейблом и переключателем */
+}
+
+.ai-main-controls .ai-setting-group > label[for="aiGroundingToggleMain"] {
+    font-size: 0.85em;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ МАРКЕРА ПОИСКА В AI-ЧАТЕ       === */
+/* ======================================================= */
+
+/* 1. Делаем контейнер сообщения точкой отсчета для иконки */
+.ai-message.model {
+    position: relative;
+    /* Добавляем отступ справа, чтобы текст не заезжал под иконку */
+    padding-right: 35px; 
+}
+
+/* 2. Стили для самой иконки */
+.ai-grounded-icon {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+    cursor: help; /* Показываем знак вопроса при наведении */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ai-grounded-icon:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* 3. Стили для SVG внутри контейнера */
+.ai-grounded-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ======================================================= */
+/* ===  ФИНАЛЬНЫЕ СТИЛИ ДЛЯ ТУЛТИПА НА СКРОЛЛБАРЕ (v2)  === */
+/* ======================================================= */
+
+.scrollbar-tooltip {
+    /* Меняем позиционирование на fixed, чтобы он не обрезался родительскими контейнерами */
+    position: fixed; 
+    z-index: 10002; /* Поверх всего, даже оверлея сайдбара */
+    
+    /* Убираем старое позиционирование, JS теперь управляет left и top */
+    right: auto; 
+    
+    /* Остальные стили для красоты */
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    max-width: 250px;
+    font-size: 0.9em;
+    line-height: 1.4;
+    word-break: break-word;
+    
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95); /* Будет появляться с легким "зумом" */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    
+    pointer-events: none; 
+}
+
+.scrollbar-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+/* Треугольник-указатель (теперь он слева от тултипа) */
+.scrollbar-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%; /* На правой границе тултипа */
+    margin-top: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent var(--container-bg-color);
+}
+
+.scrollbar-tooltip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    margin-top: -7px;
+    margin-left: -1px; /* Сдвигаем чуть левее для идеального совпадения */
+    border-width: 7px;
+    border-style: solid;
+    border-color: transparent transparent transparent var(--border-color);
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ СПИСКА ИСТОЧНИКОВ В AI-ЧАТЕ    === */
+/* ======================================================= */
+
+/* Применяем стили к <hr>, который создаст Markdown из "---" */
+.ai-message.model hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 16px 0;
+}
+
+/* Стили для заголовка "Sources" */
+.ai-message.model strong {
+    color: var(--text-color);
+}
+
+/* Стили для списка <ol>, который создаст Markdown */
+.ai-message.model ol {
+    padding-left: 20px;
+    margin-top: 8px;
+    margin-bottom: 0;
+    font-size: 0.9em; /* Делаем шрифт источников чуть меньше */
+}
+
+.ai-message.model ol li {
+    margin-bottom: 6px;
+    color: var(--secondary-text-color); /* Приглушенный цвет для номеров */
+}
+
+/* Стили для ссылок <a> внутри списка */
+.ai-message.model ol li a {
+    color: var(--accent); /* Используем акцентный цвет для ссылок */
+    text-decoration: none;
+    word-break: break-all; /* Переносим очень длинные ссылки */
+}
+
+.ai-message.model ol li a:hover {
+    text-decoration: underline;
+}

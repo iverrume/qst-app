@@ -529,24 +529,22 @@
             <i data-lucide="bot"></i>
         </button>
 
-        <!-- ======================================================= -->
-        <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ AI-ЧАТА             === -->
-        <!-- ======================================================= -->
-        <div id="aiChatModal" class="modal-overlay hidden">
-            <div class="modal-content ai-chat-modal-content">
+            <!-- ======================================================= -->
+            <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ AI-ЧАТА             === -->
+            <!-- ======================================================= -->
+            <div id="aiChatModal" class="modal-overlay hidden">
+                <div class="modal-content ai-chat-modal-content">
 
-                <div class="ai-chat-header">
-                    <h3><i data-lucide="brain-circuit"></i> AI Помощник</h3>
-                    <!-- Новый контейнер для кнопок -->
-                    <div class="ai-chat-header-controls">
-
-                        <button id="aiChatHistoryBtn" class="ai-chat-control-btn" title="История чатов"><i data-lucide="history"></i></button>
-                        <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
-                        <button id="aiChatResizeBtn" class="ai-chat-control-btn" title="Развернуть / Свернуть"><i data-lucide="maximize-2"></i></button>
-                        <button id="aiChatCloseBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
-
-                    </div>
+                    <div class="ai-chat-header">
+                        <h3><i data-lucide="brain-circuit"></i> AI Помощник</h3>
+                        <!-- Новый контейнер для кнопок -->
+                        <div class="ai-chat-header-controls">
+                            <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
+                            <button id="aiChatResizeBtn" class="ai-chat-control-btn" title="Развернуть / Свернуть"><i data-lucide="maximize-2"></i></button>
+                            <button id="aiChatCloseBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
+                        </div>
                     </div> <!-- Закрывающий </div> для .ai-chat-header -->
+
 
                     <!-- ======== НАЧАЛО НОВОЙ ПАНЕЛИ НАСТРОЕК ======== -->
                     <div id="aiChatSettingsPanel" class="ai-chat-settings-panel hidden">
@@ -588,11 +586,13 @@
                             <span id="aiCreativityValue">Средняя</span>
                         </div>
                         <input type="range" id="aiCreativitySlider" min="0" max="2" value="1" step="1">
+                        
                     </div>
 
-                    <!-- === НАЧАЛО ИЗМЕНЕНИЙ: Контейнер для скролла и сайдбара === -->
+
+
                     <div class="ai-chat-body-wrapper">
-                        <!-- ======== САЙДБАР ИСТОРИИ ЧАТОВ ======== -->
+                        <!-- ======== САЙДБАР ИСТОРИИ ЧАТОВ (теперь с ручкой) ======== -->
                         <div id="aiChatSidebar" class="ai-chat-sidebar">
                             <div class="ai-sidebar-header">
                                 <h4>История чатов</h4>
@@ -603,6 +603,8 @@
                             <ul id="aiChatHistoryList" class="ai-chat-history-list">
                                 <!-- Сюда будут добавляться чаты из JS -->
                             </ul>
+                            <!-- ======== НОВАЯ РУЧКА ДЛЯ ОТКРЫТИЯ МЕНЮ ======== -->
+                            <div id="aiSidebarHandle" class="ai-sidebar-handle"></div>
                         </div>
                         <!-- ======== КОНЕЦ САЙДБАРА ======== -->
 
@@ -617,12 +619,25 @@
                                 </div>
                                 <div id="aiScrollbarThumb" class="scrollbar-thumb"></div>
                             </div>
-                        </div> <!-- <-- ВОТ ОН, ЗАКРЫВАЮЩИЙ ТЕГ ДЛЯ ai-chat-scroll-wrapper -->
-                    </div> <!-- <-- И ВОТ ГЛАВНЫЙ ЗАКРЫВАЮЩИЙ ТЕГ ДЛЯ ai-chat-body-wrapper -->
+                        </div>
+                    </div>
                     <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
 
-                    <div class="ai-chat-input-area">
 
+
+
+                    <div class="ai-chat-input-area">
+                        <!-- === НАЧАЛО НОВОГО КОДА === -->
+                        <div class="ai-main-controls">
+                            <div class="ai-setting-group">
+                                <label for="aiGroundingToggleMain" data-lang-key="ai_grounding_label">Поиск в Google</label>
+                                <label class="ai-toggle-switch">
+                                    <input type="checkbox" id="aiGroundingToggleMain">
+                                    <span class="ai-toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- === КОНЕЦ НОВОГО КОДА === -->
                         <div id="aiReplyPanel" class="ai-reply-panel hidden">
                             <div class="ai-reply-info">
                                 <span class="ai-reply-title">Ответ на сообщение:</span>
