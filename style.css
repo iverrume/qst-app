@@ -5424,14 +5424,10 @@ body.synthwave-mode .google-signin-btn:hover {
 
 
 
-
-
-
 /* ======================================================= */
 /* ===  ПОЛНОЭКРАННЫЕ МОДАЛЬНЫЕ ОКНА ДЛЯ МОБИЛЬНЫХ      === */
 /* ======================================================= */
 
-/* Применяем стили на экранах шириной 768px или меньше */
 @media (max-width: 768px) {
     
     /* 1. Растягиваем темный оверлей на весь экран для обоих окон */
@@ -5452,7 +5448,7 @@ body.synthwave-mode .google-signin-btn:hover {
         max-width: 100%;
         max-height: 100%;
         border-radius: 0;
-        padding: 40px 15px 15px 15px;
+        padding: 15px 15px 15px 15px; /* ИЗМЕНЕНИЕ: Уменьшили верхний отступ с 40px до 15px */
         justify-content: flex-start;
     }
 
@@ -5474,8 +5470,6 @@ body.synthwave-mode .google-signin-btn:hover {
         flex-shrink: 0;
     }
 }
-
-
 
 
 
@@ -5710,9 +5704,10 @@ body.synthwave-mode #aiExplanationStyleButtons .btn-secondary-small.active:hover
     background-color: var(--input-hover-bg-color);
 }
 
+
 /* 7. Стиль для активного (выбранного) элемента в списке */
 .style-dropdown-content a.active {
-    background-color: var(--button-primary-bg);
+    background: var(--button-primary-bg); /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: background-color заменен на background */
     color: var(--button-primary-text);
     font-weight: bold;
 }
@@ -8718,7 +8713,7 @@ body.glass-dark #confirmModalYesBtn:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 15px;
+    padding: 4px 15px; /* ИЗМЕНЕНИЕ: Уменьшили вертикальные отступы */
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     transition: padding 0.3s ease; /* Добавляем плавный переход для высоты */
@@ -10280,4 +10275,43 @@ body.claude-mode .ai-chat-history-item.active {
 
 .ai-message.model ol li a:hover {
     text-decoration: underline;
+}
+
+/* ======================================================= */
+/* ===   УЛЬТРА-КОМПАКТНАЯ ШАПКА (ФИНАЛ v2)          === */
+/* ======================================================= */
+
+/* Применяем стили на экранах шириной 600px или меньше */
+/* Замените на этот код */
+@media (max-width: 600px) {
+    .ai-chat-header {
+        /* ГЛАВНОЕ ИЗМЕНЕНИЕ: Жестко задаем высоту шапки */
+        height: 40px; /* ИЗМЕНЕНИЕ: Уменьшили высоту */
+        min-height: 40px; /* ИЗМЕНЕНИЕ: Уменьшили минимальную высоту */
+        
+        /* Убираем вертикальные отступы, так как высота фиксирована */
+        padding-top: 0;
+        padding-bottom: 0;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .ai-chat-header h3 {
+        font-size: 1em;
+        gap: 6px;
+    }
+
+    .ai-chat-header h3 i[data-lucide] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .ai-chat-header-controls .ai-chat-control-btn {
+        padding: 3px;
+    }
+
+    .ai-chat-header-controls .ai-chat-control-btn i[data-lucide] {
+        width: 18px;
+        height: 18px;
+    }
 }
