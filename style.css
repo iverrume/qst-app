@@ -8807,11 +8807,12 @@ body.glass-dark #confirmModalYesBtn:hover {
 
 
 
-/* --- Область сообщений --- */
+/* Замените на этот код */
 .ai-chat-messages {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 15px; /* <-- ИЗМЕНЕНО: Уменьшили отступы со всех сторон */
+    /* ИЗМЕНЕНИЕ: Добавили отступ справа (30px) для кастомного скроллбара */
+    padding: 15px 28px 15px 15px; 
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -9712,22 +9713,22 @@ body.glass-dark .ai-chat-settings-panel {
     position: absolute;
     top: 10px;
     bottom: 10px;
-    right: 5px;
-    width: 24px; /* <-- ИЗМЕНЕНИЕ: Сделали контейнер шире */
+    right: 2px;
+    width: 26px; /* <-- ИЗМЕНЕНИЕ: Сделали контейнер шире */
     z-index: 5;
 }
 
-/* 5. Дорожка (трек) с точками - теперь справа */
+/* Замените на этот код */
 .scrollbar-track {
     position: absolute;
-    top: 0;
-    right: 5px; /* <-- ИЗМЕНЕНИЕ: Прижимаем к правому краю контейнера */
-    left: auto;   /* <-- ИЗМЕНЕНИЕ: Убираем привязку к левому краю */
+    top: 10px;      /* ИЗМЕНЕНИЕ: Добавляем отступ сверху */
+    bottom: 10px;   /* ИЗМЕНЕНИЕ: Добавляем отступ снизу */
+    right: 0px;
+    left: auto;
     width: 2px;
-    height: 100%;
+    /* height: 100% убран, так как теперь высота определяется через top и bottom */
     background-color: var(--border-color);
     border-radius: 1px;
-    /* Убираем transform, он больше не нужен */
 }
 
 /* 6. Ползунок (ручка) скроллбара - теперь слева */
@@ -10313,5 +10314,22 @@ body.claude-mode .ai-chat-history-item.active {
     .ai-chat-header-controls .ai-chat-control-btn i[data-lucide] {
         width: 18px;
         height: 18px;
+    }
+}
+
+/* ======================================================= */
+/* ===  АДАПТИВНОСТЬ ДЛЯ КАСТОМНОГО СКРОЛЛБАРА (МОБИЛЬНЫЕ) === */
+/* ======================================================= */
+@media (max-width: 768px) {
+    
+    /* 1. Придвигаем трек с точками ближе к правому краю */
+    .scrollbar-track {
+        right: 1px; /* Было: 5px. Теперь линия будет почти у края. */
+    }
+
+    /* 2. Делаем сами точки-маркеры крупнее и заметнее */
+    .scrollbar-dot {
+        width: 14px;  /* Было: 10px */
+        height: 14px; /* Было: 10px */
     }
 }
