@@ -15507,8 +15507,10 @@ const mainApp = (function() {
         localStorage.setItem('aiChatFabPosition', JSON.stringify(pos));
     }
 
+
     function openAIChat() {
         if (!aiChatModal) return;
+        document.body.classList.add('chat-open'); // <-- ВОТ ОНО, ИСПРАВЛЕНИЕ
         aiChatModal.classList.remove('hidden');
         aiChatInput.focus();
         // Загружаем и отображаем текущий активный чат
@@ -15520,6 +15522,7 @@ const mainApp = (function() {
      */
     function closeAIChat() {
         if (!aiChatModal) return;
+        document.body.classList.remove('chat-open'); // <-- И ВТОРОЕ ИСПРАВЛЕНИЕ
         aiChatModal.classList.add('hidden');
     }
 
