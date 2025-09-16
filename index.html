@@ -536,7 +536,7 @@
                 <div class="modal-content ai-chat-modal-content">
 
                     <div class="ai-chat-header">
-                        <h3><i data-lucide="brain-circuit"></i> AI Помощник</h3>
+                        <h3><i data-lucide="brain-circuit"></i></h3>
                         <!-- Новый контейнер для кнопок -->
                         <div class="ai-chat-header-controls">
                             <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
@@ -591,19 +591,21 @@
 
 
 
-                    <div class="ai-chat-body-wrapper">
-                        <!-- ======== САЙДБАР ИСТОРИИ ЧАТОВ (теперь с ручкой) ======== -->
+                    <div class="ai-chat-body-wrapper">  
+                        <!-- Замените на этот код -->
                         <div id="aiChatSidebar" class="ai-chat-sidebar">
                             <div class="ai-sidebar-header">
-                                <h4>История чатов</h4>
-                                <button id="aiNewChatBtn" class="ai-new-chat-btn" title="Начать новый чат">
-                                    <i data-lucide="plus"></i>
-                                </button>
                             </div>
                             <ul id="aiChatHistoryList" class="ai-chat-history-list">
                                 <!-- Сюда будут добавляться чаты из JS -->
                             </ul>
-                            <!-- ======== НОВАЯ РУЧКА ДЛЯ ОТКРЫТИЯ МЕНЮ ======== -->
+                            <!-- ======== НОВЫЙ БЛОК ДЛЯ КНОПКИ "СОЗДАТЬ ЧАТ" ======== -->
+                            <div class="ai-sidebar-footer">
+                                <button id="aiNewChatBtn" class="ai-new-chat-btn" title="Начать новый чат">
+                                    <i data-lucide="plus"></i>
+                                </button>
+                            </div>
+                            <!-- ======================================================= -->
                             <div id="aiSidebarHandle" class="ai-sidebar-handle"></div>
                         </div>
                         <!-- ======== КОНЕЦ САЙДБАРА ======== -->

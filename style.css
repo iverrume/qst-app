@@ -5448,7 +5448,7 @@ body.synthwave-mode .google-signin-btn:hover {
         max-width: 100%;
         max-height: 100%;
         border-radius: 0;
-        padding: 15px 15px 15px 15px; /* ИЗМЕНЕНИЕ: Уменьшили верхний отступ с 40px до 15px */
+        padding: 5px 5px 5px 5px; /* ИЗМЕНЕНИЕ: Уменьшили верхний отступ с 40px до 15px */
         justify-content: flex-start;
     }
 
@@ -9723,7 +9723,7 @@ body.glass-dark .ai-chat-settings-panel {
     position: absolute;
     top: 10px;      /* ИЗМЕНЕНИЕ: Добавляем отступ сверху */
     bottom: 10px;   /* ИЗМЕНЕНИЕ: Добавляем отступ снизу */
-    right: 0px;
+    right: 10px;
     left: auto;
     width: 2px;
     /* height: 100% убран, так как теперь высота определяется через top и bottom */
@@ -9772,7 +9772,7 @@ body.glass-dark .ai-chat-settings-panel {
 }
 
 .scrollbar-dot:hover {
-    transform: translate(-50%, -50%) scale(1.5);
+    transform: translate(-50%, -50%) scale(1.2);
     box-shadow: 0 0 5px var(--accent);
 }
 
@@ -9868,6 +9868,7 @@ body.glass-dark .ai-chat-settings-panel {
     z-index: 10;
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
+    gap: 8px; /* ИЗМЕНЕНИЕ: Добавляем отступ между шапкой, списком и футером */
 }
 
 /* Класс для показа сайдбара */
@@ -9886,9 +9887,9 @@ body.glass-dark .ai-chat-settings-panel {
 /* Шапка сайдбара */
 .ai-sidebar-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: center; /* ИЗМЕНЕНИЕ: Центрируем заголовок */
     align-items: center;
-    padding: 10px 15px;
+    padding: -1px -1px;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
@@ -9918,7 +9919,7 @@ body.glass-dark .ai-chat-settings-panel {
 /* Список чатов */
 .ai-chat-history-list {
     list-style: none;
-    padding: 8px;
+    padding: 0 8px; /* ИЗМЕНЕНИЕ: Убираем вертикальные отступы, так как теперь есть gap */
     margin: 0;
     flex-grow: 1;
     overflow-y: auto;
@@ -10324,12 +10325,44 @@ body.claude-mode .ai-chat-history-item.active {
     
     /* 1. Придвигаем трек с точками ближе к правому краю */
     .scrollbar-track {
-        right: 1px; /* Было: 5px. Теперь линия будет почти у края. */
+        right: -3px; /* Было: 5px. Теперь линия будет почти у края. */
     }
 
     /* 2. Делаем сами точки-маркеры крупнее и заметнее */
     .scrollbar-dot {
-        width: 14px;  /* Было: 10px */
-        height: 14px; /* Было: 10px */
+        width: 20px;  /* Было: 10px */
+        height: 10px; /* Было: 10px */
     }
+}
+
+
+/* --- Стили для футера сайдбара (с кнопкой "+") --- */
+.ai-sidebar-footer {
+    display: flex;
+    justify-content: center; /* Центрируем кнопку по горизонтали */
+    align-items: center;
+    padding: 8px 15px; /* Отступы сверху и снизу */
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0; /* Футер не должен сжиматься */
+}
+
+/* --- Обновленные стили для кнопки "Новый чат" --- */
+.ai-new-chat-btn {
+    width: 40px;  /* Увеличиваем размер */
+    height: 40px;
+    border-radius: 50%; /* Делаем ее круглой */
+    background-color: var(--input-hover-bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-new-chat-btn:hover {
+    background-color: var(--border-color);
+    transform: scale(1.1); /* Эффект при наведении */
+}
+
+.ai-new-chat-btn i[data-lucide] {
+    width: 24px;  /* Увеличиваем иконку внутри */
+    height: 24px;
 }
