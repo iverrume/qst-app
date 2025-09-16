@@ -10114,31 +10114,53 @@ body.claude-mode .ai-chat-history-item.active {
 }
 
 /* ======================================================= */
-/* === СТИЛИ ДЛЯ ПЕРЕКЛЮЧАТЕЛЯ ПОИСКА НАД ПОЛЕМ ВВОДА === */
+/* ===  УЛЬТРА-КОМПАКТНАЯ ПАНЕЛЬ УПРАВЛЕНИЯ AI-ЧАТА   === */
 /* ======================================================= */
-
 .ai-main-controls {
     display: flex;
-    justify-content: flex-start; /* <-- ИЗМЕНЕНИЕ: Выравниваем по левому краю */
+    justify-content: space-between;
     align-items: center;
-    gap: 20px; /* Добавляем отступ между будущими переключателями */
-    padding: 0 5px 8px 5px;
-    border-bottom: 1px solid var(--dashed-border-color); /* Тонкая линия-разделитель */
-    margin-bottom: 8px; /* Внешний отступ */
+    gap: 15px; /* Немного уменьшили расстояние между элементами */
+    padding: 0 5px 2px 5px; /* Сделали нижний отступ минимальным */
+    border-bottom: 1px solid var(--dashed-border-color);
+    margin-bottom: 6px; /* Чуть увеличили отступ до поля ввода для баланса */
 }
 
-/* Группа "Лейбл + переключатель" теперь сама становится flex-контейнером */
-.ai-main-controls .ai-setting-group {
-    margin-bottom: 0;
-    display: flex; /* <-- Главное изменение */
-    align-items: center; /* <-- Выравниваем по вертикали */
-    gap: 8px; /* <-- Добавляем отступ между лейблом и переключателем */
+/* Уменьшаем текст "Поиск в Google" */
+.ai-main-controls .ai-setting-group > label {
+    font-size: 0.8em;
+    margin-right: 5px; /* Уменьшаем отступ до переключателя */
 }
 
-.ai-main-controls .ai-setting-group > label[for="aiGroundingToggleMain"] {
-    font-size: 0.85em;
-    font-weight: 500;
-    color: var(--secondary-text-color);
+/* Уменьшаем сам переключатель (был 44x24) */
+.ai-main-controls .ai-toggle-switch {
+  width: 36px;
+  height: 20px;
+}
+
+/* Подгоняем кружок под новый размер (был 18x18) */
+.ai-main-controls .ai-toggle-slider:before {
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+}
+
+/* Корректируем движение кружка (был 20px) */
+.ai-main-controls .ai-toggle-switch input:checked + .ai-toggle-slider:before {
+  transform: translateX(16px);
+}
+
+/* Уменьшаем кнопку справа */
+.ai-main-controls .ai-action-btn {
+    width: 30px;
+    height: 30px;
+}
+
+/* Уменьшаем иконку внутри кнопки */
+.ai-main-controls .ai-action-btn i[data-lucide] {
+    width: 16px;
+    height: 16px;
 }
 
 
@@ -10366,3 +10388,55 @@ body.claude-mode .ai-chat-history-item.active {
     width: 24px;  /* Увеличиваем иконку внутри */
     height: 24px;
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ОБЗОРА СВОИХ СООБЩЕНИЙ        === */
+/* ======================================================= */
+
+/* Выравниваем элементы в панели по краям */
+.ai-main-controls {
+    justify-content: space-between;
+}
+
+/* Стили для постоянно видимых подсказок */
+.persistent-tooltip {
+    position: absolute;
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 5px 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px var(--shadow-light-color);
+    max-width: 220px;
+    font-size: 0.85em;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: normal;
+    
+    /* Анимация появления */
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    
+    /* Чтобы не мешали кликать по другим элементам */
+    pointer-events: none; 
+    z-index: 100;
+}
+
+.persistent-tooltip.visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Треугольник-указатель для подсказки */
+.persistent-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -6px; /* Располагаем справа */
+    margin-top: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent var(--container-bg-color);
+}
+

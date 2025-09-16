@@ -6224,6 +6224,8 @@ const mainApp = (function() {
             ai_share_response: "Поделиться",
             ai_regenerate_response: "Перегенерировать ответ",
             ai_reply_context_prompt: '[В ответ на сообщение от "{authorName}": "{originalText}"]\n\n{newText}',
+            ai_search_disabled_with_file: "Поиск в Google отключается при отправке файлов",
+            ai_show_all_user_messages_tooltip: "Показать/скрыть все мои сообщения",
             session_save_new_button: "Сохранить как новую"
         },
         kk: {
@@ -6595,6 +6597,8 @@ const mainApp = (function() {
             ai_share_response: "Бөлісу",
             ai_regenerate_response: "Жауапты қайта құру",
             ai_reply_context_prompt: '["{authorName}"-ның мына хабарламасына жауап ретінде: "{originalText}"]\n\n{newText}',
+            ai_search_disabled_with_file: "Файл жіберген кезде Google Іздеу өшіріледі",
+            ai_show_all_user_messages_tooltip: "Барлық менің хабарламаларымды көрсету/жасыру",
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -6973,9 +6977,10 @@ const mainApp = (function() {
             ai_share_response: "Share",
             ai_regenerate_response: "Regenerate response",
             ai_reply_context_prompt: '[In reply to "{authorName}" who said: "{originalText}"]\n\n{newText}',
+            ai_search_disabled_with_file: "Google Search is disabled when sending files",
+            ai_show_all_user_messages_tooltip: "Show/hide all my messages",
             session_save_new_button: "Save as New"
         }
-
 
     };
 
@@ -14320,8 +14325,8 @@ const mainApp = (function() {
 
 // Переменные для нового чата
     let aiChatFab, aiChatModal, aiChatModalContent, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn, aiChatResizeBtn,
-        aiChatHistoryBtn, aiChatSidebar, aiNewChatBtn, aiChatHistoryList; // <-- НОВЫЕ ПЕРЕМЕННЫЕ
-    
+        aiChatHistoryBtn, aiChatSidebar, aiNewChatBtn, aiChatHistoryList, aiChatScrollWrapper; // <-- ИСПРАВЛЕНИЕ: Добавили aiChatScrollWrapper сюда
+    let isAllTooltipsVisible = false;
     let allAIChats = {}; // Объект для хранения ВСЕХ чатов { chatId: [messages] }
     let currentAIChatId = null; // ID текущего активного чата
     const AI_CHATS_STORAGE_KEY = 'allUserAIChats'; // Ключ для localStorage
@@ -14337,8 +14342,6 @@ const mainApp = (function() {
     let aiCustomScrollbar, aiScrollbarThumb, aiScrollbarDots;
     let aiScrollbarTooltip;
     let activeTooltipDot = null; 
-
-
 
 
     function initAIChat() {
@@ -14360,16 +14363,17 @@ const mainApp = (function() {
         const aiChatSettingsBtn = getEl('aiChatSettingsBtn');
         const aiChatSettingsPanel = getEl('aiChatSettingsPanel');
         const aiCreativitySlider = getEl('aiCreativitySlider');
-        // ======== НАЧАЛО ИЗМЕНЕНИЙ ========
-        const aiGroundingToggleMain = getEl('aiGroundingToggleMain'); // Теперь это единственный переключатель
-        // ======== КОНЕЦ ИЗМЕНЕНИЙ ========
+        const aiGroundingToggleMain = getEl('aiGroundingToggleMain');
         const imagePreviewModal = getEl('imagePreviewModal');
         const closeImagePreviewBtn = imagePreviewModal?.querySelector('.close-image-preview');
         const textPreviewModal = getEl('textPreviewModal');
         const closeTextPreviewBtn = textPreviewModal?.querySelector('.close-text-preview');
-        const aiChatScrollWrapper = aiChatModal?.querySelector('.ai-chat-scroll-wrapper');
+        
+        // <-- ИСПРАВЛЕНИЕ: Убираем const, теперь это присваивание глобальной переменной -->
+        aiChatScrollWrapper = aiChatModal?.querySelector('.ai-chat-scroll-wrapper');
         const aiSidebarHandle = getEl('aiSidebarHandle');
-
+        const aiShowAllUserMessagesBtn = getEl('aiShowAllUserMessagesBtn');
+        
         aiCustomScrollbar = getEl('aiCustomScrollbar');
         aiScrollbarThumb = getEl('aiScrollbarThumb');
         aiScrollbarDots = getEl('aiScrollbarDots');
@@ -14378,7 +14382,7 @@ const mainApp = (function() {
         aiChatSidebar = getEl('aiChatSidebar');
         aiNewChatBtn = getEl('aiNewChatBtn');
         aiChatHistoryList = getEl('aiChatHistoryList');
-
+        
         const closeImageModal = () => imagePreviewModal?.classList.add('hidden');
         const closeTextModal = () => textPreviewModal?.classList.add('hidden');
 
@@ -14387,6 +14391,17 @@ const mainApp = (function() {
             makeFabDraggable(aiChatFab);
             loadFabPosition(aiChatFab);
         }
+        
+        aiShowAllUserMessagesBtn?.addEventListener('click', toggleAllUserMessageTooltips);
+
+        // Динамически создаем контейнер для постоянных подсказок
+        if (aiChatScrollWrapper && !getEl('aiPersistentTooltipsContainer')) {
+            const container = document.createElement('div');
+            container.id = 'aiPersistentTooltipsContainer';
+            container.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;';
+            aiChatScrollWrapper.appendChild(container);
+        }
+        
         aiCancelReplyBtn?.addEventListener('click', cancelAIReply);
         aiChatCloseBtn?.addEventListener('click', closeAIChat);
         aiChatResizeBtn?.addEventListener('click', toggleAIChatSize);
@@ -14417,9 +14432,7 @@ const mainApp = (function() {
         });
 
         aiCreativitySlider?.addEventListener('input', saveAIChatSettings);
-        // ======== НАЧАЛО ИЗМЕНЕНИЙ ========
-        aiGroundingToggleMain?.addEventListener('change', saveAIChatSettings); // Оставляем обработчик только для него
-        // ======== КОНЕЦ ИЗМЕНЕНИЙ ========
+        aiGroundingToggleMain?.addEventListener('change', saveAIChatSettings);
         aiChatSendBtn?.addEventListener('click', sendAIChatMessage);
         if (aiChatInput && aiChatSendBtn) {
             aiChatInput.addEventListener('keydown', (e) => {
@@ -14434,7 +14447,6 @@ const mainApp = (function() {
             aiChatSendBtn.disabled = true;
         }
 
-        // ======== НАЧАЛО НОВОЙ ЛОГИКИ СВАЙПА И РУЧКИ ========
         const openSidebar = () => {
             aiChatModalContent?.classList.add('sidebar-open');
         };
@@ -14443,12 +14455,11 @@ const mainApp = (function() {
         };
 
         aiSidebarHandle?.addEventListener('click', (e) => {
-            e.stopPropagation(); // Важно, чтобы не сработал клик по scroll-wrapper
+            e.stopPropagation();
             openSidebar();
         });
         aiChatScrollWrapper?.addEventListener('click', closeSidebar);
 
-        // Логика свайпа
         let touchStartX = 0;
         aiChatModalContent?.addEventListener('touchstart', (e) => {
             touchStartX = e.touches[0].clientX;
@@ -14456,16 +14467,14 @@ const mainApp = (function() {
 
 
         aiChatModalContent?.addEventListener('touchmove', (e) => {
-            if (window.innerWidth > 800) return; // Свайпы работают только на экранах <= 800px
+            if (window.innerWidth > 800) return;
 
             const currentX = e.touches[0].clientX;
             const sidebarIsOpen = aiChatModalContent.classList.contains('sidebar-open');
 
-            // Свайп от левого края для открытия
             if (!sidebarIsOpen && touchStartX < 30 && currentX > 70) {
                 openSidebar();
             } 
-            // Свайп влево для закрытия
             else if (sidebarIsOpen && currentX < touchStartX - 50) { 
                 closeSidebar();
             }
@@ -14537,24 +14546,118 @@ const mainApp = (function() {
 
         initCustomScrollbar();
         initCustomScrollbarTooltipEvents();
-        // === НАЧАЛО НОВОГО КОДА ===
-        // Закрываем тултип, если пользователь кликает в любом месте области сообщений
+        
         aiChatMessages?.addEventListener('click', (e) => {
-            // Проверяем, что клик был не по самим точкам
             if (!e.target.closest('.scrollbar-dots-container')) {
                 hideActiveTooltip();
             }
         });
-        // === КОНЕЦ НОВОГО КОДА ===
-
-        // 4. Вызываем функции первоначальной настройки
+        
         setupCustomSelect('aiModelSelectContainer');
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
         loadAIChatsFromStorage();
     }
 
+    /**
+     * Обработчик кликов вне области подсказок, который будет их скрывать.
+     * Он должен быть определен вне toggle-функции, чтобы его можно было корректно удалять.
+     */
+    function handleOutsideTooltipClick(event) {
+        const button = getEl('aiShowAllUserMessagesBtn');
+        // Если клик был не по кнопке, которая открывает подсказки
+        if (button && !button.contains(event.target)) {
+            // И если подсказки в данный момент видны
+            if (isAllTooltipsVisible) {
+                // Вызываем toggle-функцию еще раз, чтобы она их скрыла
+                toggleAllUserMessageTooltips();
+            }
+        }
+    }
 
+    /**
+     * Показывает или скрывает все подсказки для сообщений пользователя.
+     */
+    function toggleAllUserMessageTooltips() {
+        // Переключаем глобальное состояние
+        isAllTooltipsVisible = !isAllTooltipsVisible;
+
+        const container = getEl('aiPersistentTooltipsContainer');
+        const button = getEl('aiShowAllUserMessagesBtn');
+        if (!container || !button) return;
+
+        button.classList.toggle('active', isAllTooltipsVisible);
+
+        if (isAllTooltipsVisible) {
+            // --- РЕЖИМ: ПОКАЗАТЬ ПОДСКАЗКИ ---
+            container.innerHTML = ''; // Очищаем от старых
+            const dots = aiScrollbarDots.querySelectorAll('.scrollbar-dot');
+            const scrollWrapperRect = aiChatScrollWrapper.getBoundingClientRect();
+
+            dots.forEach(dot => {
+                const messageIndex = parseInt(dot.dataset.index, 10);
+                const message = allAIChats[currentAIChatId]?.[messageIndex];
+                if (!message) return;
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'persistent-tooltip';
+                const content = message.content || 'Вложение';
+                tooltip.textContent = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+
+                const dotRect = dot.getBoundingClientRect();
+                const topPos = dotRect.top - scrollWrapperRect.top + (dotRect.height / 2) - 15;
+                
+                tooltip.style.top = `${topPos}px`;
+                tooltip.style.right = '35px';
+
+                container.appendChild(tooltip);
+                setTimeout(() => tooltip.classList.add('visible'), 10);
+            });
+
+            // Добавляем слушатель кликов на весь документ.
+            // setTimeout нужен, чтобы этот слушатель не сработал на тот же клик, который его и создал.
+            setTimeout(() => {
+                document.body.addEventListener('click', handleOutsideTooltipClick);
+            }, 0);
+        } else {
+            // --- РЕЖИМ: СКРЫТЬ ПОДСКАЗКИ ---
+            const tooltips = container.querySelectorAll('.persistent-tooltip');
+            tooltips.forEach(tt => {
+                tt.classList.remove('visible');
+                setTimeout(() => tt.remove(), 300);
+            });
+            // Самое важное: убираем слушатель, так как он больше не нужен
+            document.body.removeEventListener('click', handleOutsideTooltipClick);
+        }
+    }
+
+
+
+    
+    /**
+     * НОВАЯ ФУНКЦИЯ: Обновляет состояние переключателя "Поиск в Google"
+     * в зависимости от того, прикреплен ли файл.
+     */
+    function updateGroundingToggleState() {
+        const groundingToggle = getEl('aiGroundingToggleMain');
+        if (!groundingToggle) return;
+
+        // Находим родительский контейнер, чтобы заблокировать и надпись
+        const container = groundingToggle.closest('.ai-setting-group');
+        if (!container) return;
+
+        if (attachedFile) {
+            // Если файл прикреплен, делаем переключатель неактивным
+            container.style.opacity = '0.5';
+            container.style.pointerEvents = 'none';
+            container.title = _('ai_search_disabled_with_file'); // Добавляем всплывающую подсказку
+        } else {
+            // Если файла нет, возвращаем в активное состояние
+            container.style.opacity = '1';
+            container.style.pointerEvents = 'auto';
+            container.title = ''; // Убираем подсказку
+        }
+    }
 
     /**
      * НОВАЯ ФУНКЦИЯ: Корректно закрывает мобильный сайдбар и удаляет слушатель клика.
@@ -14834,7 +14937,14 @@ const mainApp = (function() {
      */
     function drawOrUpdateScrollbar() {
         if (!aiChatMessages || !aiCustomScrollbar) return;
-
+        // ======== НАЧАЛО ИЗМЕНЕНИЙ ========
+        // Если режим обзора включен, принудительно его обновляем
+        if (isAllTooltipsVisible) {
+            // Вызываем функцию дважды, чтобы сначала скрыть старые, а потом показать новые
+            toggleAllUserMessageTooltips(); 
+            toggleAllUserMessageTooltips(); 
+        }
+        // ======== КОНЕЦ ИЗМЕНЕНИЙ ========
         const scrollHeight = aiChatMessages.scrollHeight;
         const clientHeight = aiChatMessages.clientHeight;
 
@@ -15002,7 +15112,6 @@ const mainApp = (function() {
             const fullDataUrl = e.target.result;
             let thumbnailDataUrl = null;
 
-            // Если это изображение, создаем миниатюру
             if (file.type.startsWith('image/')) {
                 try {
                     thumbnailDataUrl = await createThumbnail(fullDataUrl, 64);
@@ -15015,9 +15124,10 @@ const mainApp = (function() {
                 name: file.name,
                 mimeType: file.type,
                 base64Data: fullDataUrl,
-                thumbnailDataUrl: thumbnailDataUrl // Будет null для не-изображений
+                thumbnailDataUrl: thumbnailDataUrl
             };
             showAttachmentPreview();
+            updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
         };
         reader.onerror = (e) => {
             console.error("Ошибка чтения файла:", e);
@@ -15241,10 +15351,10 @@ const mainApp = (function() {
         previewEl.classList.add('hidden');
         previewEl.innerHTML = '';
         
-        // Деактивируем кнопку отправки, если в поле ввода нет текста
         if (aiChatInput.value.trim().length === 0) {
             aiChatSendBtn.disabled = true;
         }
+        updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
     }
 
 
@@ -15509,12 +15619,13 @@ const mainApp = (function() {
 
 
     function openAIChat() {
-        if (!aiChatModal) return;
-        document.body.classList.add('chat-open'); // <-- ВОТ ОНО, ИСПРАВЛЕНИЕ
-        aiChatModal.classList.remove('hidden');
-        aiChatInput.focus();
-        // Загружаем и отображаем текущий активный чат
-        switchToAIChat(currentAIChatId);
+       if (!aiChatModal) return;
+       document.body.classList.add('chat-open'); 
+       aiChatModal.classList.remove('hidden');
+       aiChatInput.focus();
+       // Загружаем и отображаем текущий активный чат
+       switchToAIChat(currentAIChatId);
+       updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
     }
 
     /**
@@ -15679,19 +15790,22 @@ const mainApp = (function() {
     }
 
 
+
     async function getAIResponseForCurrentHistory(file = null) {
         if (isAIResponding || !currentAIChatId) return;
         isAIResponding = true;
         aiChatSendBtn.disabled = true;
         
         const currentChat = allAIChats[currentAIChatId];
-
-        // 1. Создаем "чистую" копию истории, как она есть, для отправки на сервер.
-        //    Клиент больше не пытается модифицировать контент для контекста.
-        const historyForAPI = JSON.parse(JSON.stringify(currentChat));
         
-        // 2. Добавляем индикатор "typing..." в массив для UI и сразу отображаем.
+        // Пользовательское сообщение уже находится в `currentChat`.
+        // Отправляем его копию в API.
+        const historyForAPI = JSON.parse(JSON.stringify(currentChat));
+
+        // Добавляем плейсхолдер ("печатает...") в историю чата.
+        // Мы будем заменять его, а не удалять через pop().
         currentChat.push({ role: 'model', content: 'typing...' });
+        const aiResponseIndex = currentChat.length - 1; // Запоминаем индекс нашего плейсхолдера
         renderAIChatMessages();
 
         try {
@@ -15699,12 +15813,11 @@ const mainApp = (function() {
             
             const requestBody = {
                 action: 'getGeneralChatReply',
-                history: historyForAPI, // Отправляем "чистую" историю
+                history: historyForAPI,
                 settings: aiSettings,
                 targetLanguage: localStorage.getItem('appLanguage') || 'ru'
             };
 
-            // Логика добавления файла остается без изменений
             if (file) {
                 requestBody.file = {
                     mimeType: file.mimeType,
@@ -15719,27 +15832,38 @@ const mainApp = (function() {
 
             const result = await response.json();
             
-            currentChat.pop(); // Убираем 'typing...'
             if (result.success && result.reply) {
-                currentChat.push({ 
+                // УСПЕХ: Заменяем плейсхолдер на реальный ответ ИИ.
+                currentChat[aiResponseIndex] = { 
                     role: 'model', 
                     content: result.reply,
-                    grounded: result.wasGrounded // <-- ДОБАВЛЕНА ЭТА СТРОКА
-                });
+                    grounded: result.wasGrounded
+                };
             } else {
-                throw new Error(result.error || 'Не удалось получить ответ от ИИ.');
+                // ОШИБКА НА СЕРВЕРЕ: Заменяем плейсхолдер на сообщение об ошибке.
+                const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
+                currentChat[aiResponseIndex] = { 
+                    role: 'model', 
+                    content: `Произошла ошибка: ${errorMessage}` 
+                };
             }
         } catch (error) {
+            // СЕТЕВАЯ ОШИБКА ИЛИ ОШИБКА НА КЛИЕНТЕ: Заменяем плейсхолдер на сообщение об ошибке.
             console.error("Ошибка AI-чата:", error);
-            currentChat.pop(); // Убираем 'typing...'
-            currentChat.push({ role: 'model', content: `Произошла ошибка: ${error.message}` });
+            currentChat[aiResponseIndex] = { 
+                role: 'model', 
+                content: `Произошла ошибка: ${error.message}` 
+            };
         } finally {
+            // Этот блок теперь только обновляет финальное состояние UI.
             isAIResponding = false;
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
             saveAIChatsToStorage();
-            renderAIChatMessages();
+            renderAIChatMessages(); // Перерисовываем чат с финальным сообщением (успех или ошибка).
         }
     }
+
+
 
     /**
      * НОВАЯ ФУНКЦИЯ
@@ -15780,11 +15904,15 @@ const mainApp = (function() {
         }
     }
 
+
+
+ 
     async function regenerateLastAIResponse() {
         if (isAIResponding || !currentAIChatId) return;
 
         const currentChat = allAIChats[currentAIChatId];
 
+        // 1. Находим индекс самого последнего сообщения от пользователя.
         let lastUserMessageIndex = -1;
         for (let i = currentChat.length - 1; i >= 0; i--) {
             if (currentChat[i].role === 'user') {
@@ -15792,13 +15920,25 @@ const mainApp = (function() {
                 break;
             }
         }
-        if (lastUserMessageIndex === -1) return;
 
-        const lastUserMessage = currentChat[lastUserMessageIndex];
-        const fileToResend = lastUserMessage.attachment || null;
+        // Если сообщений от пользователя нет, перегенерация невозможна.
+        if (lastUserMessageIndex === -1) {
+            console.warn("Не найдено сообщений пользователя для перегенерации.");
+            return;
+        }
 
-        allAIChats[currentAIChatId] = currentChat.slice(0, lastUserMessageIndex + 1);
+        // 2. Обрезаем историю чата, оставляя все сообщения до последнего сообщения пользователя включительно.
+        // Это надежно удаляет все последующие ответы ИИ, включая ошибки.
+        const historyToResubmit = currentChat.slice(0, lastUserMessageIndex + 1);
 
+        // 3. Последнее сообщение в этой обрезанной истории — это и есть наш промпт.
+        const promptingMessage = historyToResubmit[historyToResubmit.length - 1];
+        const fileToResend = promptingMessage?.attachment || null;
+
+        // 4. Обновляем основной массив чата.
+        allAIChats[currentAIChatId] = historyToResubmit;
+
+        // 5. Запускаем генерацию ответа заново.
         getAIResponseForCurrentHistory(fileToResend);
     }
 

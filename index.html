@@ -629,8 +629,11 @@
 
 
                     <div class="ai-chat-input-area">
+
+
                         <!-- === НАЧАЛО НОВОГО КОДА === -->
                         <div class="ai-main-controls">
+                            <!-- Блок с переключателем поиска остается слева -->
                             <div class="ai-setting-group">
                                 <label for="aiGroundingToggleMain" data-lang-key="ai_grounding_label">Поиск в Google</label>
                                 <label class="ai-toggle-switch">
@@ -638,8 +641,15 @@
                                     <span class="ai-toggle-slider"></span>
                                 </label>
                             </div>
+
+                            <!-- Новая кнопка для показа сообщений будет справа -->
+                            <button id="aiShowAllUserMessagesBtn" class="ai-action-btn" title="Показать все мои сообщения">
+                                <i data-lucide="user-round-search"></i>
+                            </button>
                         </div>
                         <!-- === КОНЕЦ НОВОГО КОДА === -->
+
+                        
                         <div id="aiReplyPanel" class="ai-reply-panel hidden">
                             <div class="ai-reply-info">
                                 <span class="ai-reply-title">Ответ на сообщение:</span>
