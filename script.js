@@ -14575,11 +14575,12 @@ const mainApp = (function() {
         }
     }
 
+
+
     /**
      * Показывает или скрывает все подсказки для сообщений пользователя.
      */
     function toggleAllUserMessageTooltips() {
-        // Переключаем глобальное состояние
         isAllTooltipsVisible = !isAllTooltipsVisible;
 
         const container = getEl('aiPersistentTooltipsContainer');
@@ -14589,8 +14590,7 @@ const mainApp = (function() {
         button.classList.toggle('active', isAllTooltipsVisible);
 
         if (isAllTooltipsVisible) {
-            // --- РЕЖИМ: ПОКАЗАТЬ ПОДСКАЗКИ ---
-            container.innerHTML = ''; // Очищаем от старых
+            container.innerHTML = '';
             const dots = aiScrollbarDots.querySelectorAll('.scrollbar-dot');
             const scrollWrapperRect = aiChatScrollWrapper.getBoundingClientRect();
 
@@ -14609,31 +14609,42 @@ const mainApp = (function() {
                 
                 tooltip.style.top = `${topPos}px`;
                 tooltip.style.right = '35px';
+                
+                // === НАЧАЛО ИЗМЕНЕНИЙ ===
+                tooltip.style.cursor = 'pointer'; // 1. Меняем курсор, чтобы показать кликабельность
+                tooltip.style.pointerEvents = 'auto'; // 2. Разрешаем клики по подсказке
+
+                tooltip.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    // 4. Прокручиваем к нужному сообщению, указывая выравнивание по верху ('start')
+                    scrollToAIMessage(messageIndex, 'start'); 
+                    
+                    // 5. Выключаем режим просмотра подсказок
+                    toggleAllUserMessageTooltips();
+                });
+                // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
                 container.appendChild(tooltip);
                 setTimeout(() => tooltip.classList.add('visible'), 10);
             });
 
-            // Добавляем слушатель кликов на весь документ.
-            // setTimeout нужен, чтобы этот слушатель не сработал на тот же клик, который его и создал.
             setTimeout(() => {
                 document.body.addEventListener('click', handleOutsideTooltipClick);
             }, 0);
         } else {
-            // --- РЕЖИМ: СКРЫТЬ ПОДСКАЗКИ ---
             const tooltips = container.querySelectorAll('.persistent-tooltip');
             tooltips.forEach(tt => {
                 tt.classList.remove('visible');
                 setTimeout(() => tt.remove(), 300);
             });
-            // Самое важное: убираем слушатель, так как он больше не нужен
             document.body.removeEventListener('click', handleOutsideTooltipClick);
         }
     }
 
 
 
-    
+
     /**
      * НОВАЯ ФУНКЦИЯ: Обновляет состояние переключателя "Поиск в Google"
      * в зависимости от того, прикреплен ли файл.
@@ -14932,19 +14943,18 @@ const mainApp = (function() {
     }
 
 
+
     /**
      * Перерисовывает весь кастомный скроллбар: ползунок и точки.
      */
     function drawOrUpdateScrollbar() {
         if (!aiChatMessages || !aiCustomScrollbar) return;
-        // ======== НАЧАЛО ИЗМЕНЕНИЙ ========
-        // Если режим обзора включен, принудительно его обновляем
+
         if (isAllTooltipsVisible) {
-            // Вызываем функцию дважды, чтобы сначала скрыть старые, а потом показать новые
-            toggleAllUserMessageTooltips(); 
-            toggleAllUserMessageTooltips(); 
+            toggleAllUserMessageTooltips();
+            toggleAllUserMessageTooltips();
         }
-        // ======== КОНЕЦ ИЗМЕНЕНИЙ ========
+
         const scrollHeight = aiChatMessages.scrollHeight;
         const clientHeight = aiChatMessages.clientHeight;
 
@@ -14953,82 +14963,106 @@ const mainApp = (function() {
             return;
         }
         aiCustomScrollbar.classList.remove('hidden');
-        
+
         updateScrollbarThumbPosition();
 
         aiScrollbarDots.innerHTML = '';
         const userMessages = Array.from(aiChatMessages.querySelectorAll('.ai-message-container.is-user'));
-        
-        // === НАЧАЛО ГЛАВНЫХ ИЗМЕНЕНИЙ (v3) ===
-        const isMobile = detectMobileDevice(); // Проверяем тип устройства ОДИН раз
 
         userMessages.forEach((msgContainer) => {
             const dot = document.createElement('div');
             dot.className = 'scrollbar-dot';
-            
+
             const messageIndex = parseInt(msgContainer.id.replace('ai-message-container-', ''), 10);
             dot.dataset.index = messageIndex;
+
+            const message = allAIChats[currentAIChatId]?.[messageIndex];
+
+            if (message && message.dotColor) {
+                dot.style.backgroundColor = message.dotColor;
+            }
 
             const messageTop = msgContainer.offsetTop;
             const dotPositionPercent = (messageTop / scrollHeight) * 100;
             dot.style.top = `${dotPositionPercent}%`;
+
+            // === НАЧАЛО ИСПРАВЛЕННОЙ И ПОЛНОЙ ЛОГИКИ ===
             
+            // 1. Логика для долгого нажатия и короткого клика
+            let longPressTimer = null;
+            let isLongPress = false;
+
+            const handlePressStart = (e) => {
+                e.preventDefault();
+                isLongPress = false;
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    showDotColorPicker(dot, messageIndex);
+                }, 500);
+            };
+
+            const handlePressEnd = (e) => {
+                clearTimeout(longPressTimer);
+                if (!isLongPress) {
+                    e.stopPropagation();
+                    msgContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            };
+
+            // 2. Логика для подсказки при наведении (восстановлена!)
             const showTooltip = (targetDot) => {
                 const currentChat = allAIChats[currentAIChatId];
-                const message = currentChat?.[messageIndex];
-                if (!message) return;
+                const msg = currentChat?.[messageIndex];
+                if (!msg) return;
 
-                const content = message.content || 'Вложение';
+                const content = msg.content || 'Вложение';
                 aiScrollbarTooltip.textContent = content.substring(0, 100) + (content.length > 100 ? '...' : '');
                 
-                const scrollWrapperRect = aiChatModal.getBoundingClientRect();
-                const dotRect = targetDot.getBoundingClientRect();
-                
-                aiScrollbarTooltip.style.left = `${dotRect.left - aiScrollbarTooltip.offsetWidth - 15}px`;
+                aiScrollbarTooltip.classList.remove('visible');
+                aiScrollbarTooltip.style.left = '-9999px';
 
-                let topPos = dotRect.top + (dotRect.height / 2) - (aiScrollbarTooltip.offsetHeight / 2);
-                if (topPos < scrollWrapperRect.top + 10) topPos = scrollWrapperRect.top + 10;
-                if (topPos + aiScrollbarTooltip.offsetHeight > scrollWrapperRect.bottom - 10) {
-                    topPos = scrollWrapperRect.bottom - 10 - aiScrollbarTooltip.offsetHeight;
-                }
-                aiScrollbarTooltip.style.top = `${topPos}px`;
-                aiScrollbarTooltip.classList.add('visible');
+                requestAnimationFrame(() => {
+                    const scrollWrapperRect = aiChatModal.getBoundingClientRect();
+                    const dotRect = targetDot.getBoundingClientRect();
+                    const tooltipWidth = aiScrollbarTooltip.offsetWidth;
+                    aiScrollbarTooltip.style.left = `${dotRect.left - tooltipWidth - 15}px`;
+
+                    let topPos = dotRect.top + (dotRect.height / 2) - (aiScrollbarTooltip.offsetHeight / 2);
+                    if (topPos < scrollWrapperRect.top + 10) topPos = scrollWrapperRect.top + 10;
+                    if (topPos + aiScrollbarTooltip.offsetHeight > scrollWrapperRect.bottom - 10) {
+                        topPos = scrollWrapperRect.bottom - 10 - aiScrollbarTooltip.offsetHeight;
+                    }
+                    aiScrollbarTooltip.style.top = `${topPos}px`;
+                    aiScrollbarTooltip.classList.add('visible');
+                });
             };
 
             const hideTooltip = () => {
                 aiScrollbarTooltip.classList.remove('visible');
             };
 
-            // Разделяем логику для ПК и мобильных
-            if (isMobile) {
-                // ЛОГИКА ДЛЯ МОБИЛЬНЫХ (ДВОЙНОЙ ТАП)
-                dot.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    if (activeTooltipDot === dot) {
-                        msgContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        hideActiveTooltip();
-                    } else {
-                        hideActiveTooltip();
-                        showTooltip(dot);
-                        activeTooltipDot = dot;
-                    }
-                };
-            } else {
-                // ЛОГИКА ДЛЯ ПК (НАВЕДЕНИЕ + ОДИН КЛИК)
-                dot.addEventListener('mouseenter', () => showTooltip(dot));
-                dot.addEventListener('mouseleave', hideTooltip);
-                dot.onclick = () => {
-                    msgContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                };
-            }
-            // === КОНЕЦ ГЛАВНЫХ ИЗМЕНЕНИЙ ===
+            // 3. Привязываем все обработчики
+            dot.addEventListener('mousedown', handlePressStart);
+            dot.addEventListener('mouseup', handlePressEnd);
+            dot.addEventListener('mouseleave', () => {
+                clearTimeout(longPressTimer);
+                hideTooltip(); // Также скрываем подсказку при уходе курсора
+            });
+            dot.addEventListener('touchstart', handlePressStart, { passive: false });
+            dot.addEventListener('touchend', handlePressEnd);
+            dot.addEventListener('touchmove', () => clearTimeout(longPressTimer));
             
+            // Наведение работает только на не-мобильных устройствах
+            if (!detectMobileDevice()) {
+                dot.addEventListener('mouseenter', () => showTooltip(dot));
+            }
+            
+            // === КОНЕЦ ИСПРАВЛЕННОЙ И ПОЛНОЙ ЛОГИКИ ===
+
             aiScrollbarDots.appendChild(dot);
         });
     }
-
+    
     /**
      * Обновляет только позицию и размер ползунка (вызывается при скролле).
      */
@@ -15048,6 +15082,75 @@ const mainApp = (function() {
         aiScrollbarThumb.style.top = `${thumbPosition}px`;
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Показывает палитру для выбора цвета точки.
+     * @param {HTMLElement} dotElement - Элемент точки, на которой был сделан долгий клик.
+     * @param {number} messageIndex - Индекс сообщения, к которому привязана точка.
+     */
+    function showDotColorPicker(dotElement, messageIndex) {
+        // Удаляем любую старую палитру, если она есть
+        document.querySelector('.dot-color-picker')?.remove();
+
+        const picker = document.createElement('div');
+        picker.className = 'dot-color-picker';
+
+        const colors = [
+            '#e74c3c', // Красный (стандартный)
+            '#e67e22', // Оранжевый
+            '#f1c40f', // Желтый
+            '#2ecc71', // Зеленый
+            '#3498db', // Синий
+            '#9b59b6'  // Фиолетовый
+        ];
+
+        colors.forEach(color => {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = color;
+            swatch.onclick = (e) => {
+                e.stopPropagation();
+                const msg = allAIChats[currentAIChatId][messageIndex];
+                msg.dotColor = color;
+                saveAIChatsToStorage();
+                drawOrUpdateScrollbar();
+                picker.remove();
+            };
+            picker.appendChild(swatch);
+        });
+
+        // Кнопка сброса цвета
+        const resetButton = document.createElement('button');
+        resetButton.className = 'color-picker-reset';
+        resetButton.title = "Сбросить цвет";
+        resetButton.innerHTML = `<i data-lucide="circle-slash-2"></i>`;
+        resetButton.onclick = (e) => {
+            e.stopPropagation();
+            const msg = allAIChats[currentAIChatId][messageIndex];
+            delete msg.dotColor; // Удаляем свойство цвета
+            saveAIChatsToStorage();
+            drawOrUpdateScrollbar();
+            picker.remove();
+        };
+        picker.appendChild(resetButton);
+
+        document.body.appendChild(picker);
+        if (window.lucide) lucide.createIcons();
+
+        // Позиционирование палитры
+        const dotRect = dotElement.getBoundingClientRect();
+        picker.style.top = `${dotRect.top + dotRect.height / 2 - picker.offsetHeight / 2}px`;
+        picker.style.left = `${dotRect.left - picker.offsetWidth - 10}px`;
+
+        // Закрытие по клику вне палитры
+        setTimeout(() => {
+            document.body.addEventListener('click', function closePicker(event) {
+                if (!picker.contains(event.target)) {
+                    picker.remove();
+                    document.body.removeEventListener('click', closePicker);
+                }
+            }, { once: true });
+        }, 0);
+    }
 
     /**
      * НОВАЯ ФУНКЦИЯ: Начинает процесс ответа на сообщение.
@@ -15078,14 +15181,16 @@ const mainApp = (function() {
         aiReplyPanel.classList.add('hidden');
     }
     
+
     /**
-     * НОВАЯ ФУНКЦИЯ: Прокручивает к указанному сообщению и подсвечивает его.
+     * Прокручивает к указанному сообщению и подсвечивает его.
      * @param {number} index - Индекс сообщения в истории.
+     * @param {'start' | 'center' | 'end'} blockAlignment - Как выровнять сообщение в окне.
      */
-    function scrollToAIMessage(index) {
+    function scrollToAIMessage(index, blockAlignment = 'center') {
         const element = getEl(`ai-message-container-${index}`);
         if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({ behavior: 'smooth', block: blockAlignment });
             element.classList.add('highlighted');
             setTimeout(() => element.classList.remove('highlighted'), 2000);
         }

@@ -9772,8 +9772,8 @@ body.glass-dark .ai-chat-settings-panel {
 }
 
 .scrollbar-dot:hover {
-    transform: translate(-50%, -50%) scale(1.2);
-    box-shadow: 0 0 5px var(--accent);
+    transform: translate(-50%, -50%) scale(1.1);
+    box-shadow: 0 0 3px var(--accent);
 }
 
 /* ======================================================= */
@@ -10352,8 +10352,8 @@ body.claude-mode .ai-chat-history-item.active {
 
     /* 2. Делаем сами точки-маркеры крупнее и заметнее */
     .scrollbar-dot {
-        width: 20px;  /* Было: 10px */
-        height: 10px; /* Было: 10px */
+        width: 25px;  /* Было: 10px */
+        height: 17px; /* Было: 10px */
     }
 }
 
@@ -10440,3 +10440,48 @@ body.claude-mode .ai-chat-history-item.active {
     border-color: transparent transparent transparent var(--container-bg-color);
 }
 
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ПАЛИТРЫ ВЫБОРА ЦВЕТА          === */
+/* ======================================================= */
+
+.dot-color-picker {
+    position: fixed; /* Позиционирование относительно окна */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 20px; /* Сильно скругленные углы */
+    box-shadow: 0 5px 20px var(--shadow-color);
+    z-index: 10003; /* Поверх всего */
+    animation: zoomIn 0.2s ease; /* Анимация появления */
+}
+
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--container-bg-color);
+    box-shadow: 0 0 0 1px var(--border-color);
+    transition: transform 0.2s ease;
+}
+
+.color-swatch:hover {
+    transform: scale(1.2);
+}
+
+.color-picker-reset {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.color-picker-reset:hover {
+    color: var(--accent);
+}
