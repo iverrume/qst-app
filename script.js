@@ -15258,6 +15258,7 @@ const mainApp = (function() {
      * @param {number} messageIndex - Индекс сообщения, к которому привязана точка.
      */
     function showDotColorPicker(targetElement, messageIndex) {
+        console.log('[LOG] Вызвана showDotColorPicker. Создаем палитру.');
         // Удаляем любую старую палитру на всякий случай
         document.querySelector('.dot-color-picker')?.remove();
 
@@ -15282,15 +15283,12 @@ const mainApp = (function() {
             if (itemInSidebar) {
                 itemInSidebar.style.borderLeftColor = newColor || '';
             }
-            
-            // Палитра удалится сама через слушатель клика, нам не нужно делать это здесь
         };
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
-            // Клик по цвету обновляет его и автоматически закрывает палитру (т.к. клик будет "вне")
             swatch.onclick = () => updateColor(color);
             picker.appendChild(swatch);
         });
@@ -15305,27 +15303,35 @@ const mainApp = (function() {
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
         
-        // Позиционируем палитру по центру экрана, что идеально для мобильных
         picker.style.position = 'fixed';
         picker.style.left = '50%';
         picker.style.top = '50%';
         picker.style.transform = 'translate(-50%, -50%)';
 
-        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Логика закрытия палитры ===
-        // Мы добавляем слушатель на закрытие с небольшой задержкой.
-        // Это позволяет "призрачному" клику, который следует за долгим нажатием, пройти, не закрывая палитру.
-        setTimeout(() => {
-            const closePickerOnClickOutside = (event) => {
-                // Если палитра все еще на странице и клик был не по ней
-                if (picker.parentNode && !picker.contains(event.target)) {
-                    picker.remove();
-                    // Важно удалить сам слушатель после использования
-                    document.removeEventListener('click', closePickerOnClickOutside, true);
-                }
-            };
-            // Вешаем слушатель на фазу "захвата", чтобы он сработал надежно
-            document.addEventListener('click', closePickerOnClickOutside, true);
-        }, 100); // 100мс - безопасная задержка
+        // === ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ С ФЛАГОМ ===
+        let ignoreFirstClick = true; // 1. Создаем флаг
+
+        const closePickerOnClickOutside = (event) => {
+            // 2. Проверяем флаг при каждом клике
+            if (ignoreFirstClick) {
+                console.log('[LOG] Игнорируем первый "призрачный" клик.');
+                ignoreFirstClick = false; // Сбрасываем флаг и ничего не делаем
+                return;
+            }
+
+            // Этот код сработает только на ВТОРОЙ и последующие клики
+            if (picker.parentNode && !picker.contains(event.target)) {
+                console.log('[LOG] Клик вне палитры. Закрытие...');
+                picker.remove();
+                document.removeEventListener('click', closePickerOnClickOutside, true);
+            } else {
+                console.log('[LOG] Клик внутри палитры. Оставляем открытой.');
+            }
+        };
+        
+        // 3. Вешаем слушатель немедленно, без задержки
+        console.log('[LOG] Слушатель на закрытие установлен.');
+        document.addEventListener('click', closePickerOnClickOutside, true);
     }
 
 
