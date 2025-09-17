@@ -14605,25 +14605,24 @@ const mainApp = (function() {
                 tooltip.textContent = content.substring(0, 50) + (content.length > 50 ? '...' : '');
 
                 const dotRect = dot.getBoundingClientRect();
-                const topPos = dotRect.top - scrollWrapperRect.top + (dotRect.height / 2) - 15;
+                const tooltipHeight = 30; // Приблизительная высота подсказки для расчета
+                const topPos = dotRect.top - scrollWrapperRect.top + (dotRect.height / 2) - (tooltipHeight / 2);
                 
                 tooltip.style.top = `${topPos}px`;
-                tooltip.style.right = '35px';
-                
-                // === НАЧАЛО ИЗМЕНЕНИЙ ===
-                tooltip.style.cursor = 'pointer'; // 1. Меняем курсор, чтобы показать кликабельность
-                tooltip.style.pointerEvents = 'auto'; // 2. Разрешаем клики по подсказке
+                // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
+                // Позиционируем подсказку слева от точки с отступом
+                tooltip.style.left = 'auto'; // Сбрасываем left
+                tooltip.style.right = `${scrollWrapperRect.width - (dotRect.left - scrollWrapperRect.left) + 15}px`;
+                // -------------------------
+
+                tooltip.style.cursor = 'pointer';
+                tooltip.style.pointerEvents = 'auto';
 
                 tooltip.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    
-                    // 4. Прокручиваем к нужному сообщению, указывая выравнивание по верху ('start')
-                    scrollToAIMessage(messageIndex, 'start'); 
-                    
-                    // 5. Выключаем режим просмотра подсказок
+                    scrollToAIMessage(messageIndex, 'start');
                     toggleAllUserMessageTooltips();
                 });
-                // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
                 container.appendChild(tooltip);
                 setTimeout(() => tooltip.classList.add('visible'), 10);
@@ -14641,7 +14640,6 @@ const mainApp = (function() {
             document.body.removeEventListener('click', handleOutsideTooltipClick);
         }
     }
-
 
 
 
@@ -14968,27 +14966,50 @@ const mainApp = (function() {
 
         aiScrollbarDots.innerHTML = '';
         const userMessages = Array.from(aiChatMessages.querySelectorAll('.ai-message-container.is-user'));
+        
+        // --- НАЧАЛО НОВОЙ ЛОГИКИ СМЕЩЕНИЯ ---
+        if (userMessages.length === 0) return;
 
-        userMessages.forEach((msgContainer) => {
+        const dotPositions = userMessages.map(msgContainer => ({
+            element: msgContainer,
+            topPercent: (msgContainer.offsetTop / scrollHeight) * 100
+        }));
+
+        const minPixelDistance = 12; // Минимальное расстояние в пикселях между точками
+        const trackHeight = aiCustomScrollbar.clientHeight;
+        const minVerticalDistancePercent = (minPixelDistance / trackHeight) * 100;
+
+        const horizontalOffsets = [50, 25, 75, 0, 100]; // Позиции в % (центр, левее, правее, край лево, край право)
+        let lastPlacedY = -Infinity;
+        let staggerIndex = 0;
+
+        dotPositions.forEach(dotInfo => {
+            if (dotInfo.topPercent - lastPlacedY < minVerticalDistancePercent) {
+                staggerIndex = (staggerIndex + 1) % horizontalOffsets.length;
+            } else {
+                staggerIndex = 0;
+            }
+            
+            dotInfo.leftPercent = horizontalOffsets[staggerIndex];
+            lastPlacedY = dotInfo.topPercent;
+
             const dot = document.createElement('div');
             dot.className = 'scrollbar-dot';
-
-            const messageIndex = parseInt(msgContainer.id.replace('ai-message-container-', ''), 10);
+            const messageIndex = parseInt(dotInfo.element.id.replace('ai-message-container-', ''), 10);
             dot.dataset.index = messageIndex;
 
             const message = allAIChats[currentAIChatId]?.[messageIndex];
-
             if (message && message.dotColor) {
                 dot.style.backgroundColor = message.dotColor;
             }
 
-            const messageTop = msgContainer.offsetTop;
-            const dotPositionPercent = (messageTop / scrollHeight) * 100;
-            dot.style.top = `${dotPositionPercent}%`;
+            dot.style.top = `${dotInfo.topPercent}%`;
+            // Применяем вычисленное горизонтальное смещение
+            dot.style.left = `${dotInfo.leftPercent}%`;
+            // Корректируем transform, чтобы точка центрировалась по горизонтали
+            dot.style.transform = `translate(-${dotInfo.leftPercent}%, -50%)`;
 
-            // === НАЧАЛО ИСПРАВЛЕННОЙ И ПОЛНОЙ ЛОГИКИ ===
-            
-            // 1. Логика для долгого нажатия и короткого клика
+            // Вся логика для обработчиков событий остается здесь
             let longPressTimer = null;
             let isLongPress = false;
 
@@ -15005,11 +15026,10 @@ const mainApp = (function() {
                 clearTimeout(longPressTimer);
                 if (!isLongPress) {
                     e.stopPropagation();
-                    msgContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    dotInfo.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             };
-
-            // 2. Логика для подсказки при наведении (восстановлена!)
+            
             const showTooltip = (targetDot) => {
                 const currentChat = allAIChats[currentAIChatId];
                 const msg = currentChat?.[messageIndex];
@@ -15037,30 +15057,22 @@ const mainApp = (function() {
                 });
             };
 
-            const hideTooltip = () => {
-                aiScrollbarTooltip.classList.remove('visible');
-            };
-
-            // 3. Привязываем все обработчики
+            const hideTooltip = () => aiScrollbarTooltip.classList.remove('visible');
+            
             dot.addEventListener('mousedown', handlePressStart);
             dot.addEventListener('mouseup', handlePressEnd);
-            dot.addEventListener('mouseleave', () => {
-                clearTimeout(longPressTimer);
-                hideTooltip(); // Также скрываем подсказку при уходе курсора
-            });
+            dot.addEventListener('mouseleave', () => { clearTimeout(longPressTimer); hideTooltip(); });
             dot.addEventListener('touchstart', handlePressStart, { passive: false });
             dot.addEventListener('touchend', handlePressEnd);
             dot.addEventListener('touchmove', () => clearTimeout(longPressTimer));
             
-            // Наведение работает только на не-мобильных устройствах
             if (!detectMobileDevice()) {
                 dot.addEventListener('mouseenter', () => showTooltip(dot));
             }
-            
-            // === КОНЕЦ ИСПРАВЛЕННОЙ И ПОЛНОЙ ЛОГИКИ ===
 
             aiScrollbarDots.appendChild(dot);
         });
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ СМЕЩЕНИЯ ---
     }
     
     /**
