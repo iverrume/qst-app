@@ -15296,12 +15296,17 @@ const mainApp = (function() {
             if (itemInSidebar) {
                 itemInSidebar.style.borderLeftColor = newColor || '';
             }
+            
+            // === ВОТ ОНО, ИСПРАВЛЕНИЕ! ===
+            // Просто удаляем палитру из DOM после того, как цвет был выбран и сохранен.
+            picker.remove();
         };
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
+            // Клик по цвету теперь вызывает функцию, которая сама закроет палитру
             swatch.onclick = () => updateColor(color);
             picker.appendChild(swatch);
         });
@@ -15321,30 +15326,17 @@ const mainApp = (function() {
         picker.style.top = '50%';
         picker.style.transform = 'translate(-50%, -50%)';
 
-        // === ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ С ФЛАГОМ ===
-        let ignoreFirstClick = true; // 1. Создаем флаг
-
-        const closePickerOnClickOutside = (event) => {
-            // 2. Проверяем флаг при каждом клике
-            if (ignoreFirstClick) {
-                console.log('[LOG] Игнорируем первый "призрачный" клик.');
-                ignoreFirstClick = false; // Сбрасываем флаг и ничего не делаем
-                return;
-            }
-
-            // Этот код сработает только на ВТОРОЙ и последующие клики
-            if (picker.parentNode && !picker.contains(event.target)) {
-                console.log('[LOG] Клик вне палитры. Закрытие...');
-                picker.remove();
-                document.removeEventListener('click', closePickerOnClickOutside, true);
-            } else {
-                console.log('[LOG] Клик внутри палитры. Оставляем открытой.');
-            }
-        };
-        
-        // 3. Вешаем слушатель немедленно, без задержки
-        console.log('[LOG] Слушатель на закрытие установлен.');
-        document.addEventListener('click', closePickerOnClickOutside, true);
+        // Логика закрытия при клике вне палитры остается для случаев,
+        // когда пользователь просто передумал и не выбрал цвет
+        setTimeout(() => {
+            const closePickerOnClickOutside = (event) => {
+                if (picker.parentNode && !picker.contains(event.target)) {
+                    picker.remove();
+                    document.removeEventListener('click', closePickerOnClickOutside, true);
+                }
+            };
+            document.addEventListener('click', closePickerOnClickOutside, true);
+        }, 100);
     }
 
 
