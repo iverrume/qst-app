@@ -14398,48 +14398,38 @@ const mainApp = (function() {
 
         // Обработчик для кнопки, открывающей правую панель
         aiShowAllUserMessagesBtn?.addEventListener('click', (e) => {
-            console.log('[DEBUG] Клик по кнопке открытия правой панели.');
             e.stopPropagation(); 
             toggleUserMessagesSidebar();
         });
 
-        // НОВЫЙ НАДЕЖНЫЙ ОБРАБОТЧИК ДЛЯ ЗАКРЫТИЯ ПАНЕЛИ
+        // Надежный обработчик для закрытия правой панели по клику вне ее
         aiChatModalContent?.addEventListener('click', (e) => {
-            console.log('[DEBUG] Клик внутри модального окна AI.');
-            // Проверяем, открыта ли панель
             if (aiChatModalContent.classList.contains('user-sidebar-open')) {
-                console.log('[DEBUG] Правая панель открыта, проверяем цель клика.');
                 const target = e.target;
-                
-                // Проверяем, был ли клик НЕ внутри панели и НЕ по кнопке ее открытия
-                const clickedOutside = !aiUserMessagesSidebar.contains(target) && !aiShowAllUserMessagesBtn.contains(target);
-                
-                console.log(`[DEBUG] Цель клика:`, target);
-                console.log(`[DEBUG] Клик был вне панели? ${clickedOutside}`);
-
-                if (clickedOutside) {
-                    console.log('[DEBUG] Панель будет закрыта.');
+                if (!aiUserMessagesSidebar.contains(target) && !aiShowAllUserMessagesBtn.contains(target)) {
                     toggleUserMessagesSidebar();
-                } else {
-                    console.log('[DEBUG] Клик был внутри панели, оставляем открытой.');
                 }
             }
         });
-
+        
         // Обработчики для списка сообщений в правой панели (с исправлением скролла)
         if (aiUserMessagesList) {
             let longPressTimer = null;
             let isLongPress = false;
-            let didScroll = false;
+            let didScroll = false; // Этот флаг теперь критически важен
 
+            // Эта функция запускается, когда пользователь начинает касание (мышью или пальцем)
             const handlePressStart = (e) => {
                 const item = e.target.closest('.ai-user-message-item');
                 if (!item) return;
                 
+                // Сбрасываем флаги перед каждым новым действием
                 isLongPress = false;
                 didScroll = false;
 
+                // Запускаем таймер, который определит, является ли нажатие долгим
                 longPressTimer = setTimeout(() => {
+                    // Если за 500мс не было скролла, считаем это долгим нажатием
                     if (!didScroll) {
                         isLongPress = true;
                         const index = parseInt(item.dataset.index, 10);
@@ -14448,29 +14438,47 @@ const mainApp = (function() {
                 }, 500);
             };
 
-            const handlePressEnd = (e) => {
-                clearTimeout(longPressTimer);
-                if (!isLongPress && !didScroll) {
-                    const item = e.target.closest('.ai-user-message-item');
-                    if (item) {
-                        const index = parseInt(item.dataset.index, 10);
-                        scrollToAIMessage(index, 'start');
-                        toggleUserMessagesSidebar();
-                    }
-                }
-            };
-            
-            aiUserMessagesList.addEventListener('mousedown', handlePressStart);
-            aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
-            aiUserMessagesList.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
-            aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: true });
-            aiUserMessagesList.addEventListener('touchmove', () => {
+            // Эта функция срабатывает, если пользователь начинает двигать пальцем/мышью
+            const handleMove = () => {
+                // Если движение началось, это точно скролл
                 didScroll = true;
+                // Немедленно отменяем таймер долгого нажатия
                 clearTimeout(longPressTimer);
+            };
+
+            // Эта функция срабатывает, когда пользователь отпускает палец/кнопку мыши
+            const handlePressEnd = () => {
+                // В любом случае останавливаем таймер
+                clearTimeout(longPressTimer);
+            };
+
+            // ГЛАВНЫЙ ОБРАБОТЧИК ДЛЯ КЛИКОВ И ТАПОВ
+            aiUserMessagesList.addEventListener('click', (e) => {
+                // Действие (клик/тап) выполняется ТОЛЬКО если это не было долгим нажатием и не было скролла
+                if (isLongPress || didScroll) {
+                    // Если было, просто сбрасываем флаги для следующего раза и ничего не делаем
+                    isLongPress = false;
+                    didScroll = false;
+                    return;
+                }
+
+                const item = e.target.closest('.ai-user-message-item');
+                if (item) {
+                    const index = parseInt(item.dataset.index, 10);
+                    scrollToAIMessage(index, 'start');
+                    toggleUserMessagesSidebar(); // <-- Теперь эта функция будет вызвана корректно!
+                }
             });
+            
+            // Привязываем все наши функции к нужным событиям
+            aiUserMessagesList.addEventListener('mousedown', handlePressStart);
+            aiUserMessagesList.addEventListener('mousemove', handleMove);
+            aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
+            
+            aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: true });
+            aiUserMessagesList.addEventListener('touchmove', handleMove, { passive: true });
             aiUserMessagesList.addEventListener('touchend', handlePressEnd);
         }
-
         // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
         
         aiCancelReplyBtn?.addEventListener('click', cancelAIReply);
@@ -14629,7 +14637,6 @@ const mainApp = (function() {
         loadAIChatSettings();
         loadAIChatsFromStorage();
     }
-
 
     // =======================================================
     // === ЛОГИКА ДЛЯ ПРАВОЙ ПАНЕЛИ С СООБЩЕНИЯМИ ПОЛЬЗОВАТЕЛЯ ===
@@ -15268,17 +15275,13 @@ const mainApp = (function() {
                 delete msg.dotColor;
             }
             saveAIChatsToStorage();
-            drawOrUpdateScrollbar(); // Обновляем точку на скроллбаре
+            drawOrUpdateScrollbar();
             
-            // --- НОВОЕ ПРЯМОЕ ОБНОВЛЕНИЕ СТИЛЯ ---
-            // Находим соответствующий элемент в правой панели...
             const itemInSidebar = getEl('aiUserMessagesList')?.querySelector(`li[data-index="${messageIndex}"]`);
             if (itemInSidebar) {
-                // ... и мгновенно меняем его стиль!
-                itemInSidebar.style.borderLeftColor = newColor || ''; // Если цвет сброшен, стиль тоже сбрасывается
+                itemInSidebar.style.borderLeftColor = newColor || '';
             }
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
+            
             picker.remove();
         };
 
@@ -15300,32 +15303,33 @@ const mainApp = (function() {
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
 
+        // --- НОВАЯ УМНАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ (v2) ---
         const targetRect = targetElement.getBoundingClientRect();
         const pickerRect = picker.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
         const margin = 10;
 
+        // Расчет позиции по вертикали (Top) с учетом границ
         let topPos = targetRect.top + targetRect.height / 2 - pickerRect.height / 2;
         topPos = Math.max(margin, Math.min(topPos, viewportHeight - pickerRect.height - margin));
 
+        // Расчет позиции по горизонтали (Left) с учетом границ
         let leftPos;
+        // Предпочтительно слева от элемента
         if (targetRect.left - pickerRect.width - margin > 0) {
             leftPos = targetRect.left - pickerRect.width - margin;
-        } else {
+        } else { // Иначе справа
             leftPos = targetRect.right + margin;
         }
         
-        if (leftPos + pickerRect.width > viewportWidth - margin) {
-            leftPos = viewportWidth - pickerRect.width - margin;
-        }
-        if (leftPos < margin) {
-            leftPos = margin;
-        }
+        // Финальная проверка, чтобы не вылезло за края
+        leftPos = Math.max(margin, Math.min(leftPos, viewportWidth - pickerRect.width - margin));
         
         picker.style.top = `${topPos}px`;
         picker.style.left = `${leftPos}px`;
-        
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ПОЗИЦИОНИРОВАНИЯ ---
+
         const stopImmediateClick = (e) => {
             e.stopPropagation();
             window.removeEventListener('click', stopImmediateClick, true);

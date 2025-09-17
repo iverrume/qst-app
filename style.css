@@ -6537,6 +6537,13 @@ body.glass-dark #finishTestButton.finish-test-early {
 /* ======================================================= */
 body.chat-open {
     overflow: hidden;
+    /* --- НОВАЯ СТРОКА: Отключаем навигационные жесты (свайп назад/вперед) на всей странице --- */
+    overscroll-behavior: contain;
+}
+
+/* --- Также добавим это свойство к самому чату для надежности --- */
+.ai-chat-modal-content {
+    overscroll-behavior: contain;
 }
 
 /* ======================================================= */
@@ -10556,6 +10563,10 @@ body.claude-mode .ai-chat-history-item.active {
     transition: background-color 0.2s ease;
     margin-bottom: 4px;
     border-left: 3px solid var(--accent);
+    /* --- НАЧАЛО НОВЫХ СТРОК --- */
+    -webkit-touch-callout: none; /* Запрещает появление контекстного меню на iOS */
+    user-select: none; /* Запрещает выделение текста на всех устройствах */
+    /* --- КОНЕЦ НОВЫХ СТРОК --- */
 }
 
 .ai-user-message-item:hover {
