@@ -14416,68 +14416,81 @@ const mainApp = (function() {
         if (aiUserMessagesList) {
             let longPressTimer = null;
             let isLongPress = false;
-            let didScroll = false; // Этот флаг теперь критически важен
+            let touchStartX = 0;
+            let touchStartY = 0;
+            const MOVE_THRESHOLD = 10; // Порог в пикселях. Движение меньше этого значения не считается скроллом.
 
-            // Эта функция запускается, когда пользователь начинает касание (мышью или пальцем)
             const handlePressStart = (e) => {
                 const item = e.target.closest('.ai-user-message-item');
                 if (!item) return;
-                
-                // Сбрасываем флаги перед каждым новым действием
+
+                const touch = e.touches ? e.touches[0] : e;
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
                 isLongPress = false;
-                didScroll = false;
 
-                // Запускаем таймер, который определит, является ли нажатие долгим
+                // Запускаем таймер, который сработает, если не будет движения
                 longPressTimer = setTimeout(() => {
-                    // Если за 500мс не было скролла, считаем это долгим нажатием
-                    if (!didScroll) {
-                        isLongPress = true;
-                        const index = parseInt(item.dataset.index, 10);
-                        showDotColorPicker(item, index);
-                    }
-                }, 500);
+                    console.log("[LOG] Таймер долгого нажатия сработал!");
+                    isLongPress = true; // Устанавливаем флаг, что это было долгое нажатие
+                    const index = parseInt(item.dataset.index, 10);
+                    showDotColorPicker(item, index);
+                }, 500); // 500мс для долгого нажатия
             };
 
-            // Эта функция срабатывает, если пользователь начинает двигать пальцем/мышью
-            const handleMove = () => {
-                // Если движение началось, это точно скролл
-                didScroll = true;
-                // Немедленно отменяем таймер долгого нажатия
+            const handleMove = (e) => {
+                // Если таймер уже отменили, ничего не делаем
+                if (!longPressTimer) return;
+
+                const touch = e.touches ? e.touches[0] : e;
+                const dx = Math.abs(touch.clientX - touchStartX);
+                const dy = Math.abs(touch.clientY - touchStartY);
+
+                // Если палец сдвинулся больше порога, это скролл - отменяем долгое нажатие
+                if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
+                    console.log("[LOG] Обнаружено движение, таймер отменен.");
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+            };
+
+            const handlePressEnd = (e) => {
+                // В любом случае очищаем таймер, когда палец отпущен
                 clearTimeout(longPressTimer);
+                longPressTimer = null;
+                
+                // САМЫЙ ВАЖНЫЙ МОМЕНТ: если это было долгое нажатие, мы должны
+                // предотвратить "призрачный" клик, который последует за ним.
+                if (isLongPress) {
+                    e.preventDefault();
+                }
             };
 
-            // Эта функция срабатывает, когда пользователь отпускает палец/кнопку мыши
-            const handlePressEnd = () => {
-                // В любом случае останавливаем таймер
-                clearTimeout(longPressTimer);
-            };
-
-            // ГЛАВНЫЙ ОБРАБОТЧИК ДЛЯ КЛИКОВ И ТАПОВ
-            aiUserMessagesList.addEventListener('click', (e) => {
-                // Действие (клик/тап) выполняется ТОЛЬКО если это не было долгим нажатием и не было скролла
-                if (isLongPress || didScroll) {
-                    // Если было, просто сбрасываем флаги для следующего раза и ничего не делаем
-                    isLongPress = false;
-                    didScroll = false;
+            const handleClick = (e) => {
+                // Если это был клик, который последовал сразу за долгим нажатием, игнорируем его.
+                if (isLongPress) {
+                    console.log("[LOG] Клик проигнорирован, так как это было долгое нажатие.");
+                    isLongPress = false; // Сбрасываем флаг для следующего раза
                     return;
                 }
 
+                // Иначе это обычный, короткий клик. Выполняем действие.
                 const item = e.target.closest('.ai-user-message-item');
                 if (item) {
                     const index = parseInt(item.dataset.index, 10);
                     scrollToAIMessage(index, 'start');
-                    toggleUserMessagesSidebar(); // <-- Теперь эта функция будет вызвана корректно!
+                    toggleUserMessagesSidebar();
                 }
-            });
-            
-            // Привязываем все наши функции к нужным событиям
+            };
+
+            // Навешиваем все обработчики
             aiUserMessagesList.addEventListener('mousedown', handlePressStart);
             aiUserMessagesList.addEventListener('mousemove', handleMove);
             aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
-            
             aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: true });
             aiUserMessagesList.addEventListener('touchmove', handleMove, { passive: true });
             aiUserMessagesList.addEventListener('touchend', handlePressEnd);
+            aiUserMessagesList.addEventListener('click', handleClick);
         }
         // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
         
