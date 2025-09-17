@@ -14369,7 +14369,6 @@ const mainApp = (function() {
         const textPreviewModal = getEl('textPreviewModal');
         const closeTextPreviewBtn = textPreviewModal?.querySelector('.close-text-preview');
         
-        // <-- ИСПРАВЛЕНИЕ: Убираем const, теперь это присваивание глобальной переменной -->
         aiChatScrollWrapper = aiChatModal?.querySelector('.ai-chat-scroll-wrapper');
         const aiSidebarHandle = getEl('aiSidebarHandle');
         const aiShowAllUserMessagesBtn = getEl('aiShowAllUserMessagesBtn');
@@ -14392,7 +14391,28 @@ const mainApp = (function() {
             loadFabPosition(aiChatFab);
         }
         
-        aiShowAllUserMessagesBtn?.addEventListener('click', toggleAllUserMessageTooltips);
+        // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+        
+        // Привязываем клик к НОВОЙ функции для правой панели
+        aiShowAllUserMessagesBtn?.addEventListener('click', toggleUserMessagesSidebar);
+        
+        // Добавляем обработчики для самой правой панели
+        const aiCloseUserMessagesSidebarBtn = getEl('aiCloseUserMessagesSidebarBtn');
+        const aiUserMessagesList = getEl('aiUserMessagesList');
+
+        aiCloseUserMessagesSidebarBtn?.addEventListener('click', toggleUserMessagesSidebar);
+
+        aiUserMessagesList?.addEventListener('click', (e) => {
+            const item = e.target.closest('.ai-user-message-item');
+            if (item) {
+                const index = parseInt(item.dataset.index, 10);
+                scrollToAIMessage(index, 'start');
+                // Закрываем панель после перехода для удобства
+                toggleUserMessagesSidebar();
+            }
+        });
+
+        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
         // Динамически создаем контейнер для постоянных подсказок
         if (aiChatScrollWrapper && !getEl('aiPersistentTooltipsContainer')) {
@@ -14559,6 +14579,76 @@ const mainApp = (function() {
         loadAIChatsFromStorage();
     }
 
+
+    // =======================================================
+    // === ЛОГИКА ДЛЯ ПРАВОЙ ПАНЕЛИ С СООБЩЕНИЯМИ ПОЛЬЗОВАТЕЛЯ ===
+    // =======================================================
+
+    /**
+     * Открывает или закрывает правую боковую панель.
+     */
+    function toggleUserMessagesSidebar() {
+        console.log('[DEBUG] Вызвана функция toggleUserMessagesSidebar.');
+        
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        // Ищем элемент по классу внутри уже найденного модального окна
+        const modalContent = aiChatModal?.querySelector('.ai-chat-modal-content');
+
+        if (!modalContent) {
+            console.error('[DEBUG] Ошибка: Не найден элемент .ai-chat-modal-content. Панель не может быть открыта.');
+            return;
+        }
+        console.log('[DEBUG] Найден modalContent:', modalContent);
+
+        console.log('[DEBUG] Классы ДО переключения:', modalContent.className);
+        const isOpen = modalContent.classList.toggle('user-sidebar-open');
+        console.log('[DEBUG] Классы ПОСЛЕ переключения:', modalContent.className);
+        
+        console.log(`[DEBUG] Панель теперь ${isOpen ? 'ОТКРЫТА' : 'ЗАКРЫТА'}.`);
+
+        if (isOpen) {
+            console.log('[DEBUG] Панель открыта, вызываю renderUserMessagesList...');
+            renderUserMessagesList();
+        }
+    }
+
+    /**
+     * Наполняет правую панель списком сообщений текущего пользователя.
+     */
+    function renderUserMessagesList() {
+        const listEl = getEl('aiUserMessagesList');
+        if (!listEl || !currentAIChatId || !allAIChats[currentAIChatId]) {
+            listEl.innerHTML = '<li>Нет сообщений для отображения.</li>';
+            return;
+        }
+
+        const currentChat = allAIChats[currentAIChatId];
+        listEl.innerHTML = ''; // Очищаем список
+
+        // Используем map для создания массива HTML-строк, а потом join. Это эффективнее.
+        const userMessagesHTML = currentChat
+            .map((msg, index) => {
+                if (msg.role === 'user') {
+                    const content = msg.content || 'Вложение';
+                    const snippet = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+                    // Timestamp пока не добавляем для простоты, но можно будет легко добавить
+                    return `
+                        <li class="ai-user-message-item" data-index="${index}">
+                            <div class="ai-user-message-snippet">${escapeHTML(snippet)}</div>
+                        </li>
+                    `;
+                }
+                return ''; // Возвращаем пустую строку для сообщений от AI
+            })
+            .join('');
+
+        if (userMessagesHTML.trim() === '') {
+            listEl.innerHTML = '<li>Вы еще не отправляли сообщений в этом чате.</li>';
+        } else {
+            listEl.innerHTML = userMessagesHTML;
+        }
+    }
+
     /**
      * Обработчик кликов вне области подсказок, который будет их скрывать.
      * Он должен быть определен вне toggle-функции, чтобы его можно было корректно удалять.
@@ -14605,24 +14695,25 @@ const mainApp = (function() {
                 tooltip.textContent = content.substring(0, 50) + (content.length > 50 ? '...' : '');
 
                 const dotRect = dot.getBoundingClientRect();
-                const tooltipHeight = 30; // Приблизительная высота подсказки для расчета
-                const topPos = dotRect.top - scrollWrapperRect.top + (dotRect.height / 2) - (tooltipHeight / 2);
+                const topPos = dotRect.top - scrollWrapperRect.top + (dotRect.height / 2) - 15;
                 
                 tooltip.style.top = `${topPos}px`;
-                // --- ГЛАВНОЕ ИЗМЕНЕНИЕ ---
-                // Позиционируем подсказку слева от точки с отступом
-                tooltip.style.left = 'auto'; // Сбрасываем left
-                tooltip.style.right = `${scrollWrapperRect.width - (dotRect.left - scrollWrapperRect.left) + 15}px`;
-                // -------------------------
-
-                tooltip.style.cursor = 'pointer';
-                tooltip.style.pointerEvents = 'auto';
+                tooltip.style.right = '35px';
+                
+                // === НАЧАЛО ИЗМЕНЕНИЙ ===
+                tooltip.style.cursor = 'pointer'; // 1. Меняем курсор, чтобы показать кликабельность
+                tooltip.style.pointerEvents = 'auto'; // 2. Разрешаем клики по подсказке
 
                 tooltip.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    scrollToAIMessage(messageIndex, 'start');
+                    
+                    // 4. Прокручиваем к нужному сообщению, указывая выравнивание по верху ('start')
+                    scrollToAIMessage(messageIndex, 'start'); 
+                    
+                    // 5. Выключаем режим просмотра подсказок
                     toggleAllUserMessageTooltips();
                 });
+                // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
                 container.appendChild(tooltip);
                 setTimeout(() => tooltip.classList.add('visible'), 10);

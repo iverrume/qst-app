@@ -10485,3 +10485,94 @@ body.claude-mode .ai-chat-history-item.active {
 .color-picker-reset:hover {
     color: var(--accent);
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ПРАВОЙ ПАНЕЛИ СООБЩЕНИЙ        === */
+/* ======================================================= */
+
+/* --- Основной контейнер панели --- */
+.ai-chat-user-messages-sidebar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 280px; /* Такая же ширина, как у левой панели */
+    max-width: 85%;
+    background-color: var(--input-bg-color);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    z-index: 1001; /* Поверх основной области чата */
+    transform: translateX(100%); /* Скрыта за правым краем по умолчанию */
+    transition: transform 0.3s ease-in-out, margin-right 0.3s ease-in-out;
+}
+
+/* --- Класс для показа панели --- */
+.ai-chat-modal-content.user-sidebar-open .ai-chat-user-messages-sidebar {
+    transform: translateX(0); /* Показываем панель */
+}
+
+/* --- Сдвигаем основную область чата влево при открытии панели --- */
+.ai-chat-modal-content.user-sidebar-open .ai-chat-scroll-wrapper,
+.ai-chat-modal-content.user-sidebar-open .ai-chat-input-area {
+    margin-right: 280px;
+    transition: margin-right 0.3s ease-in-out;
+}
+.ai-chat-scroll-wrapper, .ai-chat-input-area {
+    transition: margin-right 0.3s ease-in-out;
+}
+
+/* --- Шапка правой панели --- */
+.ai-chat-user-messages-sidebar .ai-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- Список сообщений --- */
+.ai-user-messages-list {
+    list-style: none;
+    padding: 8px;
+    margin: 0;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* --- Элемент списка (одно сообщение) --- */
+.ai-user-message-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-bottom: 4px;
+    border-left: 3px solid var(--accent);
+}
+
+.ai-user-message-item:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+.ai-user-message-snippet {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Ограничиваем двумя строками */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9em;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.ai-user-message-timestamp {
+    font-size: 0.75em;
+    color: var(--secondary-text-color);
+}
+
+/* --- Адаптивность для мобильных --- */
+@media (max-width: 800px) {
+    /* На мобильных панель не сдвигает контент, а накладывается поверх */
+    .ai-chat-modal-content.user-sidebar-open .ai-chat-scroll-wrapper,
+    .ai-chat-modal-content.user-sidebar-open .ai-chat-input-area {
+        margin-right: 0;
+    }
+}
