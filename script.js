@@ -7083,6 +7083,7 @@ const mainApp = (function() {
 
 
     // --- State Variables ---
+    let activeSourceTooltip = null;
     let allParsedQuestions = [];
     let questionsForCurrentQuiz = [];
     let currentQuestionIndex = 0;
@@ -14412,62 +14413,6 @@ const mainApp = (function() {
             }
         });
 
-        // --- НОВЫЙ БЛОК (ВЕРСИЯ 2.0): Интерактивные подсказки для источников ---
-        let sourceTooltip = null; // Переменная для хранения элемента подсказки
-
-        aiChatMessages?.addEventListener('mouseover', (e) => {
-            const target = e.target.closest('.grounded-segment');
-            if (!target) return;
-
-            if (!sourceTooltip) {
-                sourceTooltip = document.createElement('div');
-                sourceTooltip.className = 'source-tooltip';
-                document.body.appendChild(sourceTooltip);
-            }
-            
-            try {
-                // Парсим массив источников из data-атрибута
-                const sources = JSON.parse(target.dataset.source);
-                if (!sources || sources.length === 0) return;
-
-                // Создаем HTML для всех ссылок
-                const linksHtml = sources.map(source => 
-                    `<a href="${source.uri}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.title || 'Источник')}</a>`
-                ).join('<br>'); // Разделяем ссылки переносом строки
-
-                sourceTooltip.innerHTML = linksHtml;
-
-                const targetRect = target.getBoundingClientRect();
-                sourceTooltip.style.left = `${targetRect.left}px`;
-                sourceTooltip.style.top = `${targetRect.bottom + 5}px`;
-
-                // Умное позиционирование, чтобы подсказка не вылезала за экран
-                const tooltipRect = sourceTooltip.getBoundingClientRect();
-                if (tooltipRect.right > window.innerWidth - 10) {
-                    sourceTooltip.style.left = `${window.innerWidth - tooltipRect.width - 10}px`;
-                }
-                if (tooltipRect.bottom > window.innerHeight - 10) {
-                     sourceTooltip.style.top = `${targetRect.top - tooltipRect.height - 5}px`;
-                }
-
-                sourceTooltip.classList.add('visible');
-
-            } catch (err) {
-                console.error("Ошибка парсинга данных источника:", err);
-            }
-        });
-
-        aiChatMessages?.addEventListener('mouseout', (e) => {
-            const target = e.target.closest('.grounded-segment');
-            if (!target) return;
-
-            if (sourceTooltip) {
-                sourceTooltip.classList.remove('visible');
-            }
-        });
-        // --- КОНЕЦ НОВОГО БЛОКА ---      
-
-
 
 
 
@@ -14565,8 +14510,95 @@ const mainApp = (function() {
         }
 
 
+            
+            // Функция, которая скрывает активную подсказку
+            const hideSourceTooltip = () => {
+                if (activeSourceTooltip) {
+                    activeSourceTooltip.classList.remove('visible');
+                    // Удаляем из DOM после анимации, чтобы не накапливались
+                    setTimeout(() => {
+                        if (activeSourceTooltip && !activeSourceTooltip.classList.contains('visible')) {
+                            activeSourceTooltip.remove();
+                        }
+                        activeSourceTooltip = null;
+                    }, 200);
+                }
+            };
 
-        // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
+            // Функция, которая создает и показывает подсказку
+            const showSourceTooltip = (targetElement) => {
+                // Сначала скрываем старую, если она была
+                hideSourceTooltip();
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'source-tooltip';
+                
+                try {
+                    const sources = JSON.parse(targetElement.dataset.source);
+                    if (!sources || sources.length === 0) return;
+
+                    tooltip.innerHTML = sources.map(source => 
+                        `<a href="${source.uri}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.title || 'Источник')}</a>`
+                    ).join('<br>');
+                    
+                    document.body.appendChild(tooltip);
+
+                    const targetRect = targetElement.getBoundingClientRect();
+                    tooltip.style.left = `${targetRect.left}px`;
+                    tooltip.style.top = `${targetRect.bottom + 5}px`;
+
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    if (tooltipRect.right > window.innerWidth - 10) {
+                        tooltip.style.left = `${window.innerWidth - tooltipRect.width - 10}px`;
+                    }
+                    if (tooltipRect.bottom > window.innerHeight - 10) {
+                        tooltip.style.top = `${targetRect.top - tooltipRect.height - 5}px`;
+                    }
+                    
+                    // Сохраняем ссылку на активную подсказку и на элемент, который ее вызвал
+                    activeSourceTooltip = tooltip;
+                    activeSourceTooltip.sourceElement = targetElement;
+                    
+                    // Делаем видимой
+                    setTimeout(() => tooltip.classList.add('visible'), 10);
+
+                } catch (err) {
+                    console.error("Ошибка парсинга данных источника:", err);
+                    tooltip.remove();
+                }
+            };
+
+            // Главный обработчик кликов по всему документу
+            const handleDocumentClickForTooltips = (e) => {
+                const clickedSegment = e.target.closest('.grounded-segment');
+                
+                // Если кликнули по сегменту...
+                if (clickedSegment) {
+                    // ...и это тот же сегмент, что уже открыл подсказку...
+                    if (activeSourceTooltip && activeSourceTooltip.sourceElement === clickedSegment) {
+                        // ...то просто скрываем ее (toggle).
+                        hideSourceTooltip();
+                    } else {
+                        // ...иначе (если это другой сегмент) - показываем новую подсказку.
+                        showSourceTooltip(clickedSegment);
+                    }
+                    return; // Завершаем обработку
+                }
+
+                // Если кликнули НЕ по сегменту и НЕ по самой подсказке, то скрываем ее.
+                if (activeSourceTooltip && !activeSourceTooltip.contains(e.target)) {
+                    hideSourceTooltip();
+                }
+            };
+            
+            // Навешиваем один универсальный обработчик на весь документ
+            document.removeEventListener('click', handleDocumentClickForTooltips); // Очистка на всякий случай
+            document.addEventListener('click', handleDocumentClickForTooltips);
+
+
+
+
+            // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
         
         aiCancelReplyBtn?.addEventListener('click', cancelAIReply);
         aiChatCloseBtn?.addEventListener('click', closeAIChat);
@@ -16278,74 +16310,71 @@ const mainApp = (function() {
         }
     }
 
+
+    // НОВЫЙ КОД ДЛЯ ВСТАВКИ
     /**
-     * ВЕРСИЯ 4.0: Создает интерактивный HTML-ответ. "Нарезает" текст ответа, 
-     * оборачивая подтвержденные сегменты в интерактивные span'ы и добавляет список поисковых запросов.
+     * ВЕРСИЯ 5.0 (ФИНАЛЬНАЯ): Корректно обрабатывает структуру ответа Gemini 1.5.
+     * Находит подтвержденные сегменты в тексте и заменяет их на интерактивные HTML-элементы.
      * @param {string} replyText - Исходный текст ответа от ИИ.
-     * @param {object} groundingMetadata - Объект с метаданными из логов.
+     * @param {object} groundingMetadata - Объект с метаданными.
      * @returns {string} - Готовый HTML для вставки в сообщение.
      */
     function processAndAppendSources(replyText, groundingMetadata) {
-        // 1. Проверяем наличие всех необходимых данных
+        // 1. Проверяем наличие всех необходимых данных. Теперь мы ищем `groundingSupports` и `groundingChunks`.
         if (!groundingMetadata || !Array.isArray(groundingMetadata.groundingSupports) || !Array.isArray(groundingMetadata.groundingChunks)) {
-            return replyText; // Если данных нет, просто возвращаем текст
-        }
-
-        const { groundingSupports, groundingChunks, webSearchQueries } = groundingMetadata;
-
-        // 2. Создаем "библиотеку" источников для быстрого доступа по индексу
-        const sourceLibrary = groundingChunks.map(chunk => chunk.web);
-
-        // 3. Преобразуем "доказательства" в удобный формат и сортируем по началу сегмента
-        const segments = groundingSupports.map(support => ({
-            start: support.segment.startIndex,
-            end: support.segment.endIndex,
-            // Находим все источники для этого сегмента
-            sources: support.groundingChunkIndices.map(index => sourceLibrary[index]).filter(Boolean)
-        })).filter(s => s.sources.length > 0).sort((a, b) => a.start - b.start);
-
-        // Если подтвержденных сегментов нет, ничего не делаем с текстом
-        if (segments.length === 0) {
+            console.warn("processAndAppendSources: Метаданные неполные или отсутствуют. Возвращаем исходный текст.");
             return replyText;
         }
 
-        // 4. Собираем новый HTML, "проходясь" по тексту и вставляя <span>'ы
-        let finalHtml = '';
-        let lastIndex = 0;
+        const { groundingSupports, groundingChunks, webSearchQueries } = groundingMetadata;
+        if (groundingSupports.length === 0 || groundingChunks.length === 0) {
+            return replyText;
+        }
+        
+        // 2. Создаем "библиотеку" источников для быстрого доступа по индексу.
+        const sourceLibrary = groundingChunks.map(chunk => chunk.web);
+        
+        // 3. Создаем копию текста, с которой будем работать.
+        let processedHtml = escapeHTML(replyText);
 
-        segments.forEach(segment => {
-            // Добавляем обычный текст, который был до этого сегмента
-            finalHtml += escapeHTML(replyText.substring(lastIndex, segment.start));
-            
-            // Добавляем сам подтвержденный сегмент, обернутый в интерактивный span
-            const segmentText = escapeHTML(replyText.substring(segment.start, segment.end));
-            
-            // В data-атрибут сохраняем массив источников в виде JSON-строки
-            const sourceInfo = JSON.stringify(segment.sources.map(s => ({ uri: s.uri, title: s.title })));
+        // 4. Проходим по каждому "доказательству" (support) от ИИ.
+        groundingSupports.forEach(support => {
+            const segmentText = support.segment?.text;
+            if (!segmentText || segmentText.trim() === '') return;
 
-            finalHtml += `<span class="grounded-segment" data-source='${escapeHTML(sourceInfo)}'>${segmentText}</span>`;
+            // Находим все источники, на которые ссылается это "доказательство".
+            const segmentSources = support.groundingChunkIndices
+                .map(index => sourceLibrary[index])
+                .filter(Boolean); // Убираем пустые/невалидные источники
+
+            if (segmentSources.length === 0) return;
+
+            // Формируем data-атрибут с информацией об источниках для этого конкретного сегмента.
+            const sourceInfo = JSON.stringify(segmentSources.map(s => ({ uri: s.uri, title: s.title })));
             
-            lastIndex = segment.end;
+            // Создаем наш интерактивный <span>
+            const replacementHtml = `<span class="grounded-segment" data-source='${escapeHTML(sourceInfo)}'>${escapeHTML(segmentText)}</span>`;
+            
+            // Заменяем простое текстовое вхождение сегмента на наш новый HTML.
+            // Мы используем функцию-заменитель, чтобы избежать проблем с регулярными выражениями и спецсимволами.
+            processedHtml = processedHtml.replace(escapeHTML(segmentText), replacementHtml);
         });
 
-        // Добавляем оставшийся текст после последнего сегмента
-        finalHtml += escapeHTML(replyText.substring(lastIndex));
-
-        // 5. Формируем список поисковых запросов, как и раньше
+        // 5. Формируем список поисковых запросов в конце (эта логика остается).
         if (Array.isArray(webSearchQueries) && webSearchQueries.length > 0) {
             let sourcesList = `\n\n---\n\n**Поисковые запросы:**\n`;
             webSearchQueries.forEach((query, index) => {
                 const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
                 sourcesList += `${index + 1}. [${escapeHTML(query)}](${searchUrl})\n`;
             });
-            // Используем `marked.parse`, чтобы Markdown превратился в HTML
-            finalHtml += `<div class="ai-message-sources-list">${marked.parse(sourcesList)}</div>`;
+            // Используем `marked.parse` для преобразования Markdown в HTML
+            processedHtml += `<div class="ai-message-sources-list">${marked.parse(sourcesList)}</div>`;
         }
 
-        // 6. Финальная очистка от "фальшивых" цитат
-        finalHtml = finalHtml.replace(/\s*\[\d+(-|\u2013)\d+\]/g, '').replace(/\s*\[\d+\]/g, '');
+        // 6. Финальная очистка от "фальшивых" цитат, если они вдруг остались.
+        processedHtml = processedHtml.replace(/\s*\[\d+(-|\u2013)?\d*\]/g, '');
         
-        return finalHtml;
+        return processedHtml;
     }
 
 
