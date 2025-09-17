@@ -14402,15 +14402,43 @@ const mainApp = (function() {
 
         aiCloseUserMessagesSidebarBtn?.addEventListener('click', toggleUserMessagesSidebar);
 
-        aiUserMessagesList?.addEventListener('click', (e) => {
-            const item = e.target.closest('.ai-user-message-item');
-            if (item) {
-                const index = parseInt(item.dataset.index, 10);
-                scrollToAIMessage(index, 'start');
-                // Закрываем панель после перехода для удобства
-                toggleUserMessagesSidebar();
-            }
-        });
+        if (aiUserMessagesList) {
+            let longPressTimer = null;
+            let isLongPress = false;
+
+            const handlePressStart = (e) => {
+                const item = e.target.closest('.ai-user-message-item');
+                if (!item) return;
+                
+                e.preventDefault();
+                isLongPress = false;
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    const index = parseInt(item.dataset.index, 10);
+                    showDotColorPicker(item, index);
+                }, 500); // 500 мс для долгого нажатия
+            };
+
+            const handlePressEnd = (e) => {
+                clearTimeout(longPressTimer);
+                if (!isLongPress) {
+                    const item = e.target.closest('.ai-user-message-item');
+                    if (item) {
+                        const index = parseInt(item.dataset.index, 10);
+                        scrollToAIMessage(index, 'start');
+                        toggleUserMessagesSidebar();
+                    }
+                }
+            };
+            
+            // Привязываем события для мыши и тач-устройств
+            aiUserMessagesList.addEventListener('mousedown', handlePressStart);
+            aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
+            aiUserMessagesList.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+            aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: false });
+            aiUserMessagesList.addEventListener('touchend', handlePressEnd);
+            aiUserMessagesList.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+        }
 
         // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
 
@@ -14612,6 +14640,7 @@ const mainApp = (function() {
         }
     }
 
+
     /**
      * Наполняет правую панель списком сообщений текущего пользователя.
      */
@@ -14625,20 +14654,24 @@ const mainApp = (function() {
         const currentChat = allAIChats[currentAIChatId];
         listEl.innerHTML = ''; // Очищаем список
 
-        // Используем map для создания массива HTML-строк, а потом join. Это эффективнее.
         const userMessagesHTML = currentChat
             .map((msg, index) => {
                 if (msg.role === 'user') {
                     const content = msg.content || 'Вложение';
                     const snippet = content.substring(0, 100) + (content.length > 100 ? '...' : '');
-                    // Timestamp пока не добавляем для простоты, но можно будет легко добавить
+                    
+                    // --- НОВАЯ ЛОГИКА ---
+                    // Проверяем, есть ли у сообщения сохраненный цвет
+                    const borderColorStyle = msg.dotColor ? `style="border-left-color: ${msg.dotColor};"` : '';
+                    // --------------------
+
                     return `
-                        <li class="ai-user-message-item" data-index="${index}">
+                        <li class="ai-user-message-item" data-index="${index}" ${borderColorStyle}>
                             <div class="ai-user-message-snippet">${escapeHTML(snippet)}</div>
                         </li>
                     `;
                 }
-                return ''; // Возвращаем пустую строку для сообщений от AI
+                return '';
             })
             .join('');
 
@@ -14648,6 +14681,8 @@ const mainApp = (function() {
             listEl.innerHTML = userMessagesHTML;
         }
     }
+
+
 
     /**
      * Обработчик кликов вне области подсказок, который будет их скрывать.
@@ -15185,26 +15220,40 @@ const mainApp = (function() {
         aiScrollbarThumb.style.top = `${thumbPosition}px`;
     }
 
+
+
     /**
      * НОВАЯ ФУНКЦИЯ: Показывает палитру для выбора цвета точки.
      * @param {HTMLElement} dotElement - Элемент точки, на которой был сделан долгий клик.
      * @param {number} messageIndex - Индекс сообщения, к которому привязана точка.
      */
-    function showDotColorPicker(dotElement, messageIndex) {
+    function showDotColorPicker(targetElement, messageIndex) {
         // Удаляем любую старую палитру, если она есть
         document.querySelector('.dot-color-picker')?.remove();
 
         const picker = document.createElement('div');
         picker.className = 'dot-color-picker';
 
-        const colors = [
-            '#e74c3c', // Красный (стандартный)
-            '#e67e22', // Оранжевый
-            '#f1c40f', // Желтый
-            '#2ecc71', // Зеленый
-            '#3498db', // Синий
-            '#9b59b6'  // Фиолетовый
-        ];
+        const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'];
+
+        // --- НОВАЯ УНИВЕРСАЛЬНАЯ ЛОГИКА ОБНОВЛЕНИЯ ---
+        const updateColor = (newColor) => {
+            const msg = allAIChats[currentAIChatId][messageIndex];
+            if (newColor) {
+                msg.dotColor = newColor;
+            } else {
+                delete msg.dotColor; // Удаляем свойство, если цвет сброшен
+            }
+            saveAIChatsToStorage();
+            drawOrUpdateScrollbar(); // Обновляем цвет точки на скроллбаре
+            
+            // Если правая панель открыта - перерисовываем ее тоже!
+            if (getEl('aiChatModalContent')?.classList.contains('user-sidebar-open')) {
+                renderUserMessagesList();
+            }
+            picker.remove();
+        };
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
@@ -15212,39 +15261,44 @@ const mainApp = (function() {
             swatch.style.backgroundColor = color;
             swatch.onclick = (e) => {
                 e.stopPropagation();
-                const msg = allAIChats[currentAIChatId][messageIndex];
-                msg.dotColor = color;
-                saveAIChatsToStorage();
-                drawOrUpdateScrollbar();
-                picker.remove();
+                updateColor(color);
             };
             picker.appendChild(swatch);
         });
 
-        // Кнопка сброса цвета
         const resetButton = document.createElement('button');
         resetButton.className = 'color-picker-reset';
         resetButton.title = "Сбросить цвет";
         resetButton.innerHTML = `<i data-lucide="circle-slash-2"></i>`;
         resetButton.onclick = (e) => {
             e.stopPropagation();
-            const msg = allAIChats[currentAIChatId][messageIndex];
-            delete msg.dotColor; // Удаляем свойство цвета
-            saveAIChatsToStorage();
-            drawOrUpdateScrollbar();
-            picker.remove();
+            updateColor(null); // Передаем null для сброса
         };
         picker.appendChild(resetButton);
 
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
 
-        // Позиционирование палитры
-        const dotRect = dotElement.getBoundingClientRect();
-        picker.style.top = `${dotRect.top + dotRect.height / 2 - picker.offsetHeight / 2}px`;
-        picker.style.left = `${dotRect.left - picker.offsetWidth - 10}px`;
+        // --- НОВАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
+        const targetRect = targetElement.getBoundingClientRect();
+        const pickerRect = picker.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        let leftPos, topPos;
 
-        // Закрытие по клику вне палитры
+        topPos = targetRect.top + targetRect.height / 2 - pickerRect.height / 2;
+
+        // Пытаемся разместить справа от элемента
+        if (targetRect.right + pickerRect.width + 10 < windowWidth) {
+            leftPos = targetRect.right + 10;
+        } else {
+            // Если не помещается, размещаем слева
+            leftPos = targetRect.left - pickerRect.width - 10;
+        }
+        
+        picker.style.top = `${topPos}px`;
+        picker.style.left = `${leftPos}px`;
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
         setTimeout(() => {
             document.body.addEventListener('click', function closePicker(event) {
                 if (!picker.contains(event.target)) {
@@ -15254,6 +15308,9 @@ const mainApp = (function() {
             }, { once: true });
         }, 0);
     }
+
+
+
 
     /**
      * НОВАЯ ФУНКЦИЯ: Начинает процесс ответа на сообщение.
