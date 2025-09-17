@@ -592,23 +592,43 @@
 
 
                     <div class="ai-chat-body-wrapper">  
-                        <!-- Замените на этот код -->
+
+
                         <div id="aiChatSidebar" class="ai-chat-sidebar">
-                            <div class="ai-sidebar-header">
+                            <!-- === ВЕРХНЯЯ СЕКЦИЯ: ПРИВАТНЫЕ ЧАТЫ === -->
+                            <div class="ai-sidebar-section" id="aiPrivateChatsSection">
+                                <div class="ai-sidebar-section-header">
+                                    <h4><i data-lucide="lock"></i> Приватные чаты</h4>
+                                    <button id="aiNewPrivateChatBtn" class="ai-sidebar-action-btn" title="Создать новый приватный чат">
+                                        <i data-lucide="plus"></i>
+                                    </button>
+                                </div>
+                                <ul id="aiChatHistoryList" class="ai-chat-history-list">
+                                    <!-- Сюда JS добавит приватные чаты -->
+                                </ul>
                             </div>
-                            <ul id="aiChatHistoryList" class="ai-chat-history-list">
-                                <!-- Сюда будут добавляться чаты из JS -->
-                            </ul>
-                            <!-- ======== НОВЫЙ БЛОК ДЛЯ КНОПКИ "СОЗДАТЬ ЧАТ" ======== -->
-                            <div class="ai-sidebar-footer">
-                                <button id="aiNewChatBtn" class="ai-new-chat-btn" title="Начать новый чат">
-                                    <i data-lucide="plus"></i>
-                                </button>
+
+                            <!-- === РАЗДЕЛИТЕЛЬ === -->
+                            <div class="ai-sidebar-divider"></div>
+
+                            <!-- === НИЖНЯЯ СЕКЦИЯ: ПУБЛИЧНЫЕ АУДИТОРИИ === -->
+                            <div class="ai-sidebar-section" id="aiPublicAudiencesSection">
+                                <div class="ai-sidebar-section-header">
+                                    <h4><i data-lucide="users"></i> Аудитории</h4>
+                                    <button id="aiNewAudienceBtn" class="ai-sidebar-action-btn" title="Создать новую Аудиторию (видна всем)">
+                                        <i data-lucide="plus"></i>
+                                    </button>
+                                </div>
+                                <ul id="aiAudiencesList" class="ai-chat-history-list">
+                                     <!-- Сюда JS добавит публичные аудитории -->
+                                </ul>
                             </div>
-                            <!-- ======================================================= -->
+                            
+                            <!-- РУЧКА ДЛЯ ИЗМЕНЕНИЯ РАЗМЕРА (остается без изменений) -->
                             <div id="aiSidebarHandle" class="ai-sidebar-handle"></div>
                         </div>
-                        <!-- ======== КОНЕЦ САЙДБАРА ======== -->
+
+
 
                         <div class="ai-chat-scroll-wrapper">
                             <div id="aiScrollbarTooltip" class="scrollbar-tooltip"></div>

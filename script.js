@@ -7005,6 +7005,19 @@ const mainApp = (function() {
         return `${originalIndex}_${lang}`;
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ-ПОМОЩНИК: Получает объект сообщения по индексу,
+     * автоматически определяя, из приватного чата или публичной аудитории.
+     * @param {number} index - Индекс сообщения в текущем активном чате.
+     * @returns {object|null} - Объект сообщения или null, если не найден.
+     */
+    function getAIChatMessageByIndex(index) {
+        if (currentAIChatType === 'public') {
+            return currentPublicChatMessages?.[index] || null;
+        } else {
+            return allAIChats[currentAIChatId]?.[index] || null;
+        }
+    }
 
     // --- Firebase & Auth ---
     let db, auth, currentUser = null;
@@ -14330,6 +14343,8 @@ const mainApp = (function() {
     let isAllTooltipsVisible = false;
     let allAIChats = {}; // Объект для хранения ВСЕХ чатов { chatId: [messages] }
     let currentAIChatId = null; // ID текущего активного чата
+    let currentAIChatType = 'private'; // 'private' или 'public'
+    let currentAudienceListener = null; // Слушатель для сообщений в "Аудитории"
     const AI_CHATS_STORAGE_KEY = 'allUserAIChats'; // Ключ для localStorage
 
     let attachedFile = null; 
@@ -14337,7 +14352,7 @@ const mainApp = (function() {
     let isAIChatExpanded = false;
     let aiReplyContext = null; // Для хранения контекста ответа
 
-
+    let currentPublicChatMessages = []; // Хранит сообщения текущей открытой Аудитории
     let aiReplyPanel, aiReplyText, aiCancelReplyBtn; // Для элементов UI
     // Переменные для кастомного скроллбара
     let aiCustomScrollbar, aiScrollbarThumb, aiScrollbarDots;
@@ -14378,10 +14393,12 @@ const mainApp = (function() {
         aiScrollbarThumb = getEl('aiScrollbarThumb');
         aiScrollbarDots = getEl('aiScrollbarDots');
 
-        aiChatHistoryBtn = getEl('aiChatHistoryBtn');
+        aiChatHistoryBtn = getEl('aiChatHistoryBtn'); // Эта кнопка может быть уже удалена, но оставим для совместимости
         aiChatSidebar = getEl('aiChatSidebar');
-        aiNewChatBtn = getEl('aiNewChatBtn');
+        const aiNewPrivateChatBtn = getEl('aiNewPrivateChatBtn');
+        const aiNewAudienceBtn = getEl('aiNewAudienceBtn');
         aiChatHistoryList = getEl('aiChatHistoryList');
+        const aiAudiencesList = getEl('aiAudiencesList'); // Находим новый список
         
         const closeImageModal = () => imagePreviewModal?.classList.add('hidden');
         const closeTextModal = () => textPreviewModal?.classList.add('hidden');
@@ -14685,8 +14702,10 @@ const mainApp = (function() {
             aiChatModalContent?.classList.toggle('sidebar-open');
         });
 
-        aiNewChatBtn?.addEventListener('click', startNewAIChat);
+        aiNewPrivateChatBtn?.addEventListener('click', startNewAIChat);
+        aiNewAudienceBtn?.addEventListener('click', createNewAudience); // Новая функция
 
+        // Обработчик для списка ПРИВАТНЫХ чатов
         aiChatHistoryList?.addEventListener('click', (e) => {
             const item = e.target.closest('.ai-chat-history-item');
             if (!item) return;
@@ -14697,7 +14716,23 @@ const mainApp = (function() {
                 e.stopPropagation();
                 deleteAIChat(chatId);
             } else {
-                switchToAIChat(chatId);
+                switchToAIChat(chatId, 'private'); // Указываем тип чата
+            }
+        });
+
+        // НОВЫЙ обработчик для списка ПУБЛИЧНЫХ аудиторий
+        aiAudiencesList?.addEventListener('click', (e) => {
+            const item = e.target.closest('.ai-chat-history-item');
+            if (!item) return;
+
+            const chatId = item.dataset.chatId;
+            const ownerId = item.dataset.ownerId;
+
+            if (e.target.closest('.ai-chat-history-delete')) {
+                e.stopPropagation();
+                deleteAudience(chatId, ownerId); // Новая функция удаления
+            } else {
+                switchToAIChat(chatId, 'public'); // Указываем тип чата
             }
         });
 
@@ -14742,15 +14777,14 @@ const mainApp = (function() {
             });
         });
 
+
+
+
+
+
         initCustomScrollbar();
-        initCustomScrollbarTooltipEvents();
-        
-        aiChatMessages?.addEventListener('click', (e) => {
-            if (!e.target.closest('.scrollbar-dots-container')) {
-                hideActiveTooltip();
-            }
-        });
-        
+        initScrollbarInteraction();
+
         setupCustomSelect('aiModelSelectContainer');
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
@@ -14789,18 +14823,29 @@ const mainApp = (function() {
         }
     }
 
-
     /**
      * Наполняет правую панель списком сообщений текущего пользователя.
      */
     function renderUserMessagesList() {
         const listEl = getEl('aiUserMessagesList');
-        if (!listEl || !currentAIChatId || !allAIChats[currentAIChatId]) {
+        if (!listEl) return;
+
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        let currentChat;
+        if (currentAIChatType === 'public') {
+            // Если открыта Аудитория, берем сообщения из нашего нового кэша
+            currentChat = currentPublicChatMessages;
+        } else {
+            // Иначе, как и раньше, берем из локального хранилища
+            currentChat = allAIChats[currentAIChatId];
+        }
+
+        if (!currentChat) {
             listEl.innerHTML = '<li>Нет сообщений для отображения.</li>';
             return;
         }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-        const currentChat = allAIChats[currentAIChatId];
         listEl.innerHTML = ''; // Очищаем список
 
         const userMessagesHTML = currentChat
@@ -14809,10 +14854,7 @@ const mainApp = (function() {
                     const content = msg.content || 'Вложение';
                     const snippet = content.substring(0, 100) + (content.length > 100 ? '...' : '');
                     
-                    // --- НОВАЯ ЛОГИКА ---
-                    // Проверяем, есть ли у сообщения сохраненный цвет
                     const borderColorStyle = msg.dotColor ? `style="border-left-color: ${msg.dotColor};"` : '';
-                    // --------------------
 
                     return `
                         <li class="ai-user-message-item" data-index="${index}" ${borderColorStyle}>
@@ -14981,35 +15023,44 @@ const mainApp = (function() {
         return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
+
+
+
     /**
      * Загружает все чаты из localStorage при запуске.
      */
     async function loadAIChatsFromStorage() {
         try {
+            // Загрузка приватных чатов (как и раньше)
             const savedChatsArray = await DBManager.getAll('AIChats');
-            
-            // Преобразуем массив обратно в объект-карту для удобства
             allAIChats = savedChatsArray.reduce((acc, chat) => {
                 acc[chat.chatId] = chat.messages;
                 return acc;
             }, {});
-
-            const chatIds = Object.keys(allAIChats);
-            currentAIChatId = localStorage.getItem('currentAIChatId') || (chatIds.length > 0 ? chatIds[0] : null);
+            currentAIChatId = localStorage.getItem('currentAIChatId');
+            currentAIChatType = 'private'; // По умолчанию открываем приватный
 
         } catch (error) {
-            console.error("Не удалось загрузить чаты из IndexedDB, используем пустой объект.", error);
+            console.error("Не удалось загрузить приватные чаты, используем пустой объект.", error);
             allAIChats = {};
             currentAIChatId = null;
         }
+        
+        // Загрузка публичных аудиторий
+        loadPublicAudiences();
 
-        // Если чатов нет или текущий чат не найден, создаем новый
+        // Если приватных чатов нет, создаем новый
         if (!currentAIChatId || !allAIChats[currentAIChatId]) {
             startNewAIChat(false); 
         } else {
+            // Если есть, просто отображаем
             renderAIChatList(); 
+            switchToAIChat(currentAIChatId, 'private');
         }
     }
+
+
+
 
     /**
      * Сохраняет все чаты в localStorage.
@@ -15086,27 +15137,337 @@ const mainApp = (function() {
     }
 
 
-    function switchToAIChat(chatId) {
-        if (!chatId || !allAIChats[chatId]) {
-             if (Object.keys(allAIChats).length === 0) startNewAIChat();
-             else {
-                currentAIChatId = Object.keys(allAIChats)[0];
-             }
-        } else {
-             currentAIChatId = chatId;
+
+// NOBY KOD
+    function switchToAIChat(chatId, chatType = 'private', dataPayload = null) {
+        console.log(`[switchToAIChat] Переключаемся на чат ID: ${chatId}, Тип: ${chatType}`);
+
+        if (currentAudienceListener) {
+            console.log("[switchToAIChat] Отписываемся от старой Аудитории.");
+            currentAudienceListener();
+            currentAudienceListener = null;
         }
+
+        currentAIChatId = chatId;
+        currentAIChatType = chatType;
         
-        localStorage.setItem('currentAIChatId', currentAIChatId);
+        renderAIChatList();
+        renderAudiencesList();
         
-        renderAIChatMessages();
-        renderAIChatList(); // Чтобы подсветить активный
-        
-        // ======== ВЫЗЫВАЕМ НАШУ НОВУЮ ФУНКЦИЮ ДЛЯ ЗАКРЫТИЯ ========
+        if (chatType === 'private') {
+            console.log("[switchToAIChat] Это приватный чат. Очищаем кэш публичных сообщений и рендерим из allAIChats.");
+            currentPublicChatMessages = [];
+            localStorage.setItem('currentAIChatId', currentAIChatId);
+            renderAIChatMessages(); // Эта функция теперь сама возьмет данные из allAIChats
+            aiChatInput.disabled = false;
+            aiChatInput.placeholder = _('ai_chat_placeholder');
+        } else { // public
+            console.log("[switchToAIChat] Это публичная Аудитория. Очищаем экран и запускаем рендер.");
+            // --- ВОТ КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ---
+            // Немедленно очищаем область сообщений и показываем индикатор загрузки.
+            aiChatMessages.innerHTML = '<div class="empty-state">Загрузка Аудитории...</div>';
+            // ------------------------------------
+            renderPublicAudience(chatId, dataPayload);
+        }
+
         if (window.innerWidth <= 800) {
             closeMobileSidebar();
         }
-        // ========================================================
     }
+
+
+    /**
+     * Загружает список публичных аудиторий из Firestore и подписывается на обновления.
+     */
+    function loadPublicAudiences() {
+        if (!db) return;
+        const audiencesRef = db.collection('ai_audiences').orderBy('createdAt', 'desc').limit(50);
+        
+        audiencesRef.onSnapshot(snapshot => {
+            const audiences = [];
+            snapshot.forEach(doc => {
+                audiences.push({ id: doc.id, ...doc.data() });
+            });
+            window.aiAudiencesCache = audiences; // Сохраняем в глобальный кэш для рендеринга
+            renderAudiencesList();
+        }, error => {
+            console.error("Ошибка загрузки Аудиторий:", error);
+        });
+    }
+
+    /**
+     * Отображает список публичных аудиторий в нижней части сайдбара.
+     */
+    function renderAudiencesList() {
+        const listEl = getEl('aiAudiencesList');
+        if (!listEl || !window.aiAudiencesCache) return;
+
+        listEl.innerHTML = '';
+        window.aiAudiencesCache.forEach(audience => {
+            const li = document.createElement('li');
+            li.className = 'ai-chat-history-item';
+            li.dataset.chatId = audience.id;
+            li.dataset.ownerId = audience.ownerId; // Сохраняем ID владельца
+
+            if (audience.id === currentAIChatId && currentAIChatType === 'public') {
+                li.classList.add('active');
+            }
+
+            // Добавляем иконку удаления, только если текущий пользователь - владелец
+            const deleteBtnHtml = (currentUser && currentUser.uid === audience.ownerId) 
+                ? `<button class="ai-chat-history-delete" title="Удалить аудиторию"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
+                : '';
+
+            li.innerHTML = `
+                <span class="ai-chat-history-title">${escapeHTML(audience.title)}</span>
+                ${deleteBtnHtml}
+            `;
+            listEl.appendChild(li);
+        });
+        if (window.lucide) lucide.createIcons();
+    }
+
+    /**
+     * Создает новую публичную Аудиторию.
+     */
+    async function createNewAudience() {
+        if (!currentUser || !db) {
+            ChatModule.openAuthModal();
+            return;
+        }
+
+        const title = prompt("Введите название для новой Аудитории:", "Обсуждение темы...");
+        if (!title || title.trim() === '') return;
+
+        try {
+            const newAudienceData = {
+                title: title.trim(),
+                ownerId: currentUser.uid,
+                ownerName: currentUser.displayName || 'Аноним',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            const docRef = await db.collection('ai_audiences').add(newAudienceData);
+            
+            await db.collection('ai_audiences').doc(docRef.id).collection('messages').add({
+                 role: 'model',
+                 content: `Добро пожаловать в аудиторию "${title.trim()}"! Владелец: ${newAudienceData.ownerName}.`,
+                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // --- ИСПРАВЛЕНИЕ: Передаем свежие данные напрямую ---
+            // Мы передаем объект newAudienceData в switchToAIChat, чтобы он не искал его в кэше
+            switchToAIChat(docRef.id, 'public', newAudienceData);
+
+        } catch (error) {
+            console.error("Ошибка создания Аудитории:", error);
+            showToast("Не удалось создать Аудиторию.", "error");
+        }
+    }
+    
+    /**
+     * Удаляет публичную Аудиторию (доступно только владельцу).
+     */
+    async function deleteAudience(audienceId, ownerId) {
+        if (!currentUser || currentUser.uid !== ownerId) return;
+
+        const confirmed = await showConfirmationModal(
+            'Подтверждение',
+            'Вы уверены, что хотите удалить эту Аудиторию? Все сообщения в ней будут потеряны.',
+            'confirm_button_delete'
+        );
+
+        if (confirmed) {
+            try {
+                // TODO: В будущем здесь нужно будет удалить и все сообщения из подколлекции
+                await db.collection('ai_audiences').doc(audienceId).delete();
+                showToast("Аудитория успешно удалена.", "success");
+                // Если удалили активную, переключаемся на приватный чат
+                if (currentAIChatId === audienceId) {
+                    const privateChats = Object.keys(allAIChats);
+                    const lastPrivateChat = privateChats[privateChats.length-1];
+                    switchToAIChat(lastPrivateChat || null, 'private');
+                }
+            } catch (error) {
+                console.error("Ошибка удаления Аудитории:", error);
+                showToast("Не удалось удалить Аудиторию.", "error");
+            }
+        }
+    }
+
+
+    /**
+     * Подписывается на сообщения в публичной Аудитории и отображает их.
+     * @param {string} audienceId - ID аудитории.
+     * @param {object|null} audienceData - (Необязательно) Предзагруженные данные аудитории.
+     */
+// NOBY KOD
+    function renderPublicAudience(audienceId, audienceData = null) {
+        console.log(`[renderPublicAudience] Начинаю рендер Аудитории ID: ${audienceId}`);
+        if (!db) return;
+        
+        if (!audienceData) {
+            audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
+            console.log(`[renderPublicAudience] Данные не переданы, ищу в кэше. Найдено:`, audienceData ? 'Да' : 'Нет');
+        }
+
+        if (!audienceData) {
+            console.error(`[renderPublicAudience] КРИТИЧЕСКАЯ ОШИБКА: Аудитория с ID ${audienceId} не найдена.`);
+            switchToAIChat(Object.keys(allAIChats)[0] || null, 'private');
+            return;
+        }
+
+        const isOwner = currentUser && currentUser.uid === audienceData.ownerId;
+        aiChatInput.disabled = !isOwner;
+        aiChatInput.placeholder = isOwner ? _('ai_chat_placeholder') : "Вы находитесь в режиме просмотра";
+
+        console.log(`[renderPublicAudience] Начинаю слушать сообщения из Firestore...`);
+        currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .onSnapshot(snapshot => {
+                const messages = [];
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                snapshot.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
+                // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+                currentPublicChatMessages = messages; 
+                renderAIChatMessages(); 
+            }, error => {
+                console.error(`[onSnapshot] Ошибка при получении сообщений Аудитории ${audienceId}:`, error);
+            });
+    }
+
+
+    /**
+     * Отображает сообщения в AI-чате. Может принимать массив сообщений извне (для публичных "Аудиторий")
+     * или использовать текущий приватный чат из allAIChats.
+     * @param {Array|null} messagesToRender - Массив сообщений для отображения.
+     */
+    function renderAIChatMessages() {
+        // --- НОВАЯ УМНАЯ ЛОГИКА ВЫБОРА ИСТОЧНИКА ДАННЫХ ---
+        let currentChat;
+        if (currentAIChatType === 'public') {
+            currentChat = currentPublicChatMessages;
+            console.log(`[renderAIChatMessages] Рендерю ПУБЛИЧНЫЙ чат. Сообщений: ${currentChat.length}`);
+        } else {
+            currentChat = allAIChats[currentAIChatId];
+            console.log(`[renderAIChatMessages] Рендерю ПРИВАТНЫЙ чат ID: ${currentAIChatId}. Сообщений: ${currentChat ? currentChat.length : 0}`);
+        }
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
+        if (!aiChatMessages || !currentChat) {
+            if(aiChatMessages) aiChatMessages.innerHTML = ''; // Очищаем на всякий случай
+            return;
+        }
+
+        const scrollThreshold = 100;
+        const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
+
+        aiChatMessages.innerHTML = '';
+
+        currentChat.forEach((msg, index) => {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = `ai-message-container is-${msg.role}`;
+            messageContainer.id = `ai-message-container-${index}`; 
+            
+            const replyContextContainer = document.createElement('div');
+            replyContextContainer.className = 'ai-reply-context-container';
+            if (msg.replyTo) {
+                const replyEl = document.createElement('div');
+                replyEl.className = 'ai-reply-context';
+                replyEl.dataset.action = 'scroll-to-ai';
+                replyEl.dataset.index = msg.replyTo.messageIndex;
+                replyEl.innerHTML = `
+                    <div class="ai-reply-author">${escapeHTML(msg.replyTo.authorName || '')}</div>
+                    <div class="ai-reply-text">${escapeHTML(msg.replyTo.textSnippet || '')}</div>
+                `;
+                replyContextContainer.appendChild(replyEl);
+            }
+            messageContainer.appendChild(replyContextContainer);
+
+            const messageEl = document.createElement('div');
+            messageEl.classList.add('ai-message', msg.role);
+            
+            if (msg.role === 'model' && msg.grounded) {
+                const groundedIcon = document.createElement('div');
+                groundedIcon.className = 'ai-grounded-icon';
+                groundedIcon.title = 'Ответ сгенерирован с использованием Поиска Google';
+                groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
+                messageEl.appendChild(groundedIcon);
+            }
+            
+            let messageHTML = '';
+            if (msg.content === 'typing...') {
+                messageHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+            } else {
+                if (msg.content) {
+                    messageHTML += window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
+                }
+                
+                if (msg.attachment) {
+                    const { name, mimeType, thumbnailDataUrl } = msg.attachment;
+                    const type = mimeType.split('/')[0] || 'файл';
+                    
+                    const previewImage = thumbnailDataUrl 
+                        ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
+                        : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
+
+                    messageHTML += `
+                        <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
+                            ${previewImage}
+                            <div class="ai-attachment-file-info">
+                                <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
+                                <div class="ai-attachment-file-type">${type}</div>
+                            </div>
+                        </a>
+                    `;
+                }
+            }
+            
+            const contentWrapper = document.createElement('div');
+            contentWrapper.innerHTML = messageHTML;
+            messageEl.appendChild(contentWrapper);
+            messageContainer.appendChild(messageEl);
+
+            const isLastMessage = index === currentChat.length - 1;
+
+            if (msg.role === 'model' && msg.content !== 'typing...') {
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'ai-message-actions';
+                actionsContainer.innerHTML = `
+                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                    <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
+                    <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
+                    ${isLastMessage ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>` : ''}
+                `;
+                messageContainer.appendChild(actionsContainer);
+            } else if (msg.role === 'user') {
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'ai-user-message-actions';
+                actionsContainer.innerHTML = `
+                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                    <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
+                    <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
+                `;
+                messageContainer.appendChild(actionsContainer);
+            }
+            
+            aiChatMessages.appendChild(messageContainer);
+        });
+
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        drawOrUpdateScrollbar();
+
+        if (isScrolledToBottom) {
+            const lastMessage = aiChatMessages.lastElementChild;
+            if (lastMessage) {
+                lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        } else {
+            console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
+        }
+    }
+
 
     /**
      * Удаляет выбранный чат.
@@ -15214,132 +15575,233 @@ const mainApp = (function() {
     function drawOrUpdateScrollbar() {
         if (!aiChatMessages || !aiCustomScrollbar) return;
 
-        if (isAllTooltipsVisible) {
-            toggleAllUserMessageTooltips();
-            toggleAllUserMessageTooltips();
-        }
-
+        // Скрываем/показываем скроллбар в зависимости от необходимости
         const scrollHeight = aiChatMessages.scrollHeight;
         const clientHeight = aiChatMessages.clientHeight;
-
-        if (scrollHeight <= clientHeight) {
-            aiCustomScrollbar.classList.add('hidden');
-            return;
-        }
-        aiCustomScrollbar.classList.remove('hidden');
+        aiCustomScrollbar.classList.toggle('hidden', scrollHeight <= clientHeight);
+        if (scrollHeight <= clientHeight) return;
 
         updateScrollbarThumbPosition();
-
         aiScrollbarDots.innerHTML = '';
+
         const userMessages = Array.from(aiChatMessages.querySelectorAll('.ai-message-container.is-user'));
-        
-        // --- НАЧАЛО НОВОЙ ЛОГИКИ СМЕЩЕНИЯ ---
         if (userMessages.length === 0) return;
 
-        const dotPositions = userMessages.map(msgContainer => ({
-            element: msgContainer,
-            topPercent: (msgContainer.offsetTop / scrollHeight) * 100
-        }));
+        // --- НАЧАЛО НОВОЙ ЛОГИКИ КЛАСТЕРИЗАЦИИ ---
 
-        const minPixelDistance = 12; // Минимальное расстояние в пикселях между точками
+        const clusters = [];
+        const MIN_PIXEL_DISTANCE = 25; // Минимальное расстояние для объединения в кластер
         const trackHeight = aiCustomScrollbar.clientHeight;
-        const minVerticalDistancePercent = (minPixelDistance / trackHeight) * 100;
+        const minPercentDistance = (MIN_PIXEL_DISTANCE / trackHeight) * 100;
 
-        const horizontalOffsets = [50, 25, 75, 0, 100]; // Позиции в % (центр, левее, правее, край лево, край право)
-        let lastPlacedY = -Infinity;
-        let staggerIndex = 0;
+        userMessages.forEach(msgContainer => {
+            const index = parseInt(msgContainer.id.replace('ai-message-container-', ''), 10);
+            const topPercent = (msgContainer.offsetTop / scrollHeight) * 100;
 
-        dotPositions.forEach(dotInfo => {
-            if (dotInfo.topPercent - lastPlacedY < minVerticalDistancePercent) {
-                staggerIndex = (staggerIndex + 1) % horizontalOffsets.length;
+            const lastCluster = clusters[clusters.length - 1];
+
+            // Проверяем, можно ли добавить точку к последнему кластеру
+            if (lastCluster && (topPercent - lastCluster.endPercent) < minPercentDistance) {
+                lastCluster.indices.push(index);
+                lastCluster.endPercent = topPercent; // Обновляем "хвост" кластера
             } else {
-                staggerIndex = 0;
+                // Создаем новый кластер
+                clusters.push({
+                    startPercent: topPercent,
+                    endPercent: topPercent,
+                    indices: [index]
+                });
             }
-            
-            dotInfo.leftPercent = horizontalOffsets[staggerIndex];
-            lastPlacedY = dotInfo.topPercent;
+        });
 
+        // --- КОНЕЦ ЛОГИКИ КЛАСТЕРИЗАЦИИ ---
+
+        // Рендерим точки или кластеры
+        clusters.forEach(cluster => {
             const dot = document.createElement('div');
             dot.className = 'scrollbar-dot';
-            const messageIndex = parseInt(dotInfo.element.id.replace('ai-message-container-', ''), 10);
-            dot.dataset.index = messageIndex;
-
-            const message = allAIChats[currentAIChatId]?.[messageIndex];
-            if (message && message.dotColor) {
-                dot.style.backgroundColor = message.dotColor;
+            
+            if (cluster.indices.length > 1) {
+                dot.classList.add('is-cluster');
             }
+            
+            dot.dataset.clusterIndices = JSON.stringify(cluster.indices);
+            
+            const midPercent = (cluster.startPercent + cluster.endPercent) / 2;
+            dot.style.top = `${midPercent}%`;
 
-            dot.style.top = `${dotInfo.topPercent}%`;
-            // Применяем вычисленное горизонтальное смещение
-            dot.style.left = `${dotInfo.leftPercent}%`;
-            // Корректируем transform, чтобы точка центрировалась по горизонтали
-            dot.style.transform = `translate(-${dotInfo.leftPercent}%, -50%)`;
+            // --- ИСПРАВЛЕНИЕ СИНХРОНИЗАЦИИ ЦВЕТА (v2) ---
+            const firstColoredMessage = cluster.indices
+                .map(index => getAIChatMessageByIndex(index)) // Используем нашу универсальную функцию
+                .find(msg => msg && msg.dotColor);
 
-            // Вся логика для обработчиков событий остается здесь
-            let longPressTimer = null;
-            let isLongPress = false;
-
-            const handlePressStart = (e) => {
-                e.preventDefault();
-                isLongPress = false;
-                longPressTimer = setTimeout(() => {
-                    isLongPress = true;
-                    showDotColorPicker(dot, messageIndex);
-                }, 500);
-            };
-
-            const handlePressEnd = (e) => {
-                clearTimeout(longPressTimer);
-                if (!isLongPress) {
-                    e.stopPropagation();
-                    dotInfo.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (firstColoredMessage) {
+                dot.style.backgroundColor = firstColoredMessage.dotColor;
+                // Для кластеров также меняем цвет тени, чтобы он соответствовал
+                if (dot.classList.contains('is-cluster')) {
+                    dot.style.boxShadow = `0 0 5px ${firstColoredMessage.dotColor}`;
                 }
-            };
-            
-            const showTooltip = (targetDot) => {
-                const currentChat = allAIChats[currentAIChatId];
-                const msg = currentChat?.[messageIndex];
-                if (!msg) return;
-
-                const content = msg.content || 'Вложение';
-                aiScrollbarTooltip.textContent = content.substring(0, 100) + (content.length > 100 ? '...' : '');
-                
-                aiScrollbarTooltip.classList.remove('visible');
-                aiScrollbarTooltip.style.left = '-9999px';
-
-                requestAnimationFrame(() => {
-                    const scrollWrapperRect = aiChatModal.getBoundingClientRect();
-                    const dotRect = targetDot.getBoundingClientRect();
-                    const tooltipWidth = aiScrollbarTooltip.offsetWidth;
-                    aiScrollbarTooltip.style.left = `${dotRect.left - tooltipWidth - 15}px`;
-
-                    let topPos = dotRect.top + (dotRect.height / 2) - (aiScrollbarTooltip.offsetHeight / 2);
-                    if (topPos < scrollWrapperRect.top + 10) topPos = scrollWrapperRect.top + 10;
-                    if (topPos + aiScrollbarTooltip.offsetHeight > scrollWrapperRect.bottom - 10) {
-                        topPos = scrollWrapperRect.bottom - 10 - aiScrollbarTooltip.offsetHeight;
-                    }
-                    aiScrollbarTooltip.style.top = `${topPos}px`;
-                    aiScrollbarTooltip.classList.add('visible');
-                });
-            };
-
-            const hideTooltip = () => aiScrollbarTooltip.classList.remove('visible');
-            
-            dot.addEventListener('mousedown', handlePressStart);
-            dot.addEventListener('mouseup', handlePressEnd);
-            dot.addEventListener('mouseleave', () => { clearTimeout(longPressTimer); hideTooltip(); });
-            dot.addEventListener('touchstart', handlePressStart, { passive: false });
-            dot.addEventListener('touchend', handlePressEnd);
-            dot.addEventListener('touchmove', () => clearTimeout(longPressTimer));
-            
-            if (!detectMobileDevice()) {
-                dot.addEventListener('mouseenter', () => showTooltip(dot));
             }
-
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ СИНХРОНИЗАЦИИ ЦВЕТА ---
+            
             aiScrollbarDots.appendChild(dot);
         });
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ СМЕЩЕНИЯ ---
     }
+
+
+    // Глобальная переменная для отслеживания активной подсказки
+    let activePreviewTooltip = null;
+
+
+    /**
+     * Инициализирует делегированные обработчики событий для скроллбара.
+     * ВЕРСИЯ 2.0: Полностью переработанная логика для надежного закрытия всплывающих подсказок.
+     */
+    function initScrollbarInteraction() {
+        if (!aiScrollbarDots) return;
+
+        // Глобальная переменная для хранения функции-обработчика, чтобы мы могли ее удалить
+        let handleOutsideClick = null;
+
+        // Наша новая, улучшенная функция скрытия
+        const hideActiveTooltip = () => {
+            if (activePreviewTooltip) {
+                activePreviewTooltip.classList.remove('visible');
+                const tooltipToRemove = activePreviewTooltip;
+                activePreviewTooltip = null;
+                setTimeout(() => tooltipToRemove.remove(), 200);
+            }
+            // Всегда удаляем глобальный слушатель, когда подсказка скрывается
+            if (handleOutsideClick) {
+                window.removeEventListener('click', handleOutsideClick, true);
+                handleOutsideClick = null;
+            }
+        };
+
+        // Функция для показа подсказки
+        const showTooltip = (dotElement) => {
+            // Сначала закрываем любую предыдущую подсказку и ее слушатели
+            hideActiveTooltip();
+
+            const indices = JSON.parse(dotElement.dataset.clusterIndices);
+            const tooltip = document.createElement('div');
+            tooltip.className = 'scrollbar-preview-tooltip';
+            const ul = document.createElement('ul');
+
+            indices.forEach(index => {
+                const msg = getAIChatMessageByIndex(index);
+                if (!msg) return;
+
+                const li = document.createElement('li');
+                li.dataset.index = index;
+
+                if (msg.dotColor) {
+                    const colorIndicator = document.createElement('span');
+                    colorIndicator.className = 'preview-color-indicator';
+                    colorIndicator.style.backgroundColor = msg.dotColor;
+                    li.appendChild(colorIndicator);
+                }
+
+                const content = msg.content || 'Вложение';
+                const snippet = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+                li.appendChild(document.createTextNode(snippet));
+                ul.appendChild(li);
+            });
+
+            tooltip.appendChild(ul);
+            document.body.appendChild(tooltip);
+            activePreviewTooltip = tooltip;
+
+            // --- ОБРАБОТЧИК КЛИКОВ ВНУТРИ ПОДСКАЗКИ ---
+            tooltip.addEventListener('click', (e) => {
+                const li = e.target.closest('li');
+                if (li) {
+                    const index = parseInt(li.dataset.index, 10);
+                    scrollToAIMessage(index);
+                    hideActiveTooltip(); // Закрываем после клика
+                }
+            });
+
+            // Позиционирование (остается без изменений)
+            requestAnimationFrame(() => {
+                const dotRect = dotElement.getBoundingClientRect();
+                const scrollbarRect = aiCustomScrollbar.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                tooltip.style.left = `${scrollbarRect.left - tooltipRect.width - 10}px`;
+                let topPos = dotRect.top + (dotRect.height / 2) - (tooltipRect.height / 2);
+                if (topPos < 10) topPos = 10;
+                if (topPos + tooltipRect.height > window.innerHeight - 10) {
+                    topPos = window.innerHeight - tooltipRect.height - 10;
+                }
+                tooltip.style.top = `${topPos}px`;
+                tooltip.classList.add('visible');
+            });
+
+            // --- НОВАЯ ЛОГИКА ЗАКРЫТИЯ ---
+            // Создаем функцию-слушатель для закрытия
+            handleOutsideClick = (event) => {
+                // Закрываем, если клик был не по самой подсказке и не по точке, которая ее вызвала
+                if (activePreviewTooltip && !activePreviewTooltip.contains(event.target) && !dotElement.contains(event.target)) {
+                    hideActiveTooltip();
+                }
+            };
+            // Добавляем слушатель с небольшой задержкой, чтобы он не сработал на тот же клик, который открыл подсказку
+            setTimeout(() => {
+                window.addEventListener('click', handleOutsideClick, true);
+            }, 0);
+        };
+
+        // --- УПРОЩЕННЫЕ ГЛАВНЫЕ СЛУШАТЕЛИ ---
+        // Для ПК: показываем по наведению
+        aiScrollbarDots.addEventListener('mouseover', (e) => {
+            if (e.target.classList.contains('scrollbar-dot')) {
+                showTooltip(e.target);
+            }
+        });
+
+        // Для ПК: скрываем, когда уводим мышь с области точек и не наводим на подсказку
+        aiScrollbarDots.addEventListener('mouseout', (e) => {
+            setTimeout(() => {
+                if (activePreviewTooltip && !activePreviewTooltip.matches(':hover') && !e.target.matches(':hover')) {
+                    hideActiveTooltip();
+                }
+            }, 300);
+        });
+
+        // Для мобильных: показываем по клику
+        aiScrollbarDots.addEventListener('click', (e) => {
+            if (e.target.classList.contains('scrollbar-dot')) {
+                showTooltip(e.target);
+            }
+        });
+    }
+
+    /**
+     * Скрывает и удаляет активную всплывающую подсказку.
+     */
+    function hidePreviewTooltip() {
+        if (activePreviewTooltip) {
+            activePreviewTooltip.classList.remove('visible');
+            const tooltipToRemove = activePreviewTooltip;
+            activePreviewTooltip = null;
+            setTimeout(() => tooltipToRemove.remove(), 200); // Удаляем после анимации
+        }
+    }
+
+    /**
+     * Прокручивает к указанному сообщению и подсвечивает его.
+     * @param {number} index - Индекс сообщения в истории.
+     */
+    function scrollToAIMessage(index) {
+        const element = getEl(`ai-message-container-${index}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('highlighted');
+            setTimeout(() => element.classList.remove('highlighted'), 2000);
+        }
+    }
+
+
     
     /**
      * Обновляет только позицию и размер ползунка (вызывается при скролле).
@@ -15375,39 +15837,59 @@ const mainApp = (function() {
         // Удаляем любую старую палитру, чтобы избежать дублирования
         document.querySelector('.dot-color-picker')?.remove();
 
-        // 1. Создаем полупрозрачный оверлей, который будет ловить клики "мимо"
         const overlay = document.createElement('div');
         overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: transparent; /* Оверлей невидимый */
-            z-index: 10002; /* Чуть ниже палитры */
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: transparent; z-index: 10002;
         `;
         
-        // 2. Создаем саму палитру
         const picker = document.createElement('div');
         picker.className = 'dot-color-picker';
 
         const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'];
 
         const updateColor = (newColor) => {
-            const msg = allAIChats[currentAIChatId]?.[messageIndex];
+            const msg = getAIChatMessageByIndex(messageIndex);
             if (!msg) return;
 
-            if (newColor) msg.dotColor = newColor;
-            else delete msg.dotColor;
-            
-            saveAIChatsToStorage();
+            // Локально обновляем цвет для мгновенного отклика UI
+            if (newColor) {
+                msg.dotColor = newColor;
+            } else {
+                delete msg.dotColor;
+            }
+
+            // --- ГЛАВНОЕ ИЗМЕНЕНИЕ: ЛОГИКА СОХРАНЕНИЯ ---
+            if (currentAIChatType === 'private') {
+                // Для приватных чатов сохраняем локально, как и раньше
+                saveAIChatsToStorage();
+            } else if (currentAIChatType === 'public' && msg.id) {
+                // Для публичных "Аудиторий" отправляем запрос в Firestore
+                const messageRef = db.collection('ai_audiences').doc(currentAIChatId).collection('messages').doc(msg.id);
+                
+                const updateData = {};
+                if (newColor) {
+                    updateData.dotColor = newColor;
+                } else {
+                    // Используем специальный метод для удаления поля
+                    updateData.dotColor = firebase.firestore.FieldValue.delete();
+                }
+
+                messageRef.update(updateData).catch(error => {
+                    console.error("Ошибка обновления цвета в Firestore:", error);
+                    showToast("Не удалось синхронизировать цвет.", "error");
+                    // Можно добавить логику отката локального изменения, если нужно
+                });
+            }
+
+            // Перерисовываем UI, который зависит от цвета
             drawOrUpdateScrollbar();
-            
             const itemInSidebar = getEl('aiUserMessagesList')?.querySelector(`li[data-index="${messageIndex}"]`);
             if (itemInSidebar) {
                 itemInSidebar.style.borderLeftColor = newColor || '';
             }
         };
+
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
@@ -15415,7 +15897,7 @@ const mainApp = (function() {
             swatch.style.backgroundColor = color;
             swatch.onclick = () => {
                 updateColor(color);
-                overlay.remove(); // Закрываем оверлей после выбора
+                overlay.remove();
             };
             picker.appendChild(swatch);
         });
@@ -15426,30 +15908,31 @@ const mainApp = (function() {
         resetButton.innerHTML = `<i data-lucide="circle-slash-2"></i>`;
         resetButton.onclick = () => {
             updateColor(null);
-            overlay.remove(); // Закрываем оверлей после сброса
+            overlay.remove();
         };
         picker.appendChild(resetButton);
 
-        // 3. Добавляем палитру ВНУТРЬ оверлея
         overlay.appendChild(picker);
         document.body.appendChild(overlay);
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons();
         
-        // Позиционируем палитру по центру оверлея
-        picker.style.position = 'absolute'; // Теперь относительно оверлея
-        picker.style.left = '50%';
-        picker.style.top = '50%';
-        picker.style.transform = 'translate(-50%, -50%)';
+        // Умное позиционирование относительно элемента, вызвавшего палитру
+        const targetRect = targetElement.getBoundingClientRect();
+        picker.style.position = 'fixed';
+        picker.style.left = `${targetRect.left + targetRect.width / 2 - picker.offsetWidth / 2}px`;
+        picker.style.top = `${targetRect.top - picker.offsetHeight - 10}px`;
+        
+        // Коррекция, если палитра вылезает сверху
+        if (picker.getBoundingClientRect().top < 10) {
+            picker.style.top = `${targetRect.bottom + 10}px`;
+        }
 
-        // 4. ГЛАВНАЯ ЛОГИКА: Клик по самому оверлею (т.е. "мимо" палитры) просто удаляет оверлей вместе со всем содержимым.
         overlay.onclick = (e) => {
-            // Сработает, только если клик был именно по оверлею, а не по палитре внутри него
             if (e.target === overlay) {
                 overlay.remove();
             }
         };
     }
-
 
     /**
      * НОВАЯ ФУНКЦИЯ: Начинает процесс ответа на сообщение.
@@ -16041,13 +16524,26 @@ const mainApp = (function() {
         aiChatModal.classList.add('hidden');
     }
 
-
-
-
+    /**
+     * Отображает сообщения в AI-чате. Автоматически определяет, какой чат активен
+     * (приватный или публичный) и использует правильный источник данных.
+     */
     function renderAIChatMessages() {
-        if (!aiChatMessages || !currentAIChatId || !allAIChats[currentAIChatId]) return;
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ: УМНЫЙ ВЫБОР ИСТОЧНИКА ДАННЫХ ---
+        let currentChat;
+        if (currentAIChatType === 'public') {
+            // Если открыта Аудитория, берем сообщения из нашего кэша для публичных чатов.
+            currentChat = currentPublicChatMessages;
+        } else {
+            // Иначе, как и раньше, берем из локального хранилища приватных чатов.
+            currentChat = allAIChats[currentAIChatId];
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
-        const currentChat = allAIChats[currentAIChatId];
+        if (!aiChatMessages || !currentChat) {
+            if (aiChatMessages) aiChatMessages.innerHTML = ''; // Очищаем на всякий случай
+            return;
+        }
 
         const scrollThreshold = 100;
         const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
@@ -16077,8 +16573,6 @@ const mainApp = (function() {
             const messageEl = document.createElement('div');
             messageEl.classList.add('ai-message', msg.role);
             
-            // === НАЧАЛО НОВОГО КОДА ===
-            // Если сообщение от ИИ и было получено с помощью поиска, добавляем иконку
             if (msg.role === 'model' && msg.grounded) {
                 const groundedIcon = document.createElement('div');
                 groundedIcon.className = 'ai-grounded-icon';
@@ -16086,17 +16580,31 @@ const mainApp = (function() {
                 groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
                 messageEl.appendChild(groundedIcon);
             }
-            // === КОНЕЦ НОВОГО КОДА ===
-            
+
             let messageHTML = '';
             if (msg.content === 'typing...') {
                 messageHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
             } else {
-                if (msg.content) {
-                    messageHTML += window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
+                // --- ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ЛОГИКИ РЕНДЕРИНГА ---
+                let contentToRender = msg.content || '';
+
+                // 1. Сначала ВСЕГДА обрабатываем Markdown в HTML.
+                let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
+
+                // 2. ЕСЛИ есть метаданные поиска, то уже на готовом HTML делаем замены.
+                if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
+                    // Эта функция теперь будет работать с HTML, а не с сырым текстом.
+                    messageHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
+                } else {
+                    messageHTML = baseHtml;
                 }
+                // --- КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                 
                 if (msg.attachment) {
+
+
+
+
                     const { name, mimeType, thumbnailDataUrl } = msg.attachment;
                     const type = mimeType.split('/')[0] || 'файл';
                     
@@ -16115,12 +16623,10 @@ const mainApp = (function() {
                     `;
                 }
             }
-
-            // Оборачиваем основной контент, чтобы он не мешал абсолютному позиционированию иконки
+            
             const contentWrapper = document.createElement('div');
             contentWrapper.innerHTML = messageHTML;
             messageEl.appendChild(contentWrapper);
-
             messageContainer.appendChild(messageEl);
 
             const isLastMessage = index === currentChat.length - 1;
@@ -16164,70 +16670,155 @@ const mainApp = (function() {
         }
     }
 
+
     async function sendAIChatMessage() {
         if (isAIResponding) return;
         const userInput = aiChatInput.value.trim();
         if (!userInput && !attachedFile) return;
 
-        const message = { role: 'user', content: userInput };
-        
-        if (aiReplyContext) {
-            message.replyTo = aiReplyContext;
+        // Если мы в публичной аудитории, используем другую логику
+        if (currentAIChatType === 'public') {
+            await sendPublicAudienceMessage(userInput);
+            return;
         }
-        
-        const fileToSend = attachedFile; // Сохраняем файл во временную переменную
-        
-        // Очищаем UI сразу для мгновенной реакции
+
+        // Далее идет логика для приватного чата (остается без изменений)
+        const message = { role: 'user', content: userInput };
+        if (aiReplyContext) message.replyTo = aiReplyContext;
+        const fileToSend = attachedFile;
         aiChatInput.value = '';
         removeAIAttachment();
         cancelAIReply();
-
-        // Если есть файл, сначала получаем его описание
         if (fileToSend) {
             try {
-                // Показываем пользователю, что мы анализируем файл
                 allAIChats[currentAIChatId].push({ role: 'model', content: 'Анализ файла...' });
                 renderAIChatMessages();
-
                 const response = await fetch(googleAppScriptUrl, {
                     method: 'POST',
                     body: JSON.stringify({
                         action: 'generateAttachmentDescription',
-                        file: {
-                            base64Data: fileToSend.base64Data.split(',')[1],
-                            mimeType: fileToSend.mimeType
-                        },
+                        file: { base64Data: fileToSend.base64Data.split(',')[1], mimeType: fileToSend.mimeType },
                         userText: userInput,
                         targetLanguage: localStorage.getItem('appLanguage') || 'ru'
                     })
                 });
                 const result = await response.json();
-                
-                if (result.success && result.description) {
-                    message.attachmentDescription = result.description;
-                } else {
-                    // Если описание не удалось, добавляем заглушку, чтобы ИИ знал, что файл был
-                    message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
-                }
-                // Удаляем сообщение "Анализ файла..."
+                if (result.success && result.description) message.attachmentDescription = result.description;
+                else message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
                 allAIChats[currentAIChatId].pop();
-
             } catch (error) {
                 console.error("Ошибка получения описания файла:", error);
                 message.attachmentDescription = `(Ошибка при анализе файла "${fileToSend.name}")`;
-                allAIChats[currentAIChatId].pop(); // Все равно удаляем сообщение о загрузке
+                allAIChats[currentAIChatId].pop();
             }
         }
-        
-        // Теперь добавляем финальное сообщение пользователя в историю
         message.attachment = fileToSend;
         allAIChats[currentAIChatId].push(message);
-        
         saveAIChatsToStorage();
-        renderAIChatList(); 
-        
-        // И только теперь запускаем основной запрос на ответ ИИ
+        renderAIChatList();
         getAIResponseForCurrentHistory(fileToSend);
+    }
+
+
+    /**
+     * Отправляет сообщение в публичную Аудиторию (только для владельца).
+     */
+    async function sendPublicAudienceMessage(userInput) {
+        if (!currentUser || !db || !currentAIChatId) return;
+
+        const audienceRef = db.collection('ai_audiences').doc(currentAIChatId);
+        const messagesRef = audienceRef.collection('messages');
+        
+        try {
+            // Проверка, является ли пользователь владельцем
+            const audienceDoc = await audienceRef.get();
+            if (!audienceDoc.exists || audienceDoc.data().ownerId !== currentUser.uid) {
+                console.warn("Попытка отправки сообщения в чужую аудиторию.");
+                return;
+            }
+
+            // Очищаем поле ввода
+            aiChatInput.value = '';
+            
+            // Добавляем сообщение пользователя в Firestore
+            const userMessage = {
+                role: 'user',
+                content: userInput,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await messagesRef.add(userMessage);
+
+            // Запускаем получение ответа от ИИ
+            getAIResponseForPublicAudience();
+
+        } catch (error) {
+            console.error("Ошибка отправки сообщения в Аудиторию:", error);
+            showToast("Не удалось отправить сообщение.", "error");
+        }
+    }
+
+    /**
+     * Получает ответ ИИ для публичной Аудитории.
+     */
+    async function getAIResponseForPublicAudience() {
+        if (isAIResponding || !currentAIChatId) return;
+        isAIResponding = true;
+        aiChatSendBtn.disabled = true;
+
+        const audienceRef = db.collection('ai_audiences').doc(currentAIChatId);
+        const messagesRef = audienceRef.collection('messages');
+
+        try {
+            // Добавляем сообщение "typing..."
+            const typingMessageRef = await messagesRef.add({
+                role: 'model',
+                content: 'typing...',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // Получаем историю из Firestore
+            const historySnapshot = await messagesRef.orderBy('timestamp', 'asc').get();
+            const historyForAPI = historySnapshot.docs.map(doc => doc.data());
+            
+            const aiSettings = getAIChatSettings();
+            
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'getGeneralChatReply',
+                    history: historyForAPI,
+                    settings: aiSettings,
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                })
+            });
+
+            const result = await response.json();
+            
+            let finalMessage;
+            if (result.success && result.reply) {
+                finalMessage = {
+                    role: 'model',
+                    content: result.reply,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    grounded: result.wasGrounded,
+                    groundingMetadata: result.groundingMetadata
+                };
+            } else {
+                 finalMessage = {
+                    role: 'model',
+                    content: `Произошла ошибка: ${result.error || 'Неизвестная ошибка'}`,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+            }
+            // Обновляем сообщение "typing..." на финальный ответ
+            await messagesRef.doc(typingMessageRef.id).set(finalMessage);
+
+        } catch (error) {
+            console.error("Критическая ошибка (публичный AI-чат):", error);
+        } finally {
+            isAIResponding = false;
+            aiChatSendBtn.disabled = false;
+        }
     }
 
 
@@ -16271,25 +16862,21 @@ const mainApp = (function() {
             console.log("ПОЛУЧЕН ПОЛНЫЙ ОТВЕТ ОТ СЕРВЕРА (GAS):");
             console.log(JSON.stringify(result, null, 2));
             // --- КОНЕЦ БЛОКА ЛОГИРОВАНИЯ ---
+
+
             
             if (result.success && result.reply) {
-                let finalContent = result.reply;
-                let finalMetadata = null; 
-                
-                if (result.wasGrounded && result.groundingMetadata) {
-                    console.log("Обнаружены метаданные, запускаю processAndAppendSources...");
-                    finalContent = processAndAppendSources(result.reply, result.groundingMetadata);
-                    finalMetadata = result.groundingMetadata; 
-                }
-                
+                // Просто сохраняем сырые данные от сервера. Вся обработка будет при рендеринге.
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
-                    content: finalContent,
+                    content: result.reply,
                     grounded: result.wasGrounded,
-                    groundingMetadata: finalMetadata
+                    groundingMetadata: result.groundingMetadata
                 };
-
             } else {
+
+
+
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
@@ -16319,59 +16906,49 @@ const mainApp = (function() {
      * @param {object} groundingMetadata - Объект с метаданными.
      * @returns {string} - Готовый HTML для вставки в сообщение.
      */
-    function processAndAppendSources(replyText, groundingMetadata) {
-        // 1. Проверяем наличие всех необходимых данных. Теперь мы ищем `groundingSupports` и `groundingChunks`.
+    function processAndAppendSources(replyHtml, groundingMetadata) {
         if (!groundingMetadata || !Array.isArray(groundingMetadata.groundingSupports) || !Array.isArray(groundingMetadata.groundingChunks)) {
-            console.warn("processAndAppendSources: Метаданные неполные или отсутствуют. Возвращаем исходный текст.");
-            return replyText;
+            return replyHtml;
         }
 
         const { groundingSupports, groundingChunks, webSearchQueries } = groundingMetadata;
         if (groundingSupports.length === 0 || groundingChunks.length === 0) {
-            return replyText;
+            return replyHtml;
         }
         
-        // 2. Создаем "библиотеку" источников для быстрого доступа по индексу.
         const sourceLibrary = groundingChunks.map(chunk => chunk.web);
         
-        // 3. Создаем копию текста, с которой будем работать.
-        let processedHtml = escapeHTML(replyText);
+        let processedHtml = replyHtml;
 
-        // 4. Проходим по каждому "доказательству" (support) от ИИ.
         groundingSupports.forEach(support => {
             const segmentText = support.segment?.text;
             if (!segmentText || segmentText.trim() === '') return;
 
-            // Находим все источники, на которые ссылается это "доказательство".
             const segmentSources = support.groundingChunkIndices
                 .map(index => sourceLibrary[index])
-                .filter(Boolean); // Убираем пустые/невалидные источники
+                .filter(Boolean);
 
             if (segmentSources.length === 0) return;
 
-            // Формируем data-атрибут с информацией об источниках для этого конкретного сегмента.
             const sourceInfo = JSON.stringify(segmentSources.map(s => ({ uri: s.uri, title: s.title })));
             
-            // Создаем наш интерактивный <span>
+            // Мы заменяем экранированный текст на HTML-элемент. 
+            // Это безопаснее, чем работать с сырым HTML.
             const replacementHtml = `<span class="grounded-segment" data-source='${escapeHTML(sourceInfo)}'>${escapeHTML(segmentText)}</span>`;
             
             // Заменяем простое текстовое вхождение сегмента на наш новый HTML.
-            // Мы используем функцию-заменитель, чтобы избежать проблем с регулярными выражениями и спецсимволами.
             processedHtml = processedHtml.replace(escapeHTML(segmentText), replacementHtml);
         });
 
-        // 5. Формируем список поисковых запросов в конце (эта логика остается).
         if (Array.isArray(webSearchQueries) && webSearchQueries.length > 0) {
             let sourcesList = `\n\n---\n\n**Поисковые запросы:**\n`;
             webSearchQueries.forEach((query, index) => {
                 const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
                 sourcesList += `${index + 1}. [${escapeHTML(query)}](${searchUrl})\n`;
             });
-            // Используем `marked.parse` для преобразования Markdown в HTML
             processedHtml += `<div class="ai-message-sources-list">${marked.parse(sourcesList)}</div>`;
         }
 
-        // 6. Финальная очистка от "фальшивых" цитат, если они вдруг остались.
         processedHtml = processedHtml.replace(/\s*\[\d+(-|\u2013)?\d*\]/g, '');
         
         return processedHtml;

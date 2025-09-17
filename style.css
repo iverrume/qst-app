@@ -10670,3 +10670,195 @@ body.claude-mode .ai-chat-history-item.active {
 .source-tooltip a:hover {
     text-decoration: underline;
 }
+
+/* ======================================================= */
+/* ===    СТИЛИ ДЛЯ КЛАСТЕРИЗАЦИИ И ПРЕДПРОСМОТРА (AI)   === */
+/* ======================================================= */
+
+/* Стиль для точки, которая является кластером (содержит >1 сообщения) */
+.scrollbar-dot.is-cluster {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background-color: var(--button-primary-bg);
+    box-shadow: 0 0 5px var(--button-primary-bg);
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+
+/* ИСПРАВЛЕНИЕ: Делаем кластеры контрастными в светлой и тёмной темах */
+body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-cluster {
+    background-color: var(--accent);
+    box-shadow: 0 0 5px var(--accent);
+}
+/* Контейнер для всплывающей подсказки со списком сообщений */
+.scrollbar-preview-tooltip {
+    position: fixed; /* Позиционируемся относительно окна, чтобы не обрезаться */
+    z-index: 10003; /* Поверх всего */
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    max-width: 280px;
+    max-height: 300px; /* Ограничиваем высоту, если в кластере много сообщений */
+    overflow-y: auto; /* Добавляем скролл внутри подсказки, если нужно */
+    
+    /* Анимация появления */
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none; /* По умолчанию не кликабельна */
+}
+
+.scrollbar-preview-tooltip.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto; /* Делаем кликабельной, когда видна */
+}
+
+/* Список внутри подсказки */
+.scrollbar-preview-tooltip ul {
+    list-style: none;
+    margin: 0;
+    padding: 5px;
+}
+
+/* Элемент списка (превью одного сообщения) */
+.scrollbar-preview-tooltip li {
+    padding: 8px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s ease;
+}
+
+.scrollbar-preview-tooltip li:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+/* ======================================================= */
+/* ===  АДАПТИВНОСТЬ ДЛЯ КАСТОМНОГО СКРОЛЛБАРА (МОБИЛЬНЫЕ) === */
+/* ======================================================= */
+@media (max-width: 768px) {
+    
+    /* 1. Увеличиваем базовый размер всех точек */
+    .scrollbar-dot {
+        /* Добавляем тонкую рамку, чтобы точка не сливалась с ползунком */
+        border: 1px solid var(--container-bg-color);
+    }
+
+    /* 2. Делаем кластеры еще крупнее и заметнее */
+    .scrollbar-dot.is-cluster {
+        width: 15px;
+        height: 25px;
+    }
+}
+
+/* ======================================================= */
+/* ===    СТИЛИ ДЛЯ ЦВЕТНЫХ МЕТОК В ПОДСКАЗКЕ СКРОЛЛБАРА === */
+/* ======================================================= */
+
+/* Делаем элемент списка flex-контейнером для выравнивания */
+.scrollbar-preview-tooltip li {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Отступ между меткой и текстом */
+}
+
+/* Стиль для самой цветной метки-полоски */
+.preview-color-indicator {
+    width: 4px; /* Ширина полоски */
+    height: 1.5em; /* Высота чуть больше текста */
+    border-radius: 2px; /* Скругленные углы */
+    flex-shrink: 0; /* Запрещаем полоске сжиматься, если текст длинный */
+}
+
+/* ======================================================= */
+/* ===         НОВЫЕ СТИЛИ ДЛЯ САЙДБАРА AI-ЧАТА        === */
+/* ======================================================= */
+
+/* Делаем сайдбар гибким контейнером-колонкой */
+.ai-chat-sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Секция (приватная или публичная) */
+.ai-sidebar-section {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    min-height: 0; /* Важно для правильного сжатия flex-элементов */
+}
+
+/* Растягиваем секцию с аудиториями, чтобы она заняла оставшееся место */
+#aiPublicAudiencesSection {
+    flex-grow: 1;
+}
+
+/* Шапка секции (заголовок + кнопка "+") */
+.ai-sidebar-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 0 4px;
+    flex-shrink: 0;
+}
+
+.ai-sidebar-section-header h4 {
+    margin: 0;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-sidebar-section-header h4 i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Кнопка "+" в шапке секции */
+.ai-sidebar-action-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    transition: all 0.2s ease;
+}
+
+.ai-sidebar-action-btn:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+/* Разделитель между секциями */
+.ai-sidebar-divider {
+    border-top: 1px solid var(--border-color);
+    margin: 4px 8px; /* Небольшие отступы */
+    flex-shrink: 0;
+}
+
+/* Списки чатов теперь занимают все доступное место в своей секции */
+.ai-chat-history-list {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+/* Стиль для заблокированного поля ввода для зрителей */
+#aiChatInput:disabled {
+    background-color: var(--input-bg-color);
+    cursor: not-allowed;
+}
+
+#aiChatInput:disabled::placeholder {
+    color: var(--secondary-text-color);
+}
+
