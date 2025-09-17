@@ -14405,23 +14405,30 @@ const mainApp = (function() {
         if (aiUserMessagesList) {
             let longPressTimer = null;
             let isLongPress = false;
+            let didScroll = false; // <-- НОВЫЙ ФЛАГ для отслеживания скролла
 
             const handlePressStart = (e) => {
                 const item = e.target.closest('.ai-user-message-item');
                 if (!item) return;
                 
-                e.preventDefault();
+                // Сбрасываем флаги в начале каждого нажатия
                 isLongPress = false;
+                didScroll = false;
+
                 longPressTimer = setTimeout(() => {
-                    isLongPress = true;
-                    const index = parseInt(item.dataset.index, 10);
-                    showDotColorPicker(item, index);
-                }, 500); // 500 мс для долгого нажатия
+                    // Если скролла не было, считаем это долгим нажатием
+                    if (!didScroll) {
+                        isLongPress = true;
+                        const index = parseInt(item.dataset.index, 10);
+                        showDotColorPicker(item, index);
+                    }
+                }, 500);
             };
 
             const handlePressEnd = (e) => {
                 clearTimeout(longPressTimer);
-                if (!isLongPress) {
+                // Если не было долгого нажатия И не было скролла - это обычный клик
+                if (!isLongPress && !didScroll) {
                     const item = e.target.closest('.ai-user-message-item');
                     if (item) {
                         const index = parseInt(item.dataset.index, 10);
@@ -14431,13 +14438,25 @@ const mainApp = (function() {
                 }
             };
             
-            // Привязываем события для мыши и тач-устройств
+            // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ТАЧ-СОБЫТИЙ ---
+            aiUserMessagesList.addEventListener('touchstart', (e) => {
+                // Мы больше не используем e.preventDefault() здесь, чтобы не ломать скролл
+                handlePressStart(e);
+            }, { passive: true }); // passive: true говорит браузеру, что мы не будем отменять скролл
+
+            aiUserMessagesList.addEventListener('touchmove', () => {
+                // Если пользователь начал двигать пальцем - это скролл.
+                // Отменяем таймер долгого нажатия и ставим флаг.
+                clearTimeout(longPressTimer);
+                didScroll = true;
+            });
+
+            aiUserMessagesList.addEventListener('touchend', handlePressEnd);
+
+            // --- ОБРАБОТЧИКИ ДЛЯ МЫШИ (остаются почти такими же) ---
             aiUserMessagesList.addEventListener('mousedown', handlePressStart);
             aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
             aiUserMessagesList.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
-            aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: false });
-            aiUserMessagesList.addEventListener('touchend', handlePressEnd);
-            aiUserMessagesList.addEventListener('touchmove', () => clearTimeout(longPressTimer));
         }
 
         // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
@@ -15228,7 +15247,6 @@ const mainApp = (function() {
      * @param {number} messageIndex - Индекс сообщения, к которому привязана точка.
      */
     function showDotColorPicker(targetElement, messageIndex) {
-        // Удаляем любую старую палитру, если она есть
         document.querySelector('.dot-color-picker')?.remove();
 
         const picker = document.createElement('div');
@@ -15236,33 +15254,27 @@ const mainApp = (function() {
 
         const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'];
 
-        // --- НОВАЯ УНИВЕРСАЛЬНАЯ ЛОГИКА ОБНОВЛЕНИЯ ---
         const updateColor = (newColor) => {
             const msg = allAIChats[currentAIChatId][messageIndex];
             if (newColor) {
                 msg.dotColor = newColor;
             } else {
-                delete msg.dotColor; // Удаляем свойство, если цвет сброшен
+                delete msg.dotColor;
             }
             saveAIChatsToStorage();
-            drawOrUpdateScrollbar(); // Обновляем цвет точки на скроллбаре
+            drawOrUpdateScrollbar();
             
-            // Если правая панель открыта - перерисовываем ее тоже!
             if (getEl('aiChatModalContent')?.classList.contains('user-sidebar-open')) {
                 renderUserMessagesList();
             }
             picker.remove();
         };
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
-            swatch.onclick = (e) => {
-                e.stopPropagation();
-                updateColor(color);
-            };
+            swatch.onclick = (e) => { e.stopPropagation(); updateColor(color); };
             picker.appendChild(swatch);
         });
 
@@ -15270,35 +15282,50 @@ const mainApp = (function() {
         resetButton.className = 'color-picker-reset';
         resetButton.title = "Сбросить цвет";
         resetButton.innerHTML = `<i data-lucide="circle-slash-2"></i>`;
-        resetButton.onclick = (e) => {
-            e.stopPropagation();
-            updateColor(null); // Передаем null для сброса
-        };
+        resetButton.onclick = (e) => { e.stopPropagation(); updateColor(null); };
         picker.appendChild(resetButton);
 
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
 
-        // --- НОВАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
+        // --- НОВАЯ УМНАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
         const targetRect = targetElement.getBoundingClientRect();
         const pickerRect = picker.getBoundingClientRect();
-        const windowWidth = window.innerWidth;
-        let leftPos, topPos;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const margin = 10;
 
-        topPos = targetRect.top + targetRect.height / 2 - pickerRect.height / 2;
+        // Расчет позиции по вертикали (Top)
+        let topPos = targetRect.top + targetRect.height / 2 - pickerRect.height / 2;
+        // Коррекция, если выходит за верхнюю границу
+        if (topPos < margin) topPos = margin;
+        // Коррекция, если выходит за нижнюю границу
+        if (topPos + pickerRect.height > viewportHeight - margin) {
+            topPos = viewportHeight - pickerRect.height - margin;
+        }
 
-        // Пытаемся разместить справа от элемента
-        if (targetRect.right + pickerRect.width + 10 < windowWidth) {
-            leftPos = targetRect.right + 10;
+        // Расчет позиции по горизонтали (Left)
+        let leftPos;
+        // Пытаемся разместить слева от элемента (предпочтительно)
+        if (targetRect.left - pickerRect.width - margin > 0) {
+            leftPos = targetRect.left - pickerRect.width - margin;
         } else {
-            // Если не помещается, размещаем слева
-            leftPos = targetRect.left - pickerRect.width - 10;
+            // Если слева не помещается, размещаем справа
+            leftPos = targetRect.right + margin;
         }
         
+        // Финальная проверка, чтобы точно не вылезло за правый край
+        if (leftPos + pickerRect.width > viewportWidth - margin) {
+            leftPos = viewportWidth - pickerRect.width - margin;
+        }
+
         picker.style.top = `${topPos}px`;
         picker.style.left = `${leftPos}px`;
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+        // --- КОНЕЦ НОВОЙ ЛОГИКИ ПОЗИЦИОНИРОВАНИЯ ---
 
+        // --- ИСПРАВЛЕНИЕ БАГА С МГНОВЕННЫМ ЗАКРЫТИЕМ ---
+        // Добавляем слушатель на закрытие с небольшой задержкой.
+        // Это позволяет текущему событию 'mouseup' завершиться, не вызывая этот слушатель.
         setTimeout(() => {
             document.body.addEventListener('click', function closePicker(event) {
                 if (!picker.contains(event.target)) {
