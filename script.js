@@ -15258,6 +15258,7 @@ const mainApp = (function() {
      * @param {number} messageIndex - Индекс сообщения, к которому привязана точка.
      */
     function showDotColorPicker(targetElement, messageIndex) {
+        // Удаляем любую старую палитру на всякий случай
         document.querySelector('.dot-color-picker')?.remove();
 
         const picker = document.createElement('div');
@@ -15282,15 +15283,15 @@ const mainApp = (function() {
                 itemInSidebar.style.borderLeftColor = newColor || '';
             }
             
-            picker.remove();
+            // Палитра удалится сама через слушатель клика, нам не нужно делать это здесь
         };
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
-            // === ИСПРАВЛЕНИЕ №2: Добавляем stopPropagation, чтобы клик по цвету не закрывал палитру ===
-            swatch.onclick = (e) => { e.stopPropagation(); updateColor(color); };
+            // Клик по цвету обновляет его и автоматически закрывает палитру (т.к. клик будет "вне")
+            swatch.onclick = () => updateColor(color);
             picker.appendChild(swatch);
         });
 
@@ -15298,34 +15299,33 @@ const mainApp = (function() {
         resetButton.className = 'color-picker-reset';
         resetButton.title = "Сбросить цвет";
         resetButton.innerHTML = `<i data-lucide="circle-slash-2"></i>`;
-        resetButton.onclick = (e) => { e.stopPropagation(); updateColor(null); };
+        resetButton.onclick = () => updateColor(null);
         picker.appendChild(resetButton);
 
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
-
-        // === ИСПРАВЛЕНИЕ №1: Упрощенная и надежная логика позиционирования для всех устройств ===
-        picker.style.position = 'fixed'; // Убедимся, что позиция отсчитывается от окна
+        
+        // Позиционируем палитру по центру экрана, что идеально для мобильных
+        picker.style.position = 'fixed';
         picker.style.left = '50%';
         picker.style.top = '50%';
-        picker.style.transform = 'translate(-50%, -50%)'; // Идеальное центрирование
-        // === КОНЕЦ ИСПРАВЛЕНИЯ №1 ===
-        
-        // === ИСПРАВЛЕНИЕ №2: Упрощенная логика закрытия палитры ===
-        // Используем setTimeout, чтобы этот слушатель добавился после текущего события клика/тапа
+        picker.style.transform = 'translate(-50%, -50%)';
+
+        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Логика закрытия палитры ===
+        // Мы добавляем слушатель на закрытие с небольшой задержкой.
+        // Это позволяет "призрачному" клику, который следует за долгим нажатием, пройти, не закрывая палитру.
         setTimeout(() => {
             const closePickerOnClickOutside = (event) => {
-                // Если клик был не внутри палитры
-                if (!picker.contains(event.target)) {
-                    picker.remove(); // Удаляем палитру
-                    // Обязательно удаляем сам слушатель, чтобы он не висел в памяти
+                // Если палитра все еще на странице и клик был не по ней
+                if (picker.parentNode && !picker.contains(event.target)) {
+                    picker.remove();
+                    // Важно удалить сам слушатель после использования
                     document.removeEventListener('click', closePickerOnClickOutside, true);
                 }
             };
-            // Добавляем слушатель на фазу захвата, чтобы он сработал раньше других
+            // Вешаем слушатель на фазу "захвата", чтобы он сработал надежно
             document.addEventListener('click', closePickerOnClickOutside, true);
-        }, 0);
-        // === КОНЕЦ ИСПРАВЛЕНИЯ №2 ===
+        }, 100); // 100мс - безопасная задержка
     }
 
 
