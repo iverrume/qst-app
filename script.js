@@ -15289,6 +15289,7 @@ const mainApp = (function() {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
+            // === ИСПРАВЛЕНИЕ №2: Добавляем stopPropagation, чтобы клик по цвету не закрывал палитру ===
             swatch.onclick = (e) => { e.stopPropagation(); updateColor(color); };
             picker.appendChild(swatch);
         });
@@ -15303,47 +15304,28 @@ const mainApp = (function() {
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
 
-        // --- НОВАЯ УМНАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ (v2) ---
-        const targetRect = targetElement.getBoundingClientRect();
-        const pickerRect = picker.getBoundingClientRect();
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-        const margin = 10;
-
-        // Расчет позиции по вертикали (Top) с учетом границ
-        let topPos = targetRect.top + targetRect.height / 2 - pickerRect.height / 2;
-        topPos = Math.max(margin, Math.min(topPos, viewportHeight - pickerRect.height - margin));
-
-        // Расчет позиции по горизонтали (Left) с учетом границ
-        let leftPos;
-        // Предпочтительно слева от элемента
-        if (targetRect.left - pickerRect.width - margin > 0) {
-            leftPos = targetRect.left - pickerRect.width - margin;
-        } else { // Иначе справа
-            leftPos = targetRect.right + margin;
-        }
+        // === ИСПРАВЛЕНИЕ №1: Упрощенная и надежная логика позиционирования для всех устройств ===
+        picker.style.position = 'fixed'; // Убедимся, что позиция отсчитывается от окна
+        picker.style.left = '50%';
+        picker.style.top = '50%';
+        picker.style.transform = 'translate(-50%, -50%)'; // Идеальное центрирование
+        // === КОНЕЦ ИСПРАВЛЕНИЯ №1 ===
         
-        // Финальная проверка, чтобы не вылезло за края
-        leftPos = Math.max(margin, Math.min(leftPos, viewportWidth - pickerRect.width - margin));
-        
-        picker.style.top = `${topPos}px`;
-        picker.style.left = `${leftPos}px`;
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ ПОЗИЦИОНИРОВАНИЯ ---
-
-        const stopImmediateClick = (e) => {
-            e.stopPropagation();
-            window.removeEventListener('click', stopImmediateClick, true);
-        };
-        window.addEventListener('click', stopImmediateClick, true);
-
+        // === ИСПРАВЛЕНИЕ №2: Упрощенная логика закрытия палитры ===
+        // Используем setTimeout, чтобы этот слушатель добавился после текущего события клика/тапа
         setTimeout(() => {
-            window.addEventListener('click', function closePicker(event) {
+            const closePickerOnClickOutside = (event) => {
+                // Если клик был не внутри палитры
                 if (!picker.contains(event.target)) {
-                    picker.remove();
-                    window.removeEventListener('click', closePicker);
+                    picker.remove(); // Удаляем палитру
+                    // Обязательно удаляем сам слушатель, чтобы он не висел в памяти
+                    document.removeEventListener('click', closePickerOnClickOutside, true);
                 }
-            }, { once: true });
+            };
+            // Добавляем слушатель на фазу захвата, чтобы он сработал раньше других
+            document.addEventListener('click', closePickerOnClickOutside, true);
         }, 0);
+        // === КОНЕЦ ИСПРАВЛЕНИЯ №2 ===
     }
 
 
