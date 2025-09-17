@@ -14391,32 +14391,55 @@ const mainApp = (function() {
             loadFabPosition(aiChatFab);
         }
         
-        // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
-        
-        // Привязываем клик к НОВОЙ функции для правой панели
-        aiShowAllUserMessagesBtn?.addEventListener('click', toggleUserMessagesSidebar);
-        
-        // Добавляем обработчики для самой правой панели
-        const aiCloseUserMessagesSidebarBtn = getEl('aiCloseUserMessagesSidebarBtn');
+        // --- НАЧАЛО ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
+
+        const aiUserMessagesSidebar = getEl('aiChatUserMessagesSidebar');
         const aiUserMessagesList = getEl('aiUserMessagesList');
 
-        aiCloseUserMessagesSidebarBtn?.addEventListener('click', toggleUserMessagesSidebar);
+        // Обработчик для кнопки, открывающей правую панель
+        aiShowAllUserMessagesBtn?.addEventListener('click', (e) => {
+            console.log('[DEBUG] Клик по кнопке открытия правой панели.');
+            e.stopPropagation(); 
+            toggleUserMessagesSidebar();
+        });
 
+        // НОВЫЙ НАДЕЖНЫЙ ОБРАБОТЧИК ДЛЯ ЗАКРЫТИЯ ПАНЕЛИ
+        aiChatModalContent?.addEventListener('click', (e) => {
+            console.log('[DEBUG] Клик внутри модального окна AI.');
+            // Проверяем, открыта ли панель
+            if (aiChatModalContent.classList.contains('user-sidebar-open')) {
+                console.log('[DEBUG] Правая панель открыта, проверяем цель клика.');
+                const target = e.target;
+                
+                // Проверяем, был ли клик НЕ внутри панели и НЕ по кнопке ее открытия
+                const clickedOutside = !aiUserMessagesSidebar.contains(target) && !aiShowAllUserMessagesBtn.contains(target);
+                
+                console.log(`[DEBUG] Цель клика:`, target);
+                console.log(`[DEBUG] Клик был вне панели? ${clickedOutside}`);
+
+                if (clickedOutside) {
+                    console.log('[DEBUG] Панель будет закрыта.');
+                    toggleUserMessagesSidebar();
+                } else {
+                    console.log('[DEBUG] Клик был внутри панели, оставляем открытой.');
+                }
+            }
+        });
+
+        // Обработчики для списка сообщений в правой панели (с исправлением скролла)
         if (aiUserMessagesList) {
             let longPressTimer = null;
             let isLongPress = false;
-            let didScroll = false; // <-- НОВЫЙ ФЛАГ для отслеживания скролла
+            let didScroll = false;
 
             const handlePressStart = (e) => {
                 const item = e.target.closest('.ai-user-message-item');
                 if (!item) return;
                 
-                // Сбрасываем флаги в начале каждого нажатия
                 isLongPress = false;
                 didScroll = false;
 
                 longPressTimer = setTimeout(() => {
-                    // Если скролла не было, считаем это долгим нажатием
                     if (!didScroll) {
                         isLongPress = true;
                         const index = parseInt(item.dataset.index, 10);
@@ -14427,7 +14450,6 @@ const mainApp = (function() {
 
             const handlePressEnd = (e) => {
                 clearTimeout(longPressTimer);
-                // Если не было долгого нажатия И не было скролла - это обычный клик
                 if (!isLongPress && !didScroll) {
                     const item = e.target.closest('.ai-user-message-item');
                     if (item) {
@@ -14438,36 +14460,18 @@ const mainApp = (function() {
                 }
             };
             
-            // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ТАЧ-СОБЫТИЙ ---
-            aiUserMessagesList.addEventListener('touchstart', (e) => {
-                // Мы больше не используем e.preventDefault() здесь, чтобы не ломать скролл
-                handlePressStart(e);
-            }, { passive: true }); // passive: true говорит браузеру, что мы не будем отменять скролл
-
-            aiUserMessagesList.addEventListener('touchmove', () => {
-                // Если пользователь начал двигать пальцем - это скролл.
-                // Отменяем таймер долгого нажатия и ставим флаг.
-                clearTimeout(longPressTimer);
-                didScroll = true;
-            });
-
-            aiUserMessagesList.addEventListener('touchend', handlePressEnd);
-
-            // --- ОБРАБОТЧИКИ ДЛЯ МЫШИ (остаются почти такими же) ---
             aiUserMessagesList.addEventListener('mousedown', handlePressStart);
             aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
             aiUserMessagesList.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+            aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: true });
+            aiUserMessagesList.addEventListener('touchmove', () => {
+                didScroll = true;
+                clearTimeout(longPressTimer);
+            });
+            aiUserMessagesList.addEventListener('touchend', handlePressEnd);
         }
 
-        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
-
-        // Динамически создаем контейнер для постоянных подсказок
-        if (aiChatScrollWrapper && !getEl('aiPersistentTooltipsContainer')) {
-            const container = document.createElement('div');
-            container.id = 'aiPersistentTooltipsContainer';
-            container.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;';
-            aiChatScrollWrapper.appendChild(container);
-        }
+        // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
         
         aiCancelReplyBtn?.addEventListener('click', cancelAIReply);
         aiChatCloseBtn?.addEventListener('click', closeAIChat);
@@ -15255,18 +15259,26 @@ const mainApp = (function() {
         const colors = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#3498db', '#9b59b6'];
 
         const updateColor = (newColor) => {
-            const msg = allAIChats[currentAIChatId][messageIndex];
+            const msg = allAIChats[currentAIChatId]?.[messageIndex];
+            if (!msg) return;
+
             if (newColor) {
                 msg.dotColor = newColor;
             } else {
                 delete msg.dotColor;
             }
             saveAIChatsToStorage();
-            drawOrUpdateScrollbar();
+            drawOrUpdateScrollbar(); // Обновляем точку на скроллбаре
             
-            if (getEl('aiChatModalContent')?.classList.contains('user-sidebar-open')) {
-                renderUserMessagesList();
+            // --- НОВОЕ ПРЯМОЕ ОБНОВЛЕНИЕ СТИЛЯ ---
+            // Находим соответствующий элемент в правой панели...
+            const itemInSidebar = getEl('aiUserMessagesList')?.querySelector(`li[data-index="${messageIndex}"]`);
+            if (itemInSidebar) {
+                // ... и мгновенно меняем его стиль!
+                itemInSidebar.style.borderLeftColor = newColor || ''; // Если цвет сброшен, стиль тоже сбрасывается
             }
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
             picker.remove();
         };
 
@@ -15288,54 +15300,47 @@ const mainApp = (function() {
         document.body.appendChild(picker);
         if (window.lucide) lucide.createIcons();
 
-        // --- НОВАЯ УМНАЯ ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
         const targetRect = targetElement.getBoundingClientRect();
         const pickerRect = picker.getBoundingClientRect();
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
         const margin = 10;
 
-        // Расчет позиции по вертикали (Top)
         let topPos = targetRect.top + targetRect.height / 2 - pickerRect.height / 2;
-        // Коррекция, если выходит за верхнюю границу
-        if (topPos < margin) topPos = margin;
-        // Коррекция, если выходит за нижнюю границу
-        if (topPos + pickerRect.height > viewportHeight - margin) {
-            topPos = viewportHeight - pickerRect.height - margin;
-        }
+        topPos = Math.max(margin, Math.min(topPos, viewportHeight - pickerRect.height - margin));
 
-        // Расчет позиции по горизонтали (Left)
         let leftPos;
-        // Пытаемся разместить слева от элемента (предпочтительно)
         if (targetRect.left - pickerRect.width - margin > 0) {
             leftPos = targetRect.left - pickerRect.width - margin;
         } else {
-            // Если слева не помещается, размещаем справа
             leftPos = targetRect.right + margin;
         }
         
-        // Финальная проверка, чтобы точно не вылезло за правый край
         if (leftPos + pickerRect.width > viewportWidth - margin) {
             leftPos = viewportWidth - pickerRect.width - margin;
         }
-
+        if (leftPos < margin) {
+            leftPos = margin;
+        }
+        
         picker.style.top = `${topPos}px`;
         picker.style.left = `${leftPos}px`;
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ ПОЗИЦИОНИРОВАНИЯ ---
+        
+        const stopImmediateClick = (e) => {
+            e.stopPropagation();
+            window.removeEventListener('click', stopImmediateClick, true);
+        };
+        window.addEventListener('click', stopImmediateClick, true);
 
-        // --- ИСПРАВЛЕНИЕ БАГА С МГНОВЕННЫМ ЗАКРЫТИЕМ ---
-        // Добавляем слушатель на закрытие с небольшой задержкой.
-        // Это позволяет текущему событию 'mouseup' завершиться, не вызывая этот слушатель.
         setTimeout(() => {
-            document.body.addEventListener('click', function closePicker(event) {
+            window.addEventListener('click', function closePicker(event) {
                 if (!picker.contains(event.target)) {
                     picker.remove();
-                    document.body.removeEventListener('click', closePicker);
+                    window.removeEventListener('click', closePicker);
                 }
             }, { once: true });
         }, 0);
     }
-
 
 
 

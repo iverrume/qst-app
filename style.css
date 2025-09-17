@@ -10513,11 +10513,17 @@ body.claude-mode .ai-chat-history-item.active {
 }
 
 /* --- Сдвигаем основную область чата влево при открытии панели --- */
-.ai-chat-modal-content.user-sidebar-open .ai-chat-scroll-wrapper,
-.ai-chat-modal-content.user-sidebar-open .ai-chat-input-area {
-    margin-right: 280px;
-    transition: margin-right 0.3s ease-in-out;
+/* (Применяем только на ПК, чтобы не сдвигать на мобильных) */
+@media (min-width: 801px) { /* <-- ИЗМЕНЕНИЕ: Только для экранов шире 800px */
+    .ai-chat-modal-content.user-sidebar-open .ai-chat-scroll-wrapper,
+    .ai-chat-modal-content.user-sidebar-open .ai-chat-input-area {
+        margin-right: 280px;
+        transition: margin-right 0.3s ease-in-out;
+    }
 }
+
+/* Добавляем transition и для мобильных, чтобы не было резких скачков, 
+   даже если margin-right остается 0 */
 .ai-chat-scroll-wrapper, .ai-chat-input-area {
     transition: margin-right 0.3s ease-in-out;
 }
@@ -10536,6 +10542,10 @@ body.claude-mode .ai-chat-history-item.active {
     margin: 0;
     flex-grow: 1;
     overflow-y: auto;
+    /* Добавляем отступ сверху, раз шапки больше нет */
+    padding-top: 15px; 
+    /* НОВОЕ СВОЙСТВО: Подсказывает браузеру, что здесь основной жест - вертикальная прокрутка */
+    touch-action: pan-y; 
 }
 
 /* --- Элемент списка (одно сообщение) --- */
