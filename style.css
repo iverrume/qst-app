@@ -10597,3 +10597,121 @@ body.claude-mode .ai-chat-history-item.active {
         margin-right: 0;
     }
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ССЫЛОК НА ИСТОЧНИКИ В AI-ЧАТЕ    === */
+/* ======================================================= */
+
+.ai-message-source-link {
+    font-size: 0.8em;
+    vertical-align: super;
+    text-decoration: none;
+    color: var(--accent);
+    padding: 0 2px;
+}
+
+.ai-message-source-link:hover {
+    text-decoration: underline;
+}
+
+.ai-message-sources-list {
+    font-size: 0.9em;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ======================================================= */
+/* ===         ИНТЕРАКТИВНЫЕ ИСТОЧНИКИ В AI-ЧАТЕ        === */
+/* ======================================================= */
+
+.grounded-segment {
+    /* Легкая пунктирная линия под текстом, подтвержденным источником */
+    border-bottom: 2px dotted color-mix(in srgb, var(--accent) 50%, transparent);
+    cursor: help; /* Курсор в виде знака вопроса */
+    transition: background-color 0.2s ease;
+}
+
+.grounded-segment:hover {
+    /* Легкая подсветка при наведении */
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.source-tooltip {
+    position: fixed; /* Позиционирование относительно окна, чтобы не обрезалось */
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    z-index: 10005; /* Поверх всего */
+    max-width: 300px;
+    pointer-events: none; /* Чтобы не мешала другим действиям */
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.source-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.source-tooltip a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.source-tooltip a:hover {
+    text-decoration: underline;
+}
+
+/* ======================================================= */
+/* ===         ИНТЕРАКТИВНЫЕ ИСТОЧНИКИ В AI-ЧАТЕ        === */
+/* ======================================================= */
+
+.grounded-segment {
+    /* Легкая пунктирная линия под текстом, подтвержденным источником */
+    border-bottom: 2px dotted color-mix(in srgb, var(--accent) 50%, transparent);
+    cursor: help; /* Курсор в виде знака вопроса */
+    transition: background-color 0.2s ease;
+}
+
+.grounded-segment:hover {
+    /* Легкая подсветка при наведении */
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.source-tooltip {
+    position: fixed; /* Позиционирование относительно окна, чтобы не обрезалось */
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    z-index: 10005; /* Поверх всего */
+    max-width: 300px;
+    pointer-events: none; /* Чтобы не мешала другим действиям */
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.source-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.source-tooltip a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+    word-break: break-all; /* Для длинных ссылок */
+}
+
+.source-tooltip a:hover {
+    text-decoration: underline;
+}

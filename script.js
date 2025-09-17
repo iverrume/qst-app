@@ -14411,70 +14411,144 @@ const mainApp = (function() {
                 }
             }
         });
-        
-        // Обработчики для списка сообщений в правой панели (с исправлением скролла)
+
+        // --- НОВЫЙ БЛОК (ВЕРСИЯ 2.0): Интерактивные подсказки для источников ---
+        let sourceTooltip = null; // Переменная для хранения элемента подсказки
+
+        aiChatMessages?.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('.grounded-segment');
+            if (!target) return;
+
+            if (!sourceTooltip) {
+                sourceTooltip = document.createElement('div');
+                sourceTooltip.className = 'source-tooltip';
+                document.body.appendChild(sourceTooltip);
+            }
+            
+            try {
+                // Парсим массив источников из data-атрибута
+                const sources = JSON.parse(target.dataset.source);
+                if (!sources || sources.length === 0) return;
+
+                // Создаем HTML для всех ссылок
+                const linksHtml = sources.map(source => 
+                    `<a href="${source.uri}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.title || 'Источник')}</a>`
+                ).join('<br>'); // Разделяем ссылки переносом строки
+
+                sourceTooltip.innerHTML = linksHtml;
+
+                const targetRect = target.getBoundingClientRect();
+                sourceTooltip.style.left = `${targetRect.left}px`;
+                sourceTooltip.style.top = `${targetRect.bottom + 5}px`;
+
+                // Умное позиционирование, чтобы подсказка не вылезала за экран
+                const tooltipRect = sourceTooltip.getBoundingClientRect();
+                if (tooltipRect.right > window.innerWidth - 10) {
+                    sourceTooltip.style.left = `${window.innerWidth - tooltipRect.width - 10}px`;
+                }
+                if (tooltipRect.bottom > window.innerHeight - 10) {
+                     sourceTooltip.style.top = `${targetRect.top - tooltipRect.height - 5}px`;
+                }
+
+                sourceTooltip.classList.add('visible');
+
+            } catch (err) {
+                console.error("Ошибка парсинга данных источника:", err);
+            }
+        });
+
+        aiChatMessages?.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('.grounded-segment');
+            if (!target) return;
+
+            if (sourceTooltip) {
+                sourceTooltip.classList.remove('visible');
+            }
+        });
+        // --- КОНЕЦ НОВОГО БЛОКА ---      
+
+
+
+
+
+
         if (aiUserMessagesList) {
             let longPressTimer = null;
-            let isLongPress = false;
             let touchStartX = 0;
             let touchStartY = 0;
-            const MOVE_THRESHOLD = 10; // Порог в пикселях. Движение меньше этого значения не считается скроллом.
+            const MOVE_THRESHOLD = 10;
+            
+            // Флаг, который будет жить между событиями. Он скажет нам, было ли последнее действие долгим нажатием.
+            let wasLongPress = false;
 
             const handlePressStart = (e) => {
                 const item = e.target.closest('.ai-user-message-item');
                 if (!item) return;
 
+                // В самом начале любого нажатия сбрасываем флаг.
+                wasLongPress = false;
+
                 const touch = e.touches ? e.touches[0] : e;
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
-                isLongPress = false;
+                
+                // Обработчик движения, который отменяет долгое нажатие, если был скролл.
+                const handleMove = (moveEvent) => {
+                    if (!longPressTimer) return;
+                    const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
+                    if (Math.abs(moveTouch.clientX - startX) > MOVE_THRESHOLD || Math.abs(moveTouch.clientY - startY) > MOVE_THRESHOLD) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                };
 
-                // Запускаем таймер, который сработает, если не будет движения
+                // Запускаем таймер. Если он сработает, значит, это было долгое нажатие.
                 longPressTimer = setTimeout(() => {
-                    console.log("[LOG] Таймер долгого нажатия сработал!");
-                    isLongPress = true; // Устанавливаем флаг, что это было долгое нажатие
+                    wasLongPress = true; // Устанавливаем наш главный флаг!
                     const index = parseInt(item.dataset.index, 10);
                     showDotColorPicker(item, index);
-                }, 500); // 500мс для долгого нажатия
-            };
+                    
+                    // Очищаем слушатели движения, так как они больше не нужны.
+                    item.removeEventListener('mousemove', handleMove);
+                    item.removeEventListener('touchmove', handleMove);
+                }, 500);
 
-            const handleMove = (e) => {
-                // Если таймер уже отменили, ничего не делаем
-                if (!longPressTimer) return;
+                // Слушатели, которые отменят таймер при скролле.
+                item.addEventListener('mousemove', handleMove);
+                item.addEventListener('touchmove', handleMove, { passive: true });
 
-                const touch = e.touches ? e.touches[0] : e;
-                const dx = Math.abs(touch.clientX - touchStartX);
-                const dy = Math.abs(touch.clientY - touchStartY);
-
-                // Если палец сдвинулся больше порога, это скролл - отменяем долгое нажатие
-                if (dx > MOVE_THRESHOLD || dy > MOVE_THRESHOLD) {
-                    console.log("[LOG] Обнаружено движение, таймер отменен.");
+                // Функция для очистки после того, как палец/кнопка мыши отпущена.
+                const cleanup = (upEvent) => {
                     clearTimeout(longPressTimer);
-                    longPressTimer = null;
-                }
-            };
+                    item.removeEventListener('mousemove', handleMove);
+                    item.removeEventListener('touchmove', handleMove);
+                    item.removeEventListener('mouseup', cleanup);
+                    item.removeEventListener('touchend', cleanup);
 
-            const handlePressEnd = (e) => {
-                // В любом случае очищаем таймер, когда палец отпущен
-                clearTimeout(longPressTimer);
-                longPressTimer = null;
+                    // Если это было долгое нажатие, мы должны остановить дальнейшее распространение событий.
+                    if (wasLongPress) {
+                        upEvent.preventDefault();
+                        upEvent.stopPropagation();
+                    }
+                };
                 
-                // САМЫЙ ВАЖНЫЙ МОМЕНТ: если это было долгое нажатие, мы должны
-                // предотвратить "призрачный" клик, который последует за ним.
-                if (isLongPress) {
-                    e.preventDefault();
-                }
+                // Вешаем слушатели на отпускание.
+                item.addEventListener('mouseup', cleanup);
+                item.addEventListener('touchend', cleanup);
             };
 
             const handleClick = (e) => {
-                // Если это был клик, который последовал сразу за долгим нажатием, игнорируем его.
-                if (isLongPress) {
-                    console.log("[LOG] Клик проигнорирован, так как это было долгое нажатие.");
-                    isLongPress = false; // Сбрасываем флаг для следующего раза
+                // ГЛАВНОЕ ПРАВИЛО: Если предыдущее действие было долгим нажатием,
+                // мы полностью игнорируем этот клик.
+                if (wasLongPress) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Сбрасываем флаг и выходим.
+                    wasLongPress = false;
                     return;
                 }
-
-                // Иначе это обычный, короткий клик. Выполняем действие.
+                
+                // Если это был обычный, короткий клик, выполняем действие.
                 const item = e.target.closest('.ai-user-message-item');
                 if (item) {
                     const index = parseInt(item.dataset.index, 10);
@@ -14482,16 +14556,16 @@ const mainApp = (function() {
                     toggleUserMessagesSidebar();
                 }
             };
-
-            // Навешиваем все обработчики
+            
+            // Используем 'mousedown' и 'touchstart' вместо 'click' для инициации логики.
+            // Слушатель 'click' теперь отвечает только за короткие нажатия.
             aiUserMessagesList.addEventListener('mousedown', handlePressStart);
-            aiUserMessagesList.addEventListener('mousemove', handleMove);
-            aiUserMessagesList.addEventListener('mouseup', handlePressEnd);
             aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: true });
-            aiUserMessagesList.addEventListener('touchmove', handleMove, { passive: true });
-            aiUserMessagesList.addEventListener('touchend', handlePressEnd);
-            aiUserMessagesList.addEventListener('click', handleClick);
+            aiUserMessagesList.addEventListener('click', handleClick, true); // Используем фазу захвата для надежности
         }
+
+
+
         // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
         
         aiCancelReplyBtn?.addEventListener('click', cancelAIReply);
@@ -14813,28 +14887,19 @@ const mainApp = (function() {
 
 
     /**
-     * НОВАЯ ФУНКЦИЯ: Обновляет состояние переключателя "Поиск в Google"
-     * в зависимости от того, прикреплен ли файл.
+     * НОВАЯ ФУНКЦИЯ: Обновляет состояние переключателя "Поиск в Google",
+     * но больше не блокирует его.
      */
     function updateGroundingToggleState() {
         const groundingToggle = getEl('aiGroundingToggleMain');
         if (!groundingToggle) return;
-
-        // Находим родительский контейнер, чтобы заблокировать и надпись
         const container = groundingToggle.closest('.ai-setting-group');
         if (!container) return;
 
-        if (attachedFile) {
-            // Если файл прикреплен, делаем переключатель неактивным
-            container.style.opacity = '0.5';
-            container.style.pointerEvents = 'none';
-            container.title = _('ai_search_disabled_with_file'); // Добавляем всплывающую подсказку
-        } else {
-            // Если файла нет, возвращаем в активное состояние
-            container.style.opacity = '1';
-            container.style.pointerEvents = 'auto';
-            container.title = ''; // Убираем подсказку
-        }
+        // Просто возвращаем контейнеру стандартный вид
+        container.style.opacity = '1';
+        container.style.pointerEvents = 'auto';
+        container.title = ''; // Убираем подсказку
     }
 
     /**
@@ -15270,11 +15335,27 @@ const mainApp = (function() {
      * @param {HTMLElement} dotElement - Элемент точки, на которой был сделан долгий клик.
      * @param {number} messageIndex - Индекс сообщения, к которому привязана точка.
      */
+    /**
+     * ВЕРСЯ 6.0 (ФИНАЛЬНАЯ): Показывает палитру выбора цвета.
+     * Логика закрытия теперь полностью инкапсулирована и не зависит от глобальных слушателей.
+     */
     function showDotColorPicker(targetElement, messageIndex) {
-        console.log('[LOG] Вызвана showDotColorPicker. Создаем палитру.');
-        // Удаляем любую старую палитру на всякий случай
+        // Удаляем любую старую палитру, чтобы избежать дублирования
         document.querySelector('.dot-color-picker')?.remove();
 
+        // 1. Создаем полупрозрачный оверлей, который будет ловить клики "мимо"
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: transparent; /* Оверлей невидимый */
+            z-index: 10002; /* Чуть ниже палитры */
+        `;
+        
+        // 2. Создаем саму палитру
         const picker = document.createElement('div');
         picker.className = 'dot-color-picker';
 
@@ -15284,11 +15365,9 @@ const mainApp = (function() {
             const msg = allAIChats[currentAIChatId]?.[messageIndex];
             if (!msg) return;
 
-            if (newColor) {
-                msg.dotColor = newColor;
-            } else {
-                delete msg.dotColor;
-            }
+            if (newColor) msg.dotColor = newColor;
+            else delete msg.dotColor;
+            
             saveAIChatsToStorage();
             drawOrUpdateScrollbar();
             
@@ -15296,18 +15375,16 @@ const mainApp = (function() {
             if (itemInSidebar) {
                 itemInSidebar.style.borderLeftColor = newColor || '';
             }
-            
-            // === ВОТ ОНО, ИСПРАВЛЕНИЕ! ===
-            // Просто удаляем палитру из DOM после того, как цвет был выбран и сохранен.
-            picker.remove();
         };
 
         colors.forEach(color => {
             const swatch = document.createElement('div');
             swatch.className = 'color-swatch';
             swatch.style.backgroundColor = color;
-            // Клик по цвету теперь вызывает функцию, которая сама закроет палитру
-            swatch.onclick = () => updateColor(color);
+            swatch.onclick = () => {
+                updateColor(color);
+                overlay.remove(); // Закрываем оверлей после выбора
+            };
             picker.appendChild(swatch);
         });
 
@@ -15315,30 +15392,31 @@ const mainApp = (function() {
         resetButton.className = 'color-picker-reset';
         resetButton.title = "Сбросить цвет";
         resetButton.innerHTML = `<i data-lucide="circle-slash-2"></i>`;
-        resetButton.onclick = () => updateColor(null);
+        resetButton.onclick = () => {
+            updateColor(null);
+            overlay.remove(); // Закрываем оверлей после сброса
+        };
         picker.appendChild(resetButton);
 
-        document.body.appendChild(picker);
+        // 3. Добавляем палитру ВНУТРЬ оверлея
+        overlay.appendChild(picker);
+        document.body.appendChild(overlay);
         if (window.lucide) lucide.createIcons();
         
-        picker.style.position = 'fixed';
+        // Позиционируем палитру по центру оверлея
+        picker.style.position = 'absolute'; // Теперь относительно оверлея
         picker.style.left = '50%';
         picker.style.top = '50%';
         picker.style.transform = 'translate(-50%, -50%)';
 
-        // Логика закрытия при клике вне палитры остается для случаев,
-        // когда пользователь просто передумал и не выбрал цвет
-        setTimeout(() => {
-            const closePickerOnClickOutside = (event) => {
-                if (picker.parentNode && !picker.contains(event.target)) {
-                    picker.remove();
-                    document.removeEventListener('click', closePickerOnClickOutside, true);
-                }
-            };
-            document.addEventListener('click', closePickerOnClickOutside, true);
-        }, 100);
+        // 4. ГЛАВНАЯ ЛОГИКА: Клик по самому оверлею (т.е. "мимо" палитры) просто удаляет оверлей вместе со всем содержимым.
+        overlay.onclick = (e) => {
+            // Сработает, только если клик был именно по оверлею, а не по палитре внутри него
+            if (e.target === overlay) {
+                overlay.remove();
+            }
+        };
     }
-
 
 
     /**
@@ -16054,7 +16132,7 @@ const mainApp = (function() {
         }
     }
 
-    function sendAIChatMessage() {
+    async function sendAIChatMessage() {
         if (isAIResponding) return;
         const userInput = aiChatInput.value.trim();
         if (!userInput && !attachedFile) return;
@@ -16065,24 +16143,60 @@ const mainApp = (function() {
             message.replyTo = aiReplyContext;
         }
         
-        if (attachedFile) {
-            message.attachment = attachedFile;
-        }
-
-        // ======== ГЛАВНОЕ ИЗМЕНЕНИЕ ========
-        allAIChats[currentAIChatId].push(message);
-        saveAIChatsToStorage();
-        renderAIChatList(); // Обновляем заголовок в списке
-        // ===================================
+        const fileToSend = attachedFile; // Сохраняем файл во временную переменную
         
+        // Очищаем UI сразу для мгновенной реакции
         aiChatInput.value = '';
-        const fileToSend = attachedFile;
         removeAIAttachment();
         cancelAIReply();
+
+        // Если есть файл, сначала получаем его описание
+        if (fileToSend) {
+            try {
+                // Показываем пользователю, что мы анализируем файл
+                allAIChats[currentAIChatId].push({ role: 'model', content: 'Анализ файла...' });
+                renderAIChatMessages();
+
+                const response = await fetch(googleAppScriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'generateAttachmentDescription',
+                        file: {
+                            base64Data: fileToSend.base64Data.split(',')[1],
+                            mimeType: fileToSend.mimeType
+                        },
+                        userText: userInput,
+                        targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                    })
+                });
+                const result = await response.json();
+                
+                if (result.success && result.description) {
+                    message.attachmentDescription = result.description;
+                } else {
+                    // Если описание не удалось, добавляем заглушку, чтобы ИИ знал, что файл был
+                    message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
+                }
+                // Удаляем сообщение "Анализ файла..."
+                allAIChats[currentAIChatId].pop();
+
+            } catch (error) {
+                console.error("Ошибка получения описания файла:", error);
+                message.attachmentDescription = `(Ошибка при анализе файла "${fileToSend.name}")`;
+                allAIChats[currentAIChatId].pop(); // Все равно удаляем сообщение о загрузке
+            }
+        }
         
+        // Теперь добавляем финальное сообщение пользователя в историю
+        message.attachment = fileToSend;
+        allAIChats[currentAIChatId].push(message);
+        
+        saveAIChatsToStorage();
+        renderAIChatList(); 
+        
+        // И только теперь запускаем основной запрос на ответ ИИ
         getAIResponseForCurrentHistory(fileToSend);
     }
-
 
 
     async function getAIResponseForCurrentHistory(file = null) {
@@ -16091,15 +16205,10 @@ const mainApp = (function() {
         aiChatSendBtn.disabled = true;
         
         const currentChat = allAIChats[currentAIChatId];
-        
-        // Пользовательское сообщение уже находится в `currentChat`.
-        // Отправляем его копию в API.
         const historyForAPI = JSON.parse(JSON.stringify(currentChat));
 
-        // Добавляем плейсхолдер ("печатает...") в историю чата.
-        // Мы будем заменять его, а не удалять через pop().
         currentChat.push({ role: 'model', content: 'typing...' });
-        const aiResponseIndex = currentChat.length - 1; // Запоминаем индекс нашего плейсхолдера
+        const aiResponseIndex = currentChat.length - 1;
         renderAIChatMessages();
 
         try {
@@ -16126,15 +16235,29 @@ const mainApp = (function() {
 
             const result = await response.json();
             
+            // --- НАЧАЛО БЛОКА ЛОГИРОВАНИЯ ---
+            console.log("ПОЛУЧЕН ПОЛНЫЙ ОТВЕТ ОТ СЕРВЕРА (GAS):");
+            console.log(JSON.stringify(result, null, 2));
+            // --- КОНЕЦ БЛОКА ЛОГИРОВАНИЯ ---
+            
             if (result.success && result.reply) {
-                // УСПЕХ: Заменяем плейсхолдер на реальный ответ ИИ.
+                let finalContent = result.reply;
+                let finalMetadata = null; 
+                
+                if (result.wasGrounded && result.groundingMetadata) {
+                    console.log("Обнаружены метаданные, запускаю processAndAppendSources...");
+                    finalContent = processAndAppendSources(result.reply, result.groundingMetadata);
+                    finalMetadata = result.groundingMetadata; 
+                }
+                
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
-                    content: result.reply,
-                    grounded: result.wasGrounded
+                    content: finalContent,
+                    grounded: result.wasGrounded,
+                    groundingMetadata: finalMetadata
                 };
+
             } else {
-                // ОШИБКА НА СЕРВЕРЕ: Заменяем плейсхолдер на сообщение об ошибке.
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
@@ -16142,21 +16265,88 @@ const mainApp = (function() {
                 };
             }
         } catch (error) {
-            // СЕТЕВАЯ ОШИБКА ИЛИ ОШИБКА НА КЛИЕНТЕ: Заменяем плейсхолдер на сообщение об ошибке.
-            console.error("Ошибка AI-чата:", error);
+            console.error("Критическая ошибка на клиенте (AI-чат):", error);
             currentChat[aiResponseIndex] = { 
                 role: 'model', 
                 content: `Произошла ошибка: ${error.message}` 
             };
         } finally {
-            // Этот блок теперь только обновляет финальное состояние UI.
             isAIResponding = false;
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
             saveAIChatsToStorage();
-            renderAIChatMessages(); // Перерисовываем чат с финальным сообщением (успех или ошибка).
+            renderAIChatMessages();
         }
     }
 
+    /**
+     * ВЕРСИЯ 4.0: Создает интерактивный HTML-ответ. "Нарезает" текст ответа, 
+     * оборачивая подтвержденные сегменты в интерактивные span'ы и добавляет список поисковых запросов.
+     * @param {string} replyText - Исходный текст ответа от ИИ.
+     * @param {object} groundingMetadata - Объект с метаданными из логов.
+     * @returns {string} - Готовый HTML для вставки в сообщение.
+     */
+    function processAndAppendSources(replyText, groundingMetadata) {
+        // 1. Проверяем наличие всех необходимых данных
+        if (!groundingMetadata || !Array.isArray(groundingMetadata.groundingSupports) || !Array.isArray(groundingMetadata.groundingChunks)) {
+            return replyText; // Если данных нет, просто возвращаем текст
+        }
+
+        const { groundingSupports, groundingChunks, webSearchQueries } = groundingMetadata;
+
+        // 2. Создаем "библиотеку" источников для быстрого доступа по индексу
+        const sourceLibrary = groundingChunks.map(chunk => chunk.web);
+
+        // 3. Преобразуем "доказательства" в удобный формат и сортируем по началу сегмента
+        const segments = groundingSupports.map(support => ({
+            start: support.segment.startIndex,
+            end: support.segment.endIndex,
+            // Находим все источники для этого сегмента
+            sources: support.groundingChunkIndices.map(index => sourceLibrary[index]).filter(Boolean)
+        })).filter(s => s.sources.length > 0).sort((a, b) => a.start - b.start);
+
+        // Если подтвержденных сегментов нет, ничего не делаем с текстом
+        if (segments.length === 0) {
+            return replyText;
+        }
+
+        // 4. Собираем новый HTML, "проходясь" по тексту и вставляя <span>'ы
+        let finalHtml = '';
+        let lastIndex = 0;
+
+        segments.forEach(segment => {
+            // Добавляем обычный текст, который был до этого сегмента
+            finalHtml += escapeHTML(replyText.substring(lastIndex, segment.start));
+            
+            // Добавляем сам подтвержденный сегмент, обернутый в интерактивный span
+            const segmentText = escapeHTML(replyText.substring(segment.start, segment.end));
+            
+            // В data-атрибут сохраняем массив источников в виде JSON-строки
+            const sourceInfo = JSON.stringify(segment.sources.map(s => ({ uri: s.uri, title: s.title })));
+
+            finalHtml += `<span class="grounded-segment" data-source='${escapeHTML(sourceInfo)}'>${segmentText}</span>`;
+            
+            lastIndex = segment.end;
+        });
+
+        // Добавляем оставшийся текст после последнего сегмента
+        finalHtml += escapeHTML(replyText.substring(lastIndex));
+
+        // 5. Формируем список поисковых запросов, как и раньше
+        if (Array.isArray(webSearchQueries) && webSearchQueries.length > 0) {
+            let sourcesList = `\n\n---\n\n**Поисковые запросы:**\n`;
+            webSearchQueries.forEach((query, index) => {
+                const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+                sourcesList += `${index + 1}. [${escapeHTML(query)}](${searchUrl})\n`;
+            });
+            // Используем `marked.parse`, чтобы Markdown превратился в HTML
+            finalHtml += `<div class="ai-message-sources-list">${marked.parse(sourcesList)}</div>`;
+        }
+
+        // 6. Финальная очистка от "фальшивых" цитат
+        finalHtml = finalHtml.replace(/\s*\[\d+(-|\u2013)\d+\]/g, '').replace(/\s*\[\d+\]/g, '');
+        
+        return finalHtml;
+    }
 
 
     /**
