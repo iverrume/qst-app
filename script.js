@@ -14360,7 +14360,11 @@ const mainApp = (function() {
     let currentAIChatId = null; // ID текущего активного чата
     let currentAIChatType = 'private'; // 'private' или 'public'
     let currentAudienceListener = null; // Слушатель для сообщений в "Аудитории"
+    let aiColorLegendsWithEditor, aiColorLegendsWithList, aiColorLegendEditor, aiLegendEditorColor, aiLegendTextInput, aiLegendSaveBtn, aiLegendCancelBtn;
+
+
     const AI_CHATS_STORAGE_KEY = 'allUserAIChats'; // Ключ для localStorage
+    const AI_LEGENDS_STORAGE_KEY = 'aiColorLegends';
 
     let attachedFile = null; 
     let isAIResponding = false;
@@ -14414,6 +14418,14 @@ const mainApp = (function() {
         const aiNewAudienceBtn = getEl('aiNewAudienceBtn');
         aiChatHistoryList = getEl('aiChatHistoryList');
         const aiAudiencesList = getEl('aiAudiencesList'); // Находим новый список
+
+        aiColorLegendsWithEditor = getEl('aiColorLegendsWithEditor');
+        aiColorLegendsWithList = getEl('aiColorLegendsWithList');
+        aiColorLegendEditor = getEl('aiColorLegendEditor');
+        aiLegendEditorColor = getEl('aiLegendEditorColor');
+        aiLegendTextInput = getEl('aiLegendTextInput');
+        aiLegendSaveBtn = getEl('aiLegendSaveBtn');
+        aiLegendCancelBtn = getEl('aiLegendCancelBtn');
         
         const closeImageModal = () => imagePreviewModal?.classList.add('hidden');
         const closeTextModal = () => textPreviewModal?.classList.add('hidden');
@@ -15195,6 +15207,7 @@ const mainApp = (function() {
         if (window.innerWidth <= 800) {
             closeMobileSidebar();
         }
+        renderColorLegends();
     }
 
 
@@ -16009,6 +16022,7 @@ const mainApp = (function() {
             if (itemInSidebar) {
                 itemInSidebar.style.borderLeftColor = newColor || '';
             }
+            renderColorLegends();
         };
 
 
@@ -16054,6 +16068,119 @@ const mainApp = (function() {
             }
         };
     }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Отображает легенду для используемых цветов.
+     */
+    function renderColorLegends() {
+        if (!aiColorLegendsWithEditor || !aiColorLegendsWithList) return;
+
+        const currentChat = (currentAIChatType === 'public') ? currentPublicChatMessages : allAIChats[currentAIChatId];
+        if (!currentChat) {
+            aiColorLegendsWithEditor.classList.add('hidden');
+            return;
+        }
+
+        const usedColors = new Set(currentChat.map(msg => msg.dotColor).filter(Boolean));
+        const savedLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+
+        if (usedColors.size === 0) {
+            aiColorLegendsWithEditor.classList.add('hidden');
+            aiColorLegendEditor.classList.add('hidden'); // Скрываем редактор, если цветов нет
+            return;
+        }
+
+        aiColorLegendsWithEditor.classList.remove('hidden');
+        aiColorLegendsWithList.innerHTML = '';
+
+        usedColors.forEach(color => {
+            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+            const description = savedLegends[color] || ''; // Если описания нет, строка будет пустой
+            // Создаем HTML для текста, только если он существует
+            const textHtml = description ? `<span class="legend-text">${escapeHTML(description)}</span>` : '';
+            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+            const item = document.createElement('div');
+            item.className = 'ai-color-legend-item';
+            
+            // --- ОБНОВЛЕННЫЙ HTML ---
+            item.innerHTML = `
+                <span class="legend-color-swatch" style="background-color: ${color};"></span>
+                ${textHtml}
+                <button class="legend-edit-btn" title="Редактировать описание"><i data-lucide="pencil" style="width: 12px; height: 12px;"></i></button>
+            `;
+            // --- КОНЕЦ ОБНОВЛЕНИЯ ---
+
+            item.querySelector('.legend-edit-btn').onclick = () => showLegendEditor(color);
+            aiColorLegendsWithList.appendChild(item);
+        });
+        if (window.lucide) lucide.createIcons();
+    }
+    /**
+     * НОВАЯ ФУНКЦИЯ: Показывает редактор для описания цвета.
+     */
+    function showLegendEditor(color) {
+        const modal = getEl('legendEditModal');
+        const colorSwatch = getEl('legendEditModalColorSwatch');
+        const input = getEl('legendNameInput');
+        const confirmBtn = getEl('legendEditConfirmBtn');
+        const cancelBtn = getEl('legendEditCancelBtn');
+
+        if (!modal || !colorSwatch || !input || !confirmBtn || !cancelBtn) return;
+
+        const savedLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+        
+        colorSwatch.style.backgroundColor = color;
+        input.value = savedLegends[color] || '';
+
+        modal.classList.remove('hidden');
+        input.focus();
+        input.select();
+
+        const cleanup = () => {
+            modal.classList.add('hidden');
+            confirmBtn.onclick = null;
+            cancelBtn.onclick = null;
+            input.onkeydown = null;
+        };
+
+        confirmBtn.onclick = () => {
+            saveLegendText(color); // Вызываем сохранение
+            cleanup();
+        };
+
+        cancelBtn.onclick = cleanup;
+
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                confirmBtn.click();
+            }
+        };
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Сохраняет текст описания для цвета.
+     */
+    function saveLegendText(color) {
+        const input = getEl('legendNameInput');
+        if (!input) return;
+
+        const newText = input.value.trim();
+        const savedLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+        
+        if (newText) {
+            savedLegends[color] = newText;
+        } else {
+            delete savedLegends[color];
+        }
+        
+        localStorage.setItem(AI_LEGENDS_STORAGE_KEY, JSON.stringify(savedLegends));
+        
+        renderColorLegends(); // Просто обновляем отображение легенды в шапке
+    }
+
 
     /**
      * НОВАЯ ФУНКЦИЯ: Начинает процесс ответа на сообщение.
@@ -16639,7 +16766,7 @@ const mainApp = (function() {
        if (!aiChatModal) return;
        document.body.classList.add('chat-open'); 
        aiChatModal.classList.remove('hidden');
-       aiChatInput.focus();
+       if (!detectMobileDevice()) { aiChatInput.focus(); } // <-- ВОТ ИЗМЕНЕНИЕ
        // Загружаем и отображаем текущий активный чат
        switchToAIChat(currentAIChatId);
        updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
@@ -17230,7 +17357,25 @@ const mainApp = (function() {
         const container = getEl(`ai-message-container-${index}`);
         if (!container) return;
 
-        const originalText = allAIChats[currentAIChatId][index].content;
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+        // 1. Определяем, откуда брать сообщение, в зависимости от типа чата.
+        let messageToEdit;
+        if (currentAIChatType === 'public') {
+            messageToEdit = currentPublicChatMessages[index];
+        } else {
+            messageToEdit = allAIChats[currentAIChatId]?.[index];
+        }
+
+        // 2. Проверяем, что сообщение действительно найдено.
+        if (!messageToEdit) {
+            console.error(`Не удалось найти сообщение для редактирования с индексом ${index} в чате ${currentAIChatId}`);
+            return;
+        }
+
+        // 3. Используем найденное сообщение для получения текста.
+        const originalText = messageToEdit.content;
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         container.classList.add('editing');
         container.innerHTML = `
             <div class="ai-edit-wrapper">
@@ -17261,6 +17406,8 @@ const mainApp = (function() {
     }
 
 
+
+
     /**
      * НОВАЯ ФУНКЦИЯ: Удаляет сообщение из AI-чата (приватного или публичного).
      * @param {number} index - Индекс сообщения для удаления.
@@ -17287,6 +17434,7 @@ const mainApp = (function() {
             
             // Перерисовываем чат, чтобы отразить удаление
             renderAIChatMessages();
+            renderColorLegends();
             showToast("Сообщение удалено.", "success");
 
         } else {

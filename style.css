@@ -8716,18 +8716,21 @@ body.glass-dark #confirmModalYesBtn:hover {
     text-align: left;
 }
 
+
+
+
+/* Шапка модального окна чата */
 .ai-chat-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto; /* 3 колонки: иконка | легенда (гибкая) | кнопки */
     align-items: center;
-    padding: 4px 15px; /* ИЗМЕНЕНИЕ: Уменьшили вертикальные отступы */
+    gap: 8px;
+    padding: 8px 15px;
+    background-color: var(--container-bg-color);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
-    transition: padding 0.3s ease; /* Добавляем плавный переход для высоты */
+    position: relative;
 }
-
-
-
 
 .ai-chat-header h3 {
     margin: 0;
@@ -8735,7 +8738,8 @@ body.glass-dark #confirmModalYesBtn:hover {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: font-size 0.3s ease; /* Плавный переход для текста */
+    transition: font-size 0.3s ease;
+    flex-shrink: 0; /* <-- ДОБАВЛЕНО: Запрещаем заголовку сжиматься */
 }
 
 /* ======================================================= */
@@ -8743,21 +8747,21 @@ body.glass-dark #confirmModalYesBtn:hover {
 /* ======================================================= */
 @media (max-width: 600px) {
     .ai-chat-header {
-        /* Делаем шапку еще ниже на мобильных */
         padding: 6px 12px; 
     }
 
     .ai-chat-header h3 {
-        /* Уменьшаем шрифт заголовка */
         font-size: 1em; 
     }
 }
 
-/* --- НОВЫЙ КОД: Стили для кнопок в шапке AI-чата --- */
+/* Контейнер для кнопок в шапке AI-чата */
 .ai-chat-header-controls {
     display: flex;
-    align-items: center;
     gap: 5px;
+    align-items: center;
+    flex-shrink: 0; /* Запрещаем кнопкам сжиматься */
+    margin-left: auto; /* <-- ДОБАВЛЕНО: Главное исправление. Прижимает блок к правому краю. */
 }
 
 .ai-chat-control-btn {
@@ -8891,8 +8895,8 @@ body.glass-dark #confirmModalYesBtn:hover {
 /* --- Область ввода --- */
 .ai-chat-input-area {
     display: flex;
-    flex-direction: column; /* <-- 1. Главное исправление: располагаем элементы в столбик */
-    padding: 8px 15px;      /* <-- 2. Слегка корректируем отступы для красоты */
+    flex-direction: column;
+    padding: 8px 15px;
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
     gap: 8px;               /* <-- 3. Добавляем красивый отступ между плашкой и полем ввода */
@@ -10862,3 +10866,215 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     color: var(--secondary-text-color);
 }
 
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ЛЕГЕНДЫ ЦВЕТОВ (AI-ЧАТ)        === */
+/* ======================================================= */
+
+/* --- Контейнер для легенды внизу правой панели --- */
+.ai-color-legend-container {
+    padding: 10px;
+    border-top: 1px solid var(--border-color);
+    margin-top: auto; /* Прижимает блок к низу */
+    flex-shrink: 0;
+    background-color: var(--container-bg-color);
+}
+
+/* --- Список элементов легенды --- */
+.ai-color-legend-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ai-color-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--input-bg-color);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+}
+
+.legend-color-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.legend-text {
+    color: var(--text-color);
+}
+
+.legend-edit-btn {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    display: flex;
+    align-items: center;
+    border-radius: 50%;
+}
+.legend-edit-btn:hover {
+    color: var(--text-color);
+    background-color: var(--input-hover-bg-color);
+}
+
+/* --- Редактор описания --- */
+.ai-color-legend-editor {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--dashed-border-color);
+}
+.legend-editor-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+#aiLegendTextInput {
+    flex-grow: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+}
+.legend-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+
+
+/* ======================================================= */
+/* ===      СТИЛИ ДЛЯ ЛЕГЕНДЫ В ШАПКЕ AI-ЧАТА (v3)     === */
+/* ======================================================= */
+
+/* Контейнер для кнопок в шапке AI-чата */
+.ai-chat-header-controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-shrink: 0; /* Запрещаем кнопкам сжиматься */
+    margin-left: auto; /* <-- ДОБАВЛЕНО: Главное исправление. Прижимает блок к правому краю. */
+}
+
+/* Стилизация скроллбара для Webkit-браузеров (Chrome, Safari) - ПРАВИЛЬНЫЙ СИНТАКСИС */
+.ai-chat-header .ai-color-legend-container::-webkit-scrollbar {
+    height: 4px;
+    background-color: transparent;
+}
+.ai-chat-header .ai-color-legend-container::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+.ai-chat-header .ai-color-legend-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--secondary-text-color);
+}
+
+
+
+
+/* Визуально скрываем скроллбар */
+.ai-chat-header .ai-color-legend-container::-webkit-scrollbar {
+    display: none;
+}
+.ai-chat-header .ai-color-legend-container {
+  -ms-overflow-style: none;  /* IE и Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+/* Переопределяем стили контейнера, когда он находится в шапке */
+.ai-chat-header .ai-color-legend-container {
+    min-width: 0; /* <-- ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ! Разрешает контейнеру сжиматься. */
+    padding: 0 15px;
+    margin: 0;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    overflow-x: auto; /* Включаем горизонтальный скроллинг */
+
+    /* Стилизация для Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+.ai-chat-header .ai-color-legend-item {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 3px 8px;
+    
+    /* === НАЧАЛО ИСПРАВЛЕНИЙ === */
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0; /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Запрещаем плашкам сжиматься */
+    white-space: nowrap; /* Гарантируем, что текст внутри плашки не перенесется */
+    /* === КОНЕЦ ИСПРАВЛЕНИЙ === */
+}
+.ai-chat-header .ai-color-legend-item:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+
+/* Стиль для цветного кружка в заголовке модального окна редактирования легенды */
+#legendEditModalTitle .legend-color-swatch {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--container-bg-color);
+    box-shadow: 0 0 0 1px var(--border-color);
+}
+
+/* ======================================================= */
+/* ===  АДАПТИВНОСТЬ ДЛЯ КОМПАКТНОЙ ШАПКИ AI-ЧАТА (v2) === */
+/* ======================================================= */
+
+@media (max-width: 600px) {
+    /* Уменьшаем общие отступы и расстояние между элементами в шапке */
+    .ai-chat-header {
+        padding: 2px 10px; 
+        gap: 8px; 
+    }
+
+    /* Уменьшаем заголовок и его иконку */
+    .ai-chat-header h3 {
+        font-size: 1em; 
+    }
+    .ai-chat-header h3 i[data-lucide] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .ai-chat-header .ai-color-legend-list {
+        gap: 5px; 
+        display: flex;
+        flex-wrap: nowrap; /* <-- Вот это ключевое исправление */
+    }
+    /* 2. (Опционально, но рекомендуется) Добавляем эффект "затухания" по краям, 
+          чтобы визуально подсказать пользователю о возможности скролла */
+    .ai-chat-header .ai-color-legend-container {
+        -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
+        mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
+    }
+    .ai-chat-header .ai-color-legend-item {
+        padding: 2px 6px; 
+        font-size: 0.75em; 
+    }
+    .ai-chat-header .legend-color-swatch {
+        width: 12px;
+        height: 12px;
+    }
+
+    /* Уменьшаем кнопки управления справа и их иконки */
+    .ai-chat-header-controls .ai-chat-control-btn {
+        padding: 3px; 
+    }
+    .ai-chat-header-controls .ai-chat-control-btn i[data-lucide] {
+        width: 16px; 
+        height: 16px;
+    }
+}

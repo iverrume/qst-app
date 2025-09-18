@@ -521,7 +521,7 @@
                 <a href="https://chromewebstore.google.com/detail/qstium-helper/ekamfcpbkcekmmbclpnlmhcimnenabcl?hl=ru&utm_source=ext_sidebar" target="_blank" rel="noopener noreferrer" data-lang-key="footer_copyright">prod by @iverrum</a>
             </p>
         </footer>
-        
+
         <!-- ======================================================= -->
         <!-- ===      НОВАЯ КНОПКА (FAB) ДЛЯ AI-ЧАТА             === -->
         <!-- ======================================================= -->
@@ -537,6 +537,23 @@
 
                     <div class="ai-chat-header">
                         <h3><i data-lucide="brain-circuit"></i></h3>
+
+                        <div id="aiColorLegendsWithEditor" class="ai-color-legend-container hidden">
+                            <div id="aiColorLegendsWithList" class="ai-color-legend-list">
+                                <!-- Сюда JS будет вставлять элементы легенды -->
+                            </div>
+                            <div id="aiColorLegendEditor" class="ai-color-legend-editor hidden">
+                                <div class="legend-editor-header">
+                                    <span id="aiLegendEditorColor" class="legend-color-swatch"></span>
+                                    <input type="text" id="aiLegendTextInput" placeholder="Описание для цвета...">
+                                </div>
+                                <div class="legend-editor-actions">
+                                    <button id="aiLegendCancelBtn" class="btn-secondary-small">Отмена</button>
+                                    <button id="aiLegendSaveBtn">Сохранить</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Новый контейнер для кнопок -->
                         <div class="ai-chat-header-controls">
                             <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
@@ -593,7 +610,6 @@
 
                     <div class="ai-chat-body-wrapper">  
 
-
                         <div id="aiChatSidebar" class="ai-chat-sidebar">
                             <!-- === ВЕРХНЯЯ СЕКЦИЯ: ПРИВАТНЫЕ ЧАТЫ === -->
                             <div class="ai-sidebar-section" id="aiPrivateChatsSection">
@@ -628,8 +644,6 @@
                             <div id="aiSidebarHandle" class="ai-sidebar-handle"></div>
                         </div>
 
-
-
                         <div class="ai-chat-scroll-wrapper">
                             <div id="aiScrollbarTooltip" class="scrollbar-tooltip"></div>
                             <div id="aiChatMessages" class="ai-chat-messages">
@@ -649,20 +663,16 @@
                                 <!-- Сюда JS будет вставлять сообщения -->
                             </ul>
                         </div>
+
+
+
                         <!-- ======== КОНЕЦ НОВОЙ ПРАВОЙ ПАНЕЛИ ======== -->
 
-                    </div>
-                    <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
+                    </div> <!-- === ЗАКРЫВАЮЩИЙ тег для ai-chat-body-wrapper === -->
 
-
-
-
+                    <!-- === НОВЫЙ ФУТЕР, ВЫНЕСЕННЫЙ ИЗ BODY-WRAPPER === -->
                     <div class="ai-chat-input-area">
-
-
-                        <!-- === НАЧАЛО НОВОГО КОДА === -->
                         <div class="ai-main-controls">
-                            <!-- Блок с переключателем поиска остается слева -->
                             <div class="ai-setting-group">
                                 <label for="aiGroundingToggleMain" data-lang-key="ai_grounding_label">Поиск в Google</label>
                                 <label class="ai-toggle-switch">
@@ -670,15 +680,10 @@
                                     <span class="ai-toggle-slider"></span>
                                 </label>
                             </div>
-
-                            <!-- Новая кнопка для показа сообщений будет справа -->
                             <button id="aiShowAllUserMessagesBtn" class="ai-action-btn" title="Показать все мои сообщения">
                                 <i data-lucide="user-round-search"></i>
                             </button>
                         </div>
-                        <!-- === КОНЕЦ НОВОГО КОДА === -->
-
-                        
                         <div id="aiReplyPanel" class="ai-reply-panel hidden">
                             <div class="ai-reply-info">
                                 <span class="ai-reply-title">Ответ на сообщение:</span>
@@ -686,28 +691,27 @@
                             </div>
                             <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ"><i data-lucide="x"></i></button>
                         </div>
-
-                        <!-- Новый контейнер-оболочка -->
                         <div class="ai-chat-input-container">
                             <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain">
                             <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
                                 <i data-lucide="plus" class="ai-chat-input-icon"></i>
                             </button>
-                            
-                            <div class="ai-chat-textarea-wrapper"> <!-- Новая обертка для textarea и превью -->
+                            <div class="ai-chat-textarea-wrapper">
                                 <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
                                 <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
                             </div>
-
                             <button id="aiChatSendBtn" class="advanced-send-btn">
                                 <i data-lucide="arrow-up"></i>
                             </button>
                         </div>
-                    </div>     
+                    </div>
+
+
+
+
+
                 </div>
             </div>
-        </div>
-
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
     </div> 
 
@@ -859,5 +863,26 @@
             <pre id="textPreviewBody"></pre>
         </div>
     </div>
+
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ЛЕГЕНДЫ === -->
+    <!-- ======================================================= -->
+    <div id="legendEditModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 id="legendEditModalTitle" style="display: flex; align-items: center; gap: 10px;">
+                <span id="legendEditModalColorSwatch" class="legend-color-swatch"></span>
+                Редактирование легенды
+            </h3>
+            <p style="margin: 20px 0; line-height: 1.6;">Введите новое описание для этого цвета.</p>
+            
+            <input type="text" id="legendNameInput" class="auth-input" placeholder="Описание..." style="margin-bottom: 25px;">
+
+            <div class="modal-buttons">
+                <button id="legendEditCancelBtn" class="btn btn-secondary">Отмена</button>
+                <button id="legendEditConfirmBtn" class="btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
