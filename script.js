@@ -4115,7 +4115,6 @@ const ChatModule = (function() {
     // === КОНЕЦ НОВОГО КОДА ===
 
 
-
     async function handleChannelClick(channel) {
         // Функция-помощник для входа в канал и добавления в участники
         const enterChannel = async () => {
@@ -6216,6 +6215,12 @@ const mainApp = (function() {
             confirm_exit_quiz_confirm_button: "Завершить",
             // === КОНЕЦ НОВОГО КОДА ===
             // === НАЧАЛО НОВОГО КОДА ===
+            audience_create_modal_title: "Создание новой Аудитории",
+            audience_create_modal_text: "Введите название для вашей публичной Аудитории. Оно будет видно всем пользователям.",
+            audience_create_placeholder: "Название Аудитории...",
+            audience_create_button: "Создать",
+            // === КОНЕЦ НОВОГО КОДА ===
+            // === НАЧАЛО НОВОГО КОДА ===
             confirm_finish_with_unanswered_title: "Завершить тест?",
             confirm_finish_with_unanswered_text: "У вас остались неотвеченные вопросы. Вы уверены, что хотите завершить тест сейчас?",
             // === КОНЕЦ НОВОГО КОДА ===
@@ -6315,7 +6320,12 @@ const mainApp = (function() {
             // === КОНЕЦ НОВОГО КОДА ДЛЯ kk ===
             copy_success_short: '✓ Көшірілді!',
 
-
+            // === НАЧАЛО НОВОГО КОДА ===
+            audience_create_modal_title: "Жаңа Аудитория құру",
+            audience_create_modal_text: "Жария Аудиторияңыз үшін атау енгізіңіз. Ол барлық пайдаланушыларға көрінетін болады.",
+            audience_create_placeholder: "Аудитория атауы...",
+            audience_create_button: "Құру",
+            // === КОНЕЦ НОВОГО КОДА ===
 
 
             // Header Buttons
@@ -6688,7 +6698,12 @@ const mainApp = (function() {
             confirm_clear_favorites: 'Are you sure you want to delete ALL items from your favorites? This action is irreversible.',
             confirm_kick_user: 'Are you sure you want to remove this member from the channel?',
             // === КОНЕЦ НОВОГО КОДА ДЛЯ en ===
-
+            // === НАЧАЛО НОВОГО КОДА ===
+            audience_create_modal_title: "Create New Audience",
+            audience_create_modal_text: "Enter a name for your public Audience. It will be visible to all users.",
+            audience_create_placeholder: "Audience Name...",
+            audience_create_button: "Create",
+            // === КОНЕЦ НОВОГО КОДА ===
             // Header Buttons (ПОЛНОСТЬЮ ПЕРЕВЕДЕНО)
             copy_question_title: 'Copy current question',
             search_web_title: 'Search the web',
@@ -14703,7 +14718,11 @@ const mainApp = (function() {
         });
 
         aiNewPrivateChatBtn?.addEventListener('click', startNewAIChat);
-        aiNewAudienceBtn?.addEventListener('click', createNewAudience); // Новая функция
+        // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ =======================
+        // Теперь обработчик вызывает функцию createNewAudience, которая
+        // находится в том же модуле mainApp.
+        aiNewAudienceBtn?.addEventListener('click', createNewAudience);
+        // ===============================================================
 
         // Обработчик для списка ПРИВАТНЫХ чатов
         aiChatHistoryList?.addEventListener('click', (e) => {
@@ -14751,6 +14770,9 @@ const mainApp = (function() {
                     case 'share-ai': handleShareAIChat(targetButton); break;
                     case 'regenerate-ai': regenerateLastAIResponse(); break;
                     case 'edit-user': startEditUserMessage(index); break;
+                    // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ =======================
+                    case 'delete-ai': deleteAIChatMessage(index); break;
+                    // ===============================================================
                 }
             } else if (targetAttachment) {
                 e.preventDefault();
@@ -15227,46 +15249,8 @@ const mainApp = (function() {
         if (window.lucide) lucide.createIcons();
     }
 
-    /**
-     * Создает новую публичную Аудиторию.
-     */
-    async function createNewAudience() {
-        if (!currentUser || !db) {
-            ChatModule.openAuthModal();
-            return;
-        }
 
-        const title = prompt("Введите название для новой Аудитории:", "Обсуждение темы...");
-        if (!title || title.trim() === '') return;
 
-        try {
-            const newAudienceData = {
-                title: title.trim(),
-                ownerId: currentUser.uid,
-                ownerName: currentUser.displayName || 'Аноним',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            };
-            const docRef = await db.collection('ai_audiences').add(newAudienceData);
-            
-            await db.collection('ai_audiences').doc(docRef.id).collection('messages').add({
-                 role: 'model',
-                 content: `Добро пожаловать в аудиторию "${title.trim()}"! Владелец: ${newAudienceData.ownerName}.`,
-                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            // --- ИСПРАВЛЕНИЕ: Передаем свежие данные напрямую ---
-            // Мы передаем объект newAudienceData в switchToAIChat, чтобы он не искал его в кэше
-            switchToAIChat(docRef.id, 'public', newAudienceData);
-
-        } catch (error) {
-            console.error("Ошибка создания Аудитории:", error);
-            showToast("Не удалось создать Аудиторию.", "error");
-        }
-    }
-    
-    /**
-     * Удаляет публичную Аудиторию (доступно только владельцу).
-     */
     async function deleteAudience(audienceId, ownerId) {
         if (!currentUser || currentUser.uid !== ownerId) return;
 
@@ -15293,6 +15277,119 @@ const mainApp = (function() {
             }
         }
     }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Проверяет, имеет ли текущий пользователь право удалять сообщения в активном AI-чате.
+     * @returns {boolean} - true, если удаление разрешено.
+     */
+    function canDeleteAIMessage() {
+        if (currentAIChatType === 'private') {
+            // В приватном чате пользователь всегда может удалять свои сообщения.
+            return true; 
+        }
+        if (currentAIChatType === 'public') {
+            // В публичной аудитории удалять может только владелец.
+            // Ищем данные текущей аудитории в кэше.
+            const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAIChatId);
+            // Возвращаем true, только если пользователь существует, данные аудитории найдены и UID совпадают.
+            return currentUser && audienceData && currentUser.uid === audienceData.ownerId;
+        }
+        // По умолчанию запрещаем удаление для безопасности.
+        return false;
+    }
+
+    /**
+     * Показывает кастомное модальное окно для ввода имени Аудитории и возвращает Promise.
+     * @returns {Promise<string|null>} - Promise, который разрешается введенным названием или null, если пользователь нажал отмену.
+     */
+    function promptForAudienceName() {
+        return new Promise(resolve => {
+            const modal = getEl('audienceCreateModal');
+            const titleEl = getEl('audienceCreateModalTitle');
+            const textEl = getEl('audienceCreateModalText');
+            const inputEl = getEl('audienceNameInput');
+            const confirmBtn = getEl('audienceCreateConfirmBtn');
+            const cancelBtn = getEl('audienceCreateCancelBtn');
+
+            // Заполняем тексты из словаря
+            titleEl.textContent = _('audience_create_modal_title');
+            textEl.textContent = _('audience_create_modal_text');
+            inputEl.placeholder = _('audience_create_placeholder');
+            confirmBtn.textContent = _('audience_create_button');
+            cancelBtn.textContent = _('modal_cancel_button');
+            
+            inputEl.value = 'Обсуждение темы...'; // Значение по умолчанию
+
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                inputEl.onkeydown = null;
+                resolve(result);
+            };
+
+            const onConfirm = () => {
+                cleanup(inputEl.value);
+            };
+
+            const onCancel = () => {
+                cleanup(null);
+            };
+
+            confirmBtn.onclick = onConfirm;
+            cancelBtn.onclick = onCancel;
+            
+            inputEl.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onConfirm();
+                }
+            };
+
+            modal.classList.remove('hidden');
+            inputEl.focus();
+            inputEl.select();
+        });
+    }
+
+
+    /**
+     * Создает новую публичную Аудиторию.
+     */
+    async function createNewAudience() {
+        if (!currentUser || !db) {
+            ChatModule.openAuthModal();
+            return;
+        }
+
+        // Заменяем стандартный prompt на нашу новую кастомную функцию
+        const title = await promptForAudienceName();
+        if (!title || title.trim() === '') return; // Если пользователь отменил, title будет null
+
+        try {
+            const newAudienceData = {
+                title: title.trim(),
+                ownerId: currentUser.uid,
+                ownerName: currentUser.displayName || 'Аноним',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+            const docRef = await db.collection('ai_audiences').add(newAudienceData);
+            
+            await db.collection('ai_audiences').doc(docRef.id).collection('messages').add({
+                 role: 'model',
+                 content: `Добро пожаловать в аудиторию "${title.trim()}"! Владелец: ${newAudienceData.ownerName}.`,
+                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            switchToAIChat(docRef.id, 'public', newAudienceData);
+
+        } catch (error) {
+            console.error("Ошибка создания Аудитории:", error);
+            showToast("Не удалось создать Аудиторию.", "error");
+        }
+    }
+
 
 
     /**
@@ -15342,19 +15439,19 @@ const mainApp = (function() {
      * @param {Array|null} messagesToRender - Массив сообщений для отображения.
      */
     function renderAIChatMessages() {
-        // --- НОВАЯ УМНАЯ ЛОГИКА ВЫБОРА ИСТОЧНИКА ДАННЫХ ---
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ: УМНЫЙ ВЫБОР ИСТОЧНИКА ДАННЫХ ---
         let currentChat;
         if (currentAIChatType === 'public') {
+            // Если открыта Аудитория, берем сообщения из нашего кэша для публичных чатов.
             currentChat = currentPublicChatMessages;
-            console.log(`[renderAIChatMessages] Рендерю ПУБЛИЧНЫЙ чат. Сообщений: ${currentChat.length}`);
         } else {
+            // Иначе, как и раньше, берем из локального хранилища приватных чатов.
             currentChat = allAIChats[currentAIChatId];
-            console.log(`[renderAIChatMessages] Рендерю ПРИВАТНЫЙ чат ID: ${currentAIChatId}. Сообщений: ${currentChat ? currentChat.length : 0}`);
         }
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
         if (!aiChatMessages || !currentChat) {
-            if(aiChatMessages) aiChatMessages.innerHTML = ''; // Очищаем на всякий случай
+            if (aiChatMessages) aiChatMessages.innerHTML = ''; // Очищаем на всякий случай
             return;
         }
 
@@ -15362,6 +15459,11 @@ const mainApp = (function() {
         const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
 
         aiChatMessages.innerHTML = '';
+
+        // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (НАЧАЛО) =======================
+        // Определяем право на удаление ОДИН раз перед циклом для эффективности.
+        const userCanDelete = canDeleteAIMessage();
+        // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (КОНЕЦ) =======================
 
         currentChat.forEach((msg, index) => {
             const messageContainer = document.createElement('div');
@@ -15393,13 +15495,18 @@ const mainApp = (function() {
                 groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
                 messageEl.appendChild(groundedIcon);
             }
-            
+
             let messageHTML = '';
             if (msg.content === 'typing...') {
                 messageHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
             } else {
-                if (msg.content) {
-                    messageHTML += window.marked ? marked.parse(msg.content) : escapeHTML(msg.content);
+                let contentToRender = msg.content || '';
+                let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
+
+                if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
+                    messageHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
+                } else {
+                    messageHTML = baseHtml;
                 }
                 
                 if (msg.attachment) {
@@ -15429,24 +15536,39 @@ const mainApp = (function() {
 
             const isLastMessage = index === currentChat.length - 1;
 
+            // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (НАЧАЛО) =======================
+            // Создаем переменную для HTML-кода кнопки удаления.
+            // Она будет заполнена, только если userCanDelete === true.
+            const deleteButtonHTML = userCanDelete 
+                ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
+                : '';
+            // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (КОНЕЦ) =======================
+
+
             if (msg.role === 'model' && msg.content !== 'typing...') {
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'ai-message-actions';
+                // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ =======================
                 actionsContainer.innerHTML = `
                     <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
                     <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
                     <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
+                    ${deleteButtonHTML}
                     ${isLastMessage ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>` : ''}
                 `;
+                // ===============================================================
                 messageContainer.appendChild(actionsContainer);
             } else if (msg.role === 'user') {
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'ai-user-message-actions';
+                // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ =======================
                 actionsContainer.innerHTML = `
                     <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
                     <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
                     <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
+                    ${deleteButtonHTML}
                 `;
+                // ===============================================================
                 messageContainer.appendChild(actionsContainer);
             }
             
@@ -15467,7 +15589,6 @@ const mainApp = (function() {
             console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
         }
     }
-
 
     /**
      * Удаляет выбранный чат.
@@ -15939,7 +16060,15 @@ const mainApp = (function() {
      * @param {number} index - Индекс сообщения в истории, на которое отвечают.
      */
     function startAIReply(index) {
-        const messageToReply = allAIChats[currentAIChatId][index];
+        // --- ИСПРАВЛЕНИЕ: Определяем правильный источник данных для сообщения ---
+        let messageToReply;
+        if (currentAIChatType === 'public') {
+            messageToReply = currentPublicChatMessages[index];
+        } else {
+            messageToReply = allAIChats[currentAIChatId][index];
+        }
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         if (!messageToReply) return;
 
         const originalText = messageToReply.content || 'Вложение';
@@ -15955,6 +16084,7 @@ const mainApp = (function() {
         aiReplyPanel.classList.remove('hidden');
         aiChatInput.focus();
     }
+
     /**
      * НОВАЯ ФУНКЦИЯ: Отменяет ответ на сообщение.
      */
@@ -16550,6 +16680,11 @@ const mainApp = (function() {
 
         aiChatMessages.innerHTML = '';
 
+        // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (НАЧАЛО) =======================
+        // Определяем право на удаление ОДИН раз перед циклом для эффективности.
+        const userCanDelete = canDeleteAIMessage();
+        // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (КОНЕЦ) =======================
+
         currentChat.forEach((msg, index) => {
             const messageContainer = document.createElement('div');
             messageContainer.className = `ai-message-container is-${msg.role}`;
@@ -16585,26 +16720,16 @@ const mainApp = (function() {
             if (msg.content === 'typing...') {
                 messageHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
             } else {
-                // --- ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ЛОГИКИ РЕНДЕРИНГА ---
                 let contentToRender = msg.content || '';
-
-                // 1. Сначала ВСЕГДА обрабатываем Markdown в HTML.
                 let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
 
-                // 2. ЕСЛИ есть метаданные поиска, то уже на готовом HTML делаем замены.
                 if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
-                    // Эта функция теперь будет работать с HTML, а не с сырым текстом.
                     messageHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
                 } else {
                     messageHTML = baseHtml;
                 }
-                // --- КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ---
                 
                 if (msg.attachment) {
-
-
-
-
                     const { name, mimeType, thumbnailDataUrl } = msg.attachment;
                     const type = mimeType.split('/')[0] || 'файл';
                     
@@ -16631,24 +16756,39 @@ const mainApp = (function() {
 
             const isLastMessage = index === currentChat.length - 1;
 
+            // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (НАЧАЛО) =======================
+            // Создаем переменную для HTML-кода кнопки удаления.
+            // Она будет заполнена, только если userCanDelete === true.
+            const deleteButtonHTML = userCanDelete 
+                ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
+                : '';
+            // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ (КОНЕЦ) =======================
+
+
             if (msg.role === 'model' && msg.content !== 'typing...') {
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'ai-message-actions';
+                // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ =======================
                 actionsContainer.innerHTML = `
                     <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
                     <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
                     <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
+                    ${deleteButtonHTML}
                     ${isLastMessage ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>` : ''}
                 `;
+                // ===============================================================
                 messageContainer.appendChild(actionsContainer);
             } else if (msg.role === 'user') {
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'ai-user-message-actions';
+                // ======================= ИСПРАВЛЕНИЕ ЗДЕСЬ =======================
                 actionsContainer.innerHTML = `
                     <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
                     <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
                     <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
+                    ${deleteButtonHTML}
                 `;
+                // ===============================================================
                 messageContainer.appendChild(actionsContainer);
             }
             
@@ -16737,7 +16877,7 @@ const mainApp = (function() {
                 return;
             }
 
-            // Очищаем поле ввода
+            // Очищаем поле ввода и контекст ответа
             aiChatInput.value = '';
             
             // Добавляем сообщение пользователя в Firestore
@@ -16746,7 +16886,19 @@ const mainApp = (function() {
                 content: userInput,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
+
+            // --- ИСПРАВЛЕНИЕ: Добавляем контекст ответа, если он есть ---
+            if (aiReplyContext) {
+                userMessage.replyTo = aiReplyContext;
+            }
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
             await messagesRef.add(userMessage);
+            
+            // --- ИСПРАВЛЕНИЕ: Сбрасываем плашку ответа ПОСЛЕ отправки ---
+            cancelAIReply();
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
 
             // Запускаем получение ответа от ИИ
             getAIResponseForPublicAudience();
@@ -16756,6 +16908,7 @@ const mainApp = (function() {
             showToast("Не удалось отправить сообщение.", "error");
         }
     }
+
 
     /**
      * Получает ответ ИИ для публичной Аудитории.
@@ -17000,9 +17153,21 @@ const mainApp = (function() {
     async function regenerateLastAIResponse() {
         if (isAIResponding || !currentAIChatId) return;
 
-        const currentChat = allAIChats[currentAIChatId];
+        // ШАГ 1: Определяем правильный источник истории сообщений.
+        let currentChat;
+        if (currentAIChatType === 'public') {
+            currentChat = currentPublicChatMessages;
+        } else {
+            currentChat = allAIChats[currentAIChatId];
+        }
 
-        // 1. Находим индекс самого последнего сообщения от пользователя.
+        // Защита от случая, если история по какой-то причине не загружена.
+        if (!currentChat || currentChat.length === 0) {
+            console.warn("Нет истории сообщений для перегенерации.");
+            return;
+        }
+
+        // ШАГ 2: Находим последнее сообщение пользователя.
         let lastUserMessageIndex = -1;
         for (let i = currentChat.length - 1; i >= 0; i--) {
             if (currentChat[i].role === 'user') {
@@ -17011,27 +17176,48 @@ const mainApp = (function() {
             }
         }
 
-        // Если сообщений от пользователя нет, перегенерация невозможна.
         if (lastUserMessageIndex === -1) {
-            console.warn("Не найдено сообщений пользователя для перегенерации.");
+            console.warn("Не найдено сообщений пользователя для регенерации.");
             return;
         }
 
-        // 2. Обрезаем историю чата, оставляя все сообщения до последнего сообщения пользователя включительно.
-        // Это надежно удаляет все последующие ответы ИИ, включая ошибки.
-        const historyToResubmit = currentChat.slice(0, lastUserMessageIndex + 1);
+        // ШАГ 3: Выполняем разные действия для приватных и публичных чатов.
+        if (currentAIChatType === 'private') {
+            // ЛОГИКА ДЛЯ ПРИВАТНОГО ЧАТА (локальное обновление)
+            const historyToResubmit = currentChat.slice(0, lastUserMessageIndex + 1);
+            const promptingMessage = historyToResubmit[historyToResubmit.length - 1];
+            const fileToResend = promptingMessage?.attachment || null;
 
-        // 3. Последнее сообщение в этой обрезанной истории — это и есть наш промпт.
-        const promptingMessage = historyToResubmit[historyToResubmit.length - 1];
-        const fileToResend = promptingMessage?.attachment || null;
+            allAIChats[currentAIChatId] = historyToResubmit;
+            getAIResponseForCurrentHistory(fileToResend);
 
-        // 4. Обновляем основной массив чата.
-        allAIChats[currentAIChatId] = historyToResubmit;
+        } else {
+            // ЛОГИКА ДЛЯ ПУБЛИЧНОЙ АУДИТОРИИ (обновление в Firestore)
+            const messagesToDelete = currentChat.slice(lastUserMessageIndex + 1);
 
-        // 5. Запускаем генерацию ответа заново.
-        getAIResponseForCurrentHistory(fileToResend);
+            try {
+                // Создаем пакетный запрос на удаление "неправильных" ответов ИИ.
+                const batch = db.batch();
+                const messagesRef = db.collection('ai_audiences').doc(currentAIChatId).collection('messages');
+                
+                messagesToDelete.forEach(msg => {
+                    if (msg.id) { // Убеждаемся, что у сообщения есть ID документа
+                        batch.delete(messagesRef.doc(msg.id));
+                    }
+                });
+                
+                await batch.commit();
+
+                // После удаления, вызываем стандартную функцию получения ответа.
+                // Она сама загрузит уже правильную (урезанную) историю из Firestore.
+                getAIResponseForPublicAudience();
+
+            } catch (error) {
+                console.error("Не удалось удалить старые ответы ИИ при регенерации:", error);
+                showToast("Ошибка при перегенерации.", "error");
+            }
+        }
     }
-
 
 
     function startEditUserMessage(index) {
@@ -17075,7 +17261,61 @@ const mainApp = (function() {
     }
 
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Удаляет сообщение из AI-чата (приватного или публичного).
+     * @param {number} index - Индекс сообщения для удаления.
+     */
+    async function deleteAIChatMessage(index) {
+        // Используем уже существующий ключ перевода для подтверждения
+        const confirmed = await showConfirmationModal(
+            'confirm_action_title',
+            'confirm_delete_message',
+            'confirm_button_delete'
+        );
+        if (!confirmed) return;
 
+        if (currentAIChatType === 'private') {
+            // --- Логика для приватных чатов ---
+            const currentChat = allAIChats[currentAIChatId];
+            if (!currentChat) return;
+
+            // Удаляем сообщение из локального массива
+            currentChat.splice(index, 1);
+            
+            // Сохраняем изменения в хранилище
+            await saveAIChatsToStorage();
+            
+            // Перерисовываем чат, чтобы отразить удаление
+            renderAIChatMessages();
+            showToast("Сообщение удалено.", "success");
+
+        } else {
+            // --- Логика для публичных "Аудиторий" ---
+            const messageToDelete = currentPublicChatMessages[index];
+            if (!messageToDelete || !messageToDelete.id) {
+                showToast("Не удалось определить сообщение для удаления.", "error");
+                return;
+            }
+
+            // Проверяем, является ли пользователь владельцем аудитории
+            const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAIChatId);
+            if (!currentUser || !audienceData || currentUser.uid !== audienceData.ownerId) {
+                showToast("Только владелец может удалять сообщения в Аудитории.", "error");
+                return;
+            }
+
+            // Отправляем запрос на удаление в Firestore
+            try {
+                const messageRef = db.collection('ai_audiences').doc(currentAIChatId).collection('messages').doc(messageToDelete.id);
+                await messageRef.delete();
+                showToast("Сообщение удалено из Аудитории.", "success");
+                // UI обновится автоматически благодаря `onSnapshot`
+            } catch (error) {
+                console.error("Ошибка удаления сообщения из Аудитории:", error);
+                showToast("Не удалось удалить сообщение.", "error");
+            }
+        }
+    }
 
     /**
      * НОВАЯ ФУНКЦИЯ: Отменяет редактирование и возвращает исходное сообщение.
