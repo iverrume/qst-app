@@ -15736,9 +15736,9 @@ const mainApp = (function() {
     }
 
 
+
     /**
-     * Отображает сообщения в AI-чате. ВЕРСИЯ С ИНТЕГРАЦИЕЙ КЛИЕНТСКОГО ПОИСКА.
-     * @param {Array|null} messagesToRender - Массив сообщений для отображения.
+     * Отображает сообщения в AI-чате. ВЕРСИЯ С АКТИВИРОВАННЫМ КЛИЕНТСКИМ ПОИСКОМ.
      */
     function renderAIChatMessages() {
         // Определяем правильный источник данных для сообщений
@@ -15748,23 +15748,23 @@ const mainApp = (function() {
         } else {
             currentChat = allAIChats[currentAIChatId];
         }
-        
+
         if (!aiChatMessages || !currentChat) {
             if (aiChatMessages) aiChatMessages.innerHTML = '';
             return;
         }
-        
+
         const scrollThreshold = 100;
         const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
-        
+
         aiChatMessages.innerHTML = '';
-        
+
         const userCanDelete = canDeleteAIMessage();
-        
+
         currentChat.forEach((msg, index) => {
             const messageContainer = document.createElement('div');
             messageContainer.className = `ai-message-container is-${msg.role}`;
-            messageContainer.id = `ai-message-container-${index}`;
+            messageContainer.id = `ai-message-container-${index}`; 
             
             const replyContextContainer = document.createElement('div');
             replyContextContainer.className = 'ai-reply-context-container';
@@ -15780,7 +15780,7 @@ const mainApp = (function() {
                 replyContextContainer.appendChild(replyEl);
             }
             messageContainer.appendChild(replyContextContainer);
-            
+
             const messageEl = document.createElement('div');
             messageEl.classList.add('ai-message', msg.role);
             
@@ -15791,14 +15791,14 @@ const mainApp = (function() {
                 groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
                 messageEl.appendChild(groundedIcon);
             }
-            
+
             const contentWrapper = document.createElement('div');
             if (msg.content === 'typing...') {
                 contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
             } else {
                 let contentToRender = msg.content || '';
                 let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
-                
+
                 if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
                     contentWrapper.innerHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
                 } else {
@@ -15806,15 +15806,15 @@ const mainApp = (function() {
                 }
             }
             messageEl.appendChild(contentWrapper);
-            
+
             if (msg.attachment) {
                 const { name, mimeType, thumbnailDataUrl } = msg.attachment;
                 const type = mimeType.split('/')[0] || 'файл';
                 
-                const previewImage = thumbnailDataUrl ?
-                    `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">` :
-                    `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
-                
+                const previewImage = thumbnailDataUrl 
+                    ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
+                    : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
+
                 const attachmentHTML = `
                     <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
                         ${previewImage}
@@ -15827,35 +15827,19 @@ const mainApp = (function() {
                 messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
             }
             
-            // --- СЕРВЕРНЫЕ КАРТИНКИ БОЛЬШЕ НЕ РАБОТАЮТ, ЭТОТ БЛОК МОЖНО УДАЛИТЬ ИЛИ ОСТАВИТЬ ---
-            // Он больше не будет выполняться, так как сервер всегда возвращает imageUrls: null
-            if (msg.role === 'model' && Array.isArray(msg.imageUrls) && msg.imageUrls.length > 0) {
-                let galleryHTML = '<div class="ai-message-image-gallery">';
-                msg.imageUrls.forEach(url => {
-                    galleryHTML += `
-                        <div class="ai-gallery-item">
-                            <img src="${url}" alt="Иллюстрация к ответу" class="ai-message-image">
-                        </div>
-                    `;
-                });
-                galleryHTML += '</div>';
-                messageEl.insertAdjacentHTML('beforeend', galleryHTML);
-            }
-            // --- КОНЕЦ БЛОКА С СЕРВЕРНЫМИ КАРТИНКАМИ ---
-            
             messageContainer.appendChild(messageEl);
-            
+
             const isLastMessage = index === currentChat.length - 1;
-            const deleteButtonHTML = userCanDelete ?
-                `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>` :
-                '';
-            
+            const deleteButtonHTML = userCanDelete 
+                ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
+                : '';
+
             if (msg.role === 'model' && msg.content !== 'typing...') {
                 const actionsContainer = document.createElement('div');
                 actionsContainer.className = 'ai-message-actions';
-                const regenerateButtonHTML = (isLastMessage && userCanDelete) ?
-                    `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>` :
-                    '';
+                const regenerateButtonHTML = (isLastMessage && userCanDelete)
+                    ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>`
+                    : '';
                 
                 actionsContainer.innerHTML = `
                     <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
@@ -15878,41 +15862,42 @@ const mainApp = (function() {
             }
             
             aiChatMessages.appendChild(messageContainer);
-            
+
             // ====================================================================
-            // ===                ВОТ ОН, НАШ НОВЫЙ "КРЮЧОК"!                  ===
+            // ===           ВОТ ОН, НАШ ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ "КРЮЧОК"         ===
             // ====================================================================
-            // Если это последнее сообщение в чате, и оно от модели (не "печатает..."),
-            // то мы запускаем клиентский поиск изображений.
             if (msg.role === 'model' && isLastMessage && msg.content !== 'typing...') {
-                // Находим последний запрос пользователя, который привел к этому ответу
+                console.log('[Триггер Поиска] Проверка последнего сообщения...');
                 const lastUserQuery = findLastUserQuery(currentChat);
                 if (lastUserQuery) {
-                    // Запускаем асинхронный поиск, не блокируя основной поток
-                    clientSideImageSearch(lastUserQuery, messageContainer);
+                    console.log(`[Триггер Поиска] ✅ Условие выполнено. Найден запрос пользователя: "${lastUserQuery}". Запускаю клиентский поиск...`);
+                    // Убедимся, что функция clientSideImageSearch существует, прежде чем вызывать ее.
+                    if (typeof clientSideImageSearch === 'function') {
+                        clientSideImageSearch(lastUserQuery, messageContainer);
+                    } else {
+                        console.error('[Триггер Поиска] 💥 Критическая ошибка: функция clientSideImageSearch не найдена!');
+                    }
+                } else {
+                    console.warn('[Триггер Поиска] ❌ Сбой: Не удалось найти последний запрос пользователя в истории. Поиск не запущен.');
                 }
             }
             // ====================================================================
-            // ===                         КОНЕЦ "КРЮЧКА"                       ===
-            // ====================================================================
         });
-        
+
         if (window.lucide) {
             lucide.createIcons();
         }
         drawOrUpdateScrollbar();
-        
+
         if (isScrolledToBottom) {
             const lastMessage = aiChatMessages.lastElementChild;
             if (lastMessage) {
                 lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-        } else {
-            console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
         }
     }
-    
-    
+
+
     /**
      * Удаляет выбранный чат.
      * @param {string} chatId - ID чата для удаления.
@@ -17411,6 +17396,10 @@ const mainApp = (function() {
 
 
 
+/**
+     * Получает ответ от ИИ для текущей истории приватного чата.
+     * ВЕРСЯ С ПРЯМЫМ ВЫЗОВОМ КЛИЕНТСКОГО ПОИСКА ИЗОБРАЖЕНИЙ.
+     */
     async function getAIResponseForCurrentHistory(file = null) {
         if (isAIResponding || !currentAIChatId) return;
         isAIResponding = true;
@@ -17447,21 +17436,13 @@ const mainApp = (function() {
 
             const result = await response.json();
             
-            // --- НАЧАЛО БЛОКА ЛОГИРОВАНИЯ ---
-            console.log("ПОЛУЧЕН ПОЛНЫЙ ОТВЕТ ОТ СЕРВЕРА (GAS):");
-            console.log(JSON.stringify(result, null, 2));
-            // --- КОНЕЦ БЛОКА ЛОГИРОВАНИЯ ---
-
-
-            
-            // === НАЧАЛО БЛОКА НА ЗАМЕНУ ===
             if (result.success && result.reply) {
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
                     content: result.reply,
                     grounded: result.wasGrounded,
                     groundingMetadata: result.groundingMetadata,
-                    imageUrls: result.imageUrls || null // <-- ДОБАВЛЕНО
+                    imageUrls: null // Сервер больше не ищет картинки
                 };
             } else {
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
@@ -17470,7 +17451,6 @@ const mainApp = (function() {
                     content: `Произошла ошибка: ${errorMessage}` 
                 };
             }
-            // === КОНЕЦ БЛОКА НА ЗАМЕНУ ===
         } catch (error) {
             console.error("Критическая ошибка на клиенте (AI-чат):", error);
             currentChat[aiResponseIndex] = { 
@@ -17481,9 +17461,38 @@ const mainApp = (function() {
             isAIResponding = false;
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
             saveAIChatsToStorage();
+            
+            // СНАЧАЛА отрисовываем текстовый ответ
             renderAIChatMessages();
+
+            // ====================================================================
+            // ===           ВОТ ОН, НАШ НОВЫЙ ПРЯМОЙ ПРИКАЗ К ПОИСКУ           ===
+            // ====================================================================
+            // После того как текстовый ответ ИИ гарантированно отрисован,
+            // мы запускаем поиск изображений.
+            console.log('[Прямой Приказ] Ответ от ИИ получен и отрисован. Запускаю поиск изображений...');
+            
+            // Находим последний запрос пользователя, который привел к этому ответу
+            const lastUserQuery = findLastUserQuery(currentChat);
+            
+            // Находим DOM-элемент только что отрисованного сообщения ИИ
+            const messageContainer = getEl(`ai-message-container-${aiResponseIndex}`);
+
+            if (lastUserQuery && messageContainer) {
+                 if (typeof clientSideImageSearch === 'function') {
+                    // Даем команду на поиск, передавая запрос и место для вставки картинок
+                    clientSideImageSearch(lastUserQuery, messageContainer);
+                 } else {
+                    console.error('[Прямой Приказ] 💥 Критическая ошибка: функция clientSideImageSearch не найдена!');
+                 }
+            } else {
+                console.warn(`[Прямой Приказ] ❌ Поиск не запущен. Запрос пользователя: ${!!lastUserQuery}, Контейнер сообщения: ${!!messageContainer}`);
+            }
+            // ====================================================================
         }
     }
+
+
 
 
     // НОВЫЙ КОД ДЛЯ ВСТАВКИ
@@ -17860,78 +17869,77 @@ const mainApp = (function() {
         }         
     };
 
-
-
 // =================================================================================
 // ===      НОВЫЙ КЛИЕНТСКИЙ МОДУЛЬ ПОИСКА ИЗОБРАЖЕНИЙ (v1.0)                   ===
 // ===      Вставьте эти функции внутрь модуля mainApp, перед `})();`        ===
 // =================================================================================
 
+
+// =================================================================================
+// ===      КЛИЕНТСКИЙ МОДУЛЬ ПОИСКА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ (v1.1)            ===
+// =================================================================================
+
     /**
      * ГЛАВНАЯ КЛИЕНТСКАЯ ФУНКЦИЯ-ОРКЕСТРАТОР.
-     * Запускает параллельный поиск по всем источникам и отображает результаты.
-     * @param {string} query - Оригинальный поисковый запрос пользователя.
-     * @param {HTMLElement} messageElement - HTML-элемент сообщения, куда нужно добавить картинки.
      */
     async function clientSideImageSearch(query, messageElement) {
-        if (!query || !messageElement) return;
-        console.log(`[Клиентский поиск] Начинаем поиск по запросу: "${query}"`);
+        if (!query || !messageElement) {
+            console.error('[Оркестратор] ❌ Сбой: Вызван без запроса или элемента для вставки.');
+            return;
+        }
+        console.log(`[Оркестратор] 🚀 Старт поиска для: "${query}"`);
 
-        // Параллельно запускаем поиск по всем источникам
         const promises = [
             searchWikimedia(query),
             searchLOC(query),
             searchFlickrFeedJSONP(query)
-            // Вы можете добавить сюда searchInternetArchive(query), если хотите
         ];
 
         try {
             const arraysOfUrls = await Promise.all(promises);
+            console.log('[Оркестратор] 📦 Получены сырые результаты от всех источников:', arraysOfUrls);
             
-            // Объединяем, фильтруем пустые результаты и удаляем дубликаты
             const allUrls = [].concat(...arraysOfUrls).filter(Boolean);
             const uniqueUrls = Array.from(new Set(allUrls));
 
             if (uniqueUrls.length > 0) {
+                console.log(`[Оркестратор] ✅ Успех! Найдено ${uniqueUrls.length} уникальных изображений. Передаю в рендерер.`);
                 renderImageGalleryInMessage(uniqueUrls.slice(0, 4), messageElement);
             } else {
-                console.log('[Клиентский поиск] Изображений не найдено ни в одном из источников.');
+                console.warn('[Оркестратор] ❌ Провал: Ни один из источников не вернул изображений.');
             }
         } catch (error) {
-            console.error('[Клиентский поиск] Произошла ошибка:', error);
+            console.error('[Оркестратор] 💥 Критическая ошибка во время выполнения Promise.all:', error);
         }
     }
 
     /**
-     * Отображает галерею изображений внутри указанного элемента сообщения.
-     * @param {string[]} imageUrls - Массив URL-адресов изображений.
-     * @param {HTMLElement} messageElement - Элемент сообщения для вставки.
+     * Отображает галерею изображений.
      */
     function renderImageGalleryInMessage(imageUrls, messageElement) {
-        if (!imageUrls || imageUrls.length === 0 || !messageElement) return;
+        if (!imageUrls || imageUrls.length === 0 || !messageElement) {
+            console.error('[Рендерер] ❌ Сбой: Вызван без URL или элемента для вставки.');
+            return;
+        }
+        console.log(`[Рендерер] 🎨 Начинаю отрисовку ${imageUrls.length} изображений.`);
 
         let galleryHTML = '<div class="ai-message-image-gallery">';
         imageUrls.forEach(url => {
-            galleryHTML += `
-                <div class="ai-gallery-item">
-                    <img src="${url}" alt="Иллюстрация к ответу" class="ai-message-image">
-                </div>
-            `;
+            galleryHTML += `<div class="ai-gallery-item"><img src="${url}" alt="Иллюстрация к ответу" class="ai-message-image"></div>`;
         });
         galleryHTML += '</div>';
 
-        // Вставляем готовую галерею в конец "пузыря" сообщения
         const contentWrapper = messageElement.querySelector('.ai-message.model');
         if (contentWrapper) {
             contentWrapper.insertAdjacentHTML('beforeend', galleryHTML);
-            console.log(`[Клиентский поиск] Добавлено ${imageUrls.length} изображений в сообщение.`);
+            console.log(`[Рендерер] ✅ Галерея успешно вставлена в сообщение.`);
+        } else {
+            console.error('[Рендерер] ❌ Сбой: Не найден контейнер .ai-message.model для вставки галереи.');
         }
     }
 
     /**
-     * Находит последний запрос пользователя в истории чата.
-     * @param {Array} chatHistory - Массив сообщений.
-     * @returns {string|null}
+     * Находит последний запрос пользователя в истории чата. (без изменений)
      */
     function findLastUserQuery(chatHistory) {
         for (let i = chatHistory.length - 1; i >= 0; i--) {
@@ -17942,13 +17950,17 @@ const mainApp = (function() {
         return null;
     }
 
-    // --- Вспомогательные функции-поисковики (из ответа ИИ-консультанта) ---
+    // --- Функции-поисковики с логированием ---
 
     async function searchWikimedia(q) {
+        console.log(`[Wikimedia] 🔍 Ищу "${q}"...`);
         try {
             const url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&generator=search&gsrsearch=' + encodeURIComponent(q) + '&gsrlimit=10&iiprop=url';
             const r = await fetch(url);
-            if (!r.ok) return [];
+            if (!r.ok) {
+                console.warn(`[Wikimedia] ❌ Сервер вернул статус ${r.status}`);
+                return [];
+            }
             const js = await r.json();
             const out = [];
             if (js.query && js.query.pages) {
@@ -17956,9 +17968,54 @@ const mainApp = (function() {
                     if (p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) out.push(p.imageinfo[0].url);
                 });
             }
+            console.log(`[Wikimedia] ✅ Найдено: ${out.length} изображений.`);
             return out;
-        } catch (e) { console.error("Wikimedia Error:", e); return []; }
+        } catch (e) { console.error("[Wikimedia] 💥 Критическая ошибка:", e); return []; }
     }
+
+    async function searchLOC(q) {
+        console.log(`[LOC] 🔍 Ищу "${q}"...`);
+        try {
+            const url = 'https://www.loc.gov/pictures/search/?fo=json&q=' + encodeURIComponent(q);
+            const r = await fetch(url);
+            if (!r.ok) {
+                console.warn(`[LOC] ❌ Сервер вернул статус ${r.status}`);
+                return [];
+            }
+            const js = await r.json();
+            const out = [];
+            (js.results || []).forEach(item => {
+                if (item.image && item.image.full) out.push(item.image.full);
+            });
+            console.log(`[LOC] ✅ Найдено: ${out.length} изображений.`);
+            return out;
+        } catch (e) { console.error("[LOC] 💥 Критическая ошибка:", e); return []; }
+    }
+
+    function searchFlickrFeedJSONP(q) {
+        console.log(`[Flickr] 🔍 Ищу "${q}"...`);
+        return new Promise((resolve) => {
+            const callbackName = 'flickr_cb_' + Date.now();
+            window[callbackName] = function(data) {
+                try {
+                    const out = (data.items || []).map(it => it.media && it.media.m).filter(Boolean);
+                    console.log(`[Flickr] ✅ Найдено: ${out.length} изображений.`);
+                    resolve(out);
+                } catch (e) { console.error("[Flickr] 💥 Критическая ошибка (в callback):", e); resolve([]); } finally {
+                    delete window[callbackName];
+                    script.remove();
+                }
+            };
+            const script = document.createElement('script');
+            script.src = 'https://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=' + callbackName + '&tags=' + encodeURIComponent(q);
+            script.onerror = () => { console.warn("[Flickr] ❌ Не удалось загрузить скрипт."); resolve([]); delete window[callbackName]; script.remove(); };
+            document.body.appendChild(script);
+        });
+    }
+
+
+
+
 
     async function searchLOC(q) {
         try {
@@ -17974,31 +18031,10 @@ const mainApp = (function() {
         } catch (e) { console.error("LOC Error:", e); return []; }
     }
 
-    function searchFlickrFeedJSONP(q) {
-        return new Promise((resolve) => {
-            const callbackName = 'flickr_cb_' + Date.now();
-            window[callbackName] = function(data) {
-                try {
-                    const out = (data.items || []).map(it => it.media && it.media.m).filter(Boolean);
-                    resolve(out);
-                } catch (e) { resolve([]); } finally {
-                    delete window[callbackName];
-                    script.remove();
-                }
-            };
-            const script = document.createElement('script');
-            script.src = 'https://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=' + callbackName + '&tags=' + encodeURIComponent(q);
-            script.onerror = () => { resolve([]); delete window[callbackName]; script.remove(); };
-            document.body.appendChild(script);
-        });
-    }
 
 
 
-})
-
-
-();
+})();
 
 document.addEventListener('DOMContentLoaded', mainApp.init);
 
