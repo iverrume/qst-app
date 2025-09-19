@@ -8938,7 +8938,7 @@ body.glass-dark #confirmModalYesBtn:hover {
     border: none;
     background: transparent;
     padding: 0px 0; /* Убираем лишние отступы */
-    font-size: 1em;
+    font-size: 1.2em;
     line-height: 1.4;
     min-height: 24px; /* Минимальная высота в одну строку */
     max-height: 180px;
@@ -11077,4 +11077,118 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
         width: 16px; 
         height: 16px;
     }
+}
+
+/* ======================================================= */
+/* ===      СТИЛИ ДЛЯ ПРОСМОТРА ТЕМ В АУДИТОРИИ       === */
+/* ======================================================= */
+
+#aiTopicsView .ai-sidebar-section-header {
+    padding: 0 4px 8px 4px; /* Компактные отступы */
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.ai-topics-breadcrumb {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center; /* Центрируем название аудитории */
+}
+
+#aiBackToAudiencesBtn,
+#aiNewTopicBtn {
+    flex-shrink: 0; /* Кнопки не должны сжиматься */
+}
+
+/* ======================================================= */
+/* ===      ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ ГОРИЗОНТАЛЬНОГО СКРОЛЛА     === */
+/* ======================================================= */
+
+/* 1. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Применяем к контейнеру сообщения (flex-item),
+   чтобы он мог сжиматься меньше своего содержимого. */
+.ai-message-container.is-model {
+    min-width: 0;
+}
+
+/* 2. Заставляем сам "пузырь" сообщения также уважать границы своего родителя. */
+.ai-message.model {
+    max-width: 100%;
+    overflow-wrap: break-word; /* Для переноса очень длинных слов */
+}
+
+/* 3. Теперь правила для таблиц и блоков кода сработают корректно,
+   так как их родительский контейнер больше не растягивается. */
+.ai-message.model table,
+.ai-message.model pre {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto; /* Включаем горизонтальный скролл */
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на мобильных */
+}
+
+/* 4. Базовые стили для таблиц, чтобы они выглядели аккуратно */
+.ai-message.model table {
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.ai-message.model th,
+.ai-message.model td {
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    white-space: nowrap; /* Важно, чтобы ячейки не переносили текст */
+}
+
+.ai-message.model th {
+    background-color: var(--input-bg-color);
+    font-weight: bold;
+}
+
+/* 5. Стили для блоков кода */
+.ai-message.model pre {
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    white-space: pre; /* Сохраняем форматирование кода */
+}
+
+/* ======================================================= */
+/* ===      СТИЛИ ДЛЯ ГАЛЕРЕИ ИЗОБРАЖЕНИЙ В AI-ОТВЕТАХ === */
+/* ======================================================= */
+
+/* Контейнер для галереи */
+.ai-message-image-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Сетка 2x2 */
+    gap: 6px; /* Отступы между картинками */
+    margin-top: 12px;
+}
+
+/* Обертка для каждой картинки в сетке */
+.ai-gallery-item {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px; /* Скругляем углы */
+    aspect-ratio: 1 / 1; /* Делаем элементы квадратными */
+}
+
+/* Сама картинка */
+.ai-message-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Картинка будет красиво обрезана, а не сжата */
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.ai-message-image:hover {
+    transform: scale(1.05);
 }

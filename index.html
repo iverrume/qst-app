@@ -639,7 +639,26 @@
                                      <!-- Сюда JS добавит публичные аудитории -->
                                 </ul>
                             </div>
-                            
+
+
+                            <!-- === НОВЫЙ БЛОК: ЭКРАН ПРОСМОТРА ТЕМ ВНУТРИ АУДИТОРИИ === -->
+                            <div class="ai-sidebar-section hidden" id="aiTopicsView">
+                                <div class="ai-sidebar-section-header">
+                                    <button id="aiBackToAudiencesBtn" class="ai-sidebar-action-btn" title="Назад к списку Аудиторий">
+                                        <i data-lucide="arrow-left"></i>
+                                    </button>
+                                    <div id="aiTopicsBreadcrumb" class="ai-topics-breadcrumb"></div>
+                                    <button id="aiNewTopicBtn" class="ai-sidebar-action-btn" title="Создать новую Тему в этой Аудитории">
+                                        <i data-lucide="plus"></i>
+                                    </button>
+                                </div>
+                                <ul id="aiTopicsList" class="ai-chat-history-list">
+                                     <!-- Сюда JS добавит список тем (чатов) -->
+                                </ul>
+                            </div>  
+
+
+
                             <!-- РУЧКА ДЛЯ ИЗМЕНЕНИЯ РАЗМЕРА (остается без изменений) -->
                             <div id="aiSidebarHandle" class="ai-sidebar-handle"></div>
                         </div>
@@ -838,6 +857,22 @@
             <div id="audienceCreateModalButtons" class="modal-buttons">
                 <button id="audienceCreateCancelBtn" class="btn btn-secondary">Отмена</button>
                 <button id="audienceCreateConfirmBtn" class="btn">Создать</button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+    <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ ТЕМЫ       === -->
+    <!-- ======================================================= -->
+    <div id="topicCreateModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 id="topicCreateModalTitle" data-lang-key="topic_create_modal_title">Создание новой Темы</h3>
+            <p id="topicCreateModalText" style="margin: 20px 0; line-height: 1.6;" data-lang-key="topic_create_modal_text">Введите название для вашей новой Темы (чата) в этой Аудитории.</p>
+            
+            <input type="text" id="topicNameInput" class="auth-input" placeholder="Название Темы..." data-lang-key="topic_create_placeholder" style="margin-bottom: 25px;">
+
+            <div id="topicCreateModalButtons" class="modal-buttons">
+                <button id="topicCreateCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="topicCreateConfirmBtn" class="btn" data-lang-key="audience_create_button">Создать</button>
             </div>
         </div>
     </div>
