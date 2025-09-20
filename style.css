@@ -8901,7 +8901,7 @@ body.glass-dark #confirmModalYesBtn:hover {
     /* УБИРАЕМ max-width из общего стиля */
     padding: 8px 14px; /* Делаем отступы чуть комфортнее */
     border-radius: 18px;
-    line-height: 1.3;
+    line-height: 1.4;
     word-wrap: break-word;
     animation: messageSlideIn 0.3s ease; /* Добавляем плавное появление */
 }
@@ -8914,7 +8914,7 @@ body.glass-dark #confirmModalYesBtn:hover {
     border-bottom-right-radius: 6px;
     max-width: 85%; /* <-- Ограничение ТОЛЬКО для пользователя */
     padding: 8px 10px; /* <-- ВОТ ИЗМЕНЕНИЕ: Уменьшаем вертикальные отступы */
-    line-height: 1.3; 
+    line-height: 1.4; 
 }
 
 /* Сообщение ИИ: прижимаем влево, БЕЗ ограничения ширины */

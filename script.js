@@ -1853,6 +1853,9 @@ const ChatModule = (function() {
         console.log('Event listeners настроены');
     } 
 
+
+
+
     
     function setupAuthStateListener() {
         if (!auth) return;
@@ -1865,25 +1868,31 @@ const ChatModule = (function() {
             if (user) {
                 console.log('Пользователь авторизован:', user.displayName || user.email);
                 
-                // ЗАГРУЖАЕМ РАЗБЛОКИРОВАННЫЕ КАНАЛЫ ИЗ ХРАНИЛИЩА
-                const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
-                if (savedUnlocked) {
-                    unlockedChannels = new Set(JSON.parse(savedUnlocked));
-                }
 
-                initializeUnreadListeners(); 
-                setupPresenceSystem();
-                fetchAllUsers();
-                loadChannels();
-                loadPrivateChats();
-                loadTabData(currentTab);
-                initializeDataListeners();
-                // === НАЧАЛО НОВОГО КОДА ===
-                // Загружаем публичные аудитории только после того, как пользователь точно вошел в систему
-                if (window.mainApp) {
-                    window.mainApp.loadPublicAudiences();
-                }
-                // === КОНЕЦ НОВОГО КОДА ===
+
+                mainApp.migrateLocalChatsToFirebase().then(() => {
+                    // Этот код выполнится ПОСЛЕ завершения миграции
+                    const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
+                    if (savedUnlocked) {
+                        unlockedChannels = new Set(JSON.parse(savedUnlocked));
+                    }
+
+                    initializeUnreadListeners(); 
+                    setupPresenceSystem();
+                    fetchAllUsers();
+                    loadChannels();
+                    loadPrivateChats();
+                    loadTabData(currentTab);
+                    initializeDataListeners();
+                    if (window.mainApp) {
+                        window.mainApp.loadPublicAudiences();
+                    }
+                    // ЗАГРУЖАЕМ ЧАТЫ ИЗ FIREBASE
+                    mainApp.loadAIChatsFromStorage(); 
+                });
+
+
+
             } else {
 
                 console.log('Пользователь не авторизован');
@@ -14383,7 +14392,8 @@ const mainApp = (function() {
 
 // Переменные для нового чата
     let aiChatFab, aiChatModal, aiChatModalContent, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn, aiChatResizeBtn,
-        aiChatHistoryBtn, aiChatSidebar, aiNewChatBtn, aiChatHistoryList, aiChatScrollWrapper; // <-- ИСПРАВЛЕНИЕ: Добавили aiChatScrollWrapper сюда
+        aiChatHistoryBtn, aiChatSidebar, aiNewChatBtn, aiChatHistoryList, aiChatScrollWrapper, aiChatsListener = null; // <-- ИСПРАВЛЕНИЕ: Добавили aiChatScrollWrapper сюда
+
     let isAllTooltipsVisible = false;
     // === НАЧАЛО НОВЫХ ПЕРЕМЕННЫХ ===
     let aiTopicsView, aiTopicsList, aiTopicsBreadcrumb, aiBackToAudiencesBtn, aiNewTopicBtn;
@@ -14880,8 +14890,213 @@ const mainApp = (function() {
         setupCustomSelect('aiModelSelectContainer');
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
-        loadAIChatsFromStorage();
     }
+
+
+    /**
+     * Загружает AI-чаты.
+     * Если пользователь онлайн - из Firestore (с real-time обновлениями).
+     * Если оффлайн - из IndexedDB.
+     */
+    function loadAIChatsFromStorage() {
+        // Отписываемся от старого слушателя, если он был
+        if (aiChatsListener) {
+            aiChatsListener();
+            aiChatsListener = null;
+        }
+
+        if (currentUser && db) {
+            // Пользователь онлайн: слушаем изменения в Firestore
+            const chatsRef = db.collection('users').doc(currentUser.uid).collection('ai_chats').orderBy('lastModified', 'desc');
+            
+            aiChatsListener = chatsRef.onSnapshot(snapshot => {
+                if (snapshot.empty) {
+                    console.log("У пользователя нет чатов в Firebase, создаем новый.");
+                    startNewAIChat(false); // Создаем первый чат, если в облаке пусто
+                } else {
+                    snapshot.docs.forEach(doc => {
+                        allAIChats[doc.id] = doc.data().messages;
+                    });
+                    
+                    currentAIChatId = localStorage.getItem('currentAIChatId');
+                    // Проверяем, существует ли еще текущий чат
+                    if (!allAIChats[currentAIChatId]) {
+                        currentAIChatId = snapshot.docs[0].id; // Если нет, берем самый новый
+                    }
+                    
+                    renderAIChatList();
+                    switchToAIChat(currentAIChatId);
+                }
+            }, error => {
+                console.error("Ошибка при загрузке чатов из Firestore:", error);
+                // В случае ошибки, пробуем загрузить из локального хранилища
+                loadLocalAIChats();
+            });
+
+        } else {
+            // Пользователь оффлайн: загружаем из IndexedDB
+            loadLocalAIChats();
+        }
+    }
+
+    /**
+     * Загружает чаты из локального хранилища (IndexedDB).
+     * Вызывается, когда пользователь не авторизован или нет сети.
+     */
+    async function loadLocalAIChats() {
+        try {
+            const savedChatsArray = await DBManager.getAll('AIChats');
+            allAIChats = savedChatsArray.reduce((acc, chat) => {
+                acc[chat.chatId] = chat.messages;
+                return acc;
+            }, {});
+            currentAIChatId = localStorage.getItem('currentAIChatId');
+
+            if (!currentAIChatId || !allAIChats[currentAIChatId]) {
+                startNewAIChat(false);
+            } else {
+                renderAIChatList();
+                switchToAIChat(currentAIChatId);
+            }
+        } catch (error) {
+            console.error("Не удалось загрузить локальные чаты, создаем новый.", error);
+            startNewAIChat(false);
+        }
+    }
+
+    /**
+     * Переносит локально сохраненные чаты в аккаунт Firebase.
+     * Вызывается один раз при входе пользователя в аккаунт.
+     */
+    async function migrateLocalChatsToFirebase() {
+        if (!currentUser || !db) return;
+
+        try {
+            const localChats = await DBManager.getAll('AIChats');
+            if (localChats.length === 0) {
+                console.log("Локальных чатов для миграции не найдено.");
+                return;
+            }
+
+            console.log(`Начинается миграция ${localChats.length} локальных чатов в Firebase...`);
+            const batch = db.batch();
+            const chatsCollectionRef = db.collection('users').doc(currentUser.uid).collection('ai_chats');
+
+            localChats.forEach(chat => {
+                const docRef = chatsCollectionRef.doc(chat.chatId);
+                batch.set(docRef, { 
+                    messages: chat.messages,
+                    lastModified: new Date() // Используем текущее время для мигрированных
+                });
+            });
+
+            await batch.commit();
+            console.log("Миграция в Firebase завершена успешно.");
+
+            // После успешной миграции удаляем чаты из локального хранилища
+            const deletePromises = localChats.map(chat => DBManager.delete(chat.chatId, 'AIChats'));
+            await Promise.all(deletePromises);
+            console.log("Локальные чаты удалены после миграции.");
+            showToast(`Синхронизировано ${localChats.length} локальных чатов.`, 'success');
+
+        } catch (error) {
+            console.error("Ошибка во время миграции локальных чатов:", error);
+            showToast("Не удалось синхронизировать локальные чаты.", "error");
+        }
+    }
+
+
+
+    /**
+     * Сохраняет текущий активный AI-чат.
+     * Если пользователь авторизован, сохраняет в Firestore.
+     * Если нет - сохраняет локально в IndexedDB.
+     */
+    async function saveAIChatsToStorage() {
+        if (!currentAIChatId || !allAIChats[currentAIChatId]) return;
+
+        const chatData = {
+            messages: allAIChats[currentAIChatId],
+            // Добавляем время последнего изменения для сортировки
+            lastModified: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        if (currentUser && db) {
+            // Пользователь онлайн - сохраняем в Firebase
+            try {
+                const chatRef = db.collection('users').doc(currentUser.uid).collection('ai_chats').doc(currentAIChatId);
+                await chatRef.set(chatData, { merge: true }); // set с merge - безопасно и создает документ, если его нет
+            } catch (error) {
+                console.error("Ошибка сохранения AI-чата в Firestore:", error);
+                showToast("Не удалось синхронизировать чат.", "error");
+            }
+        } else {
+            // Пользователь оффлайн - сохраняем в IndexedDB
+            try {
+                await DBManager.save({
+                    chatId: currentAIChatId,
+                    messages: allAIChats[currentAIChatId]
+                }, 'AIChats');
+            } catch (error) {
+                console.error("Ошибка сохранения AI-чата в IndexedDB:", error);
+                showToast("Не удалось сохранить историю чата.", "error");
+            }
+        }
+        // ID текущего чата всегда сохраняем локально для быстрого доступа
+        localStorage.setItem('currentAIChatId', currentAIChatId);
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Удаляет сообщение из AI-чата (приватного или публичного).
+     * @param {number} index - Индекс сообщения для удаления.
+     */
+    async function deleteAIChatMessage(index) {
+        const confirmed = await showConfirmationModal(
+            'confirm_action_title',
+            'confirm_delete_message',
+            'confirm_button_delete'
+        );
+        if (!confirmed) return;
+
+        if (currentAIChatType === 'private') {
+            const currentChat = allAIChats[currentAIChatId];
+            if (!currentChat) return;
+
+            currentChat.splice(index, 1);
+            await saveAIChatsToStorage();
+            
+            renderAIChatMessages();
+            renderColorLegends();
+            showToast("Сообщение удалено.", "success");
+
+        } else {
+            const messageToDelete = currentPublicChatMessages[index];
+            if (!messageToDelete || !messageToDelete.id) {
+                showToast("Не удалось определить сообщение для удаления.", "error");
+                return;
+            }
+
+            // ИСПРАВЛЕНИЕ: Ищем аудиторию по currentAudienceId, а не currentAIChatId
+            const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId); 
+            if (!currentUser || !audienceData || currentUser.uid !== audienceData.ownerId) {
+                showToast("Только владелец может удалять сообщения в Аудитории.", "error");
+                return;
+            }
+
+            try {
+                const messageRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId).collection('messages').doc(messageToDelete.id);
+                await messageRef.delete();
+                showToast("Сообщение удалено из Аудитории.", "success");
+            } catch (error) {
+                console.error("Ошибка удаления сообщения из Аудитории:", error);
+                showToast("Не удалось удалить сообщение.", "error");
+            }
+        }
+    }
+
+
+
+
 
     // =================================================================================
     // ===      НОВЫЕ ФУНКЦИИ ДЛЯ КАСТОМНОЙ ПОДСКАЗКИ (v1.0)                        ===
@@ -15190,60 +15405,10 @@ const mainApp = (function() {
 
 
 
-    /**
-     * Загружает все чаты из localStorage при запуске.
-     */
-    async function loadAIChatsFromStorage() {
-        try {
-            // Загрузка приватных чатов (как и раньше)
-            const savedChatsArray = await DBManager.getAll('AIChats');
-            allAIChats = savedChatsArray.reduce((acc, chat) => {
-                acc[chat.chatId] = chat.messages;
-                return acc;
-            }, {});
-            currentAIChatId = localStorage.getItem('currentAIChatId');
-            currentAIChatType = 'private'; // По умолчанию открываем приватный
-
-        } catch (error) {
-            console.error("Не удалось загрузить приватные чаты, используем пустой объект.", error);
-            allAIChats = {};
-            currentAIChatId = null;
-        }
-        
-
-        // Если приватных чатов нет, создаем новый
-        if (!currentAIChatId || !allAIChats[currentAIChatId]) {
-            startNewAIChat(false); 
-        } else {
-            // Если есть, просто отображаем
-            renderAIChatList(); 
-            switchToAIChat(currentAIChatId, 'private');
-        }
-    }
 
 
 
 
-    /**
-     * Сохраняет все чаты в localStorage.
-     */
-    async function saveAIChatsToStorage() {
-        try {
-            // Сохраняем только текущий активный чат, что гораздо эффективнее
-            if (currentAIChatId && allAIChats[currentAIChatId]) {
-                await DBManager.save({
-                    chatId: currentAIChatId,
-                    messages: allAIChats[currentAIChatId]
-                }, 'AIChats');
-            }
-            // ID текущего чата - это маленькая строка, ее безопасно хранить в localStorage
-            localStorage.setItem('currentAIChatId', currentAIChatId);
-        } catch (error) {
-            console.error("Ошибка сохранения чата в IndexedDB:", error);
-            // Можно показать уведомление пользователю
-            showToast("Не удалось сохранить историю чата.", "error");
-        }
-    }
 
     /**
      * Рендерит список чатов в боковой панели.
@@ -15960,42 +16125,44 @@ const mainApp = (function() {
 
 
     /**
-     * Удаляет выбранный чат.
+     * Удаляет выбранный чат из текущего хранилища (Firebase или IndexedDB).
      * @param {string} chatId - ID чата для удаления.
      */
     async function deleteAIChat(chatId) {
         const confirmed = await showConfirmationModal(
-            'Подтверждение', // titleKey - можно добавить в LANG_PACK
-            'Вы уверены, что хотите удалить этот чат? Это действие необратимо.', // messageKey
+            'Подтверждение',
+            'Вы уверены, что хотите удалить этот чат? Это действие необратимо.',
             'confirm_button_delete'
         );
+        if (!confirmed) return;
 
-        if (confirmed) {
-            delete allAIChats[chatId];
-            
-            // ======== УДАЛЯЕМ ИЗ INDEXEDDB ========
+        // Удаляем из оперативной памяти
+        delete allAIChats[chatId];
+
+        // Удаляем из хранилища
+        if (currentUser && db) {
+            // Удаляем из Firestore
+            await db.collection('users').doc(currentUser.uid).collection('ai_chats').doc(chatId).delete();
+        } else {
+            // Удаляем из IndexedDB
             await DBManager.delete(chatId, 'AIChats');
-            // =======================================
+        }
 
-            // Если удалили текущий чат, нужно переключиться на другой
-            if (currentAIChatId === chatId) {
-                const remainingIds = Object.keys(allAIChats);
-                // Сортируем, чтобы всегда переключаться на самый новый
-                remainingIds.sort((a, b) => b.localeCompare(a));
-                const newCurrentId = remainingIds.length > 0 ? remainingIds[0] : null;
-                
-                if (newCurrentId) {
-                    switchToAIChat(newCurrentId);
-                } else {
-                    // Если чатов не осталось, создаем новый
-                    startNewAIChat();
-                }
+        // Логика переключения на другой чат
+        if (currentAIChatId === chatId) {
+            const remainingIds = Object.keys(allAIChats);
+            remainingIds.sort((a, b) => b.localeCompare(a));
+            const newCurrentId = remainingIds.length > 0 ? remainingIds[0] : null;
+
+            if (newCurrentId) {
+                switchToAIChat(newCurrentId);
             } else {
-                // Если удалили неактивный чат, просто сохраняем и перерисовываем
-                saveAIChatsToStorage();
-                renderAIChatList();
+                startNewAIChat(); // Создаем новый, если все удалили
             }
         }
+        
+        // В любом случае перерисовываем список
+        renderAIChatList();
     }
 
 
@@ -17308,14 +17475,24 @@ const mainApp = (function() {
             return;
         }
 
-        // Далее идет логика для приватного чата (остается без изменений)
-        const message = { role: 'user', content: userInput };
-        if (aiReplyContext) message.replyTo = aiReplyContext;
+        // Далее идет логика для приватного чата
         const fileToSend = attachedFile;
         aiChatInput.value = '';
         resetAIInputHeight(); 
         removeAIAttachment();
+        
+        // Формируем основной объект сообщения
+        const message = { 
+            role: 'user', 
+            content: userInput,
+            // Добавляем поля сразу, чтобы они были в UI
+            replyTo: aiReplyContext,
+            attachment: fileToSend
+        };
+        
+        // Очищаем контекст ответа ПОСЛЕ его присвоения сообщению
         cancelAIReply();
+
         if (fileToSend) {
             try {
                 allAIChats[currentAIChatId].push({ role: 'model', content: 'Анализ файла...' });
@@ -17330,22 +17507,25 @@ const mainApp = (function() {
                     })
                 });
                 const result = await response.json();
-                if (result.success && result.description) message.attachmentDescription = result.description;
-                else message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
-                allAIChats[currentAIChatId].pop();
+                if (result.success && result.description) {
+                     // Добавляем описание файла в уже существующий объект сообщения
+                    message.attachmentDescription = result.description;
+                } else {
+                    message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
+                }
+                allAIChats[currentAIChatId].pop(); // Удаляем "Анализ файла..."
             } catch (error) {
                 console.error("Ошибка получения описания файла:", error);
                 message.attachmentDescription = `(Ошибка при анализе файла "${fileToSend.name}")`;
-                allAIChats[currentAIChatId].pop();
+                allAIChats[currentAIChatId].pop(); // Удаляем "Анализ файла..."
             }
         }
-        message.attachment = fileToSend;
+        
         allAIChats[currentAIChatId].push(message);
         saveAIChatsToStorage();
         renderAIChatList();
         getAIResponseForCurrentHistory(fileToSend);
     }
-
 
     /**
      * Отправляет сообщение в публичную Аудиторию (только для владельца).
@@ -17455,17 +17635,21 @@ const mainApp = (function() {
 
 
 
-/**
-     * Получает ответ от ИИ для текущей истории приватного чата.
-     * ВЕРСЯ С ПРЯМЫМ ВЫЗОВОМ КЛИЕНТСКОГО ПОИСКА ИЗОБРАЖЕНИЙ.
-     */
     async function getAIResponseForCurrentHistory(file = null) {
         if (isAIResponding || !currentAIChatId) return;
         isAIResponding = true;
         aiChatSendBtn.disabled = true;
         
         const currentChat = allAIChats[currentAIChatId];
-        const historyForAPI = JSON.parse(JSON.stringify(currentChat.filter(msg => msg.content !== 'typing...')));
+        
+        // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Формируем "чистую" историю для API ===
+        const historyForAPI = currentChat
+            .filter(msg => msg.content !== 'typing...')
+            .map(msg => ({
+                role: msg.role,
+                content: msg.content || ''
+            }));
+        // ==========================================================
 
         currentChat.push({ role: 'model', content: 'typing...' });
         const aiResponseIndex = currentChat.length - 1;
@@ -17500,7 +17684,7 @@ const mainApp = (function() {
                     role: 'model', 
                     content: result.reply,
                     grounded: result.wasGrounded,
-                    groundingMetadata: result.groundingMetadata,
+                    groundingMetadata: result.groundingMetadata
                 };
             } else {
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
@@ -17519,8 +17703,6 @@ const mainApp = (function() {
             isAIResponding = false;
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
             saveAIChatsToStorage();
-            
-            // СНАЧАЛА отрисовываем текстовый ответ
             renderAIChatMessages();
         }
     }
@@ -17748,53 +17930,6 @@ const mainApp = (function() {
 
 
 
-    /**
-     * НОВАЯ ФУНКЦИЯ: Удаляет сообщение из AI-чата (приватного или публичного).
-     * @param {number} index - Индекс сообщения для удаления.
-     */
-    async function deleteAIChatMessage(index) {
-        const confirmed = await showConfirmationModal(
-            'confirm_action_title',
-            'confirm_delete_message',
-            'confirm_button_delete'
-        );
-        if (!confirmed) return;
-
-        if (currentAIChatType === 'private') {
-            const currentChat = allAIChats[currentAIChatId];
-            if (!currentChat) return;
-
-            currentChat.splice(index, 1);
-            await saveAIChatsToStorage();
-            
-            renderAIChatMessages();
-            renderColorLegends();
-            showToast("Сообщение удалено.", "success");
-
-        } else {
-            const messageToDelete = currentPublicChatMessages[index];
-            if (!messageToDelete || !messageToDelete.id) {
-                showToast("Не удалось определить сообщение для удаления.", "error");
-                return;
-            }
-
-            // ИСПРАВЛЕНИЕ: Ищем аудиторию по currentAudienceId, а не currentAIChatId
-            const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId); 
-            if (!currentUser || !audienceData || currentUser.uid !== audienceData.ownerId) {
-                showToast("Только владелец может удалять сообщения в Аудитории.", "error");
-                return;
-            }
-
-            try {
-                const messageRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId).collection('messages').doc(messageToDelete.id);
-                await messageRef.delete();
-                showToast("Сообщение удалено из Аудитории.", "success");
-            } catch (error) {
-                console.error("Ошибка удаления сообщения из Аудитории:", error);
-                showToast("Не удалось удалить сообщение.", "error");
-            }
-        }
-    }
 
     /**
      * НОВАЯ ФУНКЦИЯ: Отменяет редактирование и возвращает исходное сообщение.
@@ -17895,6 +18030,11 @@ const mainApp = (function() {
         handleCopyAIChat: handleCopyAIChat,
         handleShareAIChat: handleShareAIChat,
         regenerateLastAIResponse: regenerateLastAIResponse,
+        // === НАЧАЛО НОВОГО КОДА ===
+        migrateLocalChatsToFirebase: migrateLocalChatsToFirebase,
+        loadAIChatsFromStorage: loadAIChatsFromStorage,
+        saveAIChatsToStorage: saveAIChatsToStorage,
+        // === КОНЕЦ НОВОГО КОДА ===
         testMobileDownload: () => {
             console.log('Тестирование мобильного скачивания.');
             console.log('detectMobileDevice():', detectMobileDevice());
