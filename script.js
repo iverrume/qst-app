@@ -4040,16 +4040,6 @@ const ChatModule = (function() {
         });
     }
 
-    // --- НАЧАЛО: Новые функции для хэширования и работы с паролями ---
-    async function hashPassword(password) {
-        if (!password) return null;
-        const encoder = new TextEncoder();
-        const data = encoder.encode(password);
-        const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        return hashHex;
-    }
 
 
     /**
@@ -5764,6 +5754,7 @@ const ChatModule = (function() {
         showModal: showModal, 
         handlePasswordReset,
         closeModal: closeModal,
+        showModal: showModal,
         _chatFormat: _chatFormat, // <--- ВОТ ДОБАВЛЕННАЯ СТРОКА
         
         // Getters
@@ -8637,10 +8628,15 @@ const mainApp = (function() {
         if (currentAIChatType === 'private') {
             return true;
         }
-        // В публичных чатах — только владелец.
-        if (currentAIChatType === 'public') {
+        // В публичных чатах — владелец или модератор.
+        if (currentAIChatType === 'public' && currentUser) {
             const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
-            return currentUser && audienceData && currentUser.uid === audienceData.ownerId;
+            if (!audienceData) return false;
+            
+            const isOwner = currentUser.uid === audienceData.ownerId;
+            const isModerator = Array.isArray(audienceData.moderators) && audienceData.moderators.includes(currentUser.uid);
+            
+            return isOwner || isModerator;
         }
         // По умолчанию запрещаем.
         return false;
@@ -11456,6 +11452,16 @@ const mainApp = (function() {
                 console.error("Ошибка рендеринга математической формулы:", error);
             }
         }
+    }
+    
+    async function hashPassword(password) {
+        if (!password) return null;
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
     }
 
     /**
@@ -15674,6 +15680,7 @@ const mainApp = (function() {
         });
     }
 
+
     /**
      * Отображает список публичных аудиторий в нижней части сайдбара.
      */
@@ -15692,19 +15699,48 @@ const mainApp = (function() {
                 li.classList.add('active');
             }
 
-            const deleteBtnHtml = (currentUser && currentUser.uid === audience.ownerId) 
+            const isOwner = currentUser && currentUser.uid === audience.ownerId;
+            const settingsBtnHtml = isOwner
+                ? `<button class="audience-settings-btn" title="Настройки Аудитории"><i data-lucide="settings-2" style="width: 16px; height: 16px; pointer-events: none;"></i></button>`
+                : '';
+
+            const deleteBtnHtml = isOwner 
                 ? `<button class="ai-chat-history-delete" title="Удалить аудиторию"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
                 : '';
 
             li.innerHTML = `
                 <span class="ai-chat-history-title">${escapeHTML(audience.title)}</span>
-                ${deleteBtnHtml}
+                <div class="ai-chat-history-actions">
+                    ${settingsBtnHtml}
+                    ${deleteBtnHtml}
+                </div>
             `;
             
             listEl.appendChild(li);
+        
+            // Делегирование событий для кликов
+            li.addEventListener('click', (e) => {
+                const audienceId = li.dataset.chatId;
+                // Клик по кнопке настроек
+                if (e.target.closest('.audience-settings-btn')) {
+                    showAudienceEditModal(audienceId);
+                    return;
+                }
+                // Клик по кнопке удаления
+                if (e.target.closest('.ai-chat-history-delete')) {
+                    const ownerId = li.dataset.ownerId;
+                    deleteAudience(audienceId, ownerId);
+                    return;
+                }
+                // Клик по самому элементу (открытие папки)
+                const audienceTitle = li.querySelector('.ai-chat-history-title')?.textContent || 'Аудитория';
+                openAudienceFolder(audienceId, audienceTitle);
+            });
         });
         if (window.lucide) lucide.createIcons();
     }
+
+
 
 
     async function deleteAudience(audienceId, ownerId) {
@@ -15801,6 +15837,13 @@ const mainApp = (function() {
                     aiTopicsList.innerHTML = '<li class="ai-chat-history-item-placeholder">Тем пока нет. Создайте первую!</li>';
                     return;
                 }
+                
+                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+                // Получаем данные об аудитории ОДИН РАЗ перед циклом
+                const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
+                const isAudienceOwner = currentUser && audienceData && currentUser.uid === audienceData.ownerId;
+                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
                 snapshot.forEach(doc => {
                     const topic = { id: doc.id, ...doc.data() };
                     const li = document.createElement('li');
@@ -15809,26 +15852,30 @@ const mainApp = (function() {
                     if (topic.id === currentTopicId) {
                         li.classList.add('active');
                     }
-                    // --- НОВЫЙ КОД: Логика отображения кнопки удаления ---
-                    const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
-                    const isOwner = currentUser && audienceData && currentUser.uid === audienceData.ownerId;
-
-                    const deleteBtnHtml = isOwner 
+                    
+                    // Используем уже готовую переменную isAudienceOwner
+                    const deleteBtnHtml = isAudienceOwner 
                         ? `<button class="ai-chat-history-delete" title="Удалить тему"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
                         : '';
-                    // --- КОНЕЦ НОВОГО КОДА ---
+
                     li.innerHTML = `<span class="ai-chat-history-title">${escapeHTML(topic.title)}</span>${deleteBtnHtml}`;
-                    li.querySelector('.ai-chat-history-title').onclick = () => switchToAIChat(audienceId, topic.id, 'public');
-                    li.onclick = () => switchToAIChat(audienceId, topic.id, 'public');
-                    const deleteBtn = li.querySelector('.ai-chat-history-delete');
-                    if(deleteBtn) {
-                        deleteBtn.onclick = (e) => {
+                    
+                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Упрощаем обработчики ---
+                    li.addEventListener('click', (e) => {
+                        // Клик по кнопке удаления
+                        if (e.target.closest('.ai-chat-history-delete')) {
                             e.stopPropagation();
-                            deleteTopic(audienceId, topic.id, topic.title); // <-- Вызываем новую функцию
-                        };
-                    }
+                            deleteTopic(audienceId, topic.id, topic.title);
+                        } else {
+                        // Клик по самому элементу
+                            switchToAIChat(audienceId, topic.id, 'public');
+                        }
+                    });
+                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+                    
                     aiTopicsList.appendChild(li);
                 });
+                if(window.lucide) lucide.createIcons();
             })
             .catch(error => {
                 console.error("Ошибка загрузки тем:", error);
@@ -15917,6 +15964,155 @@ const mainApp = (function() {
             }
         }
     }
+
+
+/**
+ * НОВАЯ ФУНКЦИЯ: Показывает модальное окно для редактирования Аудитории.
+ */
+async function showAudienceEditModal(audienceId) {
+    const modal = getEl('audienceEditModal');
+    const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
+    if (!modal || !audienceData) return;
+
+    // Заполняем поля
+    getEl('audienceEditModalTitle').textContent = `Настройки: ${audienceData.title}`;
+    getEl('audienceNameEditInput').value = audienceData.title;
+    getEl('audiencePasswordEditInput').value = ''; // Пароль всегда пуст для безопасности
+    getEl('moderatorEmailInput').value = '';
+
+    // Загружаем и отображаем список модераторов
+    const moderatorsListEl = getEl('moderatorsList');
+    moderatorsListEl.innerHTML = '<li>Загрузка...</li>';
+    
+    const moderators = audienceData.moderators || [];
+    if (moderators.length > 0) {
+        const moderatorPromises = moderators.map(uid => db.collection('users').doc(uid).get());
+        const moderatorDocs = await Promise.all(moderatorPromises);
+        
+        moderatorsListEl.innerHTML = moderatorDocs.map(doc => {
+            if (!doc.exists) return '';
+            const user = doc.data();
+            return `
+                <li class="moderator-item" data-uid="${user.uid}">
+                    <span class="moderator-name">${escapeHTML(user.username)}</span>
+                    <button class="remove-moderator-btn" title="Удалить модератора"><i data-lucide="x"></i></button>
+                </li>
+            `;
+        }).join('');
+    } else {
+        moderatorsListEl.innerHTML = '<li>Модераторы не назначены.</li>';
+    }
+    
+    // Привязываем обработчики
+    getEl('saveAudienceSettingsBtn').onclick = () => saveAudienceSettings(audienceId);
+    getEl('cancelAudienceEditBtn').onclick = () => ChatModule.closeModal('audienceEditModal');
+    getEl('addModeratorBtn').onclick = () => addModeratorToAudience(audienceId);
+    moderatorsListEl.onclick = (e) => {
+        const removeBtn = e.target.closest('.remove-moderator-btn');
+        if (removeBtn) {
+            const uid = removeBtn.closest('.moderator-item').dataset.uid;
+            removeModeratorFromAudience(audienceId, uid);
+        }
+    };
+
+    ChatModule.showModal('audienceEditModal');
+    if(window.lucide) lucide.createIcons();
+}
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Сохраняет изменения названия и пароля Аудитории.
+     */
+    async function saveAudienceSettings(audienceId) {
+        const newName = getEl('audienceNameEditInput').value.trim();
+        const newPassword = getEl('audiencePasswordEditInput').value;
+
+        if (!newName) {
+            showToast("Название Аудитории не может быть пустым.", "error");
+            return;
+        }
+
+        showGlobalLoader("Сохранение...");
+        try {
+            const audienceRef = db.collection('ai_audiences').doc(audienceId);
+            const updateData = { title: newName };
+
+            if (newPassword) {
+                updateData.hasPassword = true;
+                updateData.passwordHash = await hashPassword(newPassword);
+            } else {
+                // Если поле пароля пустое, проверяем, был ли пароль до этого, и если да - удаляем
+                const doc = await audienceRef.get();
+                if (doc.exists && doc.data().hasPassword) {
+                    updateData.hasPassword = false;
+                    updateData.passwordHash = firebase.firestore.FieldValue.delete();
+                }
+            }
+
+            await audienceRef.update(updateData);
+            showToast("Настройки успешно сохранены.", "success");
+            ChatModule.closeModal('audienceEditModal');
+        } catch (error) {
+            console.error("Ошибка сохранения настроек:", error);
+            showToast("Не удалось сохранить настройки.", "error");
+        } finally {
+            hideGlobalLoader();
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Добавляет нового модератора в Аудиторию.
+     */
+    async function addModeratorToAudience(audienceId) {
+        const email = getEl('moderatorEmailInput').value.trim();
+        if (!email) return;
+
+        const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
+        if (!audienceData) return;
+
+        try {
+            const userQuery = await db.collection('users').where('email', '==', email).limit(1).get();
+            if (userQuery.empty) {
+                showToast("Пользователь с таким email не найден.", "error");
+                return;
+            }
+            
+            const user = userQuery.docs[0].data();
+            if (user.uid === audienceData.ownerId) {
+                showToast("Владелец не может быть модератором.", "info");
+                return;
+            }
+
+            const audienceRef = db.collection('ai_audiences').doc(audienceId);
+            await audienceRef.update({
+                moderators: firebase.firestore.FieldValue.arrayUnion(user.uid)
+            });
+
+            showToast(`"${user.username}" назначен модератором.`, "success");
+            showAudienceEditModal(audienceId); // Обновляем модальное окно
+
+        } catch (error) {
+            console.error("Ошибка добавления модератора:", error);
+            showToast("Не удалось добавить модератора.", "error");
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Удаляет модератора из Аудитории.
+     */
+    async function removeModeratorFromAudience(audienceId, uid) {
+        try {
+            const audienceRef = db.collection('ai_audiences').doc(audienceId);
+            await audienceRef.update({
+                moderators: firebase.firestore.FieldValue.arrayRemove(uid)
+            });
+            showToast("Модератор удален.", "success");
+            showAudienceEditModal(audienceId); // Обновляем модальное окно
+        } catch (error) {
+            console.error("Ошибка удаления модератора:", error);
+            showToast("Не удалось удалить модератора.", "error");
+        }
+    }
+
 
     /**
      * НОВАЯ ФУНКЦИЯ: Проверяет, имеет ли текущий пользователь право удалять сообщения в активном AI-чате.
@@ -17699,8 +17895,15 @@ const mainApp = (function() {
         
         try {
             const audienceDoc = await audienceRef.get();
-            if (!audienceDoc.exists || audienceDoc.data().ownerId !== currentUser.uid) {
+
+            if (!audienceDoc.exists) return;
+            const audienceData = audienceDoc.data();
+            const isOwner = audienceData.ownerId === currentUser.uid;
+            const isModerator = Array.isArray(audienceData.moderators) && audienceData.moderators.includes(currentUser.uid);
+
+            if (!isOwner && !isModerator) {
                 console.warn("Попытка отправки сообщения в чужую аудиторию.");
+                showToast("Только владелец и модераторы могут отправлять сообщения.", "error");
                 return;
             }
 

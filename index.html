@@ -905,7 +905,42 @@
             <pre id="textPreviewBody"></pre>
         </div>
     </div>
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ АУДИТОРИИ === -->
+    <!-- ======================================================= -->
+    <div id="audienceEditModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 480px;">
+            <h3 id="audienceEditModalTitle">Настройки Аудитории</h3>
+            
+            <div class="settings-group" style="text-align: left; border-bottom: none; padding-bottom: 0;">
+                <label for="audienceNameEditInput" style="font-weight: 500;">Название Аудитории:</label>
+                <input type="text" id="audienceNameEditInput" class="auth-input" placeholder="Новое название...">
 
+                <label for="audiencePasswordEditInput" style="font-weight: 500; margin-top: 15px;">Пароль (пусто = без пароля):</label>
+                <div class="password-wrapper">
+                    <input type="password" id="audiencePasswordEditInput" class="auth-input" placeholder="Новый пароль...">
+                    <span class="toggle-password"><i data-lucide="eye"></i></span>
+                </div>
+            </div>
+
+            <!-- Блок управления модераторами -->
+            <div class="moderator-management-section">
+                <h4>Управление модераторами</h4>
+                <div class="moderator-add-form">
+                    <input type="email" id="moderatorEmailInput" class="auth-input" placeholder="Email нового модератора...">
+                    <button id="addModeratorBtn" class="btn-secondary-small">Добавить</button>
+                </div>
+                <ul id="moderatorsList" class="moderator-list">
+                    <!-- Сюда JS добавит список модераторов -->
+                </ul>
+            </div>
+
+            <div id="audienceEditModalButtons" class="modal-buttons" style="margin-top: 25px;">
+                <button id="cancelAudienceEditBtn" class="btn btn-secondary">Отмена</button>
+                <button id="saveAudienceSettingsBtn" class="btn">Сохранить</button>
+            </div>
+        </div>
+    </div>
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ЛЕГЕНДЫ === -->
     <!-- ======================================================= -->
