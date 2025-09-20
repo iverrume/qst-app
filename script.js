@@ -8633,6 +8633,25 @@ const mainApp = (function() {
     }
 
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Проверяет, имеет ли текущий пользователь право редактировать метаданные (цвета, легенды).
+     * @returns {boolean} - true, если редактирование разрешено.
+     */
+    function canEditAIMetadata() {
+        // В приватных чатах пользователь всегда может все редактировать.
+        if (currentAIChatType === 'private') {
+            return true;
+        }
+        // В публичных чатах — только владелец.
+        if (currentAIChatType === 'public') {
+            const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
+            return currentUser && audienceData && currentUser.uid === audienceData.ownerId;
+        }
+        // По умолчанию запрещаем.
+        return false;
+    }
+
+
     // Определение мобильного устройства (улучшенная версия)
     function isMobileDevice() {
         return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -14487,6 +14506,12 @@ const mainApp = (function() {
                 const item = e.target.closest('.ai-user-message-item');
                 if (!item) return;
 
+                if (!canEditAIMetadata()) {
+                    // Если у пользователя нет прав, просто ничего не делаем.
+                    // Долгое нажатие не будет вызывать палитру.
+                    return;
+                }
+
                 // В самом начале любого нажатия сбрасываем флаг.
                 wasLongPress = false;
 
@@ -16433,31 +16458,31 @@ const mainApp = (function() {
                 delete msg.dotColor;
             }
 
-            // --- ИСПРАВЛЕННАЯ ЛОГИКА СОХРАНЕНИЯ ---
             if (currentAIChatType === 'private') {
-                // Для приватных чатов сохраняем локально, как и раньше
                 saveAIChatsToStorage();
             } else if (currentAIChatType === 'public' && msg.id && currentAudienceId && currentTopicId) {
-                // Для публичных "Аудиторий" отправляем запрос в Firestore
-                // Используем правильные переменные для построения пути
+                
+                // Добавляем проверку прав как дополнительную защиту
+                if (!canEditAIMetadata()) {
+                    showToast("Только владелец может изменять цвета.", "error");
+                    return;
+                }
+
                 const messageRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId).collection('messages').doc(msg.id);
                 
                 const updateData = {};
                 if (newColor) {
                     updateData.dotColor = newColor;
                 } else {
-                    // Используем специальный метод для удаления поля
                     updateData.dotColor = firebase.firestore.FieldValue.delete();
                 }
 
                 messageRef.update(updateData).catch(error => {
                     console.error("Ошибка обновления цвета в Firestore:", error);
                     showToast("Не удалось синхронизировать цвет.", "error");
-                    // Можно добавить логику отката локального изменения, если нужно
                 });
             }
 
-            // Перерисовываем UI, который зависит от цвета
             drawOrUpdateScrollbar();
             const itemInSidebar = getEl('aiUserMessagesList')?.querySelector(`li[data-index="${messageIndex}"]`);
             if (itemInSidebar) {
