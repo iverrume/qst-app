@@ -946,12 +946,14 @@ const ChatModule = (function() {
     let listenerInitializationTime = null; // ВРЕМЯ ЗАПУСКА СЛУШАТЕЛЯ
     let questionsListener = null; // СЛУШАТЕЛЬ ДЛЯ ВОПРОСОВ
 
+
     let questionToHighlight = null;
     let favoritesListener = null;
     let unlockedChannels = new Set();
     const QUICK_REACTIONS_KEY = 'userQuickReactions';
     const DEFAULT_QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
-    
+
+
     // DOM elements
     let chatOverlay = null;
     let chatModal = null;
@@ -1848,9 +1850,7 @@ const ChatModule = (function() {
             if (user) {
                 console.log('Пользователь авторизован:', user.displayName || user.email);
                 
-                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-                setupPrivateLegendsListener(user); // Запускаем новый слушатель для легенд
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+                mainApp.setupPrivateLegendsListener(user);// Запускаем новый слушатель для легенд
 
                 mainApp.migrateLocalChatsToFirebase().then(() => {
                     const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
@@ -1875,62 +1875,8 @@ const ChatModule = (function() {
                 console.log('Пользователь не авторизован');
                 clearChatData();
                 cleanupPresenceSystem();
-                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
                 cleanupPrivateLegendsListener(); // Останавливаем слушатель легенд при выходе
-                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
-        });
-    }
-    /**
-     * НОВАЯ ФУНКЦИЯ: Устанавливает real-time слушатель на документ пользователя
-     * для синхронизации легенд приватных чатов. Также выполняет одноразовую миграцию
-     * из localStorage в Firestore.
-     * @param {object} user - Объект пользователя Firebase.
-     */
-    function setupPrivateLegendsListener(user) {
-        if (!db || !user) return;
-        
-        // Отписываемся от старого слушателя, если он был
-        if (privateLegendsListener) privateLegendsListener();
-
-        const userDocRef = db.collection('users').doc(user.uid);
-        let isFirstLoad = true; // Флаг для одноразовой миграции
-
-        privateLegendsListener = userDocRef.onSnapshot(async (doc) => {
-            if (doc.exists) {
-                const userData = doc.data();
-                currentPrivateLegends = userData.aiChatLegends || {};
-                
-                // Одноразовая миграция при первой загрузке данных
-                if (isFirstLoad) {
-                    isFirstLoad = false;
-                    const localLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
-                    
-                    // Мигрируем только если в localStorage что-то есть
-                    if (Object.keys(localLegends).length > 0) {
-                        console.log("Обнаружены локальные легенды. Начинаю миграцию в Firestore...");
-                        // Объединяем данные, облачные имеют приоритет
-                        const mergedLegends = { ...localLegends, ...currentPrivateLegends };
-                        
-                        try {
-                            await userDocRef.update({ aiChatLegends: mergedLegends });
-                            // После успешной миграции очищаем localStorage
-                            localStorage.removeItem(AI_LEGENDS_STORAGE_KEY);
-                            currentPrivateLegends = mergedLegends; // Обновляем кэш
-                            console.log("Миграция легенд завершена, localStorage очищен.");
-                        } catch (error) {
-                            console.error("Ошибка миграции легенд:", error);
-                        }
-                    }
-                }
-                
-                // Перерисовываем легенду, если чат открыт
-                if (aiChatModal && !aiChatModal.classList.contains('hidden')) {
-                    renderColorLegends();
-                }
-            }
-        }, error => {
-            console.error("Ошибка слушателя легенд:", error);
         });
     }
 
@@ -7188,8 +7134,6 @@ const mainApp = (function() {
     let searchResultsData = [];
     let currentResultIndex = 0;
     let currentQuizContext = null;
-    let currentPrivateLegends = {};
-    let privateLegendsListener = null;
     let currentPublicLegends = {};
     let currentTopicListener = null; 
     let currentTopicLegends = {};  
@@ -14431,7 +14375,58 @@ const mainApp = (function() {
         });
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Устанавливает real-time слушатель на документ пользователя
+     * для синхронизации легенд приватных чатов. Также выполняет одноразовую миграцию
+     * из localStorage в Firestore.
+     * @param {object} user - Объект пользователя Firebase.
+     */
+    function setupPrivateLegendsListener(user) {
+        if (!db || !user) return;
+        
+        // Отписываемся от старого слушателя, если он был
+        if (privateLegendsListener) privateLegendsListener();
 
+        const userDocRef = db.collection('users').doc(user.uid);
+        let isFirstLoad = true; // Флаг для одноразовой миграции
+
+        privateLegendsListener = userDocRef.onSnapshot(async (doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                currentPrivateLegends = userData.aiChatLegends || {};
+                
+                // Одноразовая миграция при первой загрузке данных
+                if (isFirstLoad) {
+                    isFirstLoad = false;
+                    const localLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+                    
+                    // Мигрируем только если в localStorage что-то есть
+                    if (Object.keys(localLegends).length > 0) {
+                        console.log("Обнаружены локальные легенды. Начинаю миграцию в Firestore...");
+                        // Объединяем данные, облачные имеют приоритет
+                        const mergedLegends = { ...localLegends, ...currentPrivateLegends };
+                        
+                        try {
+                            await userDocRef.update({ aiChatLegends: mergedLegends });
+                            // После успешной миграции очищаем localStorage
+                            localStorage.removeItem(AI_LEGENDS_STORAGE_KEY);
+                            currentPrivateLegends = mergedLegends; // Обновляем кэш
+                            console.log("Миграция легенд завершена, localStorage очищен.");
+                        } catch (error) {
+                            console.error("Ошибка миграции легенд:", error);
+                        }
+                    }
+                }
+                
+                // Перерисовываем легенду, если чат открыт
+                if (aiChatModal && !aiChatModal.classList.contains('hidden')) {
+                    renderColorLegends();
+                }
+            }
+        }, error => {
+            console.error("Ошибка слушателя легенд:", error);
+        });
+    }
 
 // =======================================================
 // ===         НОВЫЙ МОДУЛЬ ДЛЯ AI-ЧАТА (FAB)          ===
@@ -14449,13 +14444,16 @@ const mainApp = (function() {
     // === КОНЕЦ НОВЫХ ПЕРЕМЕННЫХ ===
     let allAIChats = {}; // Объект для хранения ВСЕХ чатов { chatId: [messages] }
     let currentAIChatId = null; // ID текущего активного чата
+    let currentPrivateLegends = {};
+    const AI_LEGENDS_STORAGE_KEY = 'aiColorLegends';
     let currentAIChatType = 'private'; // 'private' или 'public'
     let currentAudienceListener = null; // Слушатель для сообщений в "Аудитории"
+    let privateLegendsListener = null; 
     let aiColorLegendsWithEditor, aiColorLegendsWithList, aiColorLegendEditor, aiLegendEditorColor, aiLegendTextInput, aiLegendSaveBtn, aiLegendCancelBtn;
 
 
     const AI_CHATS_STORAGE_KEY = 'allUserAIChats'; // Ключ для localStorage
-    const AI_LEGENDS_STORAGE_KEY = 'aiColorLegends';
+
 
     let attachedFile = null; 
     let isAIResponding = false;
@@ -14950,6 +14948,7 @@ const mainApp = (function() {
      * Загружает AI-чаты.
      * Если пользователь онлайн - из Firestore (с real-time обновлениями).
      * Если оффлайн - из IndexedDB.
+     * При онлайн-загрузке создает новый чат, только если последний был использован.
      */
     function loadAIChatsFromStorage() {
         // Отписываемся от старого слушателя, если он был
@@ -14963,32 +14962,43 @@ const mainApp = (function() {
             const chatsRef = db.collection('users').doc(currentUser.uid).collection('ai_chats').orderBy('lastModified', 'desc');
             
             aiChatsListener = chatsRef.onSnapshot(snapshot => {
-                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Блокируем обновление, пока ждем ответа ИИ ===
                 if (isAIResponding) {
                     return; 
                 }
-                // =======================================================================
 
                 if (snapshot.empty) {
                     console.log("У пользователя нет чатов в Firebase, создаем новый.");
-                    startNewAIChat(false); // Создаем первый чат, если в облаке пусто
+                    startNewAIChat(false);
+                    return; // Завершаем выполнение здесь
+                }
+
+                // Сначала загружаем все чаты в память
+                snapshot.docs.forEach(doc => {
+                    allAIChats[doc.id] = doc.data().messages;
+                });
+
+                // Определяем самый последний чат (он первый в списке благодаря сортировке)
+                const mostRecentChatId = snapshot.docs[0].id;
+                const mostRecentChat = allAIChats[mostRecentChatId];
+                
+                // Проверяем, был ли последний чат использован (содержит больше 1 сообщения)
+                if (mostRecentChat && mostRecentChat.length > 1) {
+                    // Если да, создаем новый чат для новой сессии
+                    console.log("Последний чат был использован. Создается новый чат.");
+                    startNewAIChat(true); // true, чтобы сразу обновить список
                 } else {
-                    snapshot.docs.forEach(doc => {
-                        allAIChats[doc.id] = doc.data().messages;
-                    });
-                    
+                    // Если нет, просто загружаем существующие чаты,
+                    // и `switchToAIChat` выберет самый последний (пустой)
+                    console.log("Последний чат не был использован. Загружается существующий.");
                     currentAIChatId = localStorage.getItem('currentAIChatId');
-                    // Проверяем, существует ли еще текущий чат
                     if (!allAIChats[currentAIChatId]) {
-                        currentAIChatId = snapshot.docs[0].id; // Если нет, берем самый новый
+                        currentAIChatId = mostRecentChatId;
                     }
-                    
                     renderAIChatList();
                     switchToAIChat(currentAIChatId);
                 }
             }, error => {
                 console.error("Ошибка при загрузке чатов из Firestore:", error);
-                // В случае ошибки, пробуем загрузить из локального хранилища
                 loadLocalAIChats();
             });
 
@@ -15237,26 +15247,19 @@ const mainApp = (function() {
      * Открывает или закрывает правую боковую панель.
      */
     function toggleUserMessagesSidebar() {
-        console.log('[DEBUG] Вызвана функция toggleUserMessagesSidebar.');
         
         // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ---
         // Ищем элемент по классу внутри уже найденного модального окна
         const modalContent = aiChatModal?.querySelector('.ai-chat-modal-content');
 
         if (!modalContent) {
-            console.error('[DEBUG] Ошибка: Не найден элемент .ai-chat-modal-content. Панель не может быть открыта.');
             return;
         }
-        console.log('[DEBUG] Найден modalContent:', modalContent);
 
-        console.log('[DEBUG] Классы ДО переключения:', modalContent.className);
         const isOpen = modalContent.classList.toggle('user-sidebar-open');
-        console.log('[DEBUG] Классы ПОСЛЕ переключения:', modalContent.className);
-        
-        console.log(`[DEBUG] Панель теперь ${isOpen ? 'ОТКРЫТА' : 'ЗАКРЫТА'}.`);
+
 
         if (isOpen) {
-            console.log('[DEBUG] Панель открыта, вызываю renderUserMessagesList...');
             renderUserMessagesList();
         }
     }
@@ -18128,6 +18131,7 @@ const mainApp = (function() {
         handleCopyAIChat: handleCopyAIChat,
         handleShareAIChat: handleShareAIChat,
         regenerateLastAIResponse: regenerateLastAIResponse,
+        setupPrivateLegendsListener: setupPrivateLegendsListener, 
         // === НАЧАЛО НОВОГО КОДА ===
         migrateLocalChatsToFirebase: migrateLocalChatsToFirebase,
         loadAIChatsFromStorage: loadAIChatsFromStorage,
