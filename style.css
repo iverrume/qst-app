@@ -8716,7 +8716,21 @@ body.glass-dark #confirmModalYesBtn:hover {
     text-align: left;
 }
 
+/* ======================================================= */
+/* ===    АДАПТИВНОСТЬ AI-ЧАТА ДЛЯ ШИРОКИХ ЭКРАНОВ      === */
+/* ======================================================= */
 
+/* Применяем стили только на экранах шире 800px (планшеты и ПК) */
+@media (min-width: 800px) {
+    /* Ограничиваем ширину и центрируем и область сообщений, и область ввода */
+    .ai-chat-messages,
+    .ai-chat-input-area {
+        max-width: 800px; /* Максимальная ширина контента */
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%; /* Важно для правильной работы внутри max-width */
+    }
+}
 
 
 /* Шапка модального окна чата */
@@ -8742,16 +8756,67 @@ body.glass-dark #confirmModalYesBtn:hover {
     flex-shrink: 0; /* <-- ДОБАВЛЕНО: Запрещаем заголовку сжиматься */
 }
 
+
+
+
 /* ======================================================= */
-/* ===    НОВЫЙ КОД: КОМПАКТНАЯ ШАПКА ДЛЯ МОБИЛЬНЫХ    === */
+/* ===   УЛЬТРА-КОМПАКТНАЯ ШАПКА (ФИНАЛ v2)          === */
 /* ======================================================= */
+
+/* Применяем стили на экранах шириной 600px или меньше */
 @media (max-width: 600px) {
     .ai-chat-header {
-        padding: 6px 12px; 
+        /* ГЛАВНОЕ ИЗМЕНЕНИЕ: Жестко задаем высоту шапки */
+        height: 40px;
+        min-height: 40px;
+        
+        /* Убираем вертикальные отступы, так как высота фиксирована */
+        padding-top: 0;
+        padding-bottom: 0;
+        padding-left: 10px;
+        padding-right: 10px;
+        gap: 8px; 
     }
 
     .ai-chat-header h3 {
-        font-size: 1em; 
+        font-size: 1em;
+        gap: 6px;
+    }
+
+    .ai-chat-header h3 i[data-lucide] {
+        width: 20px;
+        height: 20px;
+    }
+
+    .ai-chat-header .ai-color-legend-list {
+        gap: 5px; 
+        display: flex;
+        flex-wrap: nowrap; /* Запрещаем перенос, чтобы легенда не увеличивала высоту */
+    }
+
+    /* Добавляем эффект "затухания" по краям, чтобы подсказать о возможности скролла */
+    .ai-chat-header .ai-color-legend-container {
+        -webkit-mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
+        mask-image: linear-gradient(to right, transparent, black 10px, black 90%, transparent);
+    }
+
+    .ai-chat-header .ai-color-legend-item {
+        padding: 2px 6px; 
+        font-size: 0.75em; 
+    }
+
+    .ai-chat-header .legend-color-swatch {
+        width: 12px;
+        height: 12px;
+    }
+
+    .ai-chat-header-controls .ai-chat-control-btn {
+        padding: 3px; 
+    }
+
+    .ai-chat-header-controls .ai-chat-control-btn i[data-lucide] {
+        width: 18px; 
+        height: 18px;
     }
 }
 
@@ -8836,7 +8901,7 @@ body.glass-dark #confirmModalYesBtn:hover {
     /* УБИРАЕМ max-width из общего стиля */
     padding: 8px 14px; /* Делаем отступы чуть комфортнее */
     border-radius: 18px;
-    line-height: 1.5;
+    line-height: 1.1;
     word-wrap: break-word;
     animation: messageSlideIn 0.3s ease; /* Добавляем плавное появление */
 }
@@ -8847,16 +8912,21 @@ body.glass-dark #confirmModalYesBtn:hover {
     background: var(--button-primary-bg);
     color: var(--button-primary-text);
     border-bottom-right-radius: 6px;
-    max-width: 85%; /* <-- Возвращаем ограничение ТОЛЬКО для пользователя */
+    max-width: 85%; /* <-- Ограничение ТОЛЬКО для пользователя */
+    padding: 8px 10px; /* <-- ВОТ ИЗМЕНЕНИЕ: Уменьшаем вертикальные отступы */
+    line-height: 1.1; 
 }
 
 /* Сообщение ИИ: прижимаем влево, БЕЗ ограничения ширины */
 .ai-message.model {
     align-self: flex-start;
-    background: var(--input-bg-color);
+    background: transparent; /* Убираем фон */
     color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-bottom-left-radius: 6px;
+    border: none; /* Убираем рамку */
+    border-radius: 0; /* Убираем скругление углов */
+    box-shadow: none; /* Убираем тень */
+    padding-left: 0; /* Убираем отступ слева */
+    padding-right: 0; /* Убираем отступ справа */
     /* max-width здесь не указываем, оно будет занимать доступное место */
 }
 
@@ -8866,6 +8936,46 @@ body.glass-dark #confirmModalYesBtn:hover {
 .ai-message.model ul, .ai-message.model ol { padding-left: 20px; }
 
 
+/* ======================================================= */
+/* ===      КОМПАКТНЫЕ ЗАГОЛОВКИ В ОТВЕТАХ AI (v1.0)    === */
+/* ======================================================= */
+
+.ai-message.model h1,
+.ai-message.model h2,
+.ai-message.model h3,
+.ai-message.model h4,
+.ai-message.model h5,
+.ai-message.model h6 {
+    color: var(--heading-color); /* Используем цвет заголовков из темы */
+    line-height: 1.3;
+}
+
+.ai-message.model h1 {
+    font-size: 1.4em; /* Уменьшаем главный заголовок */
+    margin-top: 0;
+    margin-bottom: 0.8em;
+}
+
+.ai-message.model h2 {
+    font-size: 1.25em; /* Уменьшаем подзаголовок */
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+}
+
+.ai-message.model h3 {
+    font-size: 1.1em; /* Делаем его чуть больше основного текста и жирным */
+    font-weight: 600;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+.ai-message.model h4 {
+    font-size: 1em; /* Такой же, как основной текст, но жирный */
+    font-weight: 600;
+    color: var(--secondary-text-color); /* Делаем его менее акцентным */
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+}
 
 
 /* --- Индикатор загрузки "Печатает..." --- */
@@ -10179,22 +10289,18 @@ body.claude-mode .ai-chat-history-item.active {
 /* ===         СТИЛИ ДЛЯ МАРКЕРА ПОИСКА В AI-ЧАТЕ       === */
 /* ======================================================= */
 
-/* 1. Делаем контейнер сообщения точкой отсчета для иконки */
-.ai-message.model {
-    position: relative;
-    /* Добавляем отступ справа, чтобы текст не заезжал под иконку */
-    padding-right: 35px; 
-}
 
-/* 2. Стили для самой иконки */
+
+
+/* 2. Стили для самой иконки (теперь в потоке текста) */
 .ai-grounded-icon {
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    width: 16px;
-    height: 16px;
-    opacity: 0.6;
-    cursor: help; /* Показываем знак вопроса при наведении */
+    display: inline-block; /* Становится частью текста */
+    width: 14px; /* Немного уменьшаем для гармонии */
+    height: 14px;
+    margin-left: 8px; /* Отступ от последнего слова */
+    opacity: 0.7;
+    cursor: pointer; 
+    vertical-align: super; /* Размещаем чуть выше, как знак сноски */
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
@@ -11191,4 +11297,52 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
 
 .ai-message-image:hover {
     transform: scale(1.05);
+}
+
+/* ======================================================= */
+/* ===    СТИЛИ ДЛЯ КАСТОМНОЙ ПОДСКАЗКИ ИКОНКИ GOOGLE   === */
+/* ======================================================= */
+
+.grounded-icon-tooltip {
+    position: fixed; /* Позиционирование относительно окна */
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    z-index: 10005; /* Поверх всего */
+    font-size: 0.9em;
+    line-height: 1.4;
+    
+    /* Анимация появления */
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none; /* Чтобы не мешала другим действиям */
+}
+
+.grounded-icon-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Треугольник-указатель снизу */
+.grounded-icon-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--container-bg-color) transparent transparent transparent;
+}
+
+/* Стиль для треугольника, когда подсказка снизу (смотрит вверх) */
+.grounded-icon-tooltip.tooltip-below::after {
+    top: -10px; /* Размещаем над подсказкой */
+    bottom: auto; /* Отменяем позиционирование снизу */
+    /* Переворачиваем треугольник */
+    border-color: transparent transparent var(--container-bg-color) transparent;
 }

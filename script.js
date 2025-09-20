@@ -14813,12 +14813,21 @@ const mainApp = (function() {
             }
         });
 
-        // --- НАЙДИТЕ ЭТОТ БЛОК И ЗАМЕНИТЕ ЕГО ЦЕЛИКОМ ---
         aiChatMessages?.addEventListener('click', (e) => {
             const targetButton = e.target.closest('.ai-action-btn');
             const targetAttachment = e.target.closest('.ai-message-attachment');
             const targetReply = e.target.closest('.ai-reply-context');
-            const targetImage = e.target.closest('.ai-message-image'); // Убедитесь, что эта строка есть
+            const targetImage = e.target.closest('.ai-message-image');
+            const groundedIcon = e.target.closest('.ai-grounded-icon'); // <-- ВОТ ИСПРАВЛЕНИЕ
+
+            // --- НОВЫЙ БЛОК ДЛЯ ОБРАБОТКИ КЛИКА ПО ИКОНКЕ ---
+            if (groundedIcon) {
+                e.preventDefault();
+                e.stopPropagation();
+                showGroundedIconTooltip(groundedIcon);
+                return; // Завершаем обработку, чтобы не сработали другие клики
+            }
+            // --- КОНЕЦ НОВОГО БЛОКА ---
 
             if (targetButton) {
                 const action = targetButton.dataset.action;
@@ -14835,7 +14844,6 @@ const mainApp = (function() {
             } else if (targetAttachment) {
                 e.preventDefault();
                 const index = parseInt(targetAttachment.dataset.index, 10);
-                // --- ИЗМЕНЕНИЕ: Используем новую функцию для определения источника сообщения ---
                 const message = getAIChatMessageByIndex(index);
                 if (message?.attachment) {
                     openAIAttachment(message.attachment);
@@ -14843,7 +14851,7 @@ const mainApp = (function() {
             } else if (targetReply) {
                 const index = parseInt(targetReply.dataset.index, 10);
                 scrollToAIMessage(index);
-            } else if (targetImage) { // <-- ВОТ ИСПРАВЛЕНИЕ
+            } else if (targetImage) {
                 e.preventDefault();
                 showImageInModal(targetImage.src);
             }
@@ -14873,6 +14881,67 @@ const mainApp = (function() {
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
         loadAIChatsFromStorage();
+    }
+
+    // =================================================================================
+    // ===      НОВЫЕ ФУНКЦИИ ДЛЯ КАСТОМНОЙ ПОДСКАЗКИ (v1.0)                        ===
+    // =================================================================================
+
+    let activeGroundedTooltip = null; // Глобальная переменная для отслеживания активной подсказки
+
+    /**
+     * Показывает кастомную подсказку над иконкой Google.
+     * @param {HTMLElement} iconElement - Элемент иконки, по которой кликнули.
+     */
+    function showGroundedIconTooltip(iconElement) {
+        // Если уже есть активная подсказка, удаляем ее
+        if (activeGroundedTooltip) {
+            activeGroundedTooltip.remove();
+            activeGroundedTooltip = null;
+        }
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'grounded-icon-tooltip';
+        tooltip.textContent = 'Ответ сгенерирован с использованием Поиска Google';
+        
+        document.body.appendChild(tooltip);
+        
+        // Расчет позиции
+        const iconRect = iconElement.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+
+        let top = iconRect.top - tooltipRect.height - 8; // 8px отступ
+        let left = iconRect.left + (iconRect.width / 2) - (tooltipRect.width / 2);
+
+        // Коррекция, если вылезает за края
+        if (left < 10) left = 10;
+        if (left + tooltipRect.width > window.innerWidth - 10) {
+            left = window.innerWidth - tooltipRect.width - 10;
+        }
+        if (top < 10) { // Если не помещается сверху, показываем снизу
+            top = iconRect.bottom + 8;
+            tooltip.classList.add('tooltip-below'); // Добавляем класс, чтобы перевернуть стрелку
+        }
+
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+        
+        // Показываем с анимацией
+        setTimeout(() => tooltip.classList.add('visible'), 10);
+        activeGroundedTooltip = tooltip;
+
+        // Добавляем слушатель для закрытия при клике в любом другом месте
+        setTimeout(() => {
+            const hideTooltipOnClickOutside = (event) => {
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+                if (activeGroundedTooltip && !activeGroundedTooltip.contains(event.target) && event.target !== iconElement) {
+                    activeGroundedTooltip.remove();
+                    activeGroundedTooltip = null;
+                    window.removeEventListener('click', hideTooltipOnClickOutside, true);
+                }
+            };
+            window.addEventListener('click', hideTooltipOnClickOutside, true);
+        }, 0);
     }
 
     /**
@@ -15737,8 +15806,10 @@ const mainApp = (function() {
 
 
 
+
     /**
-     * Отображает сообщения в AI-чате. ВЕРСИЯ С АКТИВИРОВАННЫМ КЛИЕНТСКИМ ПОИСКОМ.
+     * Отображает сообщения в AI-чате. Автоматически определяет, какой чат активен
+     * (приватный или публичный) и использует правильный источник данных.
      */
     function renderAIChatMessages() {
         // Определяем правильный источник данных для сообщений
@@ -15784,14 +15855,6 @@ const mainApp = (function() {
             const messageEl = document.createElement('div');
             messageEl.classList.add('ai-message', msg.role);
             
-            if (msg.role === 'model' && msg.grounded) {
-                const groundedIcon = document.createElement('div');
-                groundedIcon.className = 'ai-grounded-icon';
-                groundedIcon.title = 'Ответ сгенерирован с использованием Поиска Google';
-                groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
-                messageEl.appendChild(groundedIcon);
-            }
-
             const contentWrapper = document.createElement('div');
             if (msg.content === 'typing...') {
                 contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
@@ -15804,6 +15867,17 @@ const mainApp = (function() {
                 } else {
                     contentWrapper.innerHTML = baseHtml;
                 }
+
+                // === ВОТ ИЗМЕНЕНИЕ: Добавляем иконку в конец, если нужно ===
+                if (msg.role === 'model' && msg.grounded) {
+                    const groundedIconHTML = `
+                        <div class="ai-grounded-icon" title="Ответ сгенерирован с использованием Поиска Google">
+                            <svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>
+                        </div>
+                    `;
+                    contentWrapper.innerHTML += groundedIconHTML;
+                }
+                // =========================================================
             }
             messageEl.appendChild(contentWrapper);
 
@@ -15826,7 +15900,8 @@ const mainApp = (function() {
                 `;
                 messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
             }
-            
+
+
             messageContainer.appendChild(messageEl);
 
             const isLastMessage = index === currentChat.length - 1;
@@ -15863,25 +15938,7 @@ const mainApp = (function() {
             
             aiChatMessages.appendChild(messageContainer);
 
-            // ====================================================================
-            // ===           ВОТ ОН, НАШ ФИНАЛЬНЫЙ ИСПРАВЛЕННЫЙ "КРЮЧОК"         ===
-            // ====================================================================
-            if (msg.role === 'model' && isLastMessage && msg.content !== 'typing...') {
-                console.log('[Триггер Поиска] Проверка последнего сообщения...');
-                const lastUserQuery = findLastUserQuery(currentChat);
-                if (lastUserQuery) {
-                    console.log(`[Триггер Поиска] ✅ Условие выполнено. Найден запрос пользователя: "${lastUserQuery}". Запускаю клиентский поиск...`);
-                    // Убедимся, что функция clientSideImageSearch существует, прежде чем вызывать ее.
-                    if (typeof clientSideImageSearch === 'function') {
-                        clientSideImageSearch(lastUserQuery, messageContainer);
-                    } else {
-                        console.error('[Триггер Поиска] 💥 Критическая ошибка: функция clientSideImageSearch не найдена!');
-                    }
-                } else {
-                    console.warn('[Триггер Поиска] ❌ Сбой: Не удалось найти последний запрос пользователя в истории. Поиск не запущен.');
-                }
-            }
-            // ====================================================================
+
         });
 
         if (window.lucide) {
@@ -15894,8 +15951,12 @@ const mainApp = (function() {
             if (lastMessage) {
                 lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        } else {
+            console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
         }
     }
+
+
 
 
     /**
@@ -17128,7 +17189,6 @@ const mainApp = (function() {
             if (msg.role === 'model' && msg.grounded) {
                 const groundedIcon = document.createElement('div');
                 groundedIcon.className = 'ai-grounded-icon';
-                groundedIcon.title = 'Ответ сгенерирован с использованием Поиска Google';
                 groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
                 messageEl.appendChild(groundedIcon);
             }
@@ -17374,7 +17434,6 @@ const mainApp = (function() {
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     grounded: result.wasGrounded,
                     groundingMetadata: result.groundingMetadata,
-                    imageUrls: result.imageUrls || null // <-- ДОБАВЛЕНО
                 };
             } else {
                  finalMessage = {
@@ -17442,7 +17501,6 @@ const mainApp = (function() {
                     content: result.reply,
                     grounded: result.wasGrounded,
                     groundingMetadata: result.groundingMetadata,
-                    imageUrls: null // Сервер больше не ищет картинки
                 };
             } else {
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
@@ -17464,31 +17522,6 @@ const mainApp = (function() {
             
             // СНАЧАЛА отрисовываем текстовый ответ
             renderAIChatMessages();
-
-            // ====================================================================
-            // ===           ВОТ ОН, НАШ НОВЫЙ ПРЯМОЙ ПРИКАЗ К ПОИСКУ           ===
-            // ====================================================================
-            // После того как текстовый ответ ИИ гарантированно отрисован,
-            // мы запускаем поиск изображений.
-            console.log('[Прямой Приказ] Ответ от ИИ получен и отрисован. Запускаю поиск изображений...');
-            
-            // Находим последний запрос пользователя, который привел к этому ответу
-            const lastUserQuery = findLastUserQuery(currentChat);
-            
-            // Находим DOM-элемент только что отрисованного сообщения ИИ
-            const messageContainer = getEl(`ai-message-container-${aiResponseIndex}`);
-
-            if (lastUserQuery && messageContainer) {
-                 if (typeof clientSideImageSearch === 'function') {
-                    // Даем команду на поиск, передавая запрос и место для вставки картинок
-                    clientSideImageSearch(lastUserQuery, messageContainer);
-                 } else {
-                    console.error('[Прямой Приказ] 💥 Критическая ошибка: функция clientSideImageSearch не найдена!');
-                 }
-            } else {
-                console.warn(`[Прямой Приказ] ❌ Поиск не запущен. Запрос пользователя: ${!!lastUserQuery}, Контейнер сообщения: ${!!messageContainer}`);
-            }
-            // ====================================================================
         }
     }
 
@@ -17868,168 +17901,6 @@ const mainApp = (function() {
             downloadOrShareFile('test.txt', 'Тестовое содержимое файла', 'text/plain', 'Тест');
         }         
     };
-
-// =================================================================================
-// ===      НОВЫЙ КЛИЕНТСКИЙ МОДУЛЬ ПОИСКА ИЗОБРАЖЕНИЙ (v1.0)                   ===
-// ===      Вставьте эти функции внутрь модуля mainApp, перед `})();`        ===
-// =================================================================================
-
-
-// =================================================================================
-// ===      КЛИЕНТСКИЙ МОДУЛЬ ПОИСКА С ДЕТАЛЬНЫМ ЛОГИРОВАНИЕМ (v1.1)            ===
-// =================================================================================
-
-    /**
-     * ГЛАВНАЯ КЛИЕНТСКАЯ ФУНКЦИЯ-ОРКЕСТРАТОР.
-     */
-    async function clientSideImageSearch(query, messageElement) {
-        if (!query || !messageElement) {
-            console.error('[Оркестратор] ❌ Сбой: Вызван без запроса или элемента для вставки.');
-            return;
-        }
-        console.log(`[Оркестратор] 🚀 Старт поиска для: "${query}"`);
-
-        const promises = [
-            searchWikimedia(query),
-            searchLOC(query),
-            searchFlickrFeedJSONP(query)
-        ];
-
-        try {
-            const arraysOfUrls = await Promise.all(promises);
-            console.log('[Оркестратор] 📦 Получены сырые результаты от всех источников:', arraysOfUrls);
-            
-            const allUrls = [].concat(...arraysOfUrls).filter(Boolean);
-            const uniqueUrls = Array.from(new Set(allUrls));
-
-            if (uniqueUrls.length > 0) {
-                console.log(`[Оркестратор] ✅ Успех! Найдено ${uniqueUrls.length} уникальных изображений. Передаю в рендерер.`);
-                renderImageGalleryInMessage(uniqueUrls.slice(0, 4), messageElement);
-            } else {
-                console.warn('[Оркестратор] ❌ Провал: Ни один из источников не вернул изображений.');
-            }
-        } catch (error) {
-            console.error('[Оркестратор] 💥 Критическая ошибка во время выполнения Promise.all:', error);
-        }
-    }
-
-    /**
-     * Отображает галерею изображений.
-     */
-    function renderImageGalleryInMessage(imageUrls, messageElement) {
-        if (!imageUrls || imageUrls.length === 0 || !messageElement) {
-            console.error('[Рендерер] ❌ Сбой: Вызван без URL или элемента для вставки.');
-            return;
-        }
-        console.log(`[Рендерер] 🎨 Начинаю отрисовку ${imageUrls.length} изображений.`);
-
-        let galleryHTML = '<div class="ai-message-image-gallery">';
-        imageUrls.forEach(url => {
-            galleryHTML += `<div class="ai-gallery-item"><img src="${url}" alt="Иллюстрация к ответу" class="ai-message-image"></div>`;
-        });
-        galleryHTML += '</div>';
-
-        const contentWrapper = messageElement.querySelector('.ai-message.model');
-        if (contentWrapper) {
-            contentWrapper.insertAdjacentHTML('beforeend', galleryHTML);
-            console.log(`[Рендерер] ✅ Галерея успешно вставлена в сообщение.`);
-        } else {
-            console.error('[Рендерер] ❌ Сбой: Не найден контейнер .ai-message.model для вставки галереи.');
-        }
-    }
-
-    /**
-     * Находит последний запрос пользователя в истории чата. (без изменений)
-     */
-    function findLastUserQuery(chatHistory) {
-        for (let i = chatHistory.length - 1; i >= 0; i--) {
-            if (chatHistory[i].role === 'user' && chatHistory[i].content) {
-                return chatHistory[i].content;
-            }
-        }
-        return null;
-    }
-
-    // --- Функции-поисковики с логированием ---
-
-    async function searchWikimedia(q) {
-        console.log(`[Wikimedia] 🔍 Ищу "${q}"...`);
-        try {
-            const url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&generator=search&gsrsearch=' + encodeURIComponent(q) + '&gsrlimit=10&iiprop=url';
-            const r = await fetch(url);
-            if (!r.ok) {
-                console.warn(`[Wikimedia] ❌ Сервер вернул статус ${r.status}`);
-                return [];
-            }
-            const js = await r.json();
-            const out = [];
-            if (js.query && js.query.pages) {
-                Object.values(js.query.pages).forEach(p => {
-                    if (p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) out.push(p.imageinfo[0].url);
-                });
-            }
-            console.log(`[Wikimedia] ✅ Найдено: ${out.length} изображений.`);
-            return out;
-        } catch (e) { console.error("[Wikimedia] 💥 Критическая ошибка:", e); return []; }
-    }
-
-    async function searchLOC(q) {
-        console.log(`[LOC] 🔍 Ищу "${q}"...`);
-        try {
-            const url = 'https://www.loc.gov/pictures/search/?fo=json&q=' + encodeURIComponent(q);
-            const r = await fetch(url);
-            if (!r.ok) {
-                console.warn(`[LOC] ❌ Сервер вернул статус ${r.status}`);
-                return [];
-            }
-            const js = await r.json();
-            const out = [];
-            (js.results || []).forEach(item => {
-                if (item.image && item.image.full) out.push(item.image.full);
-            });
-            console.log(`[LOC] ✅ Найдено: ${out.length} изображений.`);
-            return out;
-        } catch (e) { console.error("[LOC] 💥 Критическая ошибка:", e); return []; }
-    }
-
-    function searchFlickrFeedJSONP(q) {
-        console.log(`[Flickr] 🔍 Ищу "${q}"...`);
-        return new Promise((resolve) => {
-            const callbackName = 'flickr_cb_' + Date.now();
-            window[callbackName] = function(data) {
-                try {
-                    const out = (data.items || []).map(it => it.media && it.media.m).filter(Boolean);
-                    console.log(`[Flickr] ✅ Найдено: ${out.length} изображений.`);
-                    resolve(out);
-                } catch (e) { console.error("[Flickr] 💥 Критическая ошибка (в callback):", e); resolve([]); } finally {
-                    delete window[callbackName];
-                    script.remove();
-                }
-            };
-            const script = document.createElement('script');
-            script.src = 'https://api.flickr.com/services/feeds/photos_public.gne?format=json&jsoncallback=' + callbackName + '&tags=' + encodeURIComponent(q);
-            script.onerror = () => { console.warn("[Flickr] ❌ Не удалось загрузить скрипт."); resolve([]); delete window[callbackName]; script.remove(); };
-            document.body.appendChild(script);
-        });
-    }
-
-
-
-
-
-    async function searchLOC(q) {
-        try {
-            const url = 'https://www.loc.gov/pictures/search/?fo=json&q=' + encodeURIComponent(q);
-            const r = await fetch(url);
-            if (!r.ok) return [];
-            const js = await r.json();
-            const out = [];
-            (js.results || []).forEach(item => {
-                if (item.image && item.image.full) out.push(item.image.full);
-            });
-            return out;
-        } catch (e) { console.error("LOC Error:", e); return []; }
-    }
 
 
 
