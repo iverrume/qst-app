@@ -11453,7 +11453,7 @@ const mainApp = (function() {
             }
         }
     }
-    
+
     async function hashPassword(password) {
         if (!password) return null;
         const encoder = new TextEncoder();
@@ -14472,6 +14472,7 @@ const mainApp = (function() {
     let isAIResponding = false;
     let isAIChatExpanded = false;
     let aiReplyContext = null; // Для хранения контекста ответа
+    let unlockedAudiences = new Set();
 
     let currentPublicChatMessages = []; // Хранит сообщения текущей открытой Аудитории
     let aiReplyPanel, aiReplyText, aiCancelReplyBtn; // Для элементов UI
@@ -15698,6 +15699,10 @@ const mainApp = (function() {
             if (audience.id === currentAudienceId && currentAIChatType === 'public') {
                 li.classList.add('active');
             }
+            
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем иконку пароля ---
+            const lockIcon = audience.hasPassword ? '<i data-lucide="lock" style="width: 12px; height: 12px; opacity: 0.7; margin-right: 6px;"></i>' : '';
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             const isOwner = currentUser && currentUser.uid === audience.ownerId;
             const settingsBtnHtml = isOwner
@@ -15707,20 +15712,23 @@ const mainApp = (function() {
             const deleteBtnHtml = isOwner 
                 ? `<button class="ai-chat-history-delete" title="Удалить аудиторию"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
                 : '';
-
+            
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Вставляем иконку пароля в название ---
             li.innerHTML = `
-                <span class="ai-chat-history-title">${escapeHTML(audience.title)}</span>
+                <span class="ai-chat-history-title">${lockIcon}${escapeHTML(audience.title)}</span>
                 <div class="ai-chat-history-actions">
                     ${settingsBtnHtml}
                     ${deleteBtnHtml}
                 </div>
             `;
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
             listEl.appendChild(li);
         
             // Делегирование событий для кликов
             li.addEventListener('click', (e) => {
                 const audienceId = li.dataset.chatId;
+                
                 // Клик по кнопке настроек
                 if (e.target.closest('.audience-settings-btn')) {
                     showAudienceEditModal(audienceId);
@@ -15732,14 +15740,13 @@ const mainApp = (function() {
                     deleteAudience(audienceId, ownerId);
                     return;
                 }
-                // Клик по самому элементу (открытие папки)
-                const audienceTitle = li.querySelector('.ai-chat-history-title')?.textContent || 'Аудитория';
-                openAudienceFolder(audienceId, audienceTitle);
+                
+                // --- ИСПРАВЛЕНИЕ: Вызываем новую функцию с проверкой пароля ---
+                handleAudienceClick(audience);
             });
         });
         if (window.lucide) lucide.createIcons();
     }
-
 
 
 
@@ -15965,59 +15972,98 @@ const mainApp = (function() {
         }
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Обрабатывает клик по Аудитории, проверяя пароль.
+     */
+    async function handleAudienceClick(audience) {
+        if (!audience) return;
 
-/**
- * НОВАЯ ФУНКЦИЯ: Показывает модальное окно для редактирования Аудитории.
- */
-async function showAudienceEditModal(audienceId) {
-    const modal = getEl('audienceEditModal');
-    const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
-    if (!modal || !audienceData) return;
+        // Если у аудитории есть пароль
+        if (audience.hasPassword) {
+            const isOwner = currentUser && currentUser.uid === audience.ownerId;
+            const isModerator = audience.moderators && audience.moderators.includes(currentUser.uid);
 
-    // Заполняем поля
-    getEl('audienceEditModalTitle').textContent = `Настройки: ${audienceData.title}`;
-    getEl('audienceNameEditInput').value = audienceData.title;
-    getEl('audiencePasswordEditInput').value = ''; // Пароль всегда пуст для безопасности
-    getEl('moderatorEmailInput').value = '';
+            // Владелец и модераторы заходят без пароля
+            if (isOwner || isModerator) {
+                openAudienceFolder(audience.id, audience.title);
+                return;
+            }
 
-    // Загружаем и отображаем список модераторов
-    const moderatorsListEl = getEl('moderatorsList');
-    moderatorsListEl.innerHTML = '<li>Загрузка...</li>';
-    
-    const moderators = audienceData.moderators || [];
-    if (moderators.length > 0) {
-        const moderatorPromises = moderators.map(uid => db.collection('users').doc(uid).get());
-        const moderatorDocs = await Promise.all(moderatorPromises);
-        
-        moderatorsListEl.innerHTML = moderatorDocs.map(doc => {
-            if (!doc.exists) return '';
-            const user = doc.data();
-            return `
-                <li class="moderator-item" data-uid="${user.uid}">
-                    <span class="moderator-name">${escapeHTML(user.username)}</span>
-                    <button class="remove-moderator-btn" title="Удалить модератора"><i data-lucide="x"></i></button>
-                </li>
-            `;
-        }).join('');
-    } else {
-        moderatorsListEl.innerHTML = '<li>Модераторы не назначены.</li>';
+            // Если пользователь уже вводил пароль в этой сессии
+            if (unlockedAudiences.has(audience.id)) {
+                openAudienceFolder(audience.id, audience.title);
+                return;
+            }
+
+            // Запрашиваем пароль
+            const password = await promptForPassword(audience.title);
+            if (password === null) return; // Пользователь нажал "Отмена"
+
+            const enteredPasswordHash = await hashPassword(password);
+            if (enteredPasswordHash === audience.passwordHash) {
+                unlockedAudiences.add(audience.id); // "Разблокируем" на время сессии
+                openAudienceFolder(audience.id, audience.title);
+            } else {
+                showToast("Неверный пароль.", "error");
+            }
+        } else {
+            // Если пароля нет, заходим свободно
+            openAudienceFolder(audience.id, audience.title);
+        }
     }
     
-    // Привязываем обработчики
-    getEl('saveAudienceSettingsBtn').onclick = () => saveAudienceSettings(audienceId);
-    getEl('cancelAudienceEditBtn').onclick = () => ChatModule.closeModal('audienceEditModal');
-    getEl('addModeratorBtn').onclick = () => addModeratorToAudience(audienceId);
-    moderatorsListEl.onclick = (e) => {
-        const removeBtn = e.target.closest('.remove-moderator-btn');
-        if (removeBtn) {
-            const uid = removeBtn.closest('.moderator-item').dataset.uid;
-            removeModeratorFromAudience(audienceId, uid);
-        }
-    };
+    /**
+     * НОВАЯ ФУНКЦИЯ: Показывает модальное окно для редактирования Аудитории.
+     */
+    async function showAudienceEditModal(audienceId) {
+        const modal = getEl('audienceEditModal');
+        const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
+        if (!modal || !audienceData) return;
 
-    ChatModule.showModal('audienceEditModal');
-    if(window.lucide) lucide.createIcons();
-}
+        // Заполняем поля
+        getEl('audienceEditModalTitle').textContent = `Настройки: ${audienceData.title}`;
+        getEl('audienceNameEditInput').value = audienceData.title;
+        getEl('audiencePasswordEditInput').value = ''; // Пароль всегда пуст для безопасности
+        getEl('moderatorEmailInput').value = '';
+
+        // Загружаем и отображаем список модераторов
+        const moderatorsListEl = getEl('moderatorsList');
+        moderatorsListEl.innerHTML = '<li>Загрузка...</li>';
+        
+        const moderators = audienceData.moderators || [];
+        if (moderators.length > 0) {
+            const moderatorPromises = moderators.map(uid => db.collection('users').doc(uid).get());
+            const moderatorDocs = await Promise.all(moderatorPromises);
+            
+            moderatorsListEl.innerHTML = moderatorDocs.map(doc => {
+                if (!doc.exists) return '';
+                const user = doc.data();
+                return `
+                    <li class="moderator-item" data-uid="${user.uid}">
+                        <span class="moderator-name">${escapeHTML(user.username)}</span>
+                        <button class="remove-moderator-btn" title="Удалить модератора"><i data-lucide="x"></i></button>
+                    </li>
+                `;
+            }).join('');
+        } else {
+            moderatorsListEl.innerHTML = '<li>Модераторы не назначены.</li>';
+        }
+        
+        // Привязываем обработчики
+        getEl('saveAudienceSettingsBtn').onclick = () => saveAudienceSettings(audienceId);
+        getEl('cancelAudienceEditBtn').onclick = () => ChatModule.closeModal('audienceEditModal');
+        getEl('addModeratorBtn').onclick = () => addModeratorToAudience(audienceId);
+        moderatorsListEl.onclick = (e) => {
+            const removeBtn = e.target.closest('.remove-moderator-btn');
+            if (removeBtn) {
+                const uid = removeBtn.closest('.moderator-item').dataset.uid;
+                removeModeratorFromAudience(audienceId, uid);
+            }
+        };
+
+        ChatModule.showModal('audienceEditModal');
+        if(window.lucide) lucide.createIcons();
+    }
 
     /**
      * НОВАЯ ФУНКЦИЯ: Сохраняет изменения названия и пароля Аудитории.
