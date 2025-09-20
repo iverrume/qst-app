@@ -1833,22 +1833,6 @@ const ChatModule = (function() {
             channelSearchInput.addEventListener('input', debouncedChannelSearch);
 
         }
-
-        // --- ДОБАВЛЕННЫЙ КОД ---
-
-        // Делегирование событий для кнопок редактирования сообщений
-        messageArea.addEventListener('click', function(event) {
-            // Проверяем, была ли нажата именно кнопка с классом 'edit-message-btn'
-            const editButton = event.target.closest('.edit-message-btn');
-            
-            if (editButton) {
-                const messageId = editButton.dataset.messageId;
-                const messageText = editButton.dataset.rawText; // Получаем текст из нашего безопасного свойства
-                
-                // Вызываем функцию редактирования с полученными данными
-                ChatModule.startEditMessage(messageId, messageText);
-            }
-        });
         
         console.log('Event listeners настроены');
     } 
@@ -5887,27 +5871,6 @@ const DBManager = (function() {
 
 
 const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91gDiuj4Ha-gTLesCMI8gSqMC3D0GYbGZ0YHIsP2mvu5ePmiftA03GLso/exec';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -14879,14 +14842,8 @@ const mainApp = (function() {
             });
         });
 
-
-
-
-
-
         initCustomScrollbar();
         initScrollbarInteraction();
-
         setupCustomSelect('aiModelSelectContainer');
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
@@ -14910,6 +14867,13 @@ const mainApp = (function() {
             const chatsRef = db.collection('users').doc(currentUser.uid).collection('ai_chats').orderBy('lastModified', 'desc');
             
             aiChatsListener = chatsRef.onSnapshot(snapshot => {
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Блокируем обновление, пока ждем ответа ИИ ===
+                if (isAIResponding) {
+                    console.log('[AI LOG] onSnapshot проигнорирован, т.к. isAIResponding = true.');
+                    return; 
+                }
+                // =======================================================================
+
                 if (snapshot.empty) {
                     console.log("У пользователя нет чатов в Firebase, создаем новый.");
                     startNewAIChat(false); // Создаем первый чат, если в облаке пусто
@@ -15971,155 +15935,6 @@ const mainApp = (function() {
 
 
 
-
-    /**
-     * Отображает сообщения в AI-чате. Автоматически определяет, какой чат активен
-     * (приватный или публичный) и использует правильный источник данных.
-     */
-    function renderAIChatMessages() {
-        // Определяем правильный источник данных для сообщений
-        let currentChat;
-        if (currentAIChatType === 'public') {
-            currentChat = currentPublicChatMessages;
-        } else {
-            currentChat = allAIChats[currentAIChatId];
-        }
-
-        if (!aiChatMessages || !currentChat) {
-            if (aiChatMessages) aiChatMessages.innerHTML = '';
-            return;
-        }
-
-        const scrollThreshold = 100;
-        const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
-
-        aiChatMessages.innerHTML = '';
-
-        const userCanDelete = canDeleteAIMessage();
-
-        currentChat.forEach((msg, index) => {
-            const messageContainer = document.createElement('div');
-            messageContainer.className = `ai-message-container is-${msg.role}`;
-            messageContainer.id = `ai-message-container-${index}`; 
-            
-            const replyContextContainer = document.createElement('div');
-            replyContextContainer.className = 'ai-reply-context-container';
-            if (msg.replyTo) {
-                const replyEl = document.createElement('div');
-                replyEl.className = 'ai-reply-context';
-                replyEl.dataset.action = 'scroll-to-ai';
-                replyEl.dataset.index = msg.replyTo.messageIndex;
-                replyEl.innerHTML = `
-                    <div class="ai-reply-author">${escapeHTML(msg.replyTo.authorName || '')}</div>
-                    <div class="ai-reply-text">${escapeHTML(msg.replyTo.textSnippet || '')}</div>
-                `;
-                replyContextContainer.appendChild(replyEl);
-            }
-            messageContainer.appendChild(replyContextContainer);
-
-            const messageEl = document.createElement('div');
-            messageEl.classList.add('ai-message', msg.role);
-            
-            const contentWrapper = document.createElement('div');
-            if (msg.content === 'typing...') {
-                contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
-            } else {
-                let contentToRender = msg.content || '';
-                let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
-
-                if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
-                    contentWrapper.innerHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
-                } else {
-                    contentWrapper.innerHTML = baseHtml;
-                }
-
-                // === ВОТ ИЗМЕНЕНИЕ: Добавляем иконку в конец, если нужно ===
-                if (msg.role === 'model' && msg.grounded) {
-                    const groundedIconHTML = `
-                        <div class="ai-grounded-icon" title="Ответ сгенерирован с использованием Поиска Google">
-                            <svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>
-                        </div>
-                    `;
-                    contentWrapper.innerHTML += groundedIconHTML;
-                }
-                // =========================================================
-            }
-            messageEl.appendChild(contentWrapper);
-
-            if (msg.attachment) {
-                const { name, mimeType, thumbnailDataUrl } = msg.attachment;
-                const type = mimeType.split('/')[0] || 'файл';
-                
-                const previewImage = thumbnailDataUrl 
-                    ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
-                    : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
-
-                const attachmentHTML = `
-                    <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
-                        ${previewImage}
-                        <div class="ai-attachment-file-info">
-                            <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
-                            <div class="ai-attachment-file-type">${type}</div>
-                        </div>
-                    </a>
-                `;
-                messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
-            }
-
-
-            messageContainer.appendChild(messageEl);
-
-            const isLastMessage = index === currentChat.length - 1;
-            const deleteButtonHTML = userCanDelete 
-                ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
-                : '';
-
-            if (msg.role === 'model' && msg.content !== 'typing...') {
-                const actionsContainer = document.createElement('div');
-                actionsContainer.className = 'ai-message-actions';
-                const regenerateButtonHTML = (isLastMessage && userCanDelete)
-                    ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>`
-                    : '';
-                
-                actionsContainer.innerHTML = `
-                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
-                    <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
-                    <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
-                    ${deleteButtonHTML}
-                    ${regenerateButtonHTML}
-                `;
-                messageContainer.appendChild(actionsContainer);
-            } else if (msg.role === 'user') {
-                const actionsContainer = document.createElement('div');
-                actionsContainer.className = 'ai-user-message-actions';
-                actionsContainer.innerHTML = `
-                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
-                    <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
-                    <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
-                    ${deleteButtonHTML}
-                `;
-                messageContainer.appendChild(actionsContainer);
-            }
-            
-            aiChatMessages.appendChild(messageContainer);
-
-
-        });
-
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-        drawOrUpdateScrollbar();
-
-        if (isScrolledToBottom) {
-            const lastMessage = aiChatMessages.lastElementChild;
-            if (lastMessage) {
-                lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        } else {
-            console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
-        }
-    }
 
 
 
@@ -17310,222 +17125,253 @@ const mainApp = (function() {
      * (приватный или публичный) и использует правильный источник данных.
      */
     function renderAIChatMessages() {
-        // Определяем правильный источник данных для сообщений
-        let currentChat;
-        if (currentAIChatType === 'public') {
-            currentChat = currentPublicChatMessages;
-        } else {
-            currentChat = allAIChats[currentAIChatId];
-        }
-
-        if (!aiChatMessages || !currentChat) {
-            if (aiChatMessages) aiChatMessages.innerHTML = '';
-            return;
-        }
-
-        const scrollThreshold = 100;
-        const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
-
-        aiChatMessages.innerHTML = '';
-
-        const userCanDelete = canDeleteAIMessage();
-
-        currentChat.forEach((msg, index) => {
-            const messageContainer = document.createElement('div');
-            messageContainer.className = `ai-message-container is-${msg.role}`;
-            messageContainer.id = `ai-message-container-${index}`; 
-            
-            const replyContextContainer = document.createElement('div');
-            replyContextContainer.className = 'ai-reply-context-container';
-            if (msg.replyTo) {
-                const replyEl = document.createElement('div');
-                replyEl.className = 'ai-reply-context';
-                replyEl.dataset.action = 'scroll-to-ai';
-                replyEl.dataset.index = msg.replyTo.messageIndex;
-                replyEl.innerHTML = `
-                    <div class="ai-reply-author">${escapeHTML(msg.replyTo.authorName || '')}</div>
-                    <div class="ai-reply-text">${escapeHTML(msg.replyTo.textSnippet || '')}</div>
-                `;
-                replyContextContainer.appendChild(replyEl);
-            }
-            messageContainer.appendChild(replyContextContainer);
-
-            const messageEl = document.createElement('div');
-            messageEl.classList.add('ai-message', msg.role);
-            
-            if (msg.role === 'model' && msg.grounded) {
-                const groundedIcon = document.createElement('div');
-                groundedIcon.className = 'ai-grounded-icon';
-                groundedIcon.innerHTML = `<svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>`;
-                messageEl.appendChild(groundedIcon);
-            }
-
-            const contentWrapper = document.createElement('div');
-            if (msg.content === 'typing...') {
-                contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+        console.groupCollapsed('[AI LOG] Этап 3: Отрисовка сообщений');
+        try {
+            let currentChat;
+            if (currentAIChatType === 'public') {
+                currentChat = currentPublicChatMessages;
             } else {
-                let contentToRender = msg.content || '';
-                let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
+                currentChat = allAIChats[currentAIChatId];
+            }
 
-                if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
-                    contentWrapper.innerHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
-                } else {
-                    contentWrapper.innerHTML = baseHtml;
+            if (!aiChatMessages) {
+                console.error('[AI LOG] КРИТИЧЕСКАЯ ОШИБКА: DOM-элемент aiChatMessages не найден!');
+                return;
+            }
+            if (!currentChat) {
+                console.warn('[AI LOG] Массив сообщений (currentChat) не найден. Отрисовка отменена.');
+                aiChatMessages.innerHTML = '<div class="empty-state">Выберите чат для начала.</div>';
+                return;
+            }
+            
+            console.log(`[AI LOG] Начало отрисовки. Источник: ${currentAIChatType} чат. Количество сообщений: ${currentChat.length}`);
+            console.table(currentChat);
+
+            const scrollThreshold = 100;
+            const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
+
+            aiChatMessages.innerHTML = '';
+            console.log('[AI LOG] Контейнер сообщений очищен.');
+
+            const userCanDelete = canDeleteAIMessage();
+
+            currentChat.forEach((msg, index) => {
+                try {
+                    console.log(`[AI LOG] - Рендерю сообщение #${index}, роль: ${msg.role}`);
+                    const messageContainer = document.createElement('div');
+                    messageContainer.className = `ai-message-container is-${msg.role}`;
+                    messageContainer.id = `ai-message-container-${index}`; 
+                    
+                    const replyContextContainer = document.createElement('div');
+                    replyContextContainer.className = 'ai-reply-context-container';
+                    if (msg.replyTo) {
+                        const replyEl = document.createElement('div');
+                        replyEl.className = 'ai-reply-context';
+                        replyEl.dataset.action = 'scroll-to-ai';
+                        replyEl.dataset.index = msg.replyTo.messageIndex;
+                        replyEl.innerHTML = `
+                            <div class="ai-reply-author">${escapeHTML(msg.replyTo.authorName || '')}</div>
+                            <div class="ai-reply-text">${escapeHTML(msg.replyTo.textSnippet || '')}</div>
+                        `;
+                        replyContextContainer.appendChild(replyEl);
+                    }
+                    messageContainer.appendChild(replyContextContainer);
+        
+                    const messageEl = document.createElement('div');
+                    messageEl.classList.add('ai-message', msg.role);
+                    
+                    const contentWrapper = document.createElement('div');
+                    if (msg.content === 'typing...') {
+                        contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+                    } else {
+                        let contentToRender = msg.content || '';
+                        let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
+        
+                        if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
+                            contentWrapper.innerHTML = processAndAppendSources(baseHtml, msg.groundingMetadata);
+                        } else {
+                            contentWrapper.innerHTML = baseHtml;
+                        }
+        
+                        if (msg.role === 'model' && msg.grounded) {
+                            const groundedIconHTML = `
+                                <div class="ai-grounded-icon" title="Ответ сгенерирован с использованием Поиска Google">
+                                    <svg viewBox="0 0 48 48"><path fill="#4285F4" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#34A853" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l5.657,5.657C39.843,36.657,43.083,31.622,43.083,24C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FBBC05" d="M28.081,42.733L22.424,37.076c-1.954,1.413-4.398,2.203-7.041,2.203c-6.627,0-12-5.373-12-12c0-3.372,1.386-6.42,3.685-8.685l-5.657-5.657C4.789,9.41,4,16.29,4,24C4,31.831,8.441,38.281,15.22,41.456L28.081,42.733z"></path><path fill="#EA4335" d="M43.082,24l-5.657,5.657c-1.856-1.407-3.295-3.337-4.087-5.574H24v-8h19.083c0.138,1.3,0.25,2.625,0.25,4C43.333,21.375,43.082,22.625,43.082,24z"></path></svg>
+                                </div>
+                            `;
+                            contentWrapper.innerHTML += groundedIconHTML;
+                        }
+                    }
+                    messageEl.appendChild(contentWrapper);
+        
+                    if (msg.attachment) {
+                        const { name, mimeType, thumbnailDataUrl } = msg.attachment;
+                        const type = mimeType.split('/')[0] || 'файл';
+                        
+                        const previewImage = thumbnailDataUrl 
+                            ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
+                            : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
+        
+                        const attachmentHTML = `
+                            <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
+                                ${previewImage}
+                                <div class="ai-attachment-file-info">
+                                    <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
+                                    <div class="ai-attachment-file-type">${type}</div>
+                                </div>
+                            </a>
+                        `;
+                        messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
+                    }
+        
+                    messageContainer.appendChild(messageEl);
+        
+                    const isLastMessage = index === currentChat.length - 1;
+                    const deleteButtonHTML = userCanDelete 
+                        ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
+                        : '';
+        
+                    if (msg.role === 'model' && msg.content !== 'typing...') {
+                        const actionsContainer = document.createElement('div');
+                        actionsContainer.className = 'ai-message-actions';
+                        const regenerateButtonHTML = (isLastMessage && userCanDelete)
+                            ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>`
+                            : '';
+                        
+                        actionsContainer.innerHTML = `
+                            <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
+                            ${deleteButtonHTML}
+                            ${regenerateButtonHTML}
+                        `;
+                        messageContainer.appendChild(actionsContainer);
+                    } else if (msg.role === 'user') {
+                        const actionsContainer = document.createElement('div');
+                        actionsContainer.className = 'ai-user-message-actions';
+                        actionsContainer.innerHTML = `
+                            <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                            <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
+                            <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
+                            ${deleteButtonHTML}
+                        `;
+                        messageContainer.appendChild(actionsContainer);
+                    }
+                    
+                    aiChatMessages.appendChild(messageContainer);
+                } catch (err) {
+                    console.error(`[AI LOG] !! ОШИБКА при рендере сообщения #${index}:`, err);
+                    console.error('[AI LOG] Данные сообщения, вызвавшие ошибку:', msg);
                 }
+            });
+
+            if (window.lucide) {
+                lucide.createIcons();
             }
-            messageEl.appendChild(contentWrapper);
+            drawOrUpdateScrollbar();
 
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            if (msg.attachment) {
-                const { name, mimeType, thumbnailDataUrl } = msg.attachment;
-                const type = mimeType.split('/')[0] || 'файл';
-                
-                const previewImage = thumbnailDataUrl 
-                    ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
-                    : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
-
-                const attachmentHTML = `
-                    <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
-                        ${previewImage}
-                        <div class="ai-attachment-file-info">
-                            <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
-                            <div class="ai-attachment-file-type">${type}</div>
-                        </div>
-                    </a>
-                `;
-                messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
+            if (isScrolledToBottom) {
+                const lastMessage = aiChatMessages.lastElementChild;
+                if (lastMessage) {
+                    lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } else {
+                console.log("[AI LOG] Пользователь смотрит историю, авто-скролл отключен.");
             }
-            
-            // Заменяем imageUrl на imageUrls и проверяем, что это массив
-            if (msg.role === 'model' && Array.isArray(msg.imageUrls) && msg.imageUrls.length > 0) {
-                let galleryHTML = '<div class="ai-message-image-gallery">';
-                msg.imageUrls.forEach(url => {
-                    galleryHTML += `
-                        <div class="ai-gallery-item">
-                            <img src="${url}" alt="Иллюстрация к ответу" class="ai-message-image">
-                        </div>
-                    `;
-                });
-                galleryHTML += '</div>';
-                messageEl.insertAdjacentHTML('beforeend', galleryHTML);
-            }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
-            messageContainer.appendChild(messageEl);
-
-            const isLastMessage = index === currentChat.length - 1;
-            const deleteButtonHTML = userCanDelete 
-                ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
-                : '';
-
-            if (msg.role === 'model' && msg.content !== 'typing...') {
-                const actionsContainer = document.createElement('div');
-                actionsContainer.className = 'ai-message-actions';
-                const regenerateButtonHTML = (isLastMessage && userCanDelete)
-                    ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>`
-                    : '';
-                
-                actionsContainer.innerHTML = `
-                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
-                    <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
-                    <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
-                    ${deleteButtonHTML}
-                    ${regenerateButtonHTML}
-                `;
-                messageContainer.appendChild(actionsContainer);
-            } else if (msg.role === 'user') {
-                const actionsContainer = document.createElement('div');
-                actionsContainer.className = 'ai-user-message-actions';
-                actionsContainer.innerHTML = `
-                    <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
-                    <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
-                    <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
-                    ${deleteButtonHTML}
-                `;
-                messageContainer.appendChild(actionsContainer);
-            }
-            
-            aiChatMessages.appendChild(messageContainer);
-        });
-
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-        drawOrUpdateScrollbar();
-
-        if (isScrolledToBottom) {
-            const lastMessage = aiChatMessages.lastElementChild;
-            if (lastMessage) {
-                lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        } else {
-            console.log("Пользователь просматривает историю, автоматическая прокрутка отключена.");
+            console.log(`[AI LOG] Отрисовка завершена. В DOM добавлено ${aiChatMessages.childElementCount} сообщений.`);
+        } finally {
+            console.groupEnd();
         }
     }
 
 
     async function sendAIChatMessage() {
-        if (isAIResponding) return;
-        const userInput = aiChatInput.value.trim();
-        if (!userInput && !attachedFile) return;
-
-        // Если мы в публичной аудитории, используем другую логику
-        if (currentAIChatType === 'public') {
-            await sendPublicAudienceMessage(userInput);
-            return;
-        }
-
-        // Далее идет логика для приватного чата
-        const fileToSend = attachedFile;
-        aiChatInput.value = '';
-        resetAIInputHeight(); 
-        removeAIAttachment();
-        
-        // Формируем основной объект сообщения
-        const message = { 
-            role: 'user', 
-            content: userInput,
-            // Добавляем поля сразу, чтобы они были в UI
-            replyTo: aiReplyContext,
-            attachment: fileToSend
-        };
-        
-        // Очищаем контекст ответа ПОСЛЕ его присвоения сообщению
-        cancelAIReply();
-
-        if (fileToSend) {
-            try {
-                allAIChats[currentAIChatId].push({ role: 'model', content: 'Анализ файла...' });
-                renderAIChatMessages();
-                const response = await fetch(googleAppScriptUrl, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'generateAttachmentDescription',
-                        file: { base64Data: fileToSend.base64Data.split(',')[1], mimeType: fileToSend.mimeType },
-                        userText: userInput,
-                        targetLanguage: localStorage.getItem('appLanguage') || 'ru'
-                    })
-                });
-                const result = await response.json();
-                if (result.success && result.description) {
-                     // Добавляем описание файла в уже существующий объект сообщения
-                    message.attachmentDescription = result.description;
-                } else {
-                    message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
-                }
-                allAIChats[currentAIChatId].pop(); // Удаляем "Анализ файла..."
-            } catch (error) {
-                console.error("Ошибка получения описания файла:", error);
-                message.attachmentDescription = `(Ошибка при анализе файла "${fileToSend.name}")`;
-                allAIChats[currentAIChatId].pop(); // Удаляем "Анализ файла..."
+        console.groupCollapsed('[AI LOG] Этап 1: Отправка сообщения');
+        try {
+            if (isAIResponding) {
+                console.warn('[AI LOG] Попытка отправить сообщение, пока ИИ отвечает. Отменено.');
+                return;
             }
+            const userInput = aiChatInput.value.trim();
+            if (!userInput && !attachedFile) {
+                console.log('[AI LOG] Нет текста или файла для отправки. Отменено.');
+                return;
+            }
+            console.log('[AI LOG] Пользовательский ввод:', userInput);
+
+            if (currentAIChatType === 'public') {
+                console.log('[AI LOG] Обнаружен публичный чат. Перенаправление на sendPublicAudienceMessage...');
+                await sendPublicAudienceMessage(userInput);
+                return;
+            }
+
+            const replyContextToSend = aiReplyContext;
+            const fileToSend = attachedFile;
+
+            aiChatInput.value = '';
+            resetAIInputHeight(); 
+            removeAIAttachment();
+            cancelAIReply();
+
+            const message = { 
+                role: 'user', 
+                content: userInput,
+                replyTo: replyContextToSend,
+                attachment: fileToSend
+            };
+            
+            if (fileToSend) {
+                try {
+                    allAIChats[currentAIChatId].push({ role: 'model', content: 'Анализ файла...' });
+                    renderAIChatMessages();
+                    
+                    const response = await fetch(googleAppScriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'generateAttachmentDescription',
+                            file: { base64Data: fileToSend.base64Data.split(',')[1], mimeType: fileToSend.mimeType },
+                            userText: userInput,
+                            targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                        })
+                    });
+                    const result = await response.json();
+
+                    allAIChats[currentAIChatId].pop();
+                    
+                    if (result.success && result.description) {
+                        message.attachmentDescription = result.description;
+                    } else {
+                        message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
+                    }
+                } catch (error) {
+                    console.error("Ошибка получения описания файла:", error);
+                    message.attachmentDescription = `(Ошибка при анализе файла "${fileToSend.name}")`;
+                    if(allAIChats[currentAIChatId].slice(-1)[0]?.content === 'Анализ файла...') {
+                        allAIChats[currentAIChatId].pop();
+                    }
+                }
+            }
+            
+            allAIChats[currentAIChatId].push(message);
+            console.log('[AI LOG] Сообщение пользователя добавлено в массив. Общая история:');
+            console.table(allAIChats[currentAIChatId]);
+            
+            await saveAIChatsToStorage();
+            console.log('[AI LOG] История сохранена в хранилище.');
+            
+            renderAIChatList();
+            console.log('[AI LOG] Список чатов перерисован.');
+
+            renderAIChatMessages(); 
+            console.log('[AI LOG] Сообщения перерисованы ПОСЛЕ добавления сообщения пользователя.');
+            
+            console.log('[AI LOG] Вызов getAIResponseForCurrentHistory...');
+            getAIResponseForCurrentHistory(fileToSend);
+        } finally {
+            console.groupEnd();
         }
-        
-        allAIChats[currentAIChatId].push(message);
-        saveAIChatsToStorage();
-        renderAIChatList();
-        getAIResponseForCurrentHistory(fileToSend);
     }
+
 
     /**
      * Отправляет сообщение в публичную Аудиторию (только для владельца).
@@ -17634,28 +17480,42 @@ const mainApp = (function() {
     }
 
 
-
     async function getAIResponseForCurrentHistory(file = null) {
-        if (isAIResponding || !currentAIChatId) return;
-        isAIResponding = true;
-        aiChatSendBtn.disabled = true;
-        
-        const currentChat = allAIChats[currentAIChatId];
-        
-        // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Формируем "чистую" историю для API ===
-        const historyForAPI = currentChat
-            .filter(msg => msg.content !== 'typing...')
-            .map(msg => ({
-                role: msg.role,
-                content: msg.content || ''
-            }));
-        // ==========================================================
-
-        currentChat.push({ role: 'model', content: 'typing...' });
-        const aiResponseIndex = currentChat.length - 1;
-        renderAIChatMessages();
-
+        console.groupCollapsed('[AI LOG] Этап 2: Получение ответа ИИ');
         try {
+            if (isAIResponding || !currentAIChatId) {
+                console.warn('[AI LOG] getAIResponse... вызвана, но флаг isAIResponding уже true или нет ID чата. Выход.');
+                return;
+            }
+            console.log('[AI LOG] Функция запущена.');
+            isAIResponding = true;
+            aiChatSendBtn.disabled = true;
+            
+            const currentChat = allAIChats[currentAIChatId];
+            
+            const historyForAPI = currentChat
+                .filter(msg => msg.content !== 'typing...')
+                .map(msg => {
+                    const cleanMsg = {
+                        role: msg.role,
+                        content: msg.content || ''
+                    };
+                    if (msg.attachmentDescription) {
+                        cleanMsg.content = `${msg.attachmentDescription}\n\n${cleanMsg.content}`;
+                    }
+                    return cleanMsg;
+                });
+
+            console.log('[AI LOG] История подготовлена для API:');
+            console.table(historyForAPI);
+
+            currentChat.push({ role: 'model', content: 'typing...' });
+            const aiResponseIndex = currentChat.length - 1;
+            console.log('[AI LOG] Индикатор "typing..." добавлен в массив.');
+            
+            renderAIChatMessages();
+            console.log('[AI LOG] Сообщения перерисованы с индикатором "typing...".');
+
             const aiSettings = getAIChatSettings();
             
             const requestBody = {
@@ -17671,44 +17531,56 @@ const mainApp = (function() {
                     base64Data: file.base64Data.split(',')[1] 
                 };
             }
-
+            
+            console.log('[AI LOG] Отправка запроса на сервер...');
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify(requestBody)
             });
 
-            const result = await response.json();
+            const rawResponseText = await response.text();
+            console.log('[AI LOG] Получен СЫРОЙ ответ от сервера:', rawResponseText);
+            
+            const result = JSON.parse(rawResponseText);
+            console.log('[AI LOG] Ответ сервера после парсинга JSON:', result);
             
             if (result.success && result.reply) {
+                console.log('[AI LOG] УСПЕХ: Сервер вернул корректный ответ.');
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
                     content: result.reply,
                     grounded: result.wasGrounded,
-                    groundingMetadata: result.groundingMetadata
+                    groundingMetadata: result.groundingMetadata,
+                    imageUrls: result.imageUrls || null
                 };
             } else {
+                console.log('[AI LOG] НЕУДАЧА: Ответ сервера не содержит success:true или поля reply.');
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
                     content: `Произошла ошибка: ${errorMessage}` 
                 };
             }
+            console.log('[AI LOG] Массив сообщений обновлен ответом ИИ:');
+            console.table(currentChat);
         } catch (error) {
-            console.error("Критическая ошибка на клиенте (AI-чат):", error);
-            currentChat[aiResponseIndex] = { 
-                role: 'model', 
-                content: `Произошла ошибка: ${error.message}` 
-            };
+            console.error("[AI LOG] КРИТИЧЕСКАЯ ОШИБКА в getAIResponseForCurrentHistory:", error);
+            const aiResponseIndex = allAIChats[currentAIChatId].length - 1;
+            if (allAIChats[currentAIChatId][aiResponseIndex]?.content === 'typing...') {
+                allAIChats[currentAIChatId][aiResponseIndex] = { 
+                    role: 'model', 
+                    content: `Произошла критическая ошибка: ${error.message}` 
+                };
+            }
         } finally {
             isAIResponding = false;
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
-            saveAIChatsToStorage();
+            await saveAIChatsToStorage();
+            console.log('[AI LOG] Блок finally. История сохранена. Вызов финальной перерисовки...');
             renderAIChatMessages();
+            console.groupEnd();
         }
     }
-
-
-
 
     // НОВЫЙ КОД ДЛЯ ВСТАВКИ
     /**
