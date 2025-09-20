@@ -4394,6 +4394,8 @@ const ChatModule = (function() {
         div.textContent = str; return div.innerHTML; 
     }
 
+
+
     async function deleteAccount() {
         if (!currentUser) return;
 
@@ -11434,7 +11436,27 @@ const mainApp = (function() {
         return p.innerHTML;
     }
 
-
+    /**
+     * НОВАЯ ФУНКЦИЯ: Находит и отображает математические формулы LaTeX в элементе.
+     * @param {HTMLElement} element - DOM-элемент, в котором нужно найти и отрисовать формулы.
+     */
+    function renderMathInElement(element) {
+        if (window.renderMathInElement) {
+            try {
+                window.renderMathInElement(element, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            } catch (error) {
+                console.error("Ошибка рендеринга математической формулы:", error);
+            }
+        }
+    }
 
     /**
      * НОВАЯ ФУНКЦИЯ
@@ -12867,6 +12889,7 @@ const mainApp = (function() {
             if (result.success) {
                 if (window.marked) {
                     outputEl.innerHTML = marked.parse(result.explanation);
+                    renderMathInElement(outputEl);
                 } else {
                     console.warn('Библиотека marked.js не загружена. Отображение без форматирования.');
                     outputEl.innerHTML = result.explanation.replace(/\n/g, '<br>');
@@ -13813,6 +13836,7 @@ const mainApp = (function() {
 
             if (result.success && result.analysis) {
                 resultContainer.innerHTML = marked.parse(result.analysis);
+                renderMathInElement(resultContainer); 
                 resultContainer.classList.remove('hidden');
             } else {
                 throw new Error(result.error || 'Не удалось получить анализ от ИИ.');
@@ -17503,6 +17527,7 @@ const mainApp = (function() {
             if (window.lucide) {
                 lucide.createIcons();
             }
+            renderMathInElement(aiChatMessages);
             drawOrUpdateScrollbar();
 
             if (isScrolledToBottom) {

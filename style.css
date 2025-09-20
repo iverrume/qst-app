@@ -11424,3 +11424,8 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     padding-bottom: 13px;  /* Небольшая ручная коррекция для идеального центрирования */
     /* === КОНЕЦ НОВЫХ СВОЙСТВ === */
 }
+
+/* Адаптация цвета математических формул KaTeX к теме */
+.katex {
+    color: var(--text-color) !important;
+}
