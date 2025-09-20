@@ -1837,9 +1837,6 @@ const ChatModule = (function() {
         console.log('Event listeners настроены');
     } 
 
-
-
-
     
     function setupAuthStateListener() {
         if (!auth) return;
@@ -1848,14 +1845,14 @@ const ChatModule = (function() {
             currentUser = user;
             updateUserUI();
 
-
             if (user) {
                 console.log('Пользователь авторизован:', user.displayName || user.email);
                 
-
+                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+                setupPrivateLegendsListener(user); // Запускаем новый слушатель для легенд
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
                 mainApp.migrateLocalChatsToFirebase().then(() => {
-                    // Этот код выполнится ПОСЛЕ завершения миграции
                     const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
                     if (savedUnlocked) {
                         unlockedChannels = new Set(JSON.parse(savedUnlocked));
@@ -1871,19 +1868,82 @@ const ChatModule = (function() {
                     if (window.mainApp) {
                         window.mainApp.loadPublicAudiences();
                     }
-                    // ЗАГРУЖАЕМ ЧАТЫ ИЗ FIREBASE
                     mainApp.loadAIChatsFromStorage(); 
                 });
 
-
-
             } else {
-
                 console.log('Пользователь не авторизован');
                 clearChatData();
                 cleanupPresenceSystem();
+                // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+                cleanupPrivateLegendsListener(); // Останавливаем слушатель легенд при выходе
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
         });
+    }
+    /**
+     * НОВАЯ ФУНКЦИЯ: Устанавливает real-time слушатель на документ пользователя
+     * для синхронизации легенд приватных чатов. Также выполняет одноразовую миграцию
+     * из localStorage в Firestore.
+     * @param {object} user - Объект пользователя Firebase.
+     */
+    function setupPrivateLegendsListener(user) {
+        if (!db || !user) return;
+        
+        // Отписываемся от старого слушателя, если он был
+        if (privateLegendsListener) privateLegendsListener();
+
+        const userDocRef = db.collection('users').doc(user.uid);
+        let isFirstLoad = true; // Флаг для одноразовой миграции
+
+        privateLegendsListener = userDocRef.onSnapshot(async (doc) => {
+            if (doc.exists) {
+                const userData = doc.data();
+                currentPrivateLegends = userData.aiChatLegends || {};
+                
+                // Одноразовая миграция при первой загрузке данных
+                if (isFirstLoad) {
+                    isFirstLoad = false;
+                    const localLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+                    
+                    // Мигрируем только если в localStorage что-то есть
+                    if (Object.keys(localLegends).length > 0) {
+                        console.log("Обнаружены локальные легенды. Начинаю миграцию в Firestore...");
+                        // Объединяем данные, облачные имеют приоритет
+                        const mergedLegends = { ...localLegends, ...currentPrivateLegends };
+                        
+                        try {
+                            await userDocRef.update({ aiChatLegends: mergedLegends });
+                            // После успешной миграции очищаем localStorage
+                            localStorage.removeItem(AI_LEGENDS_STORAGE_KEY);
+                            currentPrivateLegends = mergedLegends; // Обновляем кэш
+                            console.log("Миграция легенд завершена, localStorage очищен.");
+                        } catch (error) {
+                            console.error("Ошибка миграции легенд:", error);
+                        }
+                    }
+                }
+                
+                // Перерисовываем легенду, если чат открыт
+                if (aiChatModal && !aiChatModal.classList.contains('hidden')) {
+                    renderColorLegends();
+                }
+            }
+        }, error => {
+            console.error("Ошибка слушателя легенд:", error);
+        });
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Отписывается от слушателя легенд и очищает кэш.
+     */
+    function cleanupPrivateLegendsListener() {
+        if (privateLegendsListener) {
+            privateLegendsListener();
+            privateLegendsListener = null;
+        }
+        currentPrivateLegends = {};
+        console.log("Слушатель приватных легенд остановлен.");
     }
 
     let globalMessagesListener = null; // Переменная для нашего нового слушателя
@@ -7128,6 +7188,8 @@ const mainApp = (function() {
     let searchResultsData = [];
     let currentResultIndex = 0;
     let currentQuizContext = null;
+    let currentPrivateLegends = {};
+    let privateLegendsListener = null;
     let currentPublicLegends = {};
     let currentTopicListener = null; 
     let currentTopicLegends = {};  
@@ -16019,12 +16081,17 @@ const mainApp = (function() {
         delete allAIChats[chatId];
 
         // Удаляем связанные с чатом легенды, ТОЛЬКО если это приватный чат
-        if (currentAIChatType === 'private') {
-            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
-            if (allLegends[chatId]) {
-                delete allLegends[chatId];
-                localStorage.setItem(AI_LEGENDS_STORAGE_KEY, JSON.stringify(allLegends));
-                console.log(`Легенды для удаленного чата ${chatId} очищены.`);
+        // Удаляем связанные с чатом легенды из Firestore, если это приватный чат
+        if (currentAIChatType === 'private' && currentUser && db) {
+            try {
+                const userDocRef = db.collection('users').doc(currentUser.uid);
+                const updateData = {};
+                // Готовим команду на удаление всего объекта легенд для этого чата
+                updateData[`aiChatLegends.${chatId}`] = firebase.firestore.FieldValue.delete();
+                await userDocRef.update(updateData);
+                console.log(`Легенды для удаленного чата ${chatId} очищены в Firestore.`);
+            } catch (error) {
+                console.error("Не удалось очистить легенды для удаленного чата:", error);
             }
         }
 
@@ -16549,11 +16616,10 @@ const mainApp = (function() {
         
         let chatLegends = {};
         if (currentAIChatType === 'public') {
-            // --- ИЗМЕНЕНИЕ: Используем легенды конкретной темы ---
             chatLegends = currentTopicLegends || {};
         } else {
-            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
-            chatLegends = allLegends[currentAIChatId] || {};
+            // --- ИЗМЕНЕНИЕ: Берем данные из нового кэша ---
+            chatLegends = currentPrivateLegends[currentAIChatId] || {};
         }
 
         if (usedColors.size === 0) {
@@ -16566,7 +16632,7 @@ const mainApp = (function() {
         aiColorLegendsWithList.innerHTML = '';
 
         const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
-        const canEdit = (currentAIChatType === 'private') || (currentUser && audienceData && currentUser.uid === audienceData.ownerId);
+        const canEdit = canEditAIMetadata(); // Используем новую функцию-помощник
 
         usedColors.forEach(color => {
             const description = chatLegends[color] || '';
@@ -16604,11 +16670,10 @@ const mainApp = (function() {
 
         let chatLegends = {};
         if (currentAIChatType === 'public') {
-            // --- ИЗМЕНЕНИЕ: Используем легенды конкретной темы ---
             chatLegends = currentTopicLegends || {};
         } else {
-            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
-            chatLegends = allLegends[currentAIChatId] || {};
+            // --- ИЗМЕНЕНИЕ: Берем данные из нового кэша ---
+            chatLegends = currentPrivateLegends[currentAIChatId] || {};
         }
         
         colorSwatch.style.backgroundColor = color;
@@ -16649,9 +16714,7 @@ const mainApp = (function() {
 
         const newText = input.value.trim();
 
-        // === ВЕТКА №1: Публичный чат (Аудитория) ===
         if (currentAIChatType === 'public') {
-            // --- ИЗМЕНЕНИЕ: Добавили проверку на ID темы ---
             if (!currentUser || !currentAudienceId || !currentTopicId || !db) return;
 
             const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
@@ -16660,7 +16723,6 @@ const mainApp = (function() {
                 return;
             }
 
-            // --- ИЗМЕНЕНИЕ: Путь теперь ведет к документу Темы ---
             const topicRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId);
             const updateData = {};
             const fieldPath = `colorLegends.${color}`; 
@@ -16672,29 +16734,36 @@ const mainApp = (function() {
             }
 
             try {
-                // Обновляем документ Темы
                 await topicRef.update(updateData);
-                // Наш слушатель onSnapshot автоматически обновит currentTopicLegends и перерисует UI
             } catch (error) {
                 console.error("Ошибка обновления легенды в Firestore:", error);
                 showToast("Не удалось сохранить описание.", "error");
             }
 
-        // === ВЕТКА №2: Приватный чат (старая логика) ===
         } else {
-            if (!currentAIChatId) return;
+            // --- НАЧАЛО БЛОКА НА ЗАМЕНУ (логика для приватных чатов) ---
+            if (!currentUser || !db || !currentAIChatId) return;
 
-            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
-            if (!allLegends[currentAIChatId]) {
-                allLegends[currentAIChatId] = {};
-            }
+            const userDocRef = db.collection('users').doc(currentUser.uid);
+            const updateData = {};
+            // Используем dot-нотацию для обновления вложенных полей в карте
+            const fieldPath = `aiChatLegends.${currentAIChatId}.${color}`;
+
             if (newText) {
-                allLegends[currentAIChatId][color] = newText;
+                updateData[fieldPath] = newText;
             } else {
-                delete allLegends[currentAIChatId][color];
+                updateData[fieldPath] = firebase.firestore.FieldValue.delete();
             }
-            localStorage.setItem(AI_LEGENDS_STORAGE_KEY, JSON.stringify(allLegends));
-            renderColorLegends();
+
+            try {
+                // Отправляем запрос на обновление документа пользователя
+                await userDocRef.update(updateData);
+                // UI обновится автоматически благодаря слушателю onSnapshot
+            } catch (error) {
+                console.error("Ошибка сохранения приватной легенды в Firestore:", error);
+                showToast("Не удалось сохранить описание.", "error");
+            }
+            // --- КОНЕЦ БЛОКА НА ЗАМЕНУ ---
         }
     }
 
