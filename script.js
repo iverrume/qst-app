@@ -2676,7 +2676,7 @@ const ChatModule = (function() {
         const element = document.getElementById(`question-${questionId}`);
         if (element) {
             // Плавно прокручиваем к элементу, чтобы он оказался по центру экрана
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({ behavior: 'smooth', block: blockAlignment });
 
             // Добавляем класс для анимации подсветки
             element.classList.add('highlighted');
@@ -2693,7 +2693,7 @@ const ChatModule = (function() {
         const element = document.getElementById(`message-${messageId}`);
         if (element) {
             // Прокручиваем к элементу
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.scrollIntoView({ behavior: 'smooth', block: blockAlignment });
 
             // Добавляем класс для подсветки
             element.classList.add('highlighted');
@@ -16750,7 +16750,7 @@ const mainApp = (function() {
      * @param {number} index - Индекс сообщения в истории.
      * @param {'start' | 'center' | 'end'} blockAlignment - Как выровнять сообщение в окне.
      */
-    function scrollToAIMessage(index, blockAlignment = 'center') {
+    function scrollToAIMessage(index, blockAlignment = 'start') {
         const element = getEl(`ai-message-container-${index}`);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: blockAlignment });
