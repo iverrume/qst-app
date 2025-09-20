@@ -14410,6 +14410,7 @@ const mainApp = (function() {
         const closeImagePreviewBtn = imagePreviewModal?.querySelector('.close-image-preview');
         const textPreviewModal = getEl('textPreviewModal');
         const closeTextPreviewBtn = textPreviewModal?.querySelector('.close-text-preview');
+        const aiScrollToBottomBtn = getEl('aiScrollToBottomBtn'); 
         
         aiChatScrollWrapper = aiChatModal?.querySelector('.ai-chat-scroll-wrapper');
         const aiSidebarHandle = getEl('aiSidebarHandle');
@@ -14844,6 +14845,16 @@ const mainApp = (function() {
 
         initCustomScrollbar();
         initScrollbarInteraction();
+        aiChatMessages?.addEventListener('scroll', handleChatScroll);
+        aiScrollToBottomBtn?.addEventListener('click', () => {
+            aiChatMessages.scrollTo({
+                top: aiChatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+        });
+        if (window.lucide) {
+            lucide.createIcons();
+        }
         setupCustomSelect('aiModelSelectContainer');
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
@@ -14869,7 +14880,6 @@ const mainApp = (function() {
             aiChatsListener = chatsRef.onSnapshot(snapshot => {
                 // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Блокируем обновление, пока ждем ответа ИИ ===
                 if (isAIResponding) {
-                    console.log('[AI LOG] onSnapshot проигнорирован, т.к. isAIResponding = true.');
                     return; 
                 }
                 // =======================================================================
@@ -15430,10 +15440,8 @@ const mainApp = (function() {
 
 
     function switchToAIChat(audienceId, topicId, chatType = 'private', dataPayload = null) {
-        console.log(`[switchToAIChat] Переключаемся на чат. AudienceID: ${audienceId}, TopicID: ${topicId}, Тип: ${chatType}`);
 
         if (currentAudienceListener) {
-            console.log("[switchToAIChat] Отписываемся от старой Аудитории.");
             currentAudienceListener();
             currentAudienceListener = null;
         }
@@ -15998,7 +16006,10 @@ const mainApp = (function() {
         });
 
         // 2. Слушаем изменение размера окна чата или добавление/удаление сообщений
-        const observer = new ResizeObserver(drawOrUpdateScrollbar);
+        const observer = new ResizeObserver(() => {
+            drawOrUpdateScrollbar();
+            updateScrollToBottomButtonVisibility(); // Добавляем вызов при изменении размера
+        });
         observer.observe(aiChatMessages);
         const mutationObserver = new MutationObserver(drawOrUpdateScrollbar);
         mutationObserver.observe(aiChatMessages, { childList: true, subtree: true });
@@ -16293,6 +16304,57 @@ const mainApp = (function() {
         aiScrollbarThumb.style.height = `${thumbHeight}px`;
         aiScrollbarThumb.style.top = `${thumbPosition}px`;
     }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ v3: Проверяет, нужно ли показывать кнопку "прокрутить вниз",
+     * и принудительно перерисовывает ВСЕ иконки в момент первого появления кнопки.
+     */
+    function updateScrollToBottomButtonVisibility() {
+        const btn = getEl('aiScrollToBottomBtn');
+        if (!btn || !aiChatMessages) return;
+
+        // --- Логирование для отладки ---
+        const scrollHeight = aiChatMessages.scrollHeight;
+        const clientHeight = aiChatMessages.clientHeight;
+        const scrollTop = aiChatMessages.scrollTop;
+        // --- Конец логирования ---
+
+        const threshold = 200; 
+        const isNearBottom = scrollHeight - clientHeight - scrollTop < threshold;
+        const shouldBeVisible = !isNearBottom && scrollHeight > clientHeight;
+
+        const wasVisible = btn.classList.contains('visible');
+        btn.classList.toggle('visible', shouldBeVisible);
+        const isVisibleNow = btn.classList.contains('visible');
+
+        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
+        // Если кнопка НЕ была видна, а СЕЙЧАС стала видна,
+        // это идеальный момент для глобальной перерисовки иконок.
+        if (!wasVisible && isVisibleNow) {
+            if (window.lucide) {
+                // Вызываем глобальную перерисовку без аргументов.
+                // Это именно то, что происходит при изменении размера окна и "чинит" иконку.
+                lucide.createIcons();
+            }
+        }
+    }
+
+    /**
+     * Обрабатывает прокрутку чата, чтобы показать/скрыть кнопку "вниз".
+     * Использует requestAnimationFrame для оптимизации производительности.
+     */
+    let scrollRAF = null; // ID для requestAnimationFrame
+    function handleChatScroll() {
+        if (scrollRAF) {
+            return;
+        }
+        scrollRAF = requestAnimationFrame(() => {
+            updateScrollToBottomButtonVisibility(); // Теперь просто вызывает нашу новую функцию
+            scrollRAF = null;
+        });
+    }
+     
 
 
 
@@ -17105,10 +17167,23 @@ const mainApp = (function() {
        if (!aiChatModal) return;
        document.body.classList.add('chat-open'); 
        aiChatModal.classList.remove('hidden');
-       if (!detectMobileDevice()) { aiChatInput.focus(); } // <-- ВОТ ИЗМЕНЕНИЕ
+
+      // ======== НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ОТРИСОВКИ ИКОНОК (v4) ========
+      // Используем setTimeout с задержкой, равной длительности анимации появления окна.
+      // Это гарантирует, что к моменту вызова lucide.createIcons() модальное окно
+      // будет полностью видимо и отрисовано, решая проблему "гонки состояний".
+      setTimeout(() => {
+          if (window.lucide) {
+              lucide.createIcons();
+              console.log('Lucide icons redrawn with a delay after modal open.');
+          }
+      }, 450); // Анимация slideUp длится 0.4s (400ms), берем с небольшим запасом.
+      // ======== КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ========
+
+       if (!detectMobileDevice()) { aiChatInput.focus(); }
        // Загружаем и отображаем текущий активный чат
        switchToAIChat(currentAIChatId);
-       updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
+       updateGroundingToggleState();
     }
 
     /**
@@ -17125,7 +17200,6 @@ const mainApp = (function() {
      * (приватный или публичный) и использует правильный источник данных.
      */
     function renderAIChatMessages() {
-        console.groupCollapsed('[AI LOG] Этап 3: Отрисовка сообщений');
         try {
             let currentChat;
             if (currentAIChatType === 'public') {
@@ -17135,29 +17209,23 @@ const mainApp = (function() {
             }
 
             if (!aiChatMessages) {
-                console.error('[AI LOG] КРИТИЧЕСКАЯ ОШИБКА: DOM-элемент aiChatMessages не найден!');
                 return;
             }
             if (!currentChat) {
-                console.warn('[AI LOG] Массив сообщений (currentChat) не найден. Отрисовка отменена.');
                 aiChatMessages.innerHTML = '<div class="empty-state">Выберите чат для начала.</div>';
                 return;
             }
             
-            console.log(`[AI LOG] Начало отрисовки. Источник: ${currentAIChatType} чат. Количество сообщений: ${currentChat.length}`);
-            console.table(currentChat);
 
             const scrollThreshold = 100;
             const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
 
             aiChatMessages.innerHTML = '';
-            console.log('[AI LOG] Контейнер сообщений очищен.');
 
             const userCanDelete = canDeleteAIMessage();
 
             currentChat.forEach((msg, index) => {
                 try {
-                    console.log(`[AI LOG] - Рендерю сообщение #${index}, роль: ${msg.role}`);
                     const messageContainer = document.createElement('div');
                     messageContainer.className = `ai-message-container is-${msg.role}`;
                     messageContainer.id = `ai-message-container-${index}`; 
@@ -17276,9 +17344,9 @@ const mainApp = (function() {
                     lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             } else {
-                console.log("[AI LOG] Пользователь смотрит историю, авто-скролл отключен.");
             }
-            console.log(`[AI LOG] Отрисовка завершена. В DOM добавлено ${aiChatMessages.childElementCount} сообщений.`);
+        // Вызываем проверку видимости кнопки после каждой перерисовки сообщений
+            updateScrollToBottomButtonVisibility();
         } finally {
             console.groupEnd();
         }
@@ -17286,21 +17354,16 @@ const mainApp = (function() {
 
 
     async function sendAIChatMessage() {
-        console.groupCollapsed('[AI LOG] Этап 1: Отправка сообщения');
         try {
             if (isAIResponding) {
-                console.warn('[AI LOG] Попытка отправить сообщение, пока ИИ отвечает. Отменено.');
                 return;
             }
             const userInput = aiChatInput.value.trim();
             if (!userInput && !attachedFile) {
-                console.log('[AI LOG] Нет текста или файла для отправки. Отменено.');
                 return;
             }
-            console.log('[AI LOG] Пользовательский ввод:', userInput);
 
             if (currentAIChatType === 'public') {
-                console.log('[AI LOG] Обнаружен публичный чат. Перенаправление на sendPublicAudienceMessage...');
                 await sendPublicAudienceMessage(userInput);
                 return;
             }
@@ -17353,19 +17416,13 @@ const mainApp = (function() {
             }
             
             allAIChats[currentAIChatId].push(message);
-            console.log('[AI LOG] Сообщение пользователя добавлено в массив. Общая история:');
-            console.table(allAIChats[currentAIChatId]);
             
             await saveAIChatsToStorage();
-            console.log('[AI LOG] История сохранена в хранилище.');
             
             renderAIChatList();
-            console.log('[AI LOG] Список чатов перерисован.');
 
             renderAIChatMessages(); 
-            console.log('[AI LOG] Сообщения перерисованы ПОСЛЕ добавления сообщения пользователя.');
             
-            console.log('[AI LOG] Вызов getAIResponseForCurrentHistory...');
             getAIResponseForCurrentHistory(fileToSend);
         } finally {
             console.groupEnd();
@@ -17481,13 +17538,10 @@ const mainApp = (function() {
 
 
     async function getAIResponseForCurrentHistory(file = null) {
-        console.groupCollapsed('[AI LOG] Этап 2: Получение ответа ИИ');
         try {
             if (isAIResponding || !currentAIChatId) {
-                console.warn('[AI LOG] getAIResponse... вызвана, но флаг isAIResponding уже true или нет ID чата. Выход.');
                 return;
             }
-            console.log('[AI LOG] Функция запущена.');
             isAIResponding = true;
             aiChatSendBtn.disabled = true;
             
@@ -17506,15 +17560,11 @@ const mainApp = (function() {
                     return cleanMsg;
                 });
 
-            console.log('[AI LOG] История подготовлена для API:');
-            console.table(historyForAPI);
 
             currentChat.push({ role: 'model', content: 'typing...' });
             const aiResponseIndex = currentChat.length - 1;
-            console.log('[AI LOG] Индикатор "typing..." добавлен в массив.');
-            
             renderAIChatMessages();
-            console.log('[AI LOG] Сообщения перерисованы с индикатором "typing...".');
+
 
             const aiSettings = getAIChatSettings();
             
@@ -17531,21 +17581,17 @@ const mainApp = (function() {
                     base64Data: file.base64Data.split(',')[1] 
                 };
             }
-            
-            console.log('[AI LOG] Отправка запроса на сервер...');
+
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify(requestBody)
             });
 
             const rawResponseText = await response.text();
-            console.log('[AI LOG] Получен СЫРОЙ ответ от сервера:', rawResponseText);
             
             const result = JSON.parse(rawResponseText);
-            console.log('[AI LOG] Ответ сервера после парсинга JSON:', result);
             
             if (result.success && result.reply) {
-                console.log('[AI LOG] УСПЕХ: Сервер вернул корректный ответ.');
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
                     content: result.reply,
@@ -17554,17 +17600,14 @@ const mainApp = (function() {
                     imageUrls: result.imageUrls || null
                 };
             } else {
-                console.log('[AI LOG] НЕУДАЧА: Ответ сервера не содержит success:true или поля reply.');
                 const errorMessage = result.error || 'Не удалось получить ответ от ИИ.';
                 currentChat[aiResponseIndex] = { 
                     role: 'model', 
                     content: `Произошла ошибка: ${errorMessage}` 
                 };
             }
-            console.log('[AI LOG] Массив сообщений обновлен ответом ИИ:');
-            console.table(currentChat);
+
         } catch (error) {
-            console.error("[AI LOG] КРИТИЧЕСКАЯ ОШИБКА в getAIResponseForCurrentHistory:", error);
             const aiResponseIndex = allAIChats[currentAIChatId].length - 1;
             if (allAIChats[currentAIChatId][aiResponseIndex]?.content === 'typing...') {
                 allAIChats[currentAIChatId][aiResponseIndex] = { 
@@ -17576,7 +17619,6 @@ const mainApp = (function() {
             isAIResponding = false;
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
             await saveAIChatsToStorage();
-            console.log('[AI LOG] Блок finally. История сохранена. Вызов финальной перерисовки...');
             renderAIChatMessages();
             console.groupEnd();
         }

@@ -9809,7 +9809,6 @@ body.glass-dark .ai-chat-settings-panel {
 .ai-chat-scroll-wrapper {
     position: relative; /* Делаем ее точкой отсчета для скроллбара */
     flex-grow: 1;
-    overflow: hidden; /* Важно, чтобы скрыть "вылезающий" контент */
     display: flex;
 }
 
@@ -11345,4 +11344,83 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     bottom: auto; /* Отменяем позиционирование снизу */
     /* Переворачиваем треугольник */
     border-color: transparent transparent var(--container-bg-color) transparent;
+}
+
+
+/* ======================================================= */
+/* ===      СТИЛИ ДЛЯ КНОПКИ ПРОКРУТКИ ВНИЗ (AI-ЧАТ)    === */
+/* ======================================================= */
+
+.ai-scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 15px; /* Отступ от нижнего края области сообщений */
+    left: 50%;
+    transform: translateX(-50%) translateY(10px); /* Изначально смещена вниз для анимации */
+    z-index: 20; /* Поверх сообщений, но под модальными окнами */
+    
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    color: var(--text-color);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    
+    opacity: 0; /* Изначально полностью прозрачна */
+    pointer-events: none; /* Не кликабельна, когда невидима */
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ai-scroll-to-bottom-btn.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0); /* Возвращаем на место */
+    pointer-events: auto; /* Делаем кликабельной */
+}
+
+.ai-scroll-to-bottom-btn:hover {
+    /* Важно сохранить translateX, чтобы кнопка не смещалась при увеличении */
+    transform: translateX(-50%) scale(1.1); 
+    background-color: var(--input-hover-bg-color);
+}
+
+/* 
+  Этот селектор гарантирует, что иконка (и ее контейнер <i>)
+  всегда будет иметь правильный размер.
+*/
+
+.ai-scroll-to-bottom-btn {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    z-index: 20;
+    
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+    color: var(--text-color);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    
+    /* === НАЧАЛО НОВЫХ СВОЙСТВ === */
+    font-size: 20px;      /* Увеличиваем размер символа */
+    font-weight: bold;    /* Делаем стрелку жирной */
+    line-height: 1.4;       /* Улучшает вертикальное центрирование */
+    padding-bottom: 13px;  /* Небольшая ручная коррекция для идеального центрирования */
+    /* === КОНЕЦ НОВЫХ СВОЙСТВ === */
 }
