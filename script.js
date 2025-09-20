@@ -13,10 +13,7 @@
 
       // НОВАЯ СТРОКА: Проверяем, является ли устройство мобильным по User Agent
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      // ИЗМЕНЕНА ЭТА СТРОКА: Добавили в лог информацию о мобильном устройстве
-      console.log(`Оценка производительности: Ядра=${coreCount}, Память=${memoryInGB}GB. Слабое железо: ${isWeakHardware}. Уменьшить движение: ${prefersReducedMotion}. Мобильное: ${isMobile}`);
-      
+           
       // ИЗМЕНЕНА ЭТА СТРОКА: Добавили проверку isMobile
       return isWeakHardware || prefersReducedMotion || isMobile;
     } catch (e) {
@@ -29,7 +26,6 @@
     function applyLowPowerMode() {
       if (shouldEnableLowPowerMode()) {
         document.body.classList.add('low-power');
-        console.log('Активирован режим низкой производительности (low-power).');
       }
     }
 
@@ -1041,7 +1037,7 @@ const ChatModule = (function() {
             setupVisibilityListener();
             
             isInitialized = true;
-            console.log('✅ Гибридный чат инициализирован');
+
         } catch (error) {
             console.error('❌ Ошибка инициализации чата:', error);
             isInitialized = false;
@@ -1274,7 +1270,7 @@ const ChatModule = (function() {
 
             // Проверяем, новый ли это пользователь
             if (result.additionalUserInfo.isNewUser) {
-                console.log('Новый пользователь Google, сохраняем в Firestore:', user.displayName);
+
                 // Если пользователь новый, сохраняем его данные в нашей базе
                 await db.collection('users').doc(user.uid).set({
                     username: user.displayName,
@@ -1525,7 +1521,7 @@ const ChatModule = (function() {
         tabCounters['users'] = document.getElementById('usersCount'); // Счетчик для вкладки
         tabCounters['online'] = document.getElementById('onlineCount'); // Счетчик для секции "Онлайн"
         chatSearchToggleBtn = document.getElementById('chatSearchToggleBtn');
-        console.log('DOM элементы гибридного чата инициализированы');
+
     }
 
 
@@ -1836,7 +1832,7 @@ const ChatModule = (function() {
 
         }
         
-        console.log('Event listeners настроены');
+  
     } 
 
     
@@ -1848,7 +1844,7 @@ const ChatModule = (function() {
             updateUserUI();
 
             if (user) {
-                console.log('Пользователь авторизован:', user.displayName || user.email);
+ 
                 
                 mainApp.setupPrivateLegendsListener(user);// Запускаем новый слушатель для легенд
 
@@ -1872,7 +1868,7 @@ const ChatModule = (function() {
                 });
 
             } else {
-                console.log('Пользователь не авторизован');
+          
                 clearChatData();
                 cleanupPresenceSystem();
                 cleanupPrivateLegendsListener(); // Останавливаем слушатель легенд при выходе
@@ -1889,7 +1885,7 @@ const ChatModule = (function() {
             privateLegendsListener = null;
         }
         currentPrivateLegends = {};
-        console.log("Слушатель приватных легенд остановлен.");
+       
     }
 
     let globalMessagesListener = null; // Переменная для нашего нового слушателя
@@ -1930,7 +1926,6 @@ const ChatModule = (function() {
         if (!currentUser) return;
 
         listenerInitializationTime = new Date();
-        console.log("Запуск двойного слушателя для счетчиков в:", listenerInitializationTime);
 
         // СЛУШАТЕЛЬ 1: Только для личных сообщений
         pmUnreadListener = db.collection('messages')
@@ -1958,7 +1953,7 @@ const ChatModule = (function() {
         if (currentUserEl) {
             const displayName = currentUser ? (currentUser.displayName || currentUser.email || 'Пользователь') : 'Гость';
             currentUserEl.textContent = displayName;
-            console.log('UI пользователя обновлено:', displayName);
+         
         }
     }
 
@@ -1983,7 +1978,7 @@ const ChatModule = (function() {
                 authorEl.textContent = newName;
             }
         });
-        console.log(`Обновлено имя для ${userMessages.length} сообщений в DOM.`);
+        
     }
 
     
@@ -2153,7 +2148,7 @@ const ChatModule = (function() {
                 allUsers.set(doc.id, doc.data());
             });
             updateTabCounter('users', allUsers.size); // <--- ДОБАВЬТЕ ЭТУ СТРОКУ
-            console.log(`Загружено ${allUsers.size} пользователей.`);
+     
         } catch (error) {
             console.error("Ошибка загрузки всех пользователей:", error);
         }
@@ -2321,7 +2316,7 @@ const ChatModule = (function() {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         updateUnreadCount(currentChannel, 0, true);
-                        console.log(`Счетчик для канала ${currentChannel} обнулен, т.к. пользователь увидел последнее сообщение.`);
+                        
                         observer.disconnect();
                     }
                 });
@@ -2727,7 +2722,7 @@ const ChatModule = (function() {
                 switchTab('questions');
 
                 // Сама логика подсветки сработает после загрузки вопросов
-                console.log(`Переход к вопросу: ${questionId}`);
+               
 
             } else {
                 // Этот блок остается без изменений
@@ -3031,7 +3026,7 @@ const ChatModule = (function() {
                 ...message,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            console.log("Сообщение успешно отправлено онлайн.");
+          
 
         } catch (error) {
             // ЛОВИМ ОШИБКУ ОТСУТСТВИЯ СЕТИ
@@ -3698,7 +3693,6 @@ const ChatModule = (function() {
     function initializeDataListeners() {
         if (!currentUser || !db) return;
 
-        console.log("Запуск постоянных слушателей данных...");
 
         // Слушатель для вопросов
         db.collection('questions')
@@ -4129,7 +4123,7 @@ const ChatModule = (function() {
                     await channelRef.update({
                         members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
                     });
-                    console.log(`Пользователь ${currentUser.displayName} добавлен в участники канала "${channel.name}"`);
+                
                 } catch (error) {
                     console.error("Ошибка добавления пользователя в участники:", error);
                 }
@@ -4145,7 +4139,7 @@ const ChatModule = (function() {
                 if (unlockedChannels.has(channel.id)) {
                     unlockedChannels.delete(channel.id);
                     localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
-                    console.log(`Локальный ключ для канала "${channel.name}" аннулирован, так как пользователь был удален.`);
+                    
                 }
             }
             
@@ -4413,7 +4407,6 @@ const ChatModule = (function() {
             return;
         }
 
-        console.log(`Начало удаления аккаунта для пользователя ${currentUser.uid}`);
         const deleteButton = document.getElementById('deleteAccountBtn');
         if (deleteButton) {
             deleteButton.disabled = true;
@@ -4425,13 +4418,13 @@ const ChatModule = (function() {
             
             const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, password);
             await currentUser.reauthenticateWithCredential(credential);
-            console.log("Повторная аутентификация прошла успешно.");
+  
 
             await db.collection('users').doc(userId).delete();
-            console.log(`Документ пользователя ${userId} удален из Firestore.`);
+         
 
             await currentUser.delete();
-            console.log(`Пользователь ${userId} удален из Firebase Auth.`);
+            
 
             alert(_chat('delete_account_success'));
             
@@ -4476,7 +4469,7 @@ const ChatModule = (function() {
 
       try {
         const { fileName, fileType, content } = data;
-        console.log(`v2: Загрузка файла из чата: ${fileName}, тип: ${fileType}`);
+       
 
         if (!fileName || !content || !fileType) {
           throw new Error('Отсутствуют обязательные параметры: fileName, fileType или content');
@@ -4502,14 +4495,14 @@ const ChatModule = (function() {
         }
         
         const fileId = file.getId();
-        console.log(`Файл чата сохранен: ${sanitizedFileName}, ID: ${fileId}`);
+      
         
         // Если это текстовый файл, добавляем его в поисковый индекс
         if (fileType !== 'pdf') {
             const cleanFilesMap = Utils.buildMapFromFolder(DriveApp.getFolderById(CONFIG.CLEAN_ARCHIVE_FOLDER_ID));
             const wasNewFileAdded = processSingleFile(file, cleanFilesMap);
             if (wasNewFileAdded) {
-                console.log("Обнаружен новый уникальный файл, запускается перестройка поискового индекса.");
+          
                 ScriptApp.newTrigger('rebuildSearchIndex').timeBased().after(1000).create();
             }
         }
@@ -4931,7 +4924,7 @@ const ChatModule = (function() {
 
             // 2) Ветвление по типу файла
             if (!isPdf) {
-                console.log(`${logTag} → текстовый файл: передаём в processFile`);
+         
                 const quizContext = {
                     fileId,
                     channelId: currentChannel,
@@ -4943,7 +4936,7 @@ const ChatModule = (function() {
             }
 
             // 3) PDF: Base64/DataURL → Blob → File → processPdfWithImages
-            console.log(`${logTag} → PDF: начинаю конвертацию Base64 → Blob → File`);
+          
             const content = data.content;
 
             console.time(`${logTag} toBlob`);
@@ -4964,7 +4957,7 @@ const ChatModule = (function() {
                 throw new Error('Неверный формат data.content для PDF');
             }
             console.timeEnd(`${logTag} toBlob`);
-            console.log(`${logTag} Blob size:`, pdfBlob.size, 'bytes');
+        
 
             const pdfFileObject = new File([pdfBlob], decodedFileName, { type: 'application/pdf' });
 
@@ -4979,7 +4972,7 @@ const ChatModule = (function() {
             console.time(`${logTag} processPdfWithImages`);
             await pdfProcessor(pdfFileObject);
             console.timeEnd(`${logTag} processPdfWithImages`);
-            console.log(`${logTag} ✔ обработка PDF завершена`);
+           
 
         } catch (error) {
             console.error('Ошибка запуска теста из чата:', error);
@@ -5007,7 +5000,6 @@ const ChatModule = (function() {
             return;
         }
 
-        console.log(`Подготовка файла "${fileName}" `);
 
         try {
             const payload = {
@@ -5027,7 +5019,7 @@ const ChatModule = (function() {
                 body: JSON.stringify(payload)
             });
 
-            console.log("Файл успешно обработан");
+           
 
         } catch (error) {
             console.error("Ошибка при загрузке файла:", error);
@@ -5049,7 +5041,7 @@ const ChatModule = (function() {
         const message = notificationsEnabled ? _chat('notifications_enabled') : _chat('notifications_disabled');
         window.mainApp.showToast(message, 'info'); // Используем тип 'info' для нейтральных сообщений
 
-        console.log(`Статус уведомлений: ${notificationsEnabled}`);
+        
     }
 
 
@@ -5099,7 +5091,7 @@ const ChatModule = (function() {
             await messageRef.update({
                 isPinned: !isCurrentlyPinned
             });
-            console.log(`Сообщение ${messageId} ${!isCurrentlyPinned ? 'закреплено' : 'откреплено'}`);
+            
         } catch (error) {
             console.error('Ошибка закрепления сообщения:', error);
             showError(_chat('error_pin_message_failed'));
@@ -5289,7 +5281,7 @@ const ChatModule = (function() {
             
             // Используем новую систему скачивания
             if (window.mainApp && typeof window.mainApp.downloadOrShareFile === 'function') {
-                console.log('Используем новую систему скачивания из чата');
+           
                 await window.mainApp.downloadOrShareFile(fullFileName, fileContent, 'text/plain;charset=utf-8', shareTitle);
             } else {
                 console.warn('Новая система скачивания недоступна, используем fallback');
@@ -5645,7 +5637,7 @@ const ChatModule = (function() {
             if ('serviceWorker' in navigator && 'SyncManager' in window) {
                 const swRegistration = await navigator.serviceWorker.ready;
                 await swRegistration.sync.register('sync-chat-messages');
-                console.log('Сообщение сохранено для офлайн-отправки и зарегистрирован sync event.');
+               
             } else {
                 console.warn('Фоновая синхронизация не поддерживается этим браузером.');
             }
@@ -5807,29 +5799,29 @@ const DBManager = (function() {
 
             request.onsuccess = (event) => {
                 db = event.target.result;
-                console.log("✅ IndexedDB успешно инициализирована.");
+              
                 resolve(db);
             };
 
             request.onupgradeneeded = (event) => {
                 const dbInstance = event.target.result;
-                console.log(`Обновление IndexedDB до версии ${DB_VERSION}...`);
+                
 
                 if (!dbInstance.objectStoreNames.contains('AppSettings')) {
                     dbInstance.createObjectStore('AppSettings', { keyPath: 'key' });
-                    console.log(`Хранилище "AppSettings" создано.`);
+            
                 }
                 if (!dbInstance.objectStoreNames.contains('SavedSessions')) {
                     dbInstance.createObjectStore('SavedSessions', { keyPath: 'originalFileNameForReview' });
-                     console.log(`Хранилище "SavedSessions" создано.`);
+                    
                 }
                 if (!dbInstance.objectStoreNames.contains('offlineMessages')) {
                     dbInstance.createObjectStore('offlineMessages', { autoIncrement: true });
-                    console.log(`Хранилище "offlineMessages" создано.`);
+                   
                 }
                 if (!dbInstance.objectStoreNames.contains('AIChats')) {
                     dbInstance.createObjectStore('AIChats', { keyPath: 'chatId' });
-                    console.log(`Хранилище "AIChats" создано.`);
+                 
                 }
             };
         });
@@ -7195,7 +7187,7 @@ const mainApp = (function() {
       // (только если мы на экране теста и режим перевода уже включен)
       if (!quizArea.classList.contains('hidden') && isTranslateModeEnabled && questionsForCurrentQuiz.length > 0) {
           
-          console.log(`Запрошен повторный перевод с помощью: ${engine}`);
+          
 
           const currentOriginalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
           const lang = localStorage.getItem('appLanguage') || 'ru';
@@ -7205,7 +7197,7 @@ const mainApp = (function() {
           const cacheKey = getCacheKey(currentOriginalQuestion.originalIndex, lang);
           if (currentQuizTranslations.has(cacheKey)) {
               currentQuizTranslations.delete(cacheKey);
-              console.log(`Кэш для вопроса #${currentOriginalQuestion.originalIndex} (${lang}) очищен для повторного перевода.`);
+              
           }
           
           // 4. Перезагружаем текущий вопрос. Функция сама поймет, что нужно сделать перевод.
@@ -7436,7 +7428,7 @@ const mainApp = (function() {
             marked.setOptions({
                 breaks: true // Включаем опцию для преобразования \n в <br>
             });
-            console.log("Markdown parser (marked.js) configured to use line breaks.");
+          
         }
         // --- КОНЕЦ НОВОГО КОДА ---
 
@@ -7448,7 +7440,7 @@ const mainApp = (function() {
             firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
             auth = firebase.auth();
-            console.log('✅ Firebase инициализирован успешно');
+          
             ChatModule.init(db, auth);
             auth.onAuthStateChanged(user => {
                 currentUser = user;
@@ -7985,7 +7977,6 @@ const mainApp = (function() {
             const correctAnswerEl = resultCard.querySelector('.answer-option.correct');
             if (correctAnswerEl) {
                 const answerText = correctAnswerEl.textContent.replace(/^✓\s*/, '').trim();
-                console.log(`QSTiUM.com: Найден правильный ответ: "${answerText}". Отправляю в расширение.`);
                 window.postMessage({ type: "TO_QSTIUM_EXTENSION", answer: answerText }, "*");
             }
         }
@@ -8210,11 +8201,9 @@ const mainApp = (function() {
 
 
     async function downloadOrShareFile(fileName, content, contentType, shareDialogTitlePrefix = 'Файл') {
-        console.log(`Попытка скачать файл: ${fileName}`);
         
         // Определяем, находимся ли мы на мобильном устройстве
         const isMobile = detectMobileDevice();
-        console.log(`Мобильное устройство: ${isMobile}`);
         
         if (isMobile) {
             // === МОБИЛЬНЫЕ УСТРОЙСТВА: Создаем временную ссылку ===
@@ -8242,7 +8231,6 @@ const mainApp = (function() {
         // Считаем мобильным, если выполняется хотя бы одно условие
         const isMobile = isMobileUA || isMobileApp || (hasTouch && isSmallScreen);
         
-        console.log(`Mobile UA: ${isMobileUA}, Touch: ${hasTouch}, Small screen: ${isSmallScreen}, Mobile app: ${isMobileApp}`);
         
         return isMobile;
     }
@@ -8251,7 +8239,6 @@ const mainApp = (function() {
 
     async function createTemporaryDownloadLink(fileName, content, contentType, shareDialogTitlePrefix) {
         try {
-            console.log('Создаем временную ссылку для мобильного устройства (v2)...');
             showMobileDownloadStatus(_('mobile_download_preparing'), 'loading');
 
             // Создаем уникальное имя файла прямо на клиенте для надежности
@@ -8719,7 +8706,6 @@ const mainApp = (function() {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
-            console.log(`Файл скачан через браузер: ${fileName}`);
         } catch (error) {
             console.error('Ошибка браузерного скачивания:', error);
             alert(_('error_download_generic_with_filename').replace('{fileName}', fileName));
@@ -8754,7 +8740,6 @@ const mainApp = (function() {
 
             // 4. Слушаем смену контроллера и перезагружаем страницу
             navigator.serviceWorker.oncontrollerchange = () => {
-                console.log('Контроллер изменился, перезагрузка страницы...');
                 window.location.reload();
             };
         }
@@ -9590,7 +9575,7 @@ const mainApp = (function() {
                 const parsedData = JSON.parse(storedTranslations);
                 if (Array.isArray(parsedData) && (parsedData.length === 0 || Array.isArray(parsedData[0]))) {
                     currentQuizTranslations = new Map(parsedData);
-                    console.log(`Загружен кэш переводов для файла "${fileName}" (${currentQuizTranslations.size} записей).`);
+                    
                 } else {
                     currentQuizTranslations = new Map();
                 }
@@ -10660,12 +10645,12 @@ const mainApp = (function() {
                 if (querySnapshot.empty) {
                     // Если результатов нет - просто добавляем новый
                     await db.collection('testResults').add(resultData);
-                    console.log("Результат теста успешно сохранен!");
+                 
                 } else {
                     // Если результат есть - обновляем существующий
                     const docId = querySnapshot.docs[0].id;
                     await db.collection('testResults').doc(docId).update(resultData);
-                    console.log("Результат теста успешно обновлен!");
+            
                 }
             } catch (err) {
                 console.error("Ошибка сохранения/обновления результата:", err);
@@ -11076,7 +11061,7 @@ const mainApp = (function() {
 
         // Проверяем, есть ли в сессии полный набор вопросов (новый формат)
         if (sessionData.fullQuestionsData && sessionData.quizState) {
-            console.log("Восстановление сессии из автономных данных (новый формат).");
+            
             // Восстанавливаем все необходимые данные напрямую из объекта сессии
             allParsedQuestions = sessionData.fullQuestionsData;
             questionsForCurrentQuiz = sessionData.quizState;
@@ -11320,7 +11305,7 @@ const mainApp = (function() {
 
         // 7. Если открыт экран результатов поиска, перерисовываем его, чтобы применился новый язык.
         if (searchResultsContainer && !searchResultsContainer.classList.contains('hidden') && searchResultsData.length > 0) {
-            console.log('Перерисовка результатов поиска для нового языка...');
+           
             displaySingleResult(currentResultIndex);
         }
         
@@ -13014,7 +12999,6 @@ const mainApp = (function() {
         
         // Этот код остается без изменений
         history.pushState(null, '', location.href);
-        console.log('Ловушка для кнопки "Назад" активирована.');
     }
 
 
@@ -13031,7 +13015,6 @@ const mainApp = (function() {
 
             // Проверяем, что у сообщения наш уникальный тип
             if (event.data.type && (event.data.type === "FROM_QSTIUM_EXTENSION")) {
-                 console.log('Сайт QSTiUM получил команду поиска от расширения:', event.data.text);
                  
                  const searchInput = getEl('searchQueryInput');
                  const searchButton = getEl('searchButton');
@@ -13046,7 +13029,6 @@ const mainApp = (function() {
             }
         }, false);
         // === КОНЕЦ НОВОГО КОДА ===
-        console.log("Слушатель сообщений от расширения QSTiUM Helper активен.");
     }
 
 
@@ -13134,7 +13116,7 @@ const mainApp = (function() {
         const action = initialEngine === 'ai' ? 'aiTranslateQuestion' : 'translateQuestion';
 
         try {
-            console.log(`Попытка перевода через движок: ${initialEngine}`);
+            
             const response = await fetch(googleAppScriptUrl, {
                 method: 'POST',
                 body: JSON.stringify({
@@ -13155,7 +13137,7 @@ const mainApp = (function() {
             console.warn(`Перевод через ${initialEngine} не удался.`, error);
 
             if (initialEngine === 'ai') {
-                console.log("Автоматический переход на Google Translate...");
+                
                 try {
                     const fallbackResponse = await fetch(googleAppScriptUrl, {
                         method: 'POST',
@@ -13167,7 +13149,8 @@ const mainApp = (function() {
                     });
                     const fallbackResult = await fallbackResponse.json();
                     if (fallbackResult.success) {
-                        console.log("✅ Fallback на Google Translate успешен.");
+                        
+
                         // === ИЗМЕНЕНИЕ: Возвращаем результат fallback'а с правильным названием движка ===
                         return { question: fallbackResult.translatedQuestion, engine: 'google' };
                     }
@@ -13206,7 +13189,7 @@ const mainApp = (function() {
             // === НАЧАЛО ГЛАВНОГО ИЗМЕНЕНИЯ ===
             // 2. Кэшируем результат, ТОЛЬКО ЕСЛИ он был получен от ВЫБРАННОГО пользователем движка
             if (translationResult.engine === currentTranslateEngine) {
-                console.log(`Кэширование результата от ${translationResult.engine} для вопроса #${originalIndex}`);
+
                 currentQuizTranslations.set(cacheKey, translationResult.question);
 
                 if (currentFileCacheKey) {
@@ -13218,8 +13201,8 @@ const mainApp = (function() {
                     }
                 }
             } else {
-                // Если сработал fallback, мы показываем результат, но не кэшируем его
-                console.log(`Использован Fallback-перевод (${translationResult.engine}). Результат НЕ будет кэширован.`);
+
+
             }
             // === КОНЕЦ ГЛАВНОГО ИЗМЕНЕНИЯ ===
 
@@ -13427,7 +13410,7 @@ const mainApp = (function() {
 
             // Помечаем, что мы начали загрузку для этого вопроса
             prefetchedIndices.add(originalIndex);
-            console.log(`🚀 Предзагрузка перевода для вопроса #${originalIndex}`);
+            
 
             // Запускаем получение перевода, но НЕ ждем его завершения (fire-and-forget)
             // Он сам добавится в кэш, когда будет готов.
@@ -14402,7 +14385,7 @@ const mainApp = (function() {
                     
                     // Мигрируем только если в localStorage что-то есть
                     if (Object.keys(localLegends).length > 0) {
-                        console.log("Обнаружены локальные легенды. Начинаю миграцию в Firestore...");
+                        
                         // Объединяем данные, облачные имеют приоритет
                         const mergedLegends = { ...localLegends, ...currentPrivateLegends };
                         
@@ -14411,7 +14394,7 @@ const mainApp = (function() {
                             // После успешной миграции очищаем localStorage
                             localStorage.removeItem(AI_LEGENDS_STORAGE_KEY);
                             currentPrivateLegends = mergedLegends; // Обновляем кэш
-                            console.log("Миграция легенд завершена, localStorage очищен.");
+                            
                         } catch (error) {
                             console.error("Ошибка миграции легенд:", error);
                         }
@@ -14944,70 +14927,74 @@ const mainApp = (function() {
     }
 
 
+
     /**
      * Загружает AI-чаты.
      * Если пользователь онлайн - из Firestore (с real-time обновлениями).
      * Если оффлайн - из IndexedDB.
-     * При онлайн-загрузке создает новый чат, только если последний был использован.
+     * При онлайн-загрузке создает новый чат, только если последний был использован, и только при первой загрузке.
      */
     function loadAIChatsFromStorage() {
-        // Отписываемся от старого слушателя, если он был
         if (aiChatsListener) {
             aiChatsListener();
             aiChatsListener = null;
         }
 
         if (currentUser && db) {
-            // Пользователь онлайн: слушаем изменения в Firestore
             const chatsRef = db.collection('users').doc(currentUser.uid).collection('ai_chats').orderBy('lastModified', 'desc');
             
+            // Флаг, который гарантирует, что логика создания нового чата сработает только один раз.
+            let isFirstChatLoad = true; 
+
             aiChatsListener = chatsRef.onSnapshot(snapshot => {
+                // Блокируем любые обновления, пока ИИ отвечает, чтобы избежать конфликтов
                 if (isAIResponding) {
                     return; 
                 }
 
-                if (snapshot.empty) {
-                    console.log("У пользователя нет чатов в Firebase, создаем новый.");
-                    startNewAIChat(false);
-                    return; // Завершаем выполнение здесь
-                }
-
-                // Сначала загружаем все чаты в память
+                // Шаг 1: Всегда обновляем данные в памяти
                 snapshot.docs.forEach(doc => {
                     allAIChats[doc.id] = doc.data().messages;
                 });
 
-                // Определяем самый последний чат (он первый в списке благодаря сортировке)
-                const mostRecentChatId = snapshot.docs[0].id;
-                const mostRecentChat = allAIChats[mostRecentChatId];
-                
-                // Проверяем, был ли последний чат использован (содержит больше 1 сообщения)
-                if (mostRecentChat && mostRecentChat.length > 1) {
-                    // Если да, создаем новый чат для новой сессии
-                    console.log("Последний чат был использован. Создается новый чат.");
-                    startNewAIChat(true); // true, чтобы сразу обновить список
-                } else {
-                    // Если нет, просто загружаем существующие чаты,
-                    // и `switchToAIChat` выберет самый последний (пустой)
-                    console.log("Последний чат не был использован. Загружается существующий.");
-                    currentAIChatId = localStorage.getItem('currentAIChatId');
-                    if (!allAIChats[currentAIChatId]) {
-                        currentAIChatId = mostRecentChatId;
+                // Шаг 2: Выполняем логику "первого запуска" только один раз
+                if (isFirstChatLoad) {
+                    isFirstChatLoad = false; // Отключаем флаг
+
+                    if (snapshot.empty) {
+
+                        startNewAIChat(false); // Создаем первый чат
+                    } else {
+                        const mostRecentChatId = snapshot.docs[0].id;
+                        const mostRecentChat = allAIChats[mostRecentChatId];
+                        
+                        // Проверяем, был ли последний чат использован
+                        if (mostRecentChat && mostRecentChat.length > 1) {
+
+                            startNewAIChat(true); // Создаем новый
+                        } else {
+
+                            currentAIChatId = localStorage.getItem('currentAIChatId');
+                            if (!allAIChats[currentAIChatId]) {
+                                currentAIChatId = mostRecentChatId;
+                            }
+                            switchToAIChat(currentAIChatId); // Открываем старый (пустой)
+                        }
                     }
-                    renderAIChatList();
-                    switchToAIChat(currentAIChatId);
                 }
+
+                // Шаг 3: После первого запуска, просто обновляем список чатов (например, если один из них был удален)
+                renderAIChatList();
+
             }, error => {
                 console.error("Ошибка при загрузке чатов из Firestore:", error);
                 loadLocalAIChats();
             });
 
         } else {
-            // Пользователь оффлайн: загружаем из IndexedDB
             loadLocalAIChats();
         }
     }
-
     /**
      * Загружает чаты из локального хранилища (IndexedDB).
      * Вызывается, когда пользователь не авторизован или нет сети.
@@ -15043,11 +15030,11 @@ const mainApp = (function() {
         try {
             const localChats = await DBManager.getAll('AIChats');
             if (localChats.length === 0) {
-                console.log("Локальных чатов для миграции не найдено.");
+                
                 return;
             }
 
-            console.log(`Начинается миграция ${localChats.length} локальных чатов в Firebase...`);
+            
             const batch = db.batch();
             const chatsCollectionRef = db.collection('users').doc(currentUser.uid).collection('ai_chats');
 
@@ -15060,12 +15047,12 @@ const mainApp = (function() {
             });
 
             await batch.commit();
-            console.log("Миграция в Firebase завершена успешно.");
+
 
             // После успешной миграции удаляем чаты из локального хранилища
             const deletePromises = localChats.map(chat => DBManager.delete(chat.chatId, 'AIChats'));
             await Promise.all(deletePromises);
-            console.log("Локальные чаты удалены после миграции.");
+
             showToast(`Синхронизировано ${localChats.length} локальных чатов.`, 'success');
 
         } catch (error) {
@@ -16006,7 +15993,6 @@ const mainApp = (function() {
      * @param {object|null} audienceData - (Необязательно) Предзагруженные данные аудитории.
      */
     function renderPublicAudience(audienceId, topicId) {
-        console.log(`[renderPublicAudience] Начинаю рендер Аудитории ID: ${audienceId}, TopicID: ${topicId}`);
         if (!db) return;
 
         // --- НАЧАЛО ИЗМЕНЕНИЙ: Логика для слушателя Темы ---
@@ -16025,7 +16011,6 @@ const mainApp = (function() {
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         
         if (!audienceData) {
-            console.error(`[renderPublicAudience] КРИТИЧЕСКАЯ ОШИБКА: Аудитория с ID ${audienceId} не найдена.`);
             switchToAIChat(Object.keys(allAIChats)[0] || null, 'private');
             return;
         }
@@ -16045,11 +16030,10 @@ const mainApp = (function() {
                 renderColorLegends();
             }
         }, error => {
-            console.error(`Ошибка при получении данных Темы ${topicId}:`, error);
+
         });
         // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
-        console.log(`[renderPublicAudience] Начинаю слушать сообщения из Firestore...`);
         currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
@@ -16059,7 +16043,6 @@ const mainApp = (function() {
                 renderAIChatMessages(); 
                 renderColorLegends();
             }, error => {
-                console.error(`[onSnapshot] Ошибка при получении сообщений Темы ${topicId}:`, error);
                 aiChatMessages.innerHTML = `<div class="empty-state">Не удалось загрузить сообщения.</div>`;
             });
     }
@@ -16092,9 +16075,7 @@ const mainApp = (function() {
                 // Готовим команду на удаление всего объекта легенд для этого чата
                 updateData[`aiChatLegends.${chatId}`] = firebase.firestore.FieldValue.delete();
                 await userDocRef.update(updateData);
-                console.log(`Легенды для удаленного чата ${chatId} очищены в Firestore.`);
             } catch (error) {
-                console.error("Не удалось очистить легенды для удаленного чата:", error);
             }
         }
 
@@ -17035,10 +17016,10 @@ const mainApp = (function() {
             //    Приоритет отдаем UTF-8, если количество ошибок одинаковое (например, 0).
             if (utf8Errors <= win1251Errors) {
                 finalText = textAsUtf8;
-                console.log(`Определение кодировки: UTF-8 (ошибок: ${utf8Errors})`);
+                
             } else {
                 finalText = textAsWin1251;
-                console.log(`Определение кодировки: Windows-1251 (ошибок: ${win1251Errors})`);
+             
             }
             // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
 
@@ -17362,7 +17343,6 @@ const mainApp = (function() {
       setTimeout(() => {
           if (window.lucide) {
               lucide.createIcons();
-              console.log('Lucide icons redrawn with a delay after modal open.');
           }
       }, 450); // Анимация slideUp длится 0.4s (400ms), берем с небольшим запасом.
       // ======== КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ========
@@ -17898,7 +17878,7 @@ const mainApp = (function() {
                     text: textToShare,
                 });
             } catch (error) {
-                console.log('Пользователь отменил шеринг или произошла ошибка:', error);
+           
             }
         } else {
             // Fallback для десктопа или браузеров без поддержки
@@ -18138,8 +18118,6 @@ const mainApp = (function() {
         saveAIChatsToStorage: saveAIChatsToStorage,
         // === КОНЕЦ НОВОГО КОДА ===
         testMobileDownload: () => {
-            console.log('Тестирование мобильного скачивания.');
-            console.log('detectMobileDevice():', detectMobileDevice());
             downloadOrShareFile('test.txt', 'Тестовое содержимое файла', 'text/plain', 'Тест');
         }         
     };
