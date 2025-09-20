@@ -7128,6 +7128,9 @@ const mainApp = (function() {
     let searchResultsData = [];
     let currentResultIndex = 0;
     let currentQuizContext = null;
+    let currentPublicLegends = {};
+    let currentTopicListener = null; 
+    let currentTopicLegends = {};  
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
     let currentAITranslation = null; // НОВАЯ: для хранения перевода в модальном окне
@@ -14471,10 +14474,6 @@ const mainApp = (function() {
             }
         });
 
-
-
-
-
         if (aiUserMessagesList) {
             let longPressTimer = null;
             let touchStartX = 0;
@@ -14566,7 +14565,6 @@ const mainApp = (function() {
             aiUserMessagesList.addEventListener('touchstart', handlePressStart, { passive: true });
             aiUserMessagesList.addEventListener('click', handleClick, true); // Используем фазу захвата для надежности
         }
-
 
             
             // Функция, которая скрывает активную подсказку
@@ -15445,6 +15443,13 @@ const mainApp = (function() {
             currentAudienceListener();
             currentAudienceListener = null;
         }
+        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
+        // Отписываемся от слушателя предыдущей темы
+        if (currentTopicListener) {
+            currentTopicListener();
+            currentTopicListener = null;
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         currentAIChatType = chatType;
 
@@ -15453,11 +15458,13 @@ const mainApp = (function() {
         const topicsView = getEl('aiTopicsView');
 
         if (chatType === 'public' && audienceId) {
-            // Мы в публичной аудитории (либо в папке, либо в теме)
             publicSection.classList.add('hidden');
             privateSection.classList.add('hidden');
             topicsView.classList.remove('hidden');
-            aiTopicsBreadcrumb.textContent = window.aiAudiencesCache?.find(a => a.id === audienceId)?.title || 'Аудитория';
+            
+            const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
+            aiTopicsBreadcrumb.textContent = audienceData?.title || 'Аудитория';
+            currentPublicLegends = audienceData?.colorLegends || {};
             
             currentAIChatId = null;
             currentAudienceId = audienceId;
@@ -15467,7 +15474,6 @@ const mainApp = (function() {
             renderPublicAudience(audienceId, topicId);
 
         } else { // private
-            // Мы в режиме приватных чатов
             publicSection.classList.remove('hidden');
             privateSection.classList.remove('hidden');
             topicsView.classList.add('hidden');
@@ -15475,6 +15481,10 @@ const mainApp = (function() {
             currentAIChatId = audienceId;
             currentAudienceId = null;
             currentTopicId = null;
+            
+            currentPublicLegends = {};
+            // --- ИЗМЕНЕНИЕ: Сбрасываем кэш легенд темы ---
+            currentTopicLegends = {};
             
             currentPublicChatMessages = [];
             localStorage.setItem('currentAIChatId', currentAIChatId);
@@ -15487,7 +15497,6 @@ const mainApp = (function() {
         renderAudiencesList();
         renderTopicsList(currentAudienceId);
 
-        // Закрываем сайдбар на мобильных, только если выбран конкретный чат (приватный или тема)
         if (window.innerWidth <= 800 && (chatType === 'private' || topicId)) {
             closeMobileSidebar();
         }
@@ -15906,13 +15915,22 @@ const mainApp = (function() {
      * @param {string} audienceId - ID аудитории.
      * @param {object|null} audienceData - (Необязательно) Предзагруженные данные аудитории.
      */
-// NOBY KOD
     function renderPublicAudience(audienceId, topicId) {
         console.log(`[renderPublicAudience] Начинаю рендер Аудитории ID: ${audienceId}, TopicID: ${topicId}`);
-        if (!db || !topicId) {
+        if (!db) return;
+
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Логика для слушателя Темы ---
+        // Отписываемся от предыдущего слушателя темы, если он был
+        if (currentTopicListener) {
+            currentTopicListener();
+            currentTopicListener = null;
+        }
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+
+        if (!topicId) {
             aiChatMessages.innerHTML = '<div class="empty-state">Выберите тему для начала общения.</div>';
             return;
-        };
+        }
 
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         
@@ -15925,6 +15943,21 @@ const mainApp = (function() {
         const isOwner = currentUser && currentUser.uid === audienceData.ownerId;
         aiChatInput.disabled = !isOwner;
         aiChatInput.placeholder = isOwner ? _('ai_chat_placeholder') : "Вы находитесь в режиме просмотра";
+
+        // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем слушатель для самой Темы ---
+        const topicRef = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId);
+        currentTopicListener = topicRef.onSnapshot(doc => {
+            if (doc.exists) {
+                const topicData = doc.data();
+                // Обновляем наш кэш с легендами для этой темы
+                currentTopicLegends = topicData.colorLegends || {};
+                // Сразу же перерисовываем легенду в шапке
+                renderColorLegends();
+            }
+        }, error => {
+            console.error(`Ошибка при получении данных Темы ${topicId}:`, error);
+        });
+        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         console.log(`[renderPublicAudience] Начинаю слушать сообщения из Firestore...`);
         currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId).collection('messages')
@@ -15945,8 +15978,6 @@ const mainApp = (function() {
 
 
 
-
-
     /**
      * Удаляет выбранный чат из текущего хранилища (Firebase или IndexedDB).
      * @param {string} chatId - ID чата для удаления.
@@ -15961,6 +15992,16 @@ const mainApp = (function() {
 
         // Удаляем из оперативной памяти
         delete allAIChats[chatId];
+
+        // Удаляем связанные с чатом легенды, ТОЛЬКО если это приватный чат
+        if (currentAIChatType === 'private') {
+            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+            if (allLegends[chatId]) {
+                delete allLegends[chatId];
+                localStorage.setItem(AI_LEGENDS_STORAGE_KEY, JSON.stringify(allLegends));
+                console.log(`Легенды для удаленного чата ${chatId} очищены.`);
+            }
+        }
 
         // Удаляем из хранилища
         if (currentUser && db) {
@@ -15987,7 +16028,6 @@ const mainApp = (function() {
         // В любом случае перерисовываем список
         renderAIChatList();
     }
-
 
 
     // =======================================================
@@ -16471,9 +16511,6 @@ const mainApp = (function() {
     }
 
 
-    /**
-     * НОВАЯ ФУНКЦИЯ: Отображает легенду для используемых цветов.
-     */
     function renderColorLegends() {
         if (!aiColorLegendsWithEditor || !aiColorLegendsWithList) return;
 
@@ -16484,43 +16521,53 @@ const mainApp = (function() {
         }
 
         const usedColors = new Set(currentChat.map(msg => msg.dotColor).filter(Boolean));
-        const savedLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+        
+        let chatLegends = {};
+        if (currentAIChatType === 'public') {
+            // --- ИЗМЕНЕНИЕ: Используем легенды конкретной темы ---
+            chatLegends = currentTopicLegends || {};
+        } else {
+            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+            chatLegends = allLegends[currentAIChatId] || {};
+        }
 
         if (usedColors.size === 0) {
             aiColorLegendsWithEditor.classList.add('hidden');
-            aiColorLegendEditor.classList.add('hidden'); // Скрываем редактор, если цветов нет
+            aiColorLegendEditor.classList.add('hidden');
             return;
         }
 
         aiColorLegendsWithEditor.classList.remove('hidden');
         aiColorLegendsWithList.innerHTML = '';
 
+        const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
+        const canEdit = (currentAIChatType === 'private') || (currentUser && audienceData && currentUser.uid === audienceData.ownerId);
+
         usedColors.forEach(color => {
-            // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-            const description = savedLegends[color] || ''; // Если описания нет, строка будет пустой
-            // Создаем HTML для текста, только если он существует
+            const description = chatLegends[color] || '';
             const textHtml = description ? `<span class="legend-text">${escapeHTML(description)}</span>` : '';
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
             const item = document.createElement('div');
             item.className = 'ai-color-legend-item';
             
-            // --- ОБНОВЛЕННЫЙ HTML ---
+            const editBtnHtml = canEdit 
+                ? `<button class="legend-edit-btn" title="Редактировать описание"><i data-lucide="pencil" style="width: 12px; height: 12px;"></i></button>` 
+                : '';
+
             item.innerHTML = `
                 <span class="legend-color-swatch" style="background-color: ${color};"></span>
                 ${textHtml}
-                <button class="legend-edit-btn" title="Редактировать описание"><i data-lucide="pencil" style="width: 12px; height: 12px;"></i></button>
+                ${editBtnHtml}
             `;
-            // --- КОНЕЦ ОБНОВЛЕНИЯ ---
 
-            item.querySelector('.legend-edit-btn').onclick = () => showLegendEditor(color);
+            if (canEdit) {
+                item.querySelector('.legend-edit-btn').onclick = () => showLegendEditor(color);
+            }
             aiColorLegendsWithList.appendChild(item);
         });
         if (window.lucide) lucide.createIcons();
     }
-    /**
-     * НОВАЯ ФУНКЦИЯ: Показывает редактор для описания цвета.
-     */
+
     function showLegendEditor(color) {
         const modal = getEl('legendEditModal');
         const colorSwatch = getEl('legendEditModalColorSwatch');
@@ -16530,10 +16577,17 @@ const mainApp = (function() {
 
         if (!modal || !colorSwatch || !input || !confirmBtn || !cancelBtn) return;
 
-        const savedLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+        let chatLegends = {};
+        if (currentAIChatType === 'public') {
+            // --- ИЗМЕНЕНИЕ: Используем легенды конкретной темы ---
+            chatLegends = currentTopicLegends || {};
+        } else {
+            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+            chatLegends = allLegends[currentAIChatId] || {};
+        }
         
         colorSwatch.style.backgroundColor = color;
-        input.value = savedLegends[color] || '';
+        input.value = chatLegends[color] || '';
 
         modal.classList.remove('hidden');
         input.focus();
@@ -16547,7 +16601,7 @@ const mainApp = (function() {
         };
 
         confirmBtn.onclick = () => {
-            saveLegendText(color); // Вызываем сохранение
+            saveLegendText(color); 
             cleanup();
         };
 
@@ -16564,24 +16618,60 @@ const mainApp = (function() {
     /**
      * НОВАЯ ФУНКЦИЯ: Сохраняет текст описания для цвета.
      */
-    function saveLegendText(color) {
+    async function saveLegendText(color) {
         const input = getEl('legendNameInput');
         if (!input) return;
 
         const newText = input.value.trim();
-        const savedLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
-        
-        if (newText) {
-            savedLegends[color] = newText;
-        } else {
-            delete savedLegends[color];
-        }
-        
-        localStorage.setItem(AI_LEGENDS_STORAGE_KEY, JSON.stringify(savedLegends));
-        
-        renderColorLegends(); // Просто обновляем отображение легенды в шапке
-    }
 
+        // === ВЕТКА №1: Публичный чат (Аудитория) ===
+        if (currentAIChatType === 'public') {
+            // --- ИЗМЕНЕНИЕ: Добавили проверку на ID темы ---
+            if (!currentUser || !currentAudienceId || !currentTopicId || !db) return;
+
+            const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
+            if (!audienceData || currentUser.uid !== audienceData.ownerId) {
+                showToast("Только владелец может редактировать легенду.", "error");
+                return;
+            }
+
+            // --- ИЗМЕНЕНИЕ: Путь теперь ведет к документу Темы ---
+            const topicRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId);
+            const updateData = {};
+            const fieldPath = `colorLegends.${color}`; 
+
+            if (newText) {
+                updateData[fieldPath] = newText;
+            } else {
+                updateData[fieldPath] = firebase.firestore.FieldValue.delete();
+            }
+
+            try {
+                // Обновляем документ Темы
+                await topicRef.update(updateData);
+                // Наш слушатель onSnapshot автоматически обновит currentTopicLegends и перерисует UI
+            } catch (error) {
+                console.error("Ошибка обновления легенды в Firestore:", error);
+                showToast("Не удалось сохранить описание.", "error");
+            }
+
+        // === ВЕТКА №2: Приватный чат (старая логика) ===
+        } else {
+            if (!currentAIChatId) return;
+
+            const allLegends = JSON.parse(localStorage.getItem(AI_LEGENDS_STORAGE_KEY)) || {};
+            if (!allLegends[currentAIChatId]) {
+                allLegends[currentAIChatId] = {};
+            }
+            if (newText) {
+                allLegends[currentAIChatId][color] = newText;
+            } else {
+                delete allLegends[currentAIChatId][color];
+            }
+            localStorage.setItem(AI_LEGENDS_STORAGE_KEY, JSON.stringify(allLegends));
+            renderColorLegends();
+        }
+    }
 
     /**
      * НОВАЯ ФУНКЦИЯ: Начинает процесс ответа на сообщение.
