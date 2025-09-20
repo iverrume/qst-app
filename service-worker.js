@@ -22,7 +22,7 @@ const IDB_NAME = 'QSTiUM_AppDB';
 const IDB_STORE_NAME = 'offlineMessages';
 
 
-const CACHE_NAME = 'qst-app-cache-v377'; 
+const CACHE_NAME = 'qst-app-cache-v378'; 
 
 // Файлы, которые составляют "оболочку" приложения и будут закешированы
 const URLS_TO_CACHE = [

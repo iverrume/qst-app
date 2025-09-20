@@ -14658,25 +14658,47 @@ const mainApp = (function() {
             aiUserMessagesList.addEventListener('click', handleClick, true); // Используем фазу захвата для надежности
         }
 
-            
-            // Функция, которая скрывает активную подсказку
-            const hideSourceTooltip = () => {
+           
+            // =================================================================================
+            // ===      НОВЫЕ ФУНКЦИИ ДЛЯ ПОДСКАЗОК К ИСТОЧНИКАМ (v2, более надежные)        ===
+            // =================================================================================
+
+            let activeSourceTooltip = null; // Глобальная переменная для отслеживания активной подсказки
+
+            /**
+             * Скрывает и полностью удаляет активную подсказку и ее слушатель событий.
+             */
+            const hideActiveTooltip = () => {
                 if (activeSourceTooltip) {
-                    activeSourceTooltip.classList.remove('visible');
-                    // Удаляем из DOM после анимации, чтобы не накапливались
+                    const tooltipToRemove = activeSourceTooltip;
+                    // Важно: получаем ссылку на функцию-слушатель ПЕРЕД тем, как сбросить activeSourceTooltip
+                    const hideListener = tooltipToRemove._hideListener; 
+                    
+                    // Сбрасываем глобальную переменную
+                    activeSourceTooltip = null;
+
+                    // Удаляем слушатель, если он был прикреплен
+                    if (hideListener) {
+                        window.removeEventListener('click', hideListener, true);
+                    }
+                    
+                    // Запускаем анимацию исчезновения и удаляем элемент из DOM
+                    tooltipToRemove.classList.remove('visible');
                     setTimeout(() => {
-                        if (activeSourceTooltip && !activeSourceTooltip.classList.contains('visible')) {
-                            activeSourceTooltip.remove();
+                        if (tooltipToRemove.parentNode) {
+                            tooltipToRemove.remove();
                         }
-                        activeSourceTooltip = null;
-                    }, 200);
+                    }, 200); // Время должно совпадать с transition в CSS
                 }
             };
 
-            // Функция, которая создает и показывает подсказку
+            /**
+             * Создает и показывает подсказку для указанного элемента.
+             * @param {HTMLElement} targetElement - Элемент .grounded-segment, для которого нужно показать подсказку.
+             */
             const showSourceTooltip = (targetElement) => {
-                // Сначала скрываем старую, если она была
-                hideSourceTooltip();
+                // Сначала всегда скрываем любую предыдущую подсказку, чтобы избежать дублирования
+                hideActiveTooltip();
 
                 const tooltip = document.createElement('div');
                 tooltip.className = 'source-tooltip';
@@ -14685,16 +14707,17 @@ const mainApp = (function() {
                     const sources = JSON.parse(targetElement.dataset.source);
                     if (!sources || sources.length === 0) return;
 
+                    // Создаем содержимое подсказки
                     tooltip.innerHTML = sources.map(source => 
                         `<a href="${source.uri}" target="_blank" rel="noopener noreferrer">${escapeHTML(source.title || 'Источник')}</a>`
                     ).join('<br>');
                     
                     document.body.appendChild(tooltip);
 
+                    // Расчет позиции (остается без изменений)
                     const targetRect = targetElement.getBoundingClientRect();
                     tooltip.style.left = `${targetRect.left}px`;
                     tooltip.style.top = `${targetRect.bottom + 5}px`;
-
                     const tooltipRect = tooltip.getBoundingClientRect();
                     if (tooltipRect.right > window.innerWidth - 10) {
                         tooltip.style.left = `${window.innerWidth - tooltipRect.width - 10}px`;
@@ -14703,47 +14726,53 @@ const mainApp = (function() {
                         tooltip.style.top = `${targetRect.top - tooltipRect.height - 5}px`;
                     }
                     
-                    // Сохраняем ссылку на активную подсказку и на элемент, который ее вызвал
+                    // Сохраняем ссылку на активную подсказку
                     activeSourceTooltip = tooltip;
-                    activeSourceTooltip.sourceElement = targetElement;
                     
-                    // Делаем видимой
-                    setTimeout(() => tooltip.classList.add('visible'), 10);
+                    // Создаем уникальный слушатель для этой подсказки
+                    const hideOnClickOutside = (event) => {
+                        // Закрываем, если клик был не по самой подсказке и не по элементу, который ее вызвал
+                        if (activeSourceTooltip && !activeSourceTooltip.contains(event.target) && !targetElement.contains(event.target)) {
+                            hideActiveTooltip();
+                        }
+                    };
+                    
+                    // Сохраняем ссылку на слушатель прямо в элементе, чтобы потом его можно было удалить
+                    tooltip._hideListener = hideOnClickOutside;
+
+                    // Показываем подсказку с анимацией
+                    setTimeout(() => {
+                        tooltip.classList.add('visible');
+                        // Добавляем слушатель на закрытие только ПОСЛЕ того, как текущий клик "прошел"
+                        window.addEventListener('click', hideOnClickOutside, true);
+                    }, 10);
 
                 } catch (err) {
                     console.error("Ошибка парсинга данных источника:", err);
-                    tooltip.remove();
-                }
-            };
-
-            // Главный обработчик кликов по всему документу
-            const handleDocumentClickForTooltips = (e) => {
-                const clickedSegment = e.target.closest('.grounded-segment');
-                
-                // Если кликнули по сегменту...
-                if (clickedSegment) {
-                    // ...и это тот же сегмент, что уже открыл подсказку...
-                    if (activeSourceTooltip && activeSourceTooltip.sourceElement === clickedSegment) {
-                        // ...то просто скрываем ее (toggle).
-                        hideSourceTooltip();
-                    } else {
-                        // ...иначе (если это другой сегмент) - показываем новую подсказку.
-                        showSourceTooltip(clickedSegment);
+                    if (tooltip.parentNode) {
+                        tooltip.remove();
                     }
-                    return; // Завершаем обработку
-                }
-
-                // Если кликнули НЕ по сегменту и НЕ по самой подсказке, то скрываем ее.
-                if (activeSourceTooltip && !activeSourceTooltip.contains(e.target)) {
-                    hideSourceTooltip();
                 }
             };
-            
-            // Навешиваем один универсальный обработчик на весь документ
-            document.removeEventListener('click', handleDocumentClickForTooltips); // Очистка на всякий случай
-            document.addEventListener('click', handleDocumentClickForTooltips);
 
-
+            // Главный обработчик кликов, который теперь только ОТКРЫВАЕТ подсказки
+            aiChatMessages?.addEventListener('click', (event) => {
+                const clickedSegment = event.target.closest('.grounded-segment');
+                
+                if (clickedSegment) {
+                    // Если кликнули по сегменту, который уже открыл подсказку, скрываем ее (toggle)
+                    if (activeSourceTooltip && activeSourceTooltip._sourceElement === clickedSegment) {
+                        hideActiveTooltip();
+                    } else {
+                        // Иначе показываем новую
+                        showSourceTooltip(clickedSegment);
+                        // Запоминаем, какой элемент вызвал подсказку
+                        if (activeSourceTooltip) {
+                            activeSourceTooltip._sourceElement = clickedSegment;
+                        }
+                    }
+                }
+            });
 
 
             // --- КОНЕЦ ФИНАЛЬНЫХ ИЗМЕНЕНИЙ ---
@@ -14956,7 +14985,7 @@ const mainApp = (function() {
      * Загружает AI-чаты.
      * Если пользователь онлайн - из Firestore (с real-time обновлениями).
      * Если оффлайн - из IndexedDB.
-     * При онлайн-загрузке создает новый чат, только если последний был использован, и только при первой загрузке.
+     * Корректно обрабатывает добавление, изменение и удаление чатов.
      */
     function loadAIChatsFromStorage() {
         if (aiChatsListener) {
@@ -14967,48 +14996,67 @@ const mainApp = (function() {
         if (currentUser && db) {
             const chatsRef = db.collection('users').doc(currentUser.uid).collection('ai_chats').orderBy('lastModified', 'desc');
             
-            // Флаг, который гарантирует, что логика создания нового чата сработает только один раз.
             let isFirstChatLoad = true; 
 
             aiChatsListener = chatsRef.onSnapshot(snapshot => {
-                // Блокируем любые обновления, пока ИИ отвечает, чтобы избежать конфликтов
                 if (isAIResponding) {
                     return; 
                 }
 
-                // Шаг 1: Всегда обновляем данные в памяти
-                snapshot.docs.forEach(doc => {
-                    allAIChats[doc.id] = doc.data().messages;
+                // Шаг 1: Обрабатываем все изменения (добавление, изменение, удаление)
+                snapshot.docChanges().forEach(change => {
+                    const doc = change.doc;
+                    if (change.type === 'removed') {
+                        // Если чат удален, убираем его из нашего локального хранилища
+                        delete allAIChats[doc.id];
+
+                    } else { // 'added' or 'modified'
+                        // Если чат добавлен или изменен, обновляем его данные
+                        allAIChats[doc.id] = doc.data().messages;
+                    }
                 });
 
                 // Шаг 2: Выполняем логику "первого запуска" только один раз
                 if (isFirstChatLoad) {
-                    isFirstChatLoad = false; // Отключаем флаг
+                    isFirstChatLoad = false;
 
                     if (snapshot.empty) {
-
-                        startNewAIChat(false); // Создаем первый чат
+                        startNewAIChat(false);
                     } else {
                         const mostRecentChatId = snapshot.docs[0].id;
                         const mostRecentChat = allAIChats[mostRecentChatId];
                         
-                        // Проверяем, был ли последний чат использован
                         if (mostRecentChat && mostRecentChat.length > 1) {
-
-                            startNewAIChat(true); // Создаем новый
+                            startNewAIChat(true);
                         } else {
-
                             currentAIChatId = localStorage.getItem('currentAIChatId');
                             if (!allAIChats[currentAIChatId]) {
                                 currentAIChatId = mostRecentChatId;
                             }
-                            switchToAIChat(currentAIChatId); // Открываем старый (пустой)
+                            switchToAIChat(currentAIChatId);
                         }
                     }
                 }
 
-                // Шаг 3: После первого запуска, просто обновляем список чатов (например, если один из них был удален)
+                // Шаг 3: Проверяем, не был ли удален текущий активный чат
+                if (!isFirstChatLoad && !allAIChats[currentAIChatId]) {
+                    const remainingIds = Object.keys(allAIChats);
+                    remainingIds.sort((a, b) => b.localeCompare(a));
+                    const newCurrentId = remainingIds.length > 0 ? remainingIds[0] : null;
+                    
+                    if (newCurrentId) {
+                        switchToAIChat(newCurrentId);
+                    } else {
+                        // Если все чаты удалены, создаем новый
+                        startNewAIChat(true);
+                    }
+                }
+
+                // Шаг 4: Всегда перерисовываем список и, если нужно, сообщения
                 renderAIChatList();
+                if (snapshot.docChanges().some(c => c.doc.id === currentAIChatId && c.type !== 'removed')) {
+                    renderAIChatMessages();
+                }
 
             }, error => {
                 console.error("Ошибка при загрузке чатов из Firestore:", error);
@@ -15019,6 +15067,8 @@ const mainApp = (function() {
             loadLocalAIChats();
         }
     }
+
+
     /**
      * Загружает чаты из локального хранилища (IndexedDB).
      * Вызывается, когда пользователь не авторизован или нет сети.
@@ -15714,12 +15764,28 @@ const mainApp = (function() {
         switchToAIChat(audienceId, null, 'public');
     }
 
+
     /**
-     * НОВАЯ ФУНКЦИЯ: Закрывает вид "внутри" папки и возвращает к списку аудиторий.
+     * НОВАЯ ФУНКЦИЯ: Закрывает вид "внутри" папки и возвращает к списку аудиторий, НЕ закрывая сайдбар.
      */
     function closeAudienceFolder() {
-        // Переключаемся обратно на последний активный приватный чат
-        switchToAIChat(localStorage.getItem('currentAIChatId'), null, 'private');
+        // Находим все необходимые элементы сайдбара
+        const publicSection = getEl('aiPublicAudiencesSection');
+        const privateSection = getEl('aiPrivateChatsSection');
+        const topicsView = getEl('aiTopicsView');
+
+        // Скрываем панель с темами
+        if (topicsView) topicsView.classList.add('hidden');
+        
+        // Показываем основные панели с приватными чатами и аудиториями
+        if (publicSection) publicSection.classList.remove('hidden');
+        if (privateSection) privateSection.classList.remove('hidden');
+
+        // Сбрасываем ID текущей аудитории, так как мы из нее "вышли"
+        currentAudienceId = null;
+        
+        // Перерисовываем список аудиторий, чтобы убрать выделение с активной
+        renderAudiencesList();
     }
 
     /**
