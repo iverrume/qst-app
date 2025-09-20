@@ -1849,6 +1849,10 @@ const ChatModule = (function() {
                 mainApp.setupPrivateLegendsListener(user);// Запускаем новый слушатель для легенд
 
                 mainApp.migrateLocalChatsToFirebase().then(() => {
+                    const savedUnlockedAudiences = localStorage.getItem(`unlockedAudiences_${currentUser.uid}`);
+                    if (savedUnlockedAudiences) {
+                        unlockedAudiences = new Set(JSON.parse(savedUnlockedAudiences));
+                    }
                     const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
                     if (savedUnlocked) {
                         unlockedChannels = new Set(JSON.parse(savedUnlocked));
@@ -4042,66 +4046,7 @@ const ChatModule = (function() {
 
 
 
-    /**
-     * Показывает кастомное модальное окно для ввода пароля и возвращает Promise.
-     * @param {string} channelName - Имя защищенного канала.
-     * @returns {Promise<string|null>} - Promise, который разрешается введенным паролем или null, если пользователь нажал отмену.
-     */
-    function promptForPassword(channelName) {
-        return new Promise(resolve => {
-            const modal = getEl('channelPasswordModal');
-            const titleEl = getEl('channelPasswordModalTitle');
-            const textEl = getEl('channelPasswordModalText');
-            const inputEl = getEl('channelPasswordInputModal');
-            const confirmBtn = getEl('channelPasswordConfirmBtn');
-            const cancelBtn = getEl('channelPasswordCancelBtn');
 
-            // Заполняем тексты из словаря
-            titleEl.textContent = _chat('channel_password_modal_title');
-            textEl.textContent = _chatFormat('channel_password_modal_text', { channelName });
-            inputEl.placeholder = _chat('channel_password_placeholder');
-            confirmBtn.textContent = _chat('modal_confirm_button');
-            cancelBtn.textContent = _chat('modal_cancel_button');
-            
-            inputEl.value = ''; // Очищаем поле
-
-            // Функция для закрытия окна и очистки обработчиков
-            const cleanup = (result) => {
-                modal.classList.add('hidden');
-                confirmBtn.onclick = null;
-                cancelBtn.onclick = null;
-                // Снимаем обработчик с Enter
-                inputEl.onkeydown = null;
-                resolve(result);
-            };
-
-            const onConfirm = () => {
-                cleanup(inputEl.value);
-            };
-
-            const onCancel = () => {
-                cleanup(null);
-            };
-
-            // Назначаем обработчики
-            confirmBtn.onclick = onConfirm;
-            cancelBtn.onclick = onCancel;
-            
-            // Добавляем обработку нажатия Enter в поле ввода
-            inputEl.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    onConfirm();
-                }
-            };
-
-            // Показываем окно и ставим фокус на поле ввода
-            modal.classList.remove('hidden');
-            if (window.lucide) lucide.createIcons(); // Перерисовываем иконку глаза
-            inputEl.focus();
-        });
-    }
-    // === КОНЕЦ НОВОГО КОДА ===
 
 
     async function handleChannelClick(channel) {
@@ -4363,6 +4308,7 @@ const ChatModule = (function() {
         // ОЧИЩАЕМ ХРАНИЛИЩЕ ПРИ ВЫХОДЕ
         if (currentUser) {
             localStorage.removeItem(`unlockedChannels_${currentUser.uid}`);
+            localStorage.removeItem(`unlockedAudiences_${currentUser.uid}`);
         }
 
         allMessages = [];
@@ -5755,7 +5701,9 @@ const ChatModule = (function() {
         handlePasswordReset,
         closeModal: closeModal,
         showModal: showModal,
-        _chatFormat: _chatFormat, // <--- ВОТ ДОБАВЛЕННАЯ СТРОКА
+        _chat: _chat,
+        _chatFormat: _chatFormat,
+
         
         // Getters
         isInitialized: () => isInitialized,
@@ -11464,6 +11412,69 @@ const mainApp = (function() {
         return hashHex;
     }
 
+
+    /**
+     * Показывает кастомное модальное окно для ввода пароля и возвращает Promise.
+     * @param {string} channelName - Имя защищенного канала.
+     * @returns {Promise<string|null>} - Promise, который разрешается введенным паролем или null, если пользователь нажал отмену.
+     */
+    function promptForPassword(channelName) {
+        return new Promise(resolve => {
+            const modal = getEl('channelPasswordModal');
+            const titleEl = getEl('channelPasswordModalTitle');
+            const textEl = getEl('channelPasswordModalText');
+            const inputEl = getEl('channelPasswordInputModal');
+            const confirmBtn = getEl('channelPasswordConfirmBtn');
+            const cancelBtn = getEl('channelPasswordCancelBtn');
+
+            // Заполняем тексты из словаря через ChatModule
+            titleEl.textContent = ChatModule._chat('channel_password_modal_title');
+            textEl.textContent = ChatModule._chatFormat('channel_password_modal_text', { channelName });
+            inputEl.placeholder = ChatModule._chat('channel_password_placeholder');
+            confirmBtn.textContent = ChatModule._chat('modal_confirm_button');
+            cancelBtn.textContent = ChatModule._chat('modal_cancel_button');
+            
+            inputEl.value = ''; // Очищаем поле
+
+            // Функция для закрытия окна и очистки обработчиков
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                // Снимаем обработчик с Enter
+                inputEl.onkeydown = null;
+                resolve(result);
+            };
+
+            const onConfirm = () => {
+                cleanup(inputEl.value);
+            };
+
+            const onCancel = () => {
+                cleanup(null);
+            };
+
+            // Назначаем обработчики
+            confirmBtn.onclick = onConfirm;
+            cancelBtn.onclick = onCancel;
+            
+            // Добавляем обработку нажатия Enter в поле ввода
+            inputEl.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    onConfirm();
+                }
+            };
+
+            // Показываем окно и ставим фокус на поле ввода
+            modal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons(); // Перерисовываем иконку глаза
+            inputEl.focus();
+        });
+    }
+
+
+
     /**
      * НОВАЯ ФУНКЦИЯ
      * Асинхронно генерирует короткий SHA-1 хэш из текстового содержимого.
@@ -14899,18 +14910,31 @@ const mainApp = (function() {
             const item = e.target.closest('.ai-chat-history-item');
             if (!item) return;
 
-            // Логика для кнопки удаления
-            if (e.target.closest('.ai-chat-history-delete')) {
-                const chatId = item.dataset.chatId;
-                const ownerId = item.dataset.ownerId;
-                deleteAudience(chatId, ownerId);
-            } 
-            // Логика для клика по самому элементу (открытие папки)
-            else {
-                const audienceId = item.dataset.chatId;
-                const audienceTitle = item.querySelector('.ai-chat-history-title')?.textContent || 'Аудитория';
-                openAudienceFolder(audienceId, audienceTitle);
+            const audienceId = item.dataset.chatId;
+            if (!audienceId) return;
+
+            // Находим полный объект аудитории в кэше
+            const audience = window.aiAudiencesCache?.find(a => a.id === audienceId);
+            if (!audience) {
+                console.error(`Не удалось найти данные для аудитории ${audienceId}`);
+                return;
             }
+
+            // --- НОВАЯ УНИВЕРСАЛЬНАЯ ЛОГИКА ---
+            // Клик по кнопке настроек
+            if (e.target.closest('.audience-settings-btn')) {
+                showAudienceEditModal(audience.id);
+                return;
+            }
+            // Клик по кнопке удаления
+            if (e.target.closest('.ai-chat-history-delete')) {
+                deleteAudience(audience.id, audience.ownerId);
+                return;
+            }
+            
+            // Если клик был не по кнопкам, значит, это клик по самому элементу.
+            // Вызываем нашу главную функцию с проверкой пароля.
+            handleAudienceClick(audience);
         });
 
         aiChatMessages?.addEventListener('click', (e) => {
@@ -14937,7 +14961,7 @@ const mainApp = (function() {
                     case 'copy-ai':
                     case 'copy-user': handleCopyAIChat(targetButton); break;
                     case 'share-ai': handleShareAIChat(targetButton); break;
-                    case 'regenerate-ai': regenerateLastAIResponse(); break;
+                    case 'regenerate-ai': regenerateAIResponse(index); break;
                     case 'edit-user': startEditUserMessage(index); break;
                     case 'delete-ai': deleteAIChatMessage(index); break;
                 }
@@ -15700,9 +15724,7 @@ const mainApp = (function() {
                 li.classList.add('active');
             }
             
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Добавляем иконку пароля ---
             const lockIcon = audience.hasPassword ? '<i data-lucide="lock" style="width: 12px; height: 12px; opacity: 0.7; margin-right: 6px;"></i>' : '';
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             const isOwner = currentUser && currentUser.uid === audience.ownerId;
             const settingsBtnHtml = isOwner
@@ -15712,8 +15734,7 @@ const mainApp = (function() {
             const deleteBtnHtml = isOwner 
                 ? `<button class="ai-chat-history-delete" title="Удалить аудиторию"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
                 : '';
-            
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ: Вставляем иконку пароля в название ---
+
             li.innerHTML = `
                 <span class="ai-chat-history-title">${lockIcon}${escapeHTML(audience.title)}</span>
                 <div class="ai-chat-history-actions">
@@ -15721,29 +15742,9 @@ const mainApp = (function() {
                     ${deleteBtnHtml}
                 </div>
             `;
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
             
             listEl.appendChild(li);
         
-            // Делегирование событий для кликов
-            li.addEventListener('click', (e) => {
-                const audienceId = li.dataset.chatId;
-                
-                // Клик по кнопке настроек
-                if (e.target.closest('.audience-settings-btn')) {
-                    showAudienceEditModal(audienceId);
-                    return;
-                }
-                // Клик по кнопке удаления
-                if (e.target.closest('.ai-chat-history-delete')) {
-                    const ownerId = li.dataset.ownerId;
-                    deleteAudience(audienceId, ownerId);
-                    return;
-                }
-                
-                // --- ИСПРАВЛЕНИЕ: Вызываем новую функцию с проверкой пароля ---
-                handleAudienceClick(audience);
-            });
         });
         if (window.lucide) lucide.createIcons();
     }
@@ -15801,10 +15802,22 @@ const mainApp = (function() {
 
     /**
      * НОВАЯ ФУНКЦИЯ: Открывает вид "внутри" папки-аудитории.
+     * (Теперь эта функция только меняет вид сайдбара).
      */
     function openAudienceFolder(audienceId, audienceTitle) {
-        // Просто передаем управление центральной функции, указывая, что тема еще не выбрана (null)
-        switchToAIChat(audienceId, null, 'public');
+        const publicSection = getEl('aiPublicAudiencesSection');
+        const privateSection = getEl('aiPrivateChatsSection');
+        const topicsView = getEl('aiTopicsView');
+
+        if (publicSection) publicSection.classList.add('hidden');
+        if (privateSection) privateSection.classList.add('hidden');
+        if (topicsView) topicsView.classList.remove('hidden');
+
+        aiTopicsBreadcrumb.textContent = audienceTitle;
+        currentAudienceId = audienceId;
+
+        // Перерисовываем список тем для новой аудитории
+        renderTopicsList(audienceId);
     }
 
 
@@ -15902,20 +15915,21 @@ const mainApp = (function() {
         if (!title || title.trim() === '') return;
 
         try {
+
             const newTopicData = {
                 title: title.trim(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                // Поле roles больше не нужно
             };
+
             const docRef = await db.collection('ai_audiences').doc(currentAudienceId).collection('topics').add(newTopicData);
 
-            // Добавляем приветственное сообщение в новый чат
             await db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(docRef.id).collection('messages').add({
                  role: 'model',
                  content: `Тема "${title.trim()}" создана.`,
                  timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Перерисовываем список тем и сразу переключаемся на новую
             renderTopicsList(currentAudienceId);
             switchToAIChat(currentAudienceId, docRef.id, 'public');
 
@@ -15978,6 +15992,14 @@ const mainApp = (function() {
     async function handleAudienceClick(audience) {
         if (!audience) return;
 
+        // Функция-помощник, которая вызывается только после успешной проверки
+        const proceedToAudience = () => {
+            // Сначала открываем папку в сайдбаре
+            openAudienceFolder(audience.id, audience.title);
+            // Затем переключаем основной контент, выбирая первую тему (или показывая заглушку)
+            switchToAIChat(audience.id, null, 'public'); 
+        };
+
         // Если у аудитории есть пароль
         if (audience.hasPassword) {
             const isOwner = currentUser && currentUser.uid === audience.ownerId;
@@ -15985,13 +16007,13 @@ const mainApp = (function() {
 
             // Владелец и модераторы заходят без пароля
             if (isOwner || isModerator) {
-                openAudienceFolder(audience.id, audience.title);
+                proceedToAudience();
                 return;
             }
 
             // Если пользователь уже вводил пароль в этой сессии
             if (unlockedAudiences.has(audience.id)) {
-                openAudienceFolder(audience.id, audience.title);
+                proceedToAudience();
                 return;
             }
 
@@ -16001,17 +16023,17 @@ const mainApp = (function() {
 
             const enteredPasswordHash = await hashPassword(password);
             if (enteredPasswordHash === audience.passwordHash) {
-                unlockedAudiences.add(audience.id); // "Разблокируем" на время сессии
-                openAudienceFolder(audience.id, audience.title);
+                unlockedAudiences.add(audience.id);
+                localStorage.setItem(`unlockedAudiences_${currentUser.uid}`, JSON.stringify(Array.from(unlockedAudiences)));
+                proceedToAudience();
             } else {
                 showToast("Неверный пароль.", "error");
             }
         } else {
             // Если пароля нет, заходим свободно
-            openAudienceFolder(audience.id, audience.title);
+            proceedToAudience();
         }
     }
-    
     /**
      * НОВАЯ ФУНКЦИЯ: Показывает модальное окно для редактирования Аудитории.
      */
@@ -16115,30 +16137,32 @@ const mainApp = (function() {
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         if (!audienceData) return;
 
+        showGlobalLoader("Добавление модератора...");
         try {
             const userQuery = await db.collection('users').where('email', '==', email).limit(1).get();
             if (userQuery.empty) {
-                showToast("Пользователь с таким email не найден.", "error");
-                return;
+                throw new Error("Пользователь с таким email не найден.");
             }
             
             const user = userQuery.docs[0].data();
             if (user.uid === audienceData.ownerId) {
-                showToast("Владелец не может быть модератором.", "info");
-                return;
+                throw new Error("Владелец не может быть модератором.");
             }
 
+            // Обновляем массив модераторов в самой Аудитории
             const audienceRef = db.collection('ai_audiences').doc(audienceId);
             await audienceRef.update({
                 moderators: firebase.firestore.FieldValue.arrayUnion(user.uid)
             });
 
             showToast(`"${user.username}" назначен модератором.`, "success");
-            showAudienceEditModal(audienceId); // Обновляем модальное окно
+            showAudienceEditModal(audienceId);
 
         } catch (error) {
             console.error("Ошибка добавления модератора:", error);
-            showToast("Не удалось добавить модератора.", "error");
+            showToast(error.message || "Не удалось добавить модератора.", "error");
+        } finally {
+            hideGlobalLoader();
         }
     }
 
@@ -16146,16 +16170,24 @@ const mainApp = (function() {
      * НОВАЯ ФУНКЦИЯ: Удаляет модератора из Аудитории.
      */
     async function removeModeratorFromAudience(audienceId, uid) {
+        showGlobalLoader("Удаление модератора...");
         try {
             const audienceRef = db.collection('ai_audiences').doc(audienceId);
+            
+            // Удаляем из массива модераторов в Аудитории
             await audienceRef.update({
                 moderators: firebase.firestore.FieldValue.arrayRemove(uid)
             });
+
+
             showToast("Модератор удален.", "success");
-            showAudienceEditModal(audienceId); // Обновляем модальное окно
+            showAudienceEditModal(audienceId);
+
         } catch (error) {
             console.error("Ошибка удаления модератора:", error);
             showToast("Не удалось удалить модератора.", "error");
+        } finally {
+            hideGlobalLoader();
         }
     }
 
@@ -16322,18 +16354,16 @@ const mainApp = (function() {
     /**
      * Подписывается на сообщения в публичной Аудитории и отображает их.
      * @param {string} audienceId - ID аудитории.
-     * @param {object|null} audienceData - (Необязательно) Предзагруженные данные аудитории.
+     * @param {string} topicId - ID темы внутри аудитории.
      */
     function renderPublicAudience(audienceId, topicId) {
+        console.log(`[renderPublicAudience] Начинаю рендер Аудитории ID: ${audienceId}, TopicID: ${topicId}`);
         if (!db) return;
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Логика для слушателя Темы ---
-        // Отписываемся от предыдущего слушателя темы, если он был
         if (currentTopicListener) {
             currentTopicListener();
             currentTopicListener = null;
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         if (!topicId) {
             aiChatMessages.innerHTML = '<div class="empty-state">Выберите тему для начала общения.</div>';
@@ -16343,29 +16373,32 @@ const mainApp = (function() {
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         
         if (!audienceData) {
+            console.error(`[renderPublicAudience] КРИТИЧЕСКАЯ ОШИБКА: Аудитория с ID ${audienceId} не найдена.`);
             switchToAIChat(Object.keys(allAIChats)[0] || null, 'private');
             return;
         }
 
+        // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
         const isOwner = currentUser && currentUser.uid === audienceData.ownerId;
-        aiChatInput.disabled = !isOwner;
-        aiChatInput.placeholder = isOwner ? _('ai_chat_placeholder') : "Вы находитесь в режиме просмотра";
+        const isModerator = audienceData.moderators && audienceData.moderators.includes(currentUser.uid);
+        const canPost = isOwner || isModerator;
 
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Добавляем слушатель для самой Темы ---
+        aiChatInput.disabled = !canPost;
+        aiChatInput.placeholder = canPost ? _('ai_chat_placeholder') : "Вы находитесь в режиме просмотра";
+        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
         const topicRef = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId);
         currentTopicListener = topicRef.onSnapshot(doc => {
             if (doc.exists) {
                 const topicData = doc.data();
-                // Обновляем наш кэш с легендами для этой темы
                 currentTopicLegends = topicData.colorLegends || {};
-                // Сразу же перерисовываем легенду в шапке
                 renderColorLegends();
             }
         }, error => {
-
+            console.error(`Ошибка при получении данных Темы ${topicId}:`, error);
         });
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-
+        
+        console.log(`[renderPublicAudience] Начинаю слушать сообщения из Firestore...`);
         currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
@@ -16375,6 +16408,7 @@ const mainApp = (function() {
                 renderAIChatMessages(); 
                 renderColorLegends();
             }, error => {
+                console.error(`[onSnapshot] Ошибка при получении сообщений Темы ${topicId}:`, error);
                 aiChatMessages.innerHTML = `<div class="empty-state">Не удалось загрузить сообщения.</div>`;
             });
     }
@@ -17033,11 +17067,16 @@ const mainApp = (function() {
         if (currentAIChatType === 'public') {
             if (!currentUser || !currentAudienceId || !currentTopicId || !db) return;
 
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
             const audienceData = window.aiAudiencesCache?.find(a => a.id === currentAudienceId);
-            if (!audienceData || currentUser.uid !== audienceData.ownerId) {
-                showToast("Только владелец может редактировать легенду.", "error");
+            const isOwner = audienceData && currentUser.uid === audienceData.ownerId;
+            const isModerator = audienceData && audienceData.moderators && audienceData.moderators.includes(currentUser.uid);
+
+            if (!isOwner && !isModerator) {
+                showToast("Только владелец или модератор может редактировать легенду.", "error");
                 return;
             }
+            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
 
             const topicRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId);
             const updateData = {};
@@ -17057,12 +17096,10 @@ const mainApp = (function() {
             }
 
         } else {
-            // --- НАЧАЛО БЛОКА НА ЗАМЕНУ (логика для приватных чатов) ---
             if (!currentUser || !db || !currentAIChatId) return;
 
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const updateData = {};
-            // Используем dot-нотацию для обновления вложенных полей в карте
             const fieldPath = `aiChatLegends.${currentAIChatId}.${color}`;
 
             if (newText) {
@@ -17072,14 +17109,11 @@ const mainApp = (function() {
             }
 
             try {
-                // Отправляем запрос на обновление документа пользователя
                 await userDocRef.update(updateData);
-                // UI обновится автоматически благодаря слушателю onSnapshot
             } catch (error) {
                 console.error("Ошибка сохранения приватной легенды в Firestore:", error);
                 showToast("Не удалось сохранить описание.", "error");
             }
-            // --- КОНЕЦ БЛОКА НА ЗАМЕНУ ---
         }
     }
 
@@ -17698,6 +17732,7 @@ const mainApp = (function() {
      * Отображает сообщения в AI-чате. Автоматически определяет, какой чат активен
      * (приватный или публичный) и использует правильный источник данных.
      */
+
     function renderAIChatMessages() {
         try {
             let currentChat;
@@ -17801,9 +17836,15 @@ const mainApp = (function() {
                     if (msg.role === 'model' && msg.content !== 'typing...') {
                         const actionsContainer = document.createElement('div');
                         actionsContainer.className = 'ai-message-actions';
-                        const regenerateButtonHTML = (isLastMessage && userCanDelete)
-                            ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai"><i data-lucide="refresh-cw"></i></button>`
+                        
+                        // === ИЗМЕНЕНИЕ: Логика отображения кнопки "Перегенерировать" ===
+                        // Проверяем, что это не первое сообщение и что предыдущее - от пользователя
+                        const isRegeneratable = index > 0 && currentChat[index - 1]?.role === 'user';
+                        
+                        const regenerateButtonHTML = (isRegeneratable && userCanDelete)
+                            ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai" data-index="${index}"><i data-lucide="refresh-cw"></i></button>`
                             : '';
+                        // === КОНЕЦ ИЗМЕНЕНИЯ ===
                         
                         actionsContainer.innerHTML = `
                             <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
@@ -17851,7 +17892,7 @@ const mainApp = (function() {
             console.groupEnd();
         }
     }
-
+    
 
     async function sendAIChatMessage() {
         try {
@@ -18033,7 +18074,7 @@ const mainApp = (function() {
                 };
             }
             // === КОНЕЦ БЛОКА НА ЗАМЕНУ ===
-            await messagesRef.doc(typingMessageRef.id).set(finalMessage);
+            await messagesRef.doc(typingMessageRef.id).update(finalMessage); // <--- ВОТ ИСПРАВЛЕНИЕ
 
         } catch (error) {
             console.error("Критическая ошибка (публичный AI-чат):", error);
@@ -18228,8 +18269,8 @@ const mainApp = (function() {
     }
 
 
-    async function regenerateLastAIResponse() {
-        if (isAIResponding || !currentAIChatId && !currentAudienceId) return; // Улучшенная проверка
+    async function regenerateAIResponse(aiMessageIndex) {
+        if (isAIResponding) return;
 
         let currentChat;
         if (currentAIChatType === 'public') {
@@ -18238,26 +18279,25 @@ const mainApp = (function() {
             currentChat = allAIChats[currentAIChatId];
         }
 
-        if (!currentChat || currentChat.length === 0) {
-            console.warn("Нет истории сообщений для перегенерации.");
-            return;
-        }
+        if (!currentChat || currentChat.length === 0) return;
 
-        let lastUserMessageIndex = -1;
-        for (let i = currentChat.length - 1; i >= 0; i--) {
+        // 1. Находим индекс сообщения пользователя, которое вызвало этот ответ ИИ
+        let userMessageIndex = -1;
+        for (let i = aiMessageIndex - 1; i >= 0; i--) {
             if (currentChat[i].role === 'user') {
-                lastUserMessageIndex = i;
+                userMessageIndex = i;
                 break;
             }
         }
 
-        if (lastUserMessageIndex === -1) {
-            console.warn("Не найдено сообщений пользователя для регенерации.");
+        if (userMessageIndex === -1) {
+            console.warn("Не удалось найти исходное сообщение пользователя для регенерации.");
             return;
         }
 
+        // 2. Обрезаем историю до этого сообщения пользователя (включительно)
         if (currentAIChatType === 'private') {
-            const historyToResubmit = currentChat.slice(0, lastUserMessageIndex + 1);
+            const historyToResubmit = currentChat.slice(0, userMessageIndex + 1);
             const promptingMessage = historyToResubmit[historyToResubmit.length - 1];
             const fileToResend = promptingMessage?.attachment || null;
 
@@ -18265,11 +18305,10 @@ const mainApp = (function() {
             getAIResponseForCurrentHistory(fileToResend);
 
         } else {
-            const messagesToDelete = currentChat.slice(lastUserMessageIndex + 1);
-
+            // Для публичных чатов нужно удалить лишние сообщения из Firestore
+            const messagesToDelete = currentChat.slice(userMessageIndex + 1);
             try {
                 const batch = db.batch();
-                // --- ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
                 const messagesRef = db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId).collection('messages');
                 
                 messagesToDelete.forEach(msg => {
@@ -18279,7 +18318,8 @@ const mainApp = (function() {
                 });
                 
                 await batch.commit();
-
+                
+                // После удаления onSnapshot автоматически вызовет getAIResponseForPublicAudience
                 getAIResponseForPublicAudience();
 
             } catch (error) {
@@ -18450,7 +18490,7 @@ const mainApp = (function() {
         loadPublicAudiences: loadPublicAudiences,
         handleCopyAIChat: handleCopyAIChat,
         handleShareAIChat: handleShareAIChat,
-        regenerateLastAIResponse: regenerateLastAIResponse,
+        regenerateAIResponse: regenerateAIResponse,
         setupPrivateLegendsListener: setupPrivateLegendsListener, 
         // === НАЧАЛО НОВОГО КОДА ===
         migrateLocalChatsToFirebase: migrateLocalChatsToFirebase,

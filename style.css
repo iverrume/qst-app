@@ -2180,11 +2180,6 @@ body.synthwave-mode .option-vote-btn.correct {
 
 
 
-
-
-
-
-
 /* ===== НОВЫЕ СТИЛИ ДЛЯ ОБЛАСТИ ВВОДА (v3) ===== */
 .chat-input-area {
     background: var(--input-bg-color);
@@ -8999,7 +8994,7 @@ body.glass-dark #confirmModalYesBtn:hover {
 
 
 /* ======================================================= */
-/* ===         НОВЫЕ СТИЛИ ДЛЯ ОБЛАСТИ ВВОДА (v2.2)    === */
+/* ===         СТИЛИ ДЛЯ ОБЛАСТИ ВВОДА (v3, ФИНАЛ)     === */
 /* ======================================================= */
 
 /* --- Область ввода --- */
@@ -9009,19 +9004,19 @@ body.glass-dark #confirmModalYesBtn:hover {
     padding: 8px 15px;
     border-top: 1px solid var(--border-color);
     flex-shrink: 0;
-    gap: 8px;               /* <-- 3. Добавляем красивый отступ между плашкой и полем ввода */
+    gap: 8px;
 }
 
-/* 1. Контейнер-оболочка ("пилюля") */
+/* 1. Главный контейнер ("пилюля") теперь тоже колонка */
 .ai-chat-input-container {
     display: flex;
-    align-items: center; /* Вертикальное выравнивание по центру */
+    flex-direction: column; /* КЛЮЧЕВОЕ ИЗМЕНЕНИЕ */
     width: 100%;
     background-color: var(--input-bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 28px; /* Сильное скругление для формы "пилюли" */
-    padding: 4px 4px; /* Небольшие отступы внутри */
-    gap: 3px; /* Расстояние между элементами */
+    border-radius: 18px; /* Сделаем менее круглым для лучшего вида */
+    padding: 4px 8px;
+    gap: 5px;
     transition: all 0.2s ease;
 }
 
@@ -9031,69 +9026,73 @@ body.glass-dark #confirmModalYesBtn:hover {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
-/* 2. Иконка "+" слева */
-.ai-chat-input-icon {
-    flex-shrink: 0; /* Иконка не сжимается */
-    color: var(--secondary-text-color);
-    width: 22px;
-    height: 22px;
-    margin-right: 0; /* Убираем старый отступ, теперь используется gap */
-    margin-bottom: 0;
+/* 2. Новая строка для кнопок и поля ввода */
+.ai-chat-main-input-row {
+    display: flex;
+    align-items: flex-end; /* Все элементы прижимаются к низу */
+    gap: 8px;
 }
 
-/* 3. Поле для ввода текста (textarea) */
+/* 3. Кнопка "+" слева */
+.ai-chat-attach-btn {
+    margin-bottom: 6px; /* Небольшая коррекция для идеального выравнивания с текстом */
+}
+
+/* 4. Обертка для поля ввода текста (убрана, теперь стили напрямую) */
 #aiChatInput {
-    flex-grow: 1; /* Занимает все свободное место */
+    flex-grow: 1;
     resize: none;
     border: none;
     background: transparent;
-    padding: 0px 0; /* Убираем лишние отступы */
-    font-size: 1.2em;
+    padding: 8px 5px; /* Увеличили вертикальный отступ */
+    font-size: 1em;
     line-height: 1.4;
-    min-height: 24px; /* Минимальная высота в одну строку */
+    min-height: 36px;
     max-height: 180px;
     color: var(--text-color);
     outline: none;
     overflow-y: auto;
 }
 
-/* Стилизация скроллбара внутри textarea */
-#aiChatInput::-webkit-scrollbar {
-    width: 4px;
-}
-#aiChatInput::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 2px;
-}
-
-/* 4. Кнопка "Отправить" */
-.ai-chat-input-container .advanced-send-btn {
-    width: 34px; /* Уменьшаем размер */
-    height: 34px;
-    margin-left: 0; /* Убираем старые отступы */
+/* 5. Кнопка "Отправить" */
+.advanced-send-btn {
+    width: 36px;
+    height: 36px;
     margin-bottom: 0;
-    flex-shrink: 0; /* Кнопка не сжимается */
-    background: var(--button-secondary-bg); /* Изначально серая */
+    flex-shrink: 0;
+    background: var(--button-secondary-bg);
     color: var(--button-secondary-text);
-    opacity: 0.6; /* Изначально полупрозрачная */
-    cursor: not-allowed; /* Показываем, что она неактивна */
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-/* Иконка внутри кнопки */
-.ai-chat-input-container .advanced-send-btn i[data-lucide] {
-    width: 20px;
-    height: 20px;
-}
-
-/* Стили для АКТИВНОЙ кнопки (когда в поле есть текст) */
-.ai-chat-input-container .advanced-send-btn:not(:disabled) {
+.advanced-send-btn:not(:disabled) {
     background: var(--button-primary-bg);
     color: var(--button-primary-text);
     opacity: 1;
     cursor: pointer;
 }
-.ai-chat-input-container .advanced-send-btn:not(:disabled):hover {
-    transform: scale(1.1);
+
+/* 6. Превью файла (теперь над строкой ввода) */
+.ai-attachment-preview {
+    margin: 4px 4px 0; /* Отступы внутри пилюли */
+}
+
+/* Убираем старый ненужный класс */
+.ai-chat-textarea-wrapper { display: contents; }
+/* ======================================================= */
+/* === ИСПРАВЛЕНИЕ ЦВЕТА ИКОНКИ "+" В СВЕТЛЫХ ТЕМАХ    === */
+/* ======================================================= */
+
+/* Применяем темный цвет иконки для стандартной светлой темы */
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+/* Увеличиваем контрастность при наведении */
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:hover {
+    opacity: 1;
 }
 
 /* ======================================================= */
@@ -9412,6 +9411,7 @@ body.glass-dark .ai-chat-settings-panel {
     padding: 0;
     cursor: pointer;
     flex-shrink: 0;
+    margin-bottom: 8px; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
 }
 
 /* 2. Обертка для поля ввода и превью */
@@ -11442,13 +11442,11 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     padding: 2px 5px;
     border-radius: 4px;
     margin-left: 8px; /* Отступ от имени */
-    opacity: 0; /* Скрыта по умолчанию */
+    opacity: 0.7;  /* Скрыта по умолчанию */
     transition: opacity 0.2s ease, background-color 0.2s ease;
 }
 
-.ai-chat-history-item:hover .audience-settings-btn {
-    opacity: 1; /* Показываем при наведении */
-}
+
 
 .audience-settings-btn:hover {
     background-color: var(--input-hover-bg-color);
@@ -11515,4 +11513,15 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
 }
 .remove-moderator-btn:hover {
     opacity: 1;
+}
+
+/* ======================================================= */
+/* ===  ИСПРАВЛЕНИЕ ВЕРСТКИ ИКОНОК В СПИСКЕ АУДИТОРИЙ  === */
+/* ======================================================= */
+
+.ai-chat-history-actions {
+    display: flex;        /* Выравнивает иконки в одну горизонтальную линию */
+    align-items: center;  /* Центрирует их по вертикали */
+    gap: 4px;             /* Добавляет небольшой красивый отступ между иконками */
+    flex-shrink: 0;       /* Запрещает контейнеру сжиматься, если название длинное */
 }

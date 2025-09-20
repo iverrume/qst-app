@@ -721,16 +721,16 @@
                         </div>
                         <div class="ai-chat-input-container">
                             <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain">
-                            <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
-                                <i data-lucide="plus" class="ai-chat-input-icon"></i>
-                            </button>
-                            <div class="ai-chat-textarea-wrapper">
-                                <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
+                            <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
+                            <div class="ai-chat-main-input-row">
+                                <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
+                                    <i data-lucide="plus" class="ai-chat-input-icon"></i>
+                                </button>
                                 <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
+                                <button id="aiChatSendBtn" class="advanced-send-btn">
+                                    <i data-lucide="arrow-up"></i>
+                                </button>
                             </div>
-                            <button id="aiChatSendBtn" class="advanced-send-btn">
-                                <i data-lucide="arrow-up"></i>
-                            </button>
                         </div>
                     </div>
 
