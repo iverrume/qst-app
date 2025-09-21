@@ -364,12 +364,6 @@ body.glass-dark .style-dropdown-content {
 }
 
 
-.header-buttons {
-    pointer-events: none; /* сам контейнер не ловит клики */
-}
-.header-buttons > * {
-    pointer-events: auto; /* кнопки внутри работают */
-}
 
 
 
@@ -398,25 +392,103 @@ body.glass-dark .style-dropdown-content {
     flex-wrap: nowrap;
 }
 
+/* ======================================================= */
+/* ===   ЕДИНЫЙ СТИЛЬ ДЛЯ КНОПОК В ШАПКЕ (ФИНАЛ)      === */
+/* ======================================================= */
+
+/* 1. Задаем общие размеры и выравнивание для ВСЕХ кнопок */
 #searchWebButton,
-#themeToggle,
+#themeDropdownButton, /* Исправлено с #themeToggle */
 #quickModeToggle,
 #triggerWordToggle,
 #copyQuestionBtnQuiz,
 #languageToggle,
 #translateQuestionBtn,
-#chatToggle {
+#chatToggle,
+#favoriteQuestionBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;  /* Фиксированная ширина */
+    height: 40px; /* Фиксированная высота */
+    padding: 0;   /* Убираем padding, т.к. размер задан жестко */
+    
+    /* Общие стили оформления */
     background: none;
     border: 1px solid var(--theme-toggle-border);
     color: var(--text-color);
-    font-size: 1.3em;
-    padding: 5px 8px;
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     line-height: 1;
     flex-shrink: 0;
 }
+
+/* 2. Стили для иконок внутри кнопок */
+#searchWebButton i,
+#themeDropdownButton i,
+#quickModeToggle i,
+#triggerWordToggle i,
+#copyQuestionBtnQuiz i,
+#translateQuestionBtn i,
+#chatToggle i,
+#favoriteQuestionBtn i {
+    width: 22px;
+    height: 22px;
+}
+
+/* 3. Отдельные стили для текстовой кнопки языка */
+#languageToggle {
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+/* 4. Общий стиль для :hover */
+#searchWebButton:hover,
+#themeDropdownButton:hover,
+#quickModeToggle:hover,
+#triggerWordToggle:hover,
+#copyQuestionBtnQuiz:hover,
+#languageToggle:hover,
+#translateQuestionBtn:hover,
+#chatToggle:hover,
+#favoriteQuestionBtn:hover {
+    background-color: var(--theme-toggle-hover-bg);
+}
+
+/* 5. Адаптивность для мобильных */
+@media (max-width: 768px) {
+    #searchWebButton,
+    #themeDropdownButton,
+    #quickModeToggle,
+    #triggerWordToggle,
+    #copyQuestionBtnQuiz,
+    #languageToggle,
+    #translateQuestionBtn,
+    #chatToggle,
+    #favoriteQuestionBtn {
+        width: 36px;  /* Делаем кнопки чуть меньше */
+        height: 36px;
+    }
+
+    /* И иконки внутри них тоже */
+    #searchWebButton i,
+    #themeDropdownButton i,
+    #quickModeToggle i,
+    #triggerWordToggle i,
+    #copyQuestionBtnQuiz i,
+    #translateQuestionBtn i,
+    #chatToggle i,
+    #favoriteQuestionBtn i {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+
+
+
+
 
 #searchWebButton:hover,
 #themeToggle:hover,
@@ -878,51 +950,142 @@ button:disabled {
 }
 
 /* ======================================================= */
-/* === ИСПРАВЛЕНИЕ ГЛАВНЫХ КНОПОК НА ГЛАВНОМ ЭКРАНЕ   === */
+/* ===   НОВЫЕ СТИЛИ ДЛЯ ГЛАВНОГО ЭКРАНА (v6, FLEXBOX)  === */
 /* ======================================================= */
 
-/* Применяем отдельный, более сильный стиль к кнопкам-действиям на главном экране */
-#gradusButton,
-#parserButton,
-#activateSearchBtn,
-#searchButton { /* <-- Также применяем стиль к кнопке "Найти" */
-    /* 1. Возвращаем правильный фон и цвет текста из переменных темы */
-    background: var(--button-primary-bg);
-    color: var(--button-primary-text);
-
-    /* 2. Задаем общие стили для солидного вида */
-    width: 100%;
-    border: none; /* Убираем рамку, так как фон теперь контрастный */
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-size: 1.05em;
-    font-weight: 500;
-    margin: 10px 0;
-    cursor: pointer;
-    text-align: center;
-    box-shadow: 0 2px 5px var(--shadow-light-color);
-    transition: all 0.2s ease-in-out;
-    
-    /* Эти свойства нужны, если --button-primary-bg это градиент */
-    background-size: 200% auto; 
-    background-position: left center;
+/* 1. Превращаем всю область в гибкий столбец */
+.file-upload-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Создает одинаковые отступы между всеми блоками */
+    border: none;
+    padding: 0;
 }
 
-/* 3. Добавляем красивый эффект при наведении */
+/* 2. Убираем старые отступы у разделителя, так как gap теперь управляет ими */
+.main-screen-divider {
+    text-align: center;
+    margin: 0;
+    color: var(--secondary-text-color);
+}
+
+/* 3. Оставляем сетку для самих кнопок */
+.main-actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    grid-auto-rows: 1fr;
+}
+
+/* Стили для кнопок-карточек (без изменений) */
+.custom-file-upload-btn,
+#gradusButton,
+#parserButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    background-color: var(--input-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px 10px;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.main-action-text-wrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-file-upload-btn:hover,
 #gradusButton:hover,
-#parserButton:hover,
-#activateSearchBtn:hover,
-#searchButton:hover {
-    background-position: right center; /* Анимация градиента */
+#parserButton:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px var(--shadow-light-color);
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.custom-file-upload-btn i,
+#gradusButton i,
+#parserButton i {
+    width: 28px;
+    height: 28px;
+    stroke-width: 1.5;
+    flex-shrink: 0;
+}
+
+#fileInput {
+    display: none;
+}
+
+/* Стили для кнопок "Активировать" и "Найти" (без изменений) */
+#activateSearchBtn,
+#searchButton {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1.05em;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 10px;
+    transition: all 0.2s ease-in-out;
+}
+
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #activateSearchBtn,
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #searchButton {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border: none;
+    box-shadow: 0 2px 5px var(--shadow-light-color);
+}
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #activateSearchBtn:hover,
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #searchButton:hover {
+    background-position: right center;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px var(--shadow-color);
 }
 
-/* 4. Отдельно стилизуем кнопку "Выбрать файл", чтобы она выглядела как вторичное действие */
-#fileInput {
-    display: block; /* Делаем элемент блочным для правильных отступов */
-    margin: 10px 0;
+body.dark-mode #activateSearchBtn, body.dark-mode #searchButton,
+body.synthwave-mode #activateSearchBtn, body.synthwave-mode #searchButton,
+body.glass-dark #activateSearchBtn, body.glass-dark #searchButton {
+    background: var(--input-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
+ body.dark-mode #activateSearchBtn:hover, body.dark-mode #searchButton:hover,
+body.synthwave-mode #activateSearchBtn:hover, body.synthwave-mode #searchButton:hover,
+body.glass-dark #activateSearchBtn:hover, body.glass-dark #searchButton:hover {
+    background: var(--input-hover-bg-color);
+    border-color: var(--accent-color);
+}
+
+@media (max-width: 600px) {
+    .main-actions-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    /* === НАЧАЛО ИЗМЕНЕНИЙ: Возвращаем вертикальный вид и корректируем отступы === */
+    .custom-file-upload-btn,
+    #gradusButton,
+    #parserButton {
+        padding: 15px 10px; /* Делаем вертикальный отступ чуть больше для баланса */
+        min-height: auto;   /* Оставляем сброс высоты */
+    }
+    /* Правило для .main-action-text-wrapper больше не нужно, так как по умолчанию текст центрируется */
+    /* === КОНЕЦ ИЗМЕНЕНИЙ === */
+}
+
+
 
 #startQuizButton,
 #downloadErrorsButton,
@@ -7077,23 +7240,20 @@ body.glass-dark .question-actions .add-to-favorites-btn {
 
 
 /* ======================================================= */
-/* ===         СТИЛИ ДЛЯ КНОПКИ СМЕНЫ ЯЗЫКА            === */
+/* ===     СТИЛИ ДЛЯ КНОПКИ СМЕНЫ ЯЗЫКА (v2, ФИНАЛ)    === */
 /* ======================================================= */
 
-/* Применяем стили, как у других кнопок-иконок */
+/* Применяем тот же базовый стиль, что и у кнопок с иконками */
 #languageToggle {
     background: none;
     border: 1px solid var(--theme-toggle-border);
     color: var(--text-color);
-    padding: 5px 12px; /* Делаем чуть шире, чтобы текст помещался */
+    padding: 5px 8px; /* Отступы как у других кнопок */
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-    line-height: 1.3;
+    line-height: 1;
     flex-shrink: 0;
-    
-    /* Устанавливаем шрифт, чтобы он выглядел аккуратно */
-    font-size: 0.9em;
     font-weight: 500;
 }
 
@@ -7101,11 +7261,10 @@ body.glass-dark .question-actions .add-to-favorites-btn {
     background-color: var(--theme-toggle-hover-bg);
 }
 
-/* Адаптивность для мобильных устройств */
+/* Адаптивность для мобильных */
 @media (max-width: 768px) {
     #languageToggle {
-        padding: 4px 8px; /* Делаем еще компактнее */
-        font-size: 0.85em;
+        padding: 4px 6px;
     }
 }
 
@@ -7510,6 +7669,7 @@ body.glass-dark .translate-engine-container #translateEngineToggle::before{
 /* ======================================================= */
 /* ===         СТИЛИ ДЛЯ БЛОКА АКТИВАЦИИ ПОИСКА        === */
 /* ======================================================= */
+
 
 #searchActivationContainer {
     padding-bottom: 15px;
@@ -11629,4 +11789,74 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
 /* Класс, который будет запускать анимацию */
 .highlight-new-test {
     animation: highlight-new-item 2s ease-out;
+}
+
+
+/* ======================================================= */
+/* === ФИНАЛЬНЫЙ ФИКС ВЫСОТЫ КНОПОК (v2, ПРИНУДИТЕЛЬНЫЙ) === */
+/* ======================================================= */
+
+/* 
+  Этот блок принудительно задает одинаковую высоту для всех трех кнопок на главном экране.
+  !important используется для гарантии того, что это правило перекроет любые другие конфликтующие стили.
+*/
+.main-actions-grid > .custom-file-upload-btn,
+.main-actions-grid > #parserButton,
+.main-actions-grid > #gradusButton {
+    height: 120px !important; /* Задаем всем блокам одинаковую высоту в 120 пикселей */
+}
+
+/* ======================================================= */
+/* ===      СТИЛИ ДЛЯ ДИНАМИЧЕСКИХ ПОДСКАЗОК (V3)       === */
+/* ======================================================= */
+
+.dynamic-description-container {
+    /* Задаем контейнеру фиксированную минимальную высоту */
+    min-height: 55px;
+    /* Превращаем его в flex-контейнер для идеального центрирования содержимого */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dynamic-description-container p {
+    /* Убираем min-height отсюда, так как он теперь у родителя */
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25em;
+}
+
+.tip-part {
+    display: inline;
+}
+
+.dynamic-description-container .tip-icon {
+    width: 1.1em;
+    height: 1.1em;
+    flex-shrink: 0;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
+
+.dynamic-tip {
+    animation: fadeInOut 5s ease-in-out;
+}
+
+/* ======================================================= */
+/* === ФИНАЛЬНЫЙ ФИКС "ПРЫЖКА" МАКЕТА (v6, УПРОЩЕННЫЙ)  === */
+/* ======================================================= */
+
+/* Устанавливаем высоту и выравнивание для текстового блока <p> */
+.dynamic-description-container p {
+    height: 100px; /* Задаем жесткую высоту, чтобы избежать "прыжка" */
+    display: flex; /* Используем flex для идеального центрирования */
+    align-items: center; /* Выравниваем по вертикали */
+    justify-content: center; /* Выравниваем по горизонтали */
+    flex-wrap: wrap;
+    gap: 0.25em;
 }

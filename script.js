@@ -4563,46 +4563,41 @@ const ChatModule = (function() {
 
     function showFileActionsModal(fileId, fileName, isTestingChannel = false) {
         const decodedFileName = decodeURIComponent(fileName);
-        document.getElementById('fileActionsModalTitle').textContent = `${_('file_actions_modal_title')} ${decodedFileName}`;
+        document.getElementById('fileActionsModalTitle').textContent = `${_chat('file_actions_modal_title')} ${decodedFileName}`;
 
         const downloadBtn = document.getElementById('fileActionDownloadBtn');
         const testBtn = document.getElementById('fileActionTestBtn');
-        // ======== НАЧАЛО НОВОГО КОДА ========
         const regenerateBtn = document.getElementById('fileActionRegenerateBtn');
         if (regenerateBtn) {
-            regenerateBtn.classList.add('hidden'); // Скрываем кнопку, она не нужна для обычных файлов
+            regenerateBtn.classList.add('hidden');
         }
-        // ======== КОНЕЦ НОВОГО КОДА ========
 
-        // «Скачать» — всегда
         downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
         downloadBtn.style.display = '';
-        downloadBtn.textContent = _('file_actions_download');
+        downloadBtn.textContent = _chat('file_actions_download');
 
-        // «Пройти тест» — ВСЕГДА видна (включая PDF)
         testBtn.style.display = '';
 
         const modalButtonsContainer = testBtn.parentElement;
         const closeBtn = modalButtonsContainer.querySelector('button[onclick*="closeModal"]');
 
-        // Сносим старую практику, если висит
         const oldPracticeBtn = document.getElementById('fileActionPracticeTestBtn');
         if (oldPracticeBtn) oldPracticeBtn.remove();
 
         if (isTestingChannel) {
             const practiceTestBtn = document.createElement('button');
             practiceTestBtn.id = 'fileActionPracticeTestBtn';
-            practiceTestBtn.textContent = _('practice_test_button');
+            practiceTestBtn.textContent = _chat('practice_test_button');
             practiceTestBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
 
-            testBtn.textContent = _('official_test_button');
+            testBtn.textContent = _chat('official_test_button');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: false });
 
             modalButtonsContainer.insertBefore(testBtn, closeBtn);
             modalButtonsContainer.insertBefore(practiceTestBtn, closeBtn);
             modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
         } else {
-            testBtn.textContent = _('file_actions_test');
+            testBtn.textContent = _chat('file_actions_test');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
 
             modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
@@ -4807,7 +4802,6 @@ const ChatModule = (function() {
 
 
 
-    // НОВЫЙ УЧАСТОК КОДА (ПОЛНАЯ ЗАМЕНА)
     async function startTestFromShare(fileId, fileName, options = { isPractice: true }) {
         const decodedFileName = decodeURIComponent(fileName);
         const isPdf = decodedFileName.toLowerCase().endsWith('.pdf');
@@ -4816,8 +4810,19 @@ const ChatModule = (function() {
         console.groupCollapsed(`${logTag} — startTestFromShare`);
         try {
             closeModal('fileActionsModal');
-            ChatModule.closeChatModal();
-            // Если уже идёт тест — спросим, что делать
+            
+            // === НАЧАЛО ИЗМЕНЕНИЙ: Корректно скрываем все окна ===
+            // 1. Скрываем окно GRADUS, если оно открыто
+            const gradusContainer = window.mainApp.getEl('gradusFoldersContainer');
+            if (gradusContainer && !gradusContainer.classList.contains('hidden')) {
+                gradusContainer.classList.add('hidden');
+            }
+            // 2. Скрываем окно чата, если оно открыто
+            if (window.ChatModule && typeof window.ChatModule.closeChatModal === 'function') {
+                ChatModule.closeChatModal();
+            }
+            // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
             const quizArea = document.getElementById('quizArea');
             const quizSetupArea = document.getElementById('quizSetupArea');
             const testIsVisible = quizArea && !quizArea.classList.contains('hidden');
@@ -4826,34 +4831,26 @@ const ChatModule = (function() {
               const decision = await askWhatToDoWithActiveQuiz();
 
               if (decision === 'cancel') {
-                // Пользователь передумал — ничего не открываем
                 closeModal('fileActionsModal');
                 return;
               }
 
               if (decision === 'save') {
-                // Жмём уже существующую кнопку "Продолжить позже" — она сохраняет сессию и скрывает тест
                 document.getElementById('continueLaterButton')?.click();
-                // Дождёмся, пока тест реально спрячется, чтобы не наслаивались панели
                 await waitFor(() => quizArea?.classList.contains('hidden'));
               }
 
               if (decision === 'finish') {
-                // Полное завершение — используем штатный обработчик
                 document.getElementById('finishTestButton')?.click();
-                // В этом сценарии НЕ запускаем новый тест автоматически — пользователь ушёл смотреть результаты
                 closeModal('fileActionsModal');
                 return;
               }
             }
-            // дальше идёт твой существующий код:
-
-
+            
             window.mainApp.showGlobalLoader(`${_chat('global_loader_loading_test')} "${decodedFileName}"...`);
 
-            // 1) Тянем содержимое
             let url = `${googleAppScriptUrl}?action=getChatFileContent&fileId=${fileId}`;
-            if (isPdf) url += '&asBase64=true'; // сервер вернёт Base64/DataURL
+            if (isPdf) url += '&asBase64=true';
             console.time(`${logTag} fetch`);
             const response = await fetch(url);
             const data = await response.json();
@@ -4861,9 +4858,7 @@ const ChatModule = (function() {
 
             if (!data.success) throw new Error(data.error || 'Server responded with success=false');
 
-            // 2) Ветвление по типу файла
             if (!isPdf) {
-         
                 const quizContext = {
                     fileId,
                     channelId: currentChannel,
@@ -4874,18 +4869,14 @@ const ChatModule = (function() {
                 return;
             }
 
-            // 3) PDF: Base64/DataURL → Blob → File → processPdfWithImages
-          
             const content = data.content;
 
             console.time(`${logTag} toBlob`);
             let pdfBlob;
             if (typeof content === 'string' && content.startsWith('data:')) {
-                // DataURL — самый быстрый путь через fetch(dataURL)
                 const fetched = await fetch(content);
                 pdfBlob = await fetched.blob();
             } else if (typeof content === 'string') {
-                // «Чистая» Base64
                 const base64 = content.replace(/^data:.*;base64,/, '');
                 const byteChars = atob(base64);
                 const byteNumbers = new Array(byteChars.length);
@@ -4897,10 +4888,8 @@ const ChatModule = (function() {
             }
             console.timeEnd(`${logTag} toBlob`);
         
-
             const pdfFileObject = new File([pdfBlob], decodedFileName, { type: 'application/pdf' });
 
-            // 4) Готово — вызываем правильный обработчик
             const pdfProcessor = window.mainApp && window.mainApp.processPdfWithImages;
             if (typeof pdfProcessor !== 'function') {
                 console.error(`${logTag} processPdfWithImages не экспортирован из mainApp`);
@@ -4912,19 +4901,14 @@ const ChatModule = (function() {
             await pdfProcessor(pdfFileObject);
             console.timeEnd(`${logTag} processPdfWithImages`);
            
-
         } catch (error) {
             console.error('Ошибка запуска теста из чата:', error);
             alert(_chat('error_start_test_failed').replace('{error}', error.message));
         } finally {
-            // На всякий случай скрываем лоадер (processFile тоже прячет его сам, но лишним не будет)
             window.mainApp.hideGlobalLoader?.();
             console.groupEnd();
         }
-
-
     }
-
 
 
 
@@ -5863,12 +5847,12 @@ const mainApp = (function() {
             search_placeholder: 'Введите часть текста вопроса...',
             find_button: 'Найти',
             searching_in_db: 'Идет поиск по базе...',
-            or_divider: '-- или --',
+            or_divider: '',
             choose_file: 'Выберите .qst|.txt|.pdf файл с устройства:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
-            parser_button_main: 'Перевести',
-            parser_subtitle: 'текст в формат .qst',
+            parser_button_main: 'Создать тест',
+            parser_subtitle: 'Конвертер и AI-генератор',
             recent_files: 'Недавно использованные:',
             // Навигация и заголовки
             nav_gradus: 'Навигация по GRADUS',
@@ -6163,6 +6147,26 @@ const mainApp = (function() {
             ai_regenerate_test: "Перегенерировать тест",
             ai_test_from_dialog_title: "Создание теста из диалога",
             ai_test_from_dialog_ready: "Тест по материалам нашего диалога готов!",
+            app_description: "QSTiUM — это мощный инструмент для подготовки к тестам и экзаменам. Загружайте готовые файлы, создавайте новые тесты из текста с помощью ИИ, проводите работу над ошибками и делитесь материалами с другими.",
+            dynamic_tips: [
+                "<span class='tip-part'>Используйте</span><i data-lucide='lightbulb' class='tip-icon'></i><span class='tip-part'>'Создать тест' для конвертации текста или генерации вопросов с помощью ИИ.</span>",
+                "<span class='tip-part'>Ищите готовые тесты в общей базе знаний</span><i data-lucide='graduation-cap' class='tip-icon'></i><span class='tip-part'>GRADUS.</span>",
+                "<span class='tip-part'>Продолжайте прерванные тесты из раздела</span><i data-lucide='play-circle' class='tip-icon'></i><span class='tip-part'>'Продолжить' на главном экране.</span>",
+                "<span class='tip-part'>Настройте внешний вид приложения, нажав</span><i data-lucide='sun-moon' class='tip-icon'></i><span class='tip-part'>и выбрав понравившуюся тему.</span>",
+                "<span class='tip-part'>Нажмите</span><i data-lucide='message-circle' class='tip-icon'></i><span class='tip-part'>, чтобы открыть чат, где можно общаться и делиться тестами.</span>",
+                "<span class='tip-part'>Тренируйтесь по конкретным темам, используя</span><i data-lucide='filter' class='tip-icon'></i><span class='tip-part'>фильтр по категориям перед началом теста.</span>",
+                "<span class='tip-part'>Создайте случайную выборку из N вопросов для быстрой проверки знаний с помощью опции</span><i data-lucide='shuffle' class='tip-icon'></i><span class='tip-part'>'Случайный набор'.</span>",
+                "<span class='tip-part'>Изучайте материал в режиме интерактивных карточек 'вопрос-ответ', включив</span><i data-lucide='layers' class='tip-icon'></i><span class='tip-part'>'Режим карточек'.</span>",
+                "<span class='tip-part'>Включите</span><i data-lucide='zap' class='tip-icon'></i><span class='tip-part'>'Быстрый режим' для автоматического перехода к следующему вопросу после ответа.</span>",
+                "<span class='tip-part'>Активируйте</span><i data-lucide='highlighter' class='tip-icon'></i><span class='tip-part'>'Триггер-слова', чтобы выделять ключевые термины в вопросах для запоминания.</span>",
+                "<span class='tip-part'>Используйте</span><i data-lucide='languages' class='tip-icon'></i><span class='tip-part'>для мгновенного перевода вопроса на другой язык прямо во время теста.</span>",
+                "<span class='tip-part'>Кнопка</span><i data-lucide='star' class='tip-icon'></i><span class='tip-part'>добавляет текущий вопрос в 'Избранное' вашего профиля в чате.</span>",
+                "<span class='tip-part'>Не поняли ответ?</span><i data-lucide='brain-circuit' class='tip-icon'></i><span class='tip-part'>под ответом вызовет детальное ИИ-объяснение.</span>",
+                "<span class='tip-part'>После теста сохраните ошибки</span><i data-lucide='download' class='tip-icon'></i><span class='tip-part'>или пройдите их заново в режиме 'Работа над ошибками'.</span>",
+                "<span class='tip-part'>Получите персональный анализ ваших ошибок от</span><i data-lucide='bot' class='tip-icon'></i><span class='tip-part'>на экране результатов.</span>",
+                "<span class='tip-part'>В AI-помощнике</span><i data-lucide='plus' class='tip-icon'></i><span class='tip-part'>прикрепляйте файлы, чтобы задавать вопросы по их содержимому.</span>",
+                "<span class='tip-part'>Превращайте любой ответ ИИ в готовый тест нажатием кнопки</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>под сообщением.</span>"
+            ],
             session_save_new_button: "Сохранить как новую"
         },
         kk: {
@@ -6179,12 +6183,12 @@ const mainApp = (function() {
             search_placeholder: 'Сұрақ мәтінінің бөлігін енгізіңіз...',
             find_button: 'Іздеу',
             searching_in_db: 'Дерекқордан іздеу жүріп жатыр...',
-            or_divider: '-- немесе --',
+            or_divider: '',
             choose_file: 'Құрылғыдан .qst|.txt|.pdf файлын таңдаңыз:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
-            parser_button_main: 'Мәтінді',
-            parser_subtitle: '.qst пішіміне аудару',
+            parser_button_main: 'Тест жасау',
+            parser_subtitle: 'Конвертер және ЖИ-генератор',
             recent_files: 'Жақында пайдаланылғандар:',
             // Navigation & Headers
             nav_gradus: 'GRADUS бойынша навигация',
@@ -6555,6 +6559,26 @@ const mainApp = (function() {
             ai_regenerate_test: "Тестті қайта жасау",
             ai_test_from_dialog_title: "Диалогтан тест жасау",
             ai_test_from_dialog_ready: "Біздің диалогымыздың материалдары бойынша тест дайын!",
+            app_description: "QSTiUM — тесттер мен емтихандарға дайындалуға арналған қуатты құрал. Дайын файлдарды жүктеп, ЖИ көмегімен мәтіннен жаңа тесттер жасаңыз, қателермен жұмыс істеп, материалдарды басқалармен бөлісіңіз.",
+            dynamic_tips: [
+                "<span class='tip-part'>Мәтінді түрлендіру немесе ЖИ көмегімен сұрақтар жасау үшін</span><i data-lucide='lightbulb' class='tip-icon'></i><span class='tip-part'>'Тест жасау' құралын пайдаланыңыз.</span>",
+                "<span class='tip-part'>Дайын тесттерді</span><i data-lucide='graduation-cap' class='tip-icon'></i><span class='tip-part'>GRADUS жалпы білім базасынан іздеңіз.</span>",
+                "<span class='tip-part'>Үзілген тесттерді басты экрандағы</span><i data-lucide='play-circle' class='tip-icon'></i><span class='tip-part'>'Жалғастыру' бөлімінен жалғастырыңыз.</span>",
+                "<span class='tip-part'>Қосымшаның сыртқы түрін баптау үшін</span><i data-lucide='sun-moon' class='tip-icon'></i><span class='tip-part'>белгішесін басып, ұнаған тақырыпты таңдаңыз.</span>",
+                "<span class='tip-part'>Сөйлесу және тесттермен бөлісу үшін жалпы чатты ашуға</span><i data-lucide='message-circle' class='tip-icon'></i><span class='tip-part'>батырмасын басыңыз.</span>",
+                "<span class='tip-part'>Тестті бастамас бұрын санаттар бойынша сүзгіні</span><i data-lucide='filter' class='tip-icon'></i><span class='tip-part'>пайдаланып, нақты тақырыптар бойынша жаттығыңыз.</span>",
+                "<span class='tip-part'>Білімді жылдам тексеру үшін</span><i data-lucide='shuffle' class='tip-icon'></i><span class='tip-part'>'Кездейсоқ жиынтық' опциясымен N сұрақтан тұратын кездейсоқ таңдау жасаңыз.</span>",
+                "<span class='tip-part'>Материалды 'сұрақ-жауап' интерактивті карточкалар режимінде зерттеу үшін</span><i data-lucide='layers' class='tip-icon'></i><span class='tip-part'>'Карточкалар режимін' қосыңыз.</span>",
+                "<span class='tip-part'>Жауаптан кейін келесі сұраққа автоматты түрде өту үшін</span><i data-lucide='zap' class='tip-icon'></i><span class='tip-part'>'Жылдам режимді' қосыңыз.</span>",
+                "<span class='tip-part'>Есте сақтау үшін сұрақтардағы негізгі терминдерді ерекшелеу үшін</span><i data-lucide='highlighter' class='tip-icon'></i><span class='tip-part'>'Триггер-сөздерді' белсендіріңіз.</span>",
+                "<span class='tip-part'>Тест кезінде сұрақты басқа тілге лезде аудару үшін</span><i data-lucide='languages' class='tip-icon'></i><span class='tip-part'>батырмасын пайдаланыңыз.</span>",
+                "<span class='tip-part'></span><i data-lucide='star' class='tip-icon'></i><span class='tip-part'>батырмасы ағымдағы сұрақты чаттағы профиліңіздің 'Таңдаулылар' бөліміне қосады.</span>",
+                "<span class='tip-part'>Жауапты түсінбедіңіз бе? Жауаптың астындағы</span><i data-lucide='brain-circuit' class='tip-icon'></i><span class='tip-part'>батырмасы ЖИ-дан толық түсіндірме шақырады.</span>",
+                "<span class='tip-part'>Тесттен кейін қателеріңізді</span><i data-lucide='download' class='tip-icon'></i><span class='tip-part'>сақтап алыңыз немесе 'Қателермен жұмыс' режимінде қайта өтіңіз.</span>",
+                "<span class='tip-part'>Нәтижелер экранында</span><i data-lucide='bot' class='tip-icon'></i><span class='tip-part'>арқылы қателеріңіз бойынша жеке талдау алыңыз.</span>",
+                "<span class='tip-part'>AI-көмекшіде мазмұны бойынша сұрақтар қою үшін</span><i data-lucide='plus' class='tip-icon'></i><span class='tip-part'>арқылы файлдарды тіркеңіз.</span>",
+                "<span class='tip-part'>Кез келген ЖИ жауабын хабарламаның астындағы</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>батырмасын басу арқылы дайын тестке айналдырыңыз.</span>"
+            ],
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -6572,12 +6596,12 @@ const mainApp = (function() {
             search_placeholder: 'Enter part of the question text...',
             find_button: 'Search',
             searching_in_db: 'Searching database...',
-            or_divider: '-- or --',
+            or_divider: '',
             choose_file: 'Select a .qst|.txt|.pdf file from your device:',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
-            parser_button_main: 'Convert',
-            parser_subtitle: 'text to .qst format',
+            parser_button_main: 'Create Test',
+            parser_subtitle: 'Converter & AI Generator',
             recent_files: 'Recently used:',
             // Navigation & Headers
             nav_gradus: 'GRADUS Navigation',
@@ -6954,6 +6978,26 @@ const mainApp = (function() {
             ai_regenerate_test: "Regenerate Test",
             ai_test_from_dialog_title: "Create Test from Dialog",
             ai_test_from_dialog_ready: "The test based on our dialog is ready!",
+            app_description: "QSTiUM is a powerful tool for preparing for tests and exams. Upload ready-made files, create new tests from text using AI, review your mistakes, and share materials with others.",
+            dynamic_tips: [
+                "<span class='tip-part'>Use the</span><i data-lucide='lightbulb' class='tip-icon'></i><span class='tip-part'>'Create Test' tool to convert text or generate questions using AI.</span>",
+                "<span class='tip-part'>Search for ready-made tests in the</span><i data-lucide='graduation-cap' class='tip-icon'></i><span class='tip-part'>GRADUS shared knowledge base.</span>",
+                "<span class='tip-part'>Continue interrupted tests from the</span><i data-lucide='play-circle' class='tip-icon'></i><span class='tip-part'>'Continue' section on the main screen.</span>",
+                "<span class='tip-part'>Customize the app's appearance by pressing</span><i data-lucide='sun-moon' class='tip-icon'></i><span class='tip-part'>and choosing your favorite theme.</span>",
+                "<span class='tip-part'>Press</span><i data-lucide='message-circle' class='tip-icon'></i><span class='tip-part'>to open the general chat to communicate and share tests.</span>",
+                "<span class='tip-part'>Practice specific topics using the</span><i data-lucide='filter' class='tip-icon'></i><span class='tip-part'>category filter before starting a test.</span>",
+                "<span class='tip-part'>Create a random set of N questions for a quick knowledge check with the</span><i data-lucide='shuffle' class='tip-icon'></i><span class='tip-part'>'Random Set' option.</span>",
+                "<span class='tip-part'>Study material in an interactive 'question-answer' card mode by enabling</span><i data-lucide='layers' class='tip-icon'></i><span class='tip-part'>'Flashcards Mode'.</span>",
+                "<span class='tip-part'>Enable</span><i data-lucide='zap' class='tip-icon'></i><span class='tip-part'>'Quick Mode' to automatically advance to the next question after answering.</span>",
+                "<span class='tip-part'>Activate</span><i data-lucide='highlighter' class='tip-icon'></i><span class='tip-part'>'Trigger Words' to highlight key terms in questions for memorization.</span>",
+                "<span class='tip-part'>Use</span><i data-lucide='languages' class='tip-icon'></i><span class='tip-part'>to instantly translate a question into another language during the test.</span>",
+                "<span class='tip-part'>The</span><i data-lucide='star' class='tip-icon'></i><span class='tip-part'>button adds the current question to 'Favorites' in your chat profile.</span>",
+                "<span class='tip-part'>Didn't understand an answer? The</span><i data-lucide='brain-circuit' class='tip-icon'></i><span class='tip-part'>button under the answer will provide a detailed AI explanation.</span>",
+                "<span class='tip-part'>After the test, save your mistakes</span><i data-lucide='download' class='tip-icon'></i><span class='tip-part'>or review them in 'Review Mistakes' mode.</span>",
+                "<span class='tip-part'>Get a personal analysis of your mistakes from the</span><i data-lucide='bot' class='tip-icon'></i><span class='tip-part'>on the results screen.</span>",
+                "<span class='tip-part'>In the AI assistant, attach files with</span><i data-lucide='plus' class='tip-icon'></i><span class='tip-part'>to ask questions about their content.</span>",
+                "<span class='tip-part'>Turn any AI response into a ready-made test by pressing the</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>button under the message.</span>"
+            ],
             session_save_new_button: "Save as New"
         }
 
@@ -7437,12 +7481,11 @@ const mainApp = (function() {
         setupEventListeners();
 
         DBManager.get('activatedSearchKey', 'AppSettings').then(result => {
-            if (result && result.value) {
-                revalidateSearchKey(result.value);
-            } else {
-                searchActivationContainer.classList.remove('hidden');
-            }
-        });
+                if (result && result.value) {
+                    revalidateSearchKey(result.value);
+                }
+                // Если ключа нет, мы просто ничего не делаем, оставляя блок скрытым.
+            });
 
         loadTheme();
         updateQuickModeToggleVisual();
@@ -7460,6 +7503,7 @@ const mainApp = (function() {
         updateTranslateEngineUI();
         // === НОВЫЙ ВЫЗОВ ДЛЯ ИНИЦИАЛИЗАЦИИ AI-ЧАТА ===
         initAIChat();
+        initDynamicDescription();
         // Скрываем индикатор начальной загрузки, когда все готово
         getEl('initial-loader')?.classList.add('hidden');
     }
@@ -7722,6 +7766,40 @@ const mainApp = (function() {
                 updateTimeControls(timeLimitSlider.value, timeLimitSlider);
             });
         }
+        // === НАЧАЛО ИСПРАВЛЕНИЯ: Поддержка двойного тапа на мобильных ===
+        let lastTapTime = 0;
+        const doubleTapDelay = 300; // Порог в миллисекундах для двойного нажатия
+
+        appTitleHeader?.addEventListener('click', (e) => {
+            const currentTime = new Date().getTime();
+            const timeDifference = currentTime - lastTapTime;
+
+            if (timeDifference < doubleTapDelay && timeDifference > 0) {
+                // Это двойной тап или двойной клик
+                console.log("Двойной тап/клик по заголовку зарегистрирован!");
+
+                e.preventDefault(); // Предотвращаем нежелательное выделение текста
+
+                const activationContainer = getEl('searchActivationContainer');
+                const verificationContainer = getEl('searchVerificationContainer');
+
+                if (activationContainer) {
+                    activationContainer.classList.remove('hidden');
+                    activationContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                if (verificationContainer) {
+                    verificationContainer.classList.add('hidden');
+                }
+
+                // Сбрасываем таймер, чтобы тройной клик не сработал снова
+                lastTapTime = 0;
+            } else {
+                // Это первый тап
+                lastTapTime = currentTime;
+            }
+        });
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
     }
 
 
@@ -8127,6 +8205,13 @@ const mainApp = (function() {
 
 
     function fetchAndLoadQstFile(fileId, fileName) {
+        const isPdf = fileName.toLowerCase().endsWith('.pdf');
+
+        if (isPdf) {
+            ChatModule.showFileActionsModal(fileId, encodeURIComponent(fileName), false);
+            return;
+        }
+        
         gradusFolderList.innerHTML = `<div class="loading-placeholder">${_('gradus_loading_quiz_prefix')} "${fileName}"...</div>`;
         const url = `${googleAppScriptUrl}?action=getFileContent&fileId=${fileId}`;
 
@@ -8140,30 +8225,56 @@ const mainApp = (function() {
                 originalFileNameForReview = data.fileName;
                 allParsedQuestions = parseQstContent(data.content);
 
-                if (allParsedQuestions.length === 0) {
-                    alert(`${_('file_empty_or_invalid_part1')}"${data.fileName}" ${_('file_empty_or_invalid_part2')}`);
-                    renderGradusView(breadcrumbs[breadcrumbs.length - 1].id, breadcrumbs[breadcrumbs.length - 1].name);
-                    return;
-                }
-
-                gradusFoldersContainer.classList.add('hidden');
-                quizSetupArea.classList.remove('hidden');
-                
-                questionRangeStartInput.value = 1;
-                questionRangeStartInput.max = allParsedQuestions.length;
-                questionRangeEndInput.value = allParsedQuestions.length;
-                questionRangeEndInput.max = allParsedQuestions.length;
-                maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${allParsedQuestions.length} ${_('questions_label_for_range')})`;
+                // Вызываем новую функцию для отображения экрана настроек
+                setupQuizScreen(data.fileName, allParsedQuestions);
             })
             .catch(error => {
                 alert(`${_('gradus_loading_error_prefix')} ${error.message}`);
                 console.error('Ошибка при загрузке файла:', error);
+                // Возвращаемся к списку файлов в GRADUS в случае ошибки
                 renderGradusView(breadcrumbs[breadcrumbs.length - 1].id, breadcrumbs[breadcrumbs.length - 1].name);
             });
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Подготавливает и показывает экран настроек теста.
+     * @param {string} fileName - Имя файла для отображения.
+     * @param {Array} parsedQuestions - Массив распарсенных вопросов.
+     */
+    function setupQuizScreen(fileName, parsedQuestions) {
+        if (parsedQuestions.length === 0) {
+            alert(`${_('file_empty_or_invalid_part1')}"${fileName}" ${_('file_empty_or_invalid_part2')}`);
+            return;
+        }
 
+        // Скрываем все остальные экраны
+        fileUploadArea.classList.add('hidden');
+        gradusFoldersContainer.classList.add('hidden');
+        searchResultsContainer.classList.add('hidden');
+        // Показываем экран настроек
+        quizSetupArea.classList.remove('hidden');
 
+        const questionCount = parsedQuestions.filter(q => q.type !== 'category').length;
+        
+        maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
+        shuffleNCountInput.max = questionCount;
+        
+        initDualSlider(questionCount);
+        initSingleSlider(); 
+        
+        shuffleNCheckbox.checked = false;
+        handleShuffleNToggle();
+
+        // Обновляем состояние кнопок и переключателей
+        shuffleQuestionsCheckbox.disabled = false;
+        shuffleAnswersCheckbox.disabled = false;
+        readingModeCheckbox.disabled = false;
+        flashcardsModeCheckbox.disabled = false;
+        questionRangeStartInput.disabled = false;
+        questionRangeEndInput.disabled = false;
+
+        manageBackButtonInterceptor();
+    }
 
     function downloadFileBrowserFallback(fileName, content, contentType) {
         const blob = new Blob([content], { type: contentType });
@@ -9562,7 +9673,6 @@ const mainApp = (function() {
                 const parsedData = JSON.parse(storedTranslations);
                 if (Array.isArray(parsedData) && (parsedData.length === 0 || Array.isArray(parsedData[0]))) {
                     currentQuizTranslations = new Map(parsedData);
-                    
                 } else {
                     currentQuizTranslations = new Map();
                 }
@@ -9578,70 +9688,48 @@ const mainApp = (function() {
         currentQuizContext = quizContext; 
         hideGlobalLoader();
 
-        if (allParsedQuestions.length > 0) {
-            saveRecentFile(fileName, fileContent);
-            
-            fileUploadArea.classList.add('hidden');
-            searchResultsContainer.classList.add('hidden');
-            quizSetupArea.classList.remove('hidden');
-            
-            // --- НАЧАЛО ИЗМЕНЕНИЙ: ЛОГИКА ОТОБРАЖЕНИЯ КАТЕГОРИЙ ---
-            const categories = allParsedQuestions.filter(item => item.type === 'category').map(item => item.text);
-
-            if (categories.length > 0) {
-                // Если категории найдены, создаем для них чекбоксы
-                categoryCheckboxesContainer.innerHTML = categories.map(category => `
-                    <label class="category-checkbox-label">
-                        <input type="checkbox" name="category" value="${escapeHTML(category)}">
-                        <span>${escapeHTML(category)}</span>
-                    </label>
-                `).join('');
-                categoryFilterGroup.classList.remove('hidden');
-                // Первичный вызов для установки правильного состояния
-                updateQuestionCountForFilters();
-            } else {
-                // Если категорий нет, скрываем блок
-                categoryFilterGroup.classList.add('hidden');
-                categoryCheckboxesContainer.innerHTML = '';
-            }
-            // --- КОНЕЦ ИЗМЕНЕНИЙ ---
-            
-            const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
-            
-            maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
-            shuffleNCountInput.max = questionCount;
-            
-            initDualSlider(questionCount);
-            initSingleSlider(); 
-            
-            shuffleNCheckbox.checked = false;
-            handleShuffleNToggle();
-
-            if (quizContext && !quizContext.isPractice) {
-                shuffleQuestionsCheckbox.checked = true;
-                shuffleAnswersCheckbox.checked = true;
-                readingModeCheckbox.checked = false;
-                flashcardsModeCheckbox.checked = false;
-                shuffleQuestionsCheckbox.disabled = true;
-                shuffleAnswersCheckbox.disabled = true;
-                readingModeCheckbox.disabled = true;
-                flashcardsModeCheckbox.disabled = true;
-                questionRangeStartInput.disabled = true;
-                questionRangeEndInput.disabled = true;
-            } else {
-                shuffleQuestionsCheckbox.disabled = false;
-                shuffleAnswersCheckbox.disabled = false;
-                readingModeCheckbox.disabled = false;
-                flashcardsModeCheckbox.disabled = false;
-                questionRangeStartInput.disabled = false;
-                questionRangeEndInput.disabled = false;
-            }
-        } else {
-            alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
+        if (allParsedQuestions.length === 0) {
+             alert(`${_('file_empty_or_invalid_part1')}"${fileName}"${_('file_empty_or_invalid_part2')}`);
+             return;
         }
-        manageBackButtonInterceptor();
-    }
 
+        saveRecentFile(fileName, fileContent);
+        
+        // Вызываем нашу новую универсальную функцию для показа настроек
+        setupQuizScreen(fileName, allParsedQuestions);
+
+        // --- Логика, специфичная для файлов, открытых НЕ из GRADUS ---
+        const categories = allParsedQuestions.filter(item => item.type === 'category').map(item => item.text);
+        if (categories.length > 0) {
+            categoryCheckboxesContainer.innerHTML = categories.map(category => `
+                <label class="category-checkbox-label">
+                    <input type="checkbox" name="category" value="${escapeHTML(category)}">
+                    <span>${escapeHTML(category)}</span>
+                </label>
+            `).join('');
+            categoryFilterGroup.classList.remove('hidden');
+            updateQuestionCountForFilters();
+        } else {
+            categoryFilterGroup.classList.add('hidden');
+            categoryCheckboxesContainer.innerHTML = '';
+        }
+        
+        const langFilterGroup = getEl('languageFilterGroup');
+        langFilterGroup.classList.add('hidden'); // Скрываем фильтр языка для обычных файлов
+        
+        if (quizContext && !quizContext.isPractice) {
+            shuffleQuestionsCheckbox.checked = true;
+            shuffleAnswersCheckbox.checked = true;
+            readingModeCheckbox.checked = false;
+            flashcardsModeCheckbox.checked = false;
+            shuffleQuestionsCheckbox.disabled = true;
+            shuffleAnswersCheckbox.disabled = true;
+            readingModeCheckbox.disabled = true;
+            flashcardsModeCheckbox.disabled = true;
+            questionRangeStartInput.disabled = true;
+            questionRangeEndInput.disabled = true;
+        }
+    }
 
 
     function parseQstContent(content) {
@@ -18830,6 +18918,61 @@ const mainApp = (function() {
         }
     }
 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Инициализирует динамическую смену подсказок на главном экране.
+     */
+    function initDynamicDescription() {
+        const container = getEl('dynamicDescriptionContainer');
+        if (!container) return;
+
+        let currentTipIndex = -1; // Начинаем с -1, чтобы первый показ был app_description
+        let tipTimer;
+
+        const showNextTip = () => {
+            const currentLang = localStorage.getItem('appLanguage') || 'ru';
+            const tips = LANG_PACK[currentLang].dynamic_tips || [];
+            const allContent = [_('app_description'), ...tips];
+            
+            currentTipIndex = (currentTipIndex + 1) % allContent.length;
+            
+            const p = container.querySelector('p');
+            if(p) {
+                // Прячем старый текст
+                p.style.opacity = 0;
+                
+                setTimeout(() => {
+                    // Обновляем текст и иконки
+                    p.innerHTML = allContent[currentTipIndex];
+                    if (window.lucide) {
+                        lucide.createIcons({
+                            attrs: {
+                                'class': 'tip-icon'
+                            }
+                        });
+                    }
+                    // Показываем новый текст
+                    p.style.opacity = 1;
+                }, 300); // Задержка равна времени transition
+            }
+            
+            // Перезапускаем таймер
+            clearTimeout(tipTimer);
+            tipTimer = setTimeout(showNextTip, 5000); // 5 секунд на подсказку
+        };
+
+        // Добавляем transition для плавности
+        const pElement = container.querySelector('p');
+        if(pElement) pElement.style.transition = 'opacity 0.3s ease-in-out';
+
+        // Обработчик клика для ручного переключения
+        container.addEventListener('click', () => {
+            clearTimeout(tipTimer); // Сбрасываем таймер
+            showNextTip(); // Показываем следующую подсказку немедленно
+        });
+
+        // Запускаем автоматическую смену
+        tipTimer = setTimeout(showNextTip, 5000);
+    }
 
 
     // --- Public methods exposed from mainApp ---
@@ -18871,6 +19014,7 @@ const mainApp = (function() {
         handleGenerateTestFromDialog: handleGenerateTestFromDialog,
         promptForPassword: promptForPassword,
         hashPassword: hashPassword,
+        getEl: getEl,
         // === КОНЕЦ НОВОГО КОДА ===
         testMobileDownload: () => {
             downloadOrShareFile('test.txt', 'Тестовое содержимое файла', 'text/plain', 'Тест');

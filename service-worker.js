@@ -22,7 +22,7 @@ const IDB_NAME = 'QSTiUM_AppDB';
 const IDB_STORE_NAME = 'offlineMessages';
 
 
-const CACHE_NAME = 'qst-app-cache-v382'; 
+const CACHE_NAME = 'qst-app-cache-v384'; 
 
 // Файлы, которые составляют "оболочку" приложения и будут закешированы
 const URLS_TO_CACHE = [
@@ -31,7 +31,13 @@ const URLS_TO_CACHE = [
   'style.css',
   'script.js',
   'favicon.png',
-  'manifest.json'
+  'manifest.json',
+  // === НАЧАЛО НОВОГО КОДА ===
+  'https://unpkg.com/lucide@latest',
+  'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css',
+  'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js',
+  'https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js'
+  // === КОНЕЦ НОВОГО КОДА ===
 ];
 
 // Событие 'install': кешируем оболочку приложения
@@ -83,7 +89,29 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
-  // Игнорируем не-GET запросы и запросы к сторонним API (как и было)
+  // === НАЧАЛО ИЗМЕНЕНИЙ: Логика для сторонних ресурсов (CDN) ===
+  const requestUrl = new URL(request.url);
+  const cdnHosts = ['unpkg.com', 'cdn.jsdelivr.net', 'fonts.gstatic.com', 'fonts.googleapis.com'];
+
+  if (cdnHosts.includes(requestUrl.hostname)) {
+    // Стратегия "Кэш, потом сеть" (Cache First) для стабильных CDN-ресурсов
+    event.respondWith(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) {
+          return cachedResponse; // Если есть в кэше, отдаем сразу
+        }
+        // Если нет, идем в сеть и кешируем ответ
+        const networkResponse = await fetch(request);
+        cache.put(request, networkResponse.clone());
+        return networkResponse;
+      })
+    );
+    return;
+  }
+  // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
+  // Игнорируем не-GET запросы и запросы к Firebase
   if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) {
     return;
   }
@@ -92,21 +120,16 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        // Пытаемся использовать предзагруженный ответ, если он есть
         const preloadResponse = await event.preloadResponse;
         if (preloadResponse) {
           console.log('Service Worker: Используем предзагруженный ответ для навигации.');
           return preloadResponse;
         }
-
-        // Если предзагрузки нет, делаем обычный запрос в сеть
         const networkResponse = await fetch(request);
         return networkResponse;
       } catch (error) {
-        // Если сеть недоступна, достаем главный HTML из кэша
         console.log('Service Worker: Сеть недоступна, отдаем index.html из кэша.');
         const cache = await caches.open(CACHE_NAME);
-        // Ищем index.html относительно текущей директории SW
         const cachedResponse = await cache.match('index.html');
         return cachedResponse;
       }
@@ -115,28 +138,21 @@ self.addEventListener('fetch', (event) => {
   }
 
   // СТРАТЕГИЯ 2: Для статики (CSS, JS, картинки) - "Stale-While-Revalidate"
-  // (Отдаем из кэша сразу, а в фоне обновляем)
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cachedResponse = await cache.match(request);
-
-    // Делаем запрос в сеть в любом случае
     const fetchPromise = fetch(request).then(networkResponse => {
-      // Если запрос успешный, обновляем кэш
       if (networkResponse && networkResponse.status === 200) {
         cache.put(request, networkResponse.clone());
       }
       return networkResponse;
     }).catch(err => {
-      // Сетевая ошибка, ничего страшного, если есть кэш
       console.warn('Service Worker: Не удалось обновить ресурс из сети:', request.url, err.message);
     });
-
-    // Если ресурс есть в кэше, отдаем его немедленно.
-    // Если нет - ждем ответа от сети.
     return cachedResponse || fetchPromise;
   })());
 });
+
 
 // Событие 'message' остается без изменений
 self.addEventListener('message', (event) => {

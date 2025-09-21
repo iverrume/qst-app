@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QSTiUM</title>
+    <title>QSTiUM - Интерактивная платформа для тестов и обучения</title>
+
+    <meta name="description" content="Создавайте, проходите и делитесь тестами в формате .qst, .txt и .pdf. Используйте AI-генератор для создания учебных материалов, анализируйте ошибки и готовьтесь к экзаменам с QSTiUM.">
+    <meta name="keywords" content="тесты, qst, обучение, экзамены, подготовка к экзаменам, создать тест, онлайн тест, AI генератор тестов, работа над ошибками, шпаргалка">
+
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -108,19 +112,48 @@
                     <input type="text" id="searchQueryInput" placeholder="Введите часть текста вопроса..." data-lang-key="search_placeholder">
                     <button id="searchButton" data-lang-key="find_button">Найти</button>
                 </div>
-                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
-                <label for="fileInput" data-lang-key="choose_file">Выберите .qst|.txt|.pdf файл с устройства:</label>
-                <input type="file" id="fileInput" accept=".qst,.txt,.pdf" multiple>
-                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
-                <button id="gradusButton">
-                    <span data-lang-key="gradus_button_main">GRADUS</span>
-                    <span class="gradus-subtitle" data-lang-key="gradus_subtitle">(General Repository for Academic Data, Utility & Structure)</span>
-                </button>
-                <p style="text-align: center; margin: 15px 0; color: var(--secondary-text-color);" data-lang-key="or_divider">-- или --</p>
-                <button id="parserButton">
-                    <span data-lang-key="parser_button_main">Перевести</span>
-                    <span class="gradus-subtitle" data-lang-key="parser_subtitle">текст в формат .qst</span>
-                </button>
+                <p class="main-screen-divider" data-lang-key="or_divider"></p>
+
+                <!-- === НАЧАЛО ИЗМЕНЕНИЙ: Динамический блок с подсказками === -->
+                <div id="dynamicDescriptionContainer" class="dynamic-description-container" style="text-align: center; margin-bottom: 20px; color: var(--secondary-text-color); line-height: 1.6; cursor: pointer;">
+                    <!-- Этот блок виден поисковикам и пользователям с отключенным JS -->
+                    <p data-lang-key="app_description">
+                        QSTiUM — это мощный инструмент для подготовки к тестам и экзаменам. Загружайте готовые файлы, создавайте новые тесты из текста с помощью ИИ, проводите работу над ошибками и делитесь материалами с другими.
+                    </p>
+                </div>
+                <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
+
+
+
+                <div class="main-actions-grid">
+                    <label for="fileInput" class="custom-file-upload-btn">
+                        <i data-lucide="file-up"></i>
+                        <!-- Добавлена обертка div -->
+                        <div class="main-action-text-wrapper">
+                            <span data-lang-key="choose_file">Выберите .qst|.txt|.pdf файл</span>
+                        </div>
+                    </label>
+                    <input type="file" id="fileInput" accept=".qst,.txt,.pdf" multiple>
+                    
+                    <button id="parserButton">
+                        <i data-lucide="lightbulb"></i>
+                        <!-- Добавлена обертка div -->
+                        <div class="main-action-text-wrapper">
+                             <span data-lang-key="parser_button_main">Создать тест</span>
+                        </div>
+                    </button>
+
+                    <button id="gradusButton">
+                        <i data-lucide="graduation-cap"></i>
+                        <!-- Добавлена обертка div -->
+                        <div class="main-action-text-wrapper">
+                            <span>GRADUS</span>
+                        </div>
+                    </button>
+                </div>
+                                
+
+
                 <div id="savedSessionArea" class="hidden">
                     <h4 data-lang-key="continue_sessions">Продолжить:</h4>
                     <div id="savedSessionList"></div>
