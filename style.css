@@ -2398,8 +2398,23 @@ body.synthwave-mode .input-action-btn.active:hover {
     color: var(--button-secondary-text);
 }
 
-.modal-buttons button:last-child:hover {
-    background: var(--button-secondary-hover-bg);
+/* ======================================================= */
+/* ===        ИСПРАВЛЕНИЕ КОНТРАСТНОСТИ КНОПОК (v3)    === */
+/* ======================================================= */
+
+/* Применяем фон, рамку и ЦВЕТ ТЕКСТА для кнопки "Пересоздать" */
+#fileActionRegenerateBtn {
+    background-color: var(--button-secondary-bg);
+    border: 1px solid var(--button-secondary-border);
+    color: var(--button-secondary-text); /* <-- ГЛАВНОЕ ИЗМЕНЕНИЕ */
+}
+#fileActionRegenerateBtn:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+
+/* Применяем темный цвет текста только к кнопке "Отмена" в светлых темах */
+body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) button[onclick*="closeModal('fileActionsModal')"] {
+    color: var(--text-color);
 }
 
 
@@ -11524,4 +11539,94 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     align-items: center;  /* Центрирует их по вертикали */
     gap: 4px;             /* Добавляет небольшой красивый отступ между иконками */
     flex-shrink: 0;       /* Запрещает контейнеру сжиматься, если название длинное */
+}
+
+/* ======================================================= */
+/* ===      СТИЛИ ДЛЯ НОВЫХ ЭЛЕМЕНТОВ В МОДАЛЬНОМ ОКНЕ   === */
+/* ======================================================= */
+
+/* --- Стили для нового компонента слайдера --- */
+#aiTestFromMessageModal .time-limit-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+#aiTestFromMessageModal .time-limit-input-container {
+    flex-shrink: 0;
+}
+
+#aiTestFromMessageModal .time-limit-wrapper .single-slider-container {
+    flex-grow: 1;
+    width: 100%;
+    position: relative;
+    height: 20px;
+}
+
+#aiTestFromMessageModal .time-limit-wrapper .range-input {
+    width: 70px;
+}
+
+#aiTestFromMessageModal .single-slider-container input[type="range"] {
+    position: absolute;
+    width: 100%;
+    height: 5px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: auto;
+    margin: 0;
+    z-index: 3;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#aiTestFromMessageModal #aiTestMsgSliderProgress {
+    position: absolute;
+    height: 5px;
+    border-radius: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    background-color: var(--accent-color);
+    z-index: 1;
+}
+
+/* --- Стили для правильного отображения чекбокса --- */
+.settings-group .category-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Расстояние между флажком и текстом */
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.settings-group .category-checkbox-label input[type="checkbox"] {
+    margin: 0; /* Убираем стандартные отступы браузера */
+}
+
+/* ======================================================= */
+/* ===        АНИМАЦИЯ ПОДСВЕТКИ НОВОГО ЭЛЕМЕНТА       === */
+/* ======================================================= */
+
+/* Описание самой анимации "свечения" */
+@keyframes highlight-new-item {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 12px 5px color-mix(in srgb, var(--accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+}
+
+/* Класс, который будет запускать анимацию */
+.highlight-new-test {
+    animation: highlight-new-item 2s ease-out;
 }

@@ -1203,7 +1203,14 @@ const ChatModule = (function() {
         <div id="questionCreateModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('create_question_title')}</h3><textarea id="questionTextInput" placeholder="${_chat('create_question_placeholder')}" rows="4"></textarea><div class="modal-buttons"><button onclick="ChatModule.createQuestion()">${_chat('create_question_modal_button')}</button><button onclick="ChatModule.closeModal('questionCreateModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="editMessageModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_message_title')}</h3><textarea id="editMessageInput" rows="4"></textarea><input type="hidden" id="editMessageIdInput"><div class="modal-buttons"><button onclick="ChatModule.saveMessageEdit()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('editMessageModal')">${_chat('modal_cancel_button')}</button></div></div></div>
         <div id="profileEditModal" class="modal-overlay hidden"><div class="modal-content"><h3>${_chat('edit_profile_title')}</h3><input type="text" id="profileDisplayName" placeholder="${_chat('edit_profile_name_placeholder')}" /><input type="email" id="profileEmail" placeholder="Email" readonly /><input type="password" id="profileNewPassword" placeholder="${_chat('edit_profile_new_password_placeholder')}" /><div class="modal-buttons"><button onclick="ChatModule.saveProfile()">${_chat('modal_save_button')}</button><button onclick="ChatModule.closeModal('profileEditModal')">${_chat('modal_cancel_button')}</button></div><button id="deleteAccountBtn" class="delete-btn" onclick="ChatModule.deleteAccount()" style="margin-top: 15px;"><i data-lucide="trash-2"></i>${_chat('delete_account_button')}</button></div></div>
-        <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical"><button id="fileActionDownloadBtn"><i data-lucide="download"></i>${_chat('file_actions_download')}</button><button id="fileActionTestBtn"><i data-lucide="play-circle"></i>${_chat('file_actions_test')}</button><button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button></div></div></div>
+        <div id="fileActionsModal" class="modal-overlay hidden"><div class="modal-content"><h3 id="fileActionsModalTitle">${_chat('file_actions_title')}</h3><p id="fileActionsModalText" style="margin-bottom: 25px;">${_chat('user_actions_text')}</p><div class="modal-buttons vertical">
+    <button id="fileActionDownloadBtn"><i data-lucide="download"></i>${_chat('file_actions_download')}</button>
+    <button id="fileActionTestBtn"><i data-lucide="play-circle"></i>${_chat('file_actions_test')}</button>
+    <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+    <button id="fileActionRegenerateBtn" class="hidden"><i data-lucide="refresh-cw"></i><span data-lang-key="ai_regenerate_test">Перегенерировать тест</span></button>
+    <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
+    <button onclick="ChatModule.closeModal('fileActionsModal')" style="background-color: var(--button-secondary-bg); color: var(--button-secondary-text);">${_chat('modal_cancel_button')}</button>
+</div></div></div>
         <div id="activeQuizModal" class="modal-overlay hidden">
           <div class="modal">
             <h3 data-lang-key="active_quiz_title">У вас уже запущен тест</h3>
@@ -1875,22 +1882,12 @@ const ChatModule = (function() {
           
                 clearChatData();
                 cleanupPresenceSystem();
-                cleanupPrivateLegendsListener(); // Останавливаем слушатель легенд при выходе
+                mainApp.cleanupPrivateLegendsListener(); // Останавливаем слушатель легенд при выходе // Останавливаем слушатель легенд при выходе
             }
         });
     }
 
-    /**
-     * НОВАЯ ФУНКЦИЯ: Отписывается от слушателя легенд и очищает кэш.
-     */
-    function cleanupPrivateLegendsListener() {
-        if (privateLegendsListener) {
-            privateLegendsListener();
-            privateLegendsListener = null;
-        }
-        currentPrivateLegends = {};
-       
-    }
+
 
     let globalMessagesListener = null; // Переменная для нашего нового слушателя
     let allMessagesByChannel = new Map(); // Кэш для сообщений, сгруппированных по каналам
@@ -3980,7 +3977,7 @@ const ChatModule = (function() {
 
         if (newPassword) {
             updates.hasPassword = true;
-            updates.passwordHash = await hashPassword(newPassword);
+            updates.passwordHash = await mainApp.hashPassword(newPassword);
         } else {
             updates.hasPassword = false;
             updates.passwordHash = null;
@@ -4081,12 +4078,12 @@ const ChatModule = (function() {
             // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Заменяем prompt на наше новое окно ===
             if (!unlockedChannels.has(channel.id)) {
                 // Ждем результат от кастомного модального окна
-                const password = await promptForPassword(channel.name);
+                const password = await mainApp.promptForPassword(channel.name);
 
                 // Если пользователь нажал "Отмена", password будет null
                 if (password === null) return;
 
-                const enteredPasswordHash = await hashPassword(password);
+                const enteredPasswordHash = await mainApp.hashPassword(password);
                 if (enteredPasswordHash === channel.passwordHash) {
                     unlockedChannels.add(channel.id);
                     localStorage.setItem(`unlockedChannels_${currentUser.uid}`, JSON.stringify(Array.from(unlockedChannels)));
@@ -4564,19 +4561,23 @@ const ChatModule = (function() {
     }
 
 
-
-    // НОВЫЙ УЧАСТОК КОДА (ПОЛНАЯ ЗАМЕНА)
     function showFileActionsModal(fileId, fileName, isTestingChannel = false) {
         const decodedFileName = decodeURIComponent(fileName);
-        document.getElementById('fileActionsModalTitle').textContent = `${_chat('file_actions_modal_title')} ${decodedFileName}`;
+        document.getElementById('fileActionsModalTitle').textContent = `${_('file_actions_modal_title')} ${decodedFileName}`;
 
         const downloadBtn = document.getElementById('fileActionDownloadBtn');
         const testBtn = document.getElementById('fileActionTestBtn');
+        // ======== НАЧАЛО НОВОГО КОДА ========
+        const regenerateBtn = document.getElementById('fileActionRegenerateBtn');
+        if (regenerateBtn) {
+            regenerateBtn.classList.add('hidden'); // Скрываем кнопку, она не нужна для обычных файлов
+        }
+        // ======== КОНЕЦ НОВОГО КОДА ========
 
         // «Скачать» — всегда
         downloadBtn.onclick = () => downloadSharedFile(fileId, fileName);
         downloadBtn.style.display = '';
-        downloadBtn.textContent = _chat('file_actions_download');
+        downloadBtn.textContent = _('file_actions_download');
 
         // «Пройти тест» — ВСЕГДА видна (включая PDF)
         testBtn.style.display = '';
@@ -4591,17 +4592,17 @@ const ChatModule = (function() {
         if (isTestingChannel) {
             const practiceTestBtn = document.createElement('button');
             practiceTestBtn.id = 'fileActionPracticeTestBtn';
-            practiceTestBtn.textContent = _chat('practice_test_button');
+            practiceTestBtn.textContent = _('practice_test_button');
             practiceTestBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
 
-            testBtn.textContent = _chat('official_test_button');
+            testBtn.textContent = _('official_test_button');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: false });
 
             modalButtonsContainer.insertBefore(testBtn, closeBtn);
             modalButtonsContainer.insertBefore(practiceTestBtn, closeBtn);
             modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
         } else {
-            testBtn.textContent = _chat('file_actions_test');
+            testBtn.textContent = _('file_actions_test');
             testBtn.onclick = () => startTestFromShare(fileId, fileName, { isPractice: true });
 
             modalButtonsContainer.insertBefore(downloadBtn, closeBtn);
@@ -6092,7 +6093,7 @@ const mainApp = (function() {
             share_title_translated_test_txt: "Переведенный тест",
             share_title_translated_test_qst: "Переведенный тест (QST)",
             error_translation_failed: "Не удалось получить перевод.",
-            ai_option_default: "(стандарт)",
+            ai_option_default: "4 (стандарт)",
             error_firebase_init: "Не удалось инициализировать Firebase. Чат будет недоступен. Ошибка:",
             copy_success_short: '✓ Скопировано!',
             ai_analyzing_text: "ИИ анализирует ваш текст...",
@@ -6153,6 +6154,15 @@ const mainApp = (function() {
             ai_reply_context_prompt: '[В ответ на сообщение от "{authorName}": "{originalText}"]\n\n{newText}',
             ai_search_disabled_with_file: "Поиск в Google отключается при отправке файлов",
             ai_show_all_user_messages_tooltip: "Показать/скрыть все мои сообщения",
+            ai_test_from_msg_title: "Создание теста из сообщения",
+            ai_test_from_msg_text: "Настройте параметры для генерации теста на основе выбранного ответа ИИ.",
+            ai_test_difficulty_label: "Сложность:",
+            ai_test_difficulty_easy: "Простой",
+            ai_test_difficulty_medium: "Средний",
+            ai_test_difficulty_hard: "Сложный",
+            ai_regenerate_test: "Перегенерировать тест",
+            ai_test_from_dialog_title: "Создание теста из диалога",
+            ai_test_from_dialog_ready: "Тест по материалам нашего диалога готов!",
             session_save_new_button: "Сохранить как новую"
         },
         kk: {
@@ -6473,7 +6483,7 @@ const mainApp = (function() {
             share_title_translated_test_qst: "Аударылған тест (QST)",
 
             error_translation_failed: "Аударманы алу мүмкін болмады.",
-            ai_option_default: "(стандартты)",
+            ai_option_default: "4 (стандартты)",
 
             error_firebase_init: "Firebase инициализациясы сәтсіз аяқталды. Чат қолжетімсіз болады. Қате:",
             ai_analyzing_text: "ЖИ сіздің мәтініңізді талдауда...",
@@ -6536,6 +6546,15 @@ const mainApp = (function() {
             ai_reply_context_prompt: '["{authorName}"-ның мына хабарламасына жауап ретінде: "{originalText}"]\n\n{newText}',
             ai_search_disabled_with_file: "Файл жіберген кезде Google Іздеу өшіріледі",
             ai_show_all_user_messages_tooltip: "Барлық менің хабарламаларымды көрсету/жасыру",
+            ai_test_from_msg_title: "Хабарламадан тест жасау",
+            ai_test_from_msg_text: "Таңдалған ЖИ жауабы негізінде тест жасау параметрлерін баптаңыз.",
+            ai_test_difficulty_label: "Қиындық:",
+            ai_test_difficulty_easy: "Жеңіл",
+            ai_test_difficulty_medium: "Орташа",
+            ai_test_difficulty_hard: "Қиын",
+            ai_regenerate_test: "Тестті қайта жасау",
+            ai_test_from_dialog_title: "Диалогтан тест жасау",
+            ai_test_from_dialog_ready: "Біздің диалогымыздың материалдары бойынша тест дайын!",
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -6861,7 +6880,7 @@ const mainApp = (function() {
             share_title_translated_test_qst: "Translated Test (QST)",
 
             error_translation_failed: "Failed to get translation.",
-            ai_option_default: "(standard)",
+            ai_option_default: "4 (standard)",
 
             error_firebase_init: "Failed to initialize Firebase. Chat will be unavailable. Error:",
             ai_analyzing_text: "AI is analyzing your text...",
@@ -6926,6 +6945,15 @@ const mainApp = (function() {
             ai_reply_context_prompt: '[In reply to "{authorName}" who said: "{originalText}"]\n\n{newText}',
             ai_search_disabled_with_file: "Google Search is disabled when sending files",
             ai_show_all_user_messages_tooltip: "Show/hide all my messages",
+            ai_test_from_msg_title: "Create Test from Message",
+            ai_test_from_msg_text: "Configure the parameters to generate a test based on the selected AI response.",
+            ai_test_difficulty_label: "Difficulty:",
+            ai_test_difficulty_easy: "Easy",
+            ai_test_difficulty_medium: "Medium",
+            ai_test_difficulty_hard: "Hard",
+            ai_regenerate_test: "Regenerate Test",
+            ai_test_from_dialog_title: "Create Test from Dialog",
+            ai_test_from_dialog_ready: "The test based on our dialog is ready!",
             session_save_new_button: "Save as New"
         }
 
@@ -7361,7 +7389,20 @@ const mainApp = (function() {
         cancelExitBtn = getEl('cancelExitBtn');
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
-        
+
+        // === НАЧАЛО НОВОГО КОДА: Загрузка сохраненных тестов ===
+        const savedTests = localStorage.getItem(AI_GENERATED_TESTS_KEY);
+        if (savedTests) {
+            try {
+                // Преобразуем JSON-строку обратно в массив, а затем в Map
+                generatedTestsFromAI = new Map(JSON.parse(savedTests));
+            } catch (e) {
+                console.error("Не удалось загрузить сгенерированные тесты из хранилища:", e);
+                generatedTestsFromAI = new Map(); // Сбрасываем в случае ошибки
+            }
+        }
+        // === КОНЕЦ НОВОГО КОДА ===  
+
         // Инициализация Service Worker
         initServiceWorkerUpdater();
         // --- НАЧАЛО НОВОГО КОДА: Настройка парсера Markdown ---
@@ -12519,7 +12560,7 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success && result.qst) {
-                aiFromTextOutput.value = result.qst;
+                aiFromTextOutput.value = formatAICategories(result.qst);
                 aiFromTextOutputArea.classList.remove('hidden');
                 aiFromTextOutputArea.scrollIntoView({ behavior: 'smooth' });
             } else {
@@ -12620,7 +12661,7 @@ const mainApp = (function() {
             const result = await response.json();
 
             if (result.success && result.qst) {
-                aiFromTopicOutput.value = result.qst;
+                aiFromTopicOutput.value = formatAICategories(result.qst);
                 aiFromTopicOutputArea.classList.remove('hidden');
                 aiFromTopicOutputArea.scrollIntoView({ behavior: 'smooth' });
             } else {
@@ -14400,6 +14441,18 @@ const mainApp = (function() {
     }
 
     /**
+     * НОВАЯ ФУНКЦИЯ: Отписывается от слушателя легенд и очищает кэш.
+     */
+    function cleanupPrivateLegendsListener() {
+        if (privateLegendsListener) {
+            privateLegendsListener();
+            privateLegendsListener = null;
+        }
+        currentPrivateLegends = {};
+       
+    }
+
+    /**
      * НОВАЯ ФУНКЦИЯ: Устанавливает real-time слушатель на документ пользователя
      * для синхронизации легенд приватных чатов. Также выполняет одноразовую миграцию
      * из localStorage в Firestore.
@@ -14480,6 +14533,8 @@ const mainApp = (function() {
 
 
     let attachedFile = null; 
+    let generatedTestsFromAI = new Map(); // Карта для хранения сгенерированных тестов { messageIndex: qstContent }
+    const AI_GENERATED_TESTS_KEY = 'aiGeneratedTests'; // Ключ для localStorage
     let isAIResponding = false;
     let isAIChatExpanded = false;
     let aiReplyContext = null; // Для хранения контекста ответа
@@ -14522,6 +14577,7 @@ const mainApp = (function() {
         aiChatScrollWrapper = aiChatModal?.querySelector('.ai-chat-scroll-wrapper');
         const aiSidebarHandle = getEl('aiSidebarHandle');
         const aiShowAllUserMessagesBtn = getEl('aiShowAllUserMessagesBtn');
+        const aiGenerateTestFromDialogBtn = getEl('aiGenerateTestFromDialogBtn');
         
         aiCustomScrollbar = getEl('aiCustomScrollbar');
         aiScrollbarThumb = getEl('aiScrollbarThumb');
@@ -14551,6 +14607,7 @@ const mainApp = (function() {
         const closeImageModal = () => imagePreviewModal?.classList.add('hidden');
         const closeTextModal = () => textPreviewModal?.classList.add('hidden');
 
+
         // 2. Навешиваем все обработчики событий
         if (aiChatFab) {
             makeFabDraggable(aiChatFab);
@@ -14561,6 +14618,8 @@ const mainApp = (function() {
 
         const aiUserMessagesSidebar = getEl('aiChatUserMessagesSidebar');
         const aiUserMessagesList = getEl('aiUserMessagesList');
+
+        aiGenerateTestFromDialogBtn?.addEventListener('click', handleGenerateTestFromDialog);
 
         // Обработчик для кнопки, открывающей правую панель
         aiShowAllUserMessagesBtn?.addEventListener('click', (e) => {
@@ -15205,6 +15264,299 @@ const mainApp = (function() {
         }
         // ID текущего чата всегда сохраняем локально для быстрого доступа
         localStorage.setItem('currentAIChatId', currentAIChatId);
+    }
+
+    /**
+     * Показывает модальное окно с настройками для генерации теста из сообщения ИИ.
+     * @param {number} index - Индекс сообщения ИИ, на основе которого будет создан тест.
+     */
+    function showAITestFromMessageModal(index) {
+        const modal = getEl('aiTestFromMessageModal');
+        const titleEl = modal?.querySelector('h3');
+        if (!modal || !titleEl) return;
+
+        // === НАЧАЛО ИЗМЕНЕНИЙ ===
+        // Если index = -1, значит создаем из всего диалога
+        if (index === -1) {
+            titleEl.textContent = _('ai_test_from_dialog_title');
+            titleEl.dataset.langKey = 'ai_test_from_dialog_title';
+        } else {
+            const msg = getAIChatMessageByIndex(index);
+            if (!msg) {
+                showToast("Не удалось найти исходное сообщение.", "error");
+                return;
+            }
+            titleEl.textContent = _('ai_test_from_msg_title');
+            titleEl.dataset.langKey = 'ai_test_from_msg_title';
+        }
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
+        
+        const questionCountInput = getEl('aiTestMsgQuestionCount');
+        const questionCountSlider = getEl('aiTestMsgQuestionSlider');
+        const sliderProgress = getEl('aiTestMsgSliderProgress');
+        const MIN_VAL = 1;
+        const MAX_VAL = 50;
+        const STEP = 5;
+
+        const snapValue = (value) => {
+            if (value === MAX_VAL) return MAX_VAL;
+            if (value === MIN_VAL) return MIN_VAL;
+            return Math.round(value / STEP) * STEP;
+        };
+
+        const updateVisuals = (value) => {
+            const numValue = Math.max(MIN_VAL, Math.min(MAX_VAL, parseInt(value, 10)));
+            questionCountInput.value = numValue;
+            questionCountSlider.value = numValue;
+            
+            const percent = ((numValue - MIN_VAL) / (MAX_VAL - MIN_VAL)) * 100;
+            sliderProgress.style.width = `${percent}%`;
+        };
+
+        questionCountInput.oninput = (e) => updateVisuals(e.target.value);
+        questionCountSlider.oninput = (e) => updateVisuals(e.target.value);
+        
+        questionCountSlider.onchange = (e) => {
+            const snapped = snapValue(parseInt(e.target.value, 10));
+            updateVisuals(snapped);
+        };
+        
+        updateVisuals(5);
+
+        getEl('aiTestFromMessageIndex').value = index;
+        
+        ChatModule.showModal('aiTestFromMessageModal');
+        
+        getEl('confirmAiTestGenerationBtn').onclick = generateAITestFromMessage;
+        getEl('cancelAiTestGenerationBtn').onclick = () => ChatModule.closeModal('aiTestFromMessageModal');
+    }
+
+
+    /**
+     * Запускает процесс генерации теста из сообщения ИИ.
+     */
+    async function generateAITestFromMessage() {
+        const index = parseInt(getEl('aiTestFromMessageIndex').value, 10);
+        let textToProcess;
+        let fileNameBase;
+
+        // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+        if (index === -1) {
+            const currentChat = (currentAIChatType === 'public') ? currentPublicChatMessages : allAIChats[currentAIChatId];
+            if (!currentChat) {
+                showToast("Ошибка: текущий диалог не найден.", "error");
+                return;
+            }
+            textToProcess = currentChat
+                .filter(msg => msg.role === 'model' && msg.content && msg.content !== 'typing...')
+                .map(msg => msg.content)
+                .join('\n\n---\n\n');
+            
+            // ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем правильный ID в зависимости от типа чата
+            const idForName = currentAIChatType === 'public' ? currentTopicId : currentAIChatId;
+            fileNameBase = `ai_test_from_dialog_${idForName ? idForName.slice(-4) : 'public'}`;
+
+        } else {
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+            const msg = getAIChatMessageByIndex(index);
+            if (!msg) {
+                showToast("Ошибка: исходное сообщение не найдено.", "error");
+                return;
+            }
+            textToProcess = msg.content;
+            fileNameBase = `ai_test_from_msg_${index + 1}`;
+        }
+
+        if (!textToProcess || textToProcess.trim() === '') {
+            showToast("Нет текста для создания теста.", "error");
+            return;
+        }
+
+        const questionCount = getEl('aiTestMsgQuestionCount').value;
+        const answerCount = getEl('aiTestMsgAnswerCount').value;
+        const difficulty = getEl('aiTestMsgDifficulty').value;
+        const autoCategorize = getEl('aiTestMsgAutoCategory').checked;
+
+        ChatModule.closeModal('aiTestFromMessageModal');
+        showGlobalLoader('ИИ создает тест...');
+
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'generateTest',
+                    text: textToProcess,
+                    count: questionCount,
+                    answerCount: answerCount,
+                    difficulty: difficulty,
+                    autoCategorize: autoCategorize
+                })
+            });
+
+            const result = await response.json();
+            hideGlobalLoader();
+
+            if (result.success && result.qst) {
+                const testData = {
+                    qstContent: formatAICategories(result.qst),
+                    fileName: `${fileNameBase}.qst`
+                };
+                
+                if (index === -1) {
+                    const currentChat = (currentAIChatType === 'public') ? currentPublicChatMessages : allAIChats[currentAIChatId];
+                    if (currentChat) {
+                        const newModelMessage = {
+                            role: 'model',
+                            content: _('ai_test_from_dialog_ready'),
+                            generatedTest: testData 
+                        };
+                        
+                        // === НАЧАЛО ИСПРАВЛЕНИЯ ДЛЯ ПУБЛИЧНЫХ ЧАТОВ ===
+                        if (currentAIChatType === 'public') {
+                            if (currentUser && db && currentAudienceId && currentTopicId) {
+                                // Добавляем сообщение в Firestore
+                                newModelMessage.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                                db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId).collection('messages').add(newModelMessage);
+                                // onSnapshot сам обновит UI
+                            }
+                        } else {
+                            // Для приватных чатов, как и раньше
+                            currentChat.push(newModelMessage);
+                            saveAIChatsToStorage();
+                            renderAIChatMessages();
+                        }
+                        // === КОНЕЦ ИСПРАВЛЕНИЯ ДЛЯ ПУБЛИЧНЫХ ЧАТОВ ===
+                    }
+                } else {
+                    generatedTestsFromAI.set(index, testData);
+                    saveGeneratedAITests();
+                    renderAIChatMessages();
+                    setTimeout(() => {
+                        const messageContainer = getEl(`ai-message-container-${index}`);
+                        if (messageContainer) {
+                            const chatContainer = getEl('aiChatMessages');
+                            if (chatContainer) {
+                                const targetScrollTop = messageContainer.offsetTop + messageContainer.offsetHeight - chatContainer.clientHeight;
+                                chatContainer.scrollTo({
+                                    top: targetScrollTop + 15, 
+                                    behavior: 'smooth'
+                                });
+                            }
+                            const fileIcon = messageContainer.querySelector('.ai-generated-test-file-btn');
+                            if (fileIcon) {
+                                fileIcon.classList.add('highlight-new-test');
+                                setTimeout(() => fileIcon.classList.remove('highlight-new-test'), 2000);
+                            }
+                        }
+                    }, 100);
+                }
+
+                showToast("Тест успешно создан!", "success");
+            } else {
+                throw new Error(result.error || _('ai_error_generation'));
+            }
+
+        } catch (error) {
+            hideGlobalLoader();
+            console.error("Ошибка генерации теста:", error);
+            showToast(error.message, "error");
+        }
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Инициирует создание теста из всего диалога.
+     */
+    function handleGenerateTestFromDialog() {
+        // Вызываем модальное окно настроек со специальным индексом -1
+        showAITestFromMessageModal(-1);
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Автоматически исправляет неправильный формат категорий (# Тема)
+     * на правильный (#_#Тема#_#), который используется в приложении.
+     * @param {string} qstText - Текст сгенерированного теста.
+     * @returns {string} - Исправленный текст.
+     */
+    function formatAICategories(qstText) {
+        if (!qstText) return '';
+        // Регулярное выражение находит строки, которые начинаются с # и пробела,
+        // и заменяет их, оборачивая текст в #_#...#_#
+        const incorrectCategoryRegex = /^# (.*)/gm;
+        return qstText.replace(incorrectCategoryRegex, '#_#$1#_#');
+    }
+    /**
+     * НОВАЯ ФУНКЦИЯ: Сохраняет карту сгенерированных тестов в localStorage.
+     */
+    function saveGeneratedAITests() {
+        try {
+            // Преобразуем Map в массив [ключ, значение] и затем в JSON-строку
+            const dataToSave = JSON.stringify(Array.from(generatedTestsFromAI.entries()));
+            localStorage.setItem(AI_GENERATED_TESTS_KEY, dataToSave);
+        } catch (e) {
+            console.error("Не удалось сохранить сгенерированные тесты в localStorage:", e);
+        }
+    }
+
+    /**
+     * Показывает модальное окно с действиями для сгенерированного теста (скачать/пройти).
+     * @param {number} index - Индекс сообщения ИИ, к которому привязан тест.
+     */
+    function showFileActionsForAIGeneratedTest(index, directTestData = null) {
+        let testData;
+
+        if (directTestData) {
+            testData = directTestData;
+        } else {
+            testData = generatedTestsFromAI.get(index);
+        }
+
+        if (!testData) {
+            showToast("Ошибка: не найдены данные сгенерированного теста.", "error");
+            return;
+        }
+
+        const { qstContent, fileName } = testData;
+
+        const modal = getEl('fileActionsModal');
+        const titleEl = getEl('fileActionsModalTitle');
+        const downloadBtn = getEl('fileActionDownloadBtn');
+        const testBtn = getEl('fileActionTestBtn');
+        const regenerateBtn = getEl('fileActionRegenerateBtn');
+
+        if (!modal || !titleEl || !downloadBtn || !testBtn || !regenerateBtn) return;
+        
+        const oldPracticeBtn = getEl('fileActionPracticeTestBtn');
+        if (oldPracticeBtn) oldPracticeBtn.remove();
+        testBtn.style.display = '';
+
+        titleEl.textContent = `Файл: ${fileName}`;
+        
+        downloadBtn.onclick = () => {
+            downloadOrShareFile(fileName, qstContent, 'text/plain;charset=utf-8', 'Сгенерированный тест');
+            ChatModule.closeModal('fileActionsModal');
+        };
+        
+        testBtn.onclick = () => {
+            processFile(fileName, qstContent);
+            ChatModule.closeModal('fileActionsModal');
+            closeAIChat();
+        };
+        
+        // === НАЧАЛО ИЗМЕНЕНИЙ ===
+        // Показываем кнопку "Пересоздать" только если тест был создан из одного сообщения
+        if (index !== -1) {
+            regenerateBtn.classList.remove('hidden');
+            regenerateBtn.onclick = () => {
+                ChatModule.closeModal('fileActionsModal');
+                showAITestFromMessageModal(index); 
+            };
+        } else {
+            regenerateBtn.classList.add('hidden');
+        }
+        // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
+        ChatModule.showModal('fileActionsModal');
     }
 
     /**
@@ -16021,7 +16373,7 @@ const mainApp = (function() {
             const password = await promptForPassword(audience.title);
             if (password === null) return; // Пользователь нажал "Отмена"
 
-            const enteredPasswordHash = await hashPassword(password);
+            const enteredPasswordHash = await mainApp.hashPassword(password);
             if (enteredPasswordHash === audience.passwordHash) {
                 unlockedAudiences.add(audience.id);
                 localStorage.setItem(`unlockedAudiences_${currentUser.uid}`, JSON.stringify(Array.from(unlockedAudiences)));
@@ -17732,7 +18084,6 @@ const mainApp = (function() {
      * Отображает сообщения в AI-чате. Автоматически определяет, какой чат активен
      * (приватный или публичный) и использует правильный источник данных.
      */
-
     function renderAIChatMessages() {
         try {
             let currentChat;
@@ -17750,7 +18101,6 @@ const mainApp = (function() {
                 return;
             }
             
-
             const scrollThreshold = 100;
             const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
 
@@ -17826,6 +18176,20 @@ const mainApp = (function() {
                         messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
                     }
         
+                    if (msg.role === 'model' && msg.generatedTest) {
+                        const testData = msg.generatedTest;
+                        const attachmentHTML = `
+                            <div class="ai-message-attachment" onclick="mainApp.showFileActionsForAIGeneratedTest(-1, JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(testData))}')))">
+                                <div class="ai-attachment-icon"><i data-lucide="file-question"></i></div>
+                                <div class="ai-attachment-file-info">
+                                    <div class="ai-attachment-file-name">${escapeHTML(testData.fileName)}</div>
+                                    <div class="ai-attachment-file-type">QST Test</div>
+                                </div>
+                            </div>
+                        `;
+                        messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
+                    }
+        
                     messageContainer.appendChild(messageEl);
         
                     const isLastMessage = index === currentChat.length - 1;
@@ -17837,23 +18201,29 @@ const mainApp = (function() {
                         const actionsContainer = document.createElement('div');
                         actionsContainer.className = 'ai-message-actions';
                         
-                        // === ИЗМЕНЕНИЕ: Логика отображения кнопки "Перегенерировать" ===
-                        // Проверяем, что это не первое сообщение и что предыдущее - от пользователя
                         const isRegeneratable = index > 0 && currentChat[index - 1]?.role === 'user';
                         
                         const regenerateButtonHTML = (isRegeneratable && userCanDelete)
                             ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai" data-index="${index}"><i data-lucide="refresh-cw"></i></button>`
                             : '';
-                        // === КОНЕЦ ИЗМЕНЕНИЯ ===
                         
+                        let createTestElementHTML = '';
+                        if (generatedTestsFromAI.has(index)) {
+                            createTestElementHTML = `<button class="ai-action-btn ai-generated-test-file-btn" title="Открыть действия для теста" onclick="mainApp.showFileActionsForAIGeneratedTest(${index})"><i data-lucide="file-question"></i></button>`;
+                        } else if (!msg.generatedTest) {
+                            createTestElementHTML = `<button class="ai-action-btn" title="Создать тест из сообщения" onclick="mainApp.showAITestFromMessageModal(${index})"><i data-lucide="clipboard-list"></i></button>`;
+                        }
+
                         actionsContainer.innerHTML = `
                             <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
                             <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
+                            ${createTestElementHTML}
                             <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
                             ${deleteButtonHTML}
                             ${regenerateButtonHTML}
                         `;
                         messageContainer.appendChild(actionsContainer);
+                        
                     } else if (msg.role === 'user') {
                         const actionsContainer = document.createElement('div');
                         actionsContainer.className = 'ai-user-message-actions';
@@ -17884,9 +18254,7 @@ const mainApp = (function() {
                 if (lastMessage) {
                     lastMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            } else {
             }
-        // Вызываем проверку видимости кнопки после каждой перерисовки сообщений
             updateScrollToBottomButtonVisibility();
         } finally {
             console.groupEnd();
@@ -18496,10 +18864,19 @@ const mainApp = (function() {
         migrateLocalChatsToFirebase: migrateLocalChatsToFirebase,
         loadAIChatsFromStorage: loadAIChatsFromStorage,
         saveAIChatsToStorage: saveAIChatsToStorage,
+        cleanupPrivateLegendsListener: cleanupPrivateLegendsListener, 
+        showAITestFromMessageModal: showAITestFromMessageModal,
+        generateAITestFromMessage: generateAITestFromMessage,
+        showFileActionsForAIGeneratedTest: showFileActionsForAIGeneratedTest,
+        handleGenerateTestFromDialog: handleGenerateTestFromDialog,
+        promptForPassword: promptForPassword,
+        hashPassword: hashPassword,
         // === КОНЕЦ НОВОГО КОДА ===
         testMobileDownload: () => {
             downloadOrShareFile('test.txt', 'Тестовое содержимое файла', 'text/plain', 'Тест');
-        }         
+        }
+
+
     };
 
 
