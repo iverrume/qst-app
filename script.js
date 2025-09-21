@@ -6149,23 +6149,43 @@ const mainApp = (function() {
             ai_test_from_dialog_ready: "Тест по материалам нашего диалога готов!",
             app_description: "QSTiUM — это мощный инструмент для подготовки к тестам и экзаменам. Загружайте готовые файлы, создавайте новые тесты из текста с помощью ИИ, проводите работу над ошибками и делитесь материалами с другими.",
             dynamic_tips: [
+                // --- Главный экран и Тесты ---
                 "<span class='tip-part'>Используйте</span><i data-lucide='lightbulb' class='tip-icon'></i><span class='tip-part'>'Создать тест' для конвертации текста или генерации вопросов с помощью ИИ.</span>",
                 "<span class='tip-part'>Ищите готовые тесты в общей базе знаний</span><i data-lucide='graduation-cap' class='tip-icon'></i><span class='tip-part'>GRADUS.</span>",
                 "<span class='tip-part'>Продолжайте прерванные тесты из раздела</span><i data-lucide='play-circle' class='tip-icon'></i><span class='tip-part'>'Продолжить' на главном экране.</span>",
+                "<span class='tip-part'>Кликайте на файлы в</span><i data-lucide='history' class='tip-icon'></i><span class='tip-part'>'Недавно использованные' для их мгновенной загрузки.</span>",
                 "<span class='tip-part'>Настройте внешний вид приложения, нажав</span><i data-lucide='sun-moon' class='tip-icon'></i><span class='tip-part'>и выбрав понравившуюся тему.</span>",
-                "<span class='tip-part'>Нажмите</span><i data-lucide='message-circle' class='tip-icon'></i><span class='tip-part'>, чтобы открыть чат, где можно общаться и делиться тестами.</span>",
                 "<span class='tip-part'>Тренируйтесь по конкретным темам, используя</span><i data-lucide='filter' class='tip-icon'></i><span class='tip-part'>фильтр по категориям перед началом теста.</span>",
+                "<span class='tip-part'>Практикуйте только часть теста, задав нужный</span><i data-lucide='sliders-horizontal' class='tip-icon'></i><span class='tip-part'>'Диапазон вопросов' с помощью ползунка.</span>",
                 "<span class='tip-part'>Создайте случайную выборку из N вопросов для быстрой проверки знаний с помощью опции</span><i data-lucide='shuffle' class='tip-icon'></i><span class='tip-part'>'Случайный набор'.</span>",
                 "<span class='tip-part'>Изучайте материал в режиме интерактивных карточек 'вопрос-ответ', включив</span><i data-lucide='layers' class='tip-icon'></i><span class='tip-part'>'Режим карточек'.</span>",
+                "<span class='tip-part'>Включите</span><i data-lucide='book-open' class='tip-icon'></i><span class='tip-part'>'Режим чтения', чтобы быстро просмотреть все вопросы с уже отмеченными правильными ответами.</span>",
+                "<span class='tip-part'>Установите</span><i data-lucide='timer' class='tip-icon'></i><span class='tip-part'>'Лимит времени', чтобы симулировать условия настоящего экзамена.</span>",
+                "<span class='tip-part'>Сгенерируйте компактную</span><i data-lucide='file-text' class='tip-icon'></i><span class='tip-part'>'шпору' из вопросов прямо на экране настроек.</span>",
                 "<span class='tip-part'>Включите</span><i data-lucide='zap' class='tip-icon'></i><span class='tip-part'>'Быстрый режим' для автоматического перехода к следующему вопросу после ответа.</span>",
                 "<span class='tip-part'>Активируйте</span><i data-lucide='highlighter' class='tip-icon'></i><span class='tip-part'>'Триггер-слова', чтобы выделять ключевые термины в вопросах для запоминания.</span>",
                 "<span class='tip-part'>Используйте</span><i data-lucide='languages' class='tip-icon'></i><span class='tip-part'>для мгновенного перевода вопроса на другой язык прямо во время теста.</span>",
+                "<span class='tip-part'>Нажмите</span><i data-lucide='search' class='tip-icon'></i><span class='tip-part'>в шапке теста, чтобы найти ответ на текущий вопрос в Google, Яндексе или Perplexity.</span>",
                 "<span class='tip-part'>Кнопка</span><i data-lucide='star' class='tip-icon'></i><span class='tip-part'>добавляет текущий вопрос в 'Избранное' вашего профиля в чате.</span>",
                 "<span class='tip-part'>Не поняли ответ?</span><i data-lucide='brain-circuit' class='tip-icon'></i><span class='tip-part'>под ответом вызовет детальное ИИ-объяснение.</span>",
                 "<span class='tip-part'>После теста сохраните ошибки</span><i data-lucide='download' class='tip-icon'></i><span class='tip-part'>или пройдите их заново в режиме 'Работа над ошибками'.</span>",
                 "<span class='tip-part'>Получите персональный анализ ваших ошибок от</span><i data-lucide='bot' class='tip-icon'></i><span class='tip-part'>на экране результатов.</span>",
+                // --- AI-Помощник ---
+                "<span class='tip-part'>Кнопку</span><i data-lucide='move' class='tip-icon'></i><span class='tip-part'>ИИ-помощника можно перетащить в удобное место на экране.</span>",
+                "<span class='tip-part'>В настройках</span><i data-lucide='sliders-horizontal' class='tip-icon'></i><span class='tip-part'>ИИ-чата можно выбрать модель (быструю или умную) и стиль ответов.</span>",
+                "<span class='tip-part'>Включите</span><i data-lucide='globe' class='tip-icon'></i><span class='tip-part'>'Поиск в Google' в ИИ-чате, чтобы получать ответы на основе свежей информации из интернета.</span>",
                 "<span class='tip-part'>В AI-помощнике</span><i data-lucide='plus' class='tip-icon'></i><span class='tip-part'>прикрепляйте файлы, чтобы задавать вопросы по их содержимому.</span>",
-                "<span class='tip-part'>Превращайте любой ответ ИИ в готовый тест нажатием кнопки</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>под сообщением.</span>"
+                "<span class='tip-part'>Превращайте любой ответ ИИ в готовый тест нажатием кнопки</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>под сообщением.</span>",
+                "<span class='tip-part'>Нажмите</span><i data-lucide='user-round-search' class='tip-icon'></i><span class='tip-part'>в ИИ-чате, чтобы увидеть список только ваших сообщений для быстрой навигации.</span>",
+                "<span class='tip-part'>Наведите на</span><i data-lucide='mouse-pointer-2' class='tip-icon'></i><span class='tip-part'>точки на полосе прокрутки ИИ-чата, чтобы увидеть превью ваших сообщений.</span>",
+                "<span class='tip-part'>Долгое нажатие на сообщение в правой панели ИИ-чата</span><i data-lucide='palette' class='tip-icon'></i><span class='tip-part'>позволит пометить его цветом и создать свою легенду.</span>",
+                "<span class='tip-part'>Редактируйте свои сообщения в ИИ-чате, чтобы уточнить запрос, и ИИ</span><i data-lucide='pencil' class='tip-icon'></i><span class='tip-part'>перегенерирует ответ с учетом изменений.</span>",
+                // --- Чат (Аудитории) ---
+                "<span class='tip-part'>ИИ-чат разделен на</span><i data-lucide='lock' class='tip-icon'></i><span class='tip-part'>Приватные чаты и</span><i data-lucide='users' class='tip-icon'></i><span class='tip-part'>Публичные Аудитории.</span>",
+                "<span class='tip-part'>Создавайте свои</span><i data-lucide='plus-square' class='tip-icon'></i><span class='tip-part'>Публичные Аудитории, чтобы обсуждать темы и делиться материалами с другими пользователями.</span>",
+                "<span class='tip-part'>Защитите свою Аудиторию</span><i data-lucide='key-round' class='tip-icon'></i><span class='tip-part'>паролем в настройках, чтобы ограничить доступ.</span>",
+                "<span class='tip-part'>Закрепляйте важные сообщения или правила в теме Аудитории с помощью</span><i data-lucide='pin' class='tip-icon'></i><span class='tip-part'>иконки-скрепки.</span>",
+                "<span class='tip-part'>Выражайте эмоции, добавляя</span><i data-lucide='smile-plus' class='tip-icon'></i><span class='tip-part'>реакции на сообщения других участников.</span>"
             ],
             session_save_new_button: "Сохранить как новую"
         },
@@ -6561,23 +6581,43 @@ const mainApp = (function() {
             ai_test_from_dialog_ready: "Біздің диалогымыздың материалдары бойынша тест дайын!",
             app_description: "QSTiUM — тесттер мен емтихандарға дайындалуға арналған қуатты құрал. Дайын файлдарды жүктеп, ЖИ көмегімен мәтіннен жаңа тесттер жасаңыз, қателермен жұмыс істеп, материалдарды басқалармен бөлісіңіз.",
             dynamic_tips: [
+                // --- Басты экран және Тесттер ---
                 "<span class='tip-part'>Мәтінді түрлендіру немесе ЖИ көмегімен сұрақтар жасау үшін</span><i data-lucide='lightbulb' class='tip-icon'></i><span class='tip-part'>'Тест жасау' құралын пайдаланыңыз.</span>",
                 "<span class='tip-part'>Дайын тесттерді</span><i data-lucide='graduation-cap' class='tip-icon'></i><span class='tip-part'>GRADUS жалпы білім базасынан іздеңіз.</span>",
                 "<span class='tip-part'>Үзілген тесттерді басты экрандағы</span><i data-lucide='play-circle' class='tip-icon'></i><span class='tip-part'>'Жалғастыру' бөлімінен жалғастырыңыз.</span>",
+                "<span class='tip-part'>Файлдарды лезде жүктеу үшін</span><i data-lucide='history' class='tip-icon'></i><span class='tip-part'>'Жақында пайдаланылғандар' бөліміндегі файлдарды басыңыз.</span>",
                 "<span class='tip-part'>Қосымшаның сыртқы түрін баптау үшін</span><i data-lucide='sun-moon' class='tip-icon'></i><span class='tip-part'>белгішесін басып, ұнаған тақырыпты таңдаңыз.</span>",
-                "<span class='tip-part'>Сөйлесу және тесттермен бөлісу үшін жалпы чатты ашуға</span><i data-lucide='message-circle' class='tip-icon'></i><span class='tip-part'>батырмасын басыңыз.</span>",
                 "<span class='tip-part'>Тестті бастамас бұрын санаттар бойынша сүзгіні</span><i data-lucide='filter' class='tip-icon'></i><span class='tip-part'>пайдаланып, нақты тақырыптар бойынша жаттығыңыз.</span>",
+                "<span class='tip-part'>Жүгірткі арқылы қажетті</span><i data-lucide='sliders-horizontal' class='tip-icon'></i><span class='tip-part'>'Сұрақтар ауқымын' орнатып, тесттің тек бір бөлігін жаттығыңыз.</span>",
                 "<span class='tip-part'>Білімді жылдам тексеру үшін</span><i data-lucide='shuffle' class='tip-icon'></i><span class='tip-part'>'Кездейсоқ жиынтық' опциясымен N сұрақтан тұратын кездейсоқ таңдау жасаңыз.</span>",
                 "<span class='tip-part'>Материалды 'сұрақ-жауап' интерактивті карточкалар режимінде зерттеу үшін</span><i data-lucide='layers' class='tip-icon'></i><span class='tip-part'>'Карточкалар режимін' қосыңыз.</span>",
+                "<span class='tip-part'>Барлық сұрақтарды дұрыс жауаптарымен жылдам қарап шығу үшін</span><i data-lucide='book-open' class='tip-icon'></i><span class='tip-part'>'Оқу режимін' қосыңыз.</span>",
+                "<span class='tip-part'>Нағыз емтихан жағдайын имитациялау үшін</span><i data-lucide='timer' class='tip-icon'></i><span class='tip-part'>'Уақыт шектеуін' орнатыңыз.</span>",
+                "<span class='tip-part'>Баптаулар экранында сұрақтардан ықшамды</span><i data-lucide='file-text' class='tip-icon'></i><span class='tip-part'>'шпаргалка' жасаңыз.</span>",
                 "<span class='tip-part'>Жауаптан кейін келесі сұраққа автоматты түрде өту үшін</span><i data-lucide='zap' class='tip-icon'></i><span class='tip-part'>'Жылдам режимді' қосыңыз.</span>",
                 "<span class='tip-part'>Есте сақтау үшін сұрақтардағы негізгі терминдерді ерекшелеу үшін</span><i data-lucide='highlighter' class='tip-icon'></i><span class='tip-part'>'Триггер-сөздерді' белсендіріңіз.</span>",
                 "<span class='tip-part'>Тест кезінде сұрақты басқа тілге лезде аудару үшін</span><i data-lucide='languages' class='tip-icon'></i><span class='tip-part'>батырмасын пайдаланыңыз.</span>",
+                "<span class='tip-part'>Тест тақырыбындағы</span><i data-lucide='search' class='tip-icon'></i><span class='tip-part'>батырмасын басып, ағымдағы сұрақтың жауабын Google, Yandex немесе Perplexity-ден іздеңіз.</span>",
                 "<span class='tip-part'></span><i data-lucide='star' class='tip-icon'></i><span class='tip-part'>батырмасы ағымдағы сұрақты чаттағы профиліңіздің 'Таңдаулылар' бөліміне қосады.</span>",
                 "<span class='tip-part'>Жауапты түсінбедіңіз бе? Жауаптың астындағы</span><i data-lucide='brain-circuit' class='tip-icon'></i><span class='tip-part'>батырмасы ЖИ-дан толық түсіндірме шақырады.</span>",
                 "<span class='tip-part'>Тесттен кейін қателеріңізді</span><i data-lucide='download' class='tip-icon'></i><span class='tip-part'>сақтап алыңыз немесе 'Қателермен жұмыс' режимінде қайта өтіңіз.</span>",
                 "<span class='tip-part'>Нәтижелер экранында</span><i data-lucide='bot' class='tip-icon'></i><span class='tip-part'>арқылы қателеріңіз бойынша жеке талдау алыңыз.</span>",
+                // --- AI-Көмекші ---
+                "<span class='tip-part'>AI-көмекші</span><i data-lucide='move' class='tip-icon'></i><span class='tip-part'>батырмасын экранның кез келген ыңғайлы жеріне апаруға болады.</span>",
+                "<span class='tip-part'>ЖИ-чат баптауларында</span><i data-lucide='sliders-horizontal' class='tip-icon'></i><span class='tip-part'>модельді (жылдам немесе ақылды) және жауап стилін таңдауға болады.</span>",
+                "<span class='tip-part'>Интернеттен жаңа ақпарат негізінде жауап алу үшін ЖИ-чатта</span><i data-lucide='globe' class='tip-icon'></i><span class='tip-part'>'Google-да іздеуді' қосыңыз.</span>",
                 "<span class='tip-part'>AI-көмекшіде мазмұны бойынша сұрақтар қою үшін</span><i data-lucide='plus' class='tip-icon'></i><span class='tip-part'>арқылы файлдарды тіркеңіз.</span>",
-                "<span class='tip-part'>Кез келген ЖИ жауабын хабарламаның астындағы</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>батырмасын басу арқылы дайын тестке айналдырыңыз.</span>"
+                "<span class='tip-part'>Кез келген ЖИ жауабын хабарламаның астындағы</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>батырмасын басу арқылы дайын тестке айналдырыңыз.</span>",
+                "<span class='tip-part'>Тек өз хабарламаларыңыздың тізімін жылдам көру үшін ЖИ-чаттағы</span><i data-lucide='user-round-search' class='tip-icon'></i><span class='tip-part'>батырмасын басыңыз.</span>",
+                "<span class='tip-part'>Хабарламаларыңызды алдын ала көру үшін ЖИ-чаттың айналдыру жолағындағы</span><i data-lucide='mouse-pointer-2' class='tip-icon'></i><span class='tip-part'>нүктелерге курсорды апарыңыз.</span>",
+                "<span class='tip-part'>ЖИ-чаттың оң жақ панеліндегі хабарламаны ұзақ басу арқылы</span><i data-lucide='palette' class='tip-icon'></i><span class='tip-part'>оны түспен белгілеп, өз аңызыңызды жасай аласыз.</span>",
+                "<span class='tip-part'>ЖИ-чаттағы өз хабарламаларыңызды</span><i data-lucide='pencil' class='tip-icon'></i><span class='tip-part'>өңдеңіз, сонда ЖИ өзгерістерді ескере отырып, жауапты қайта жасайды.</span>",
+                // --- Чат (Аудиториялар) ---
+                "<span class='tip-part'>ЖИ-чат</span><i data-lucide='lock' class='tip-icon'></i><span class='tip-part'>Жеке чаттарға және</span><i data-lucide='users' class='tip-icon'></i><span class='tip-part'>Жария Аудиторияларға бөлінген.</span>",
+                "<span class='tip-part'>Басқа пайдаланушылармен тақырыптарды талқылау және материалдармен бөлісу үшін өз</span><i data-lucide='plus-square' class='tip-icon'></i><span class='tip-part'>Жария Аудиторияларыңызды жасаңыз.</span>",
+                "<span class='tip-part'>Кіруді шектеу үшін баптауларда Аудиторияңызды</span><i data-lucide='key-round' class='tip-icon'></i><span class='tip-part'>құпия сөзбен қорғаңыз.</span>",
+                "<span class='tip-part'>Аудитория тақырыбындағы маңызды хабарламаларды немесе ережелерді</span><i data-lucide='pin' class='tip-icon'></i><span class='tip-part'>белгішесі арқылы бекітіңіз.</span>",
+                "<span class='tip-part'>Басқа қатысушылардың хабарламаларына</span><i data-lucide='smile-plus' class='tip-icon'></i><span class='tip-part'>реакциялар қосып, эмоцияларыңызды білдіріңіз.</span>"
             ],
             session_save_new_button: "Жаңа ретінде сақтау"
 
@@ -6980,23 +7020,43 @@ const mainApp = (function() {
             ai_test_from_dialog_ready: "The test based on our dialog is ready!",
             app_description: "QSTiUM is a powerful tool for preparing for tests and exams. Upload ready-made files, create new tests from text using AI, review your mistakes, and share materials with others.",
             dynamic_tips: [
+                // --- Main Screen & Quizzes ---
                 "<span class='tip-part'>Use the</span><i data-lucide='lightbulb' class='tip-icon'></i><span class='tip-part'>'Create Test' tool to convert text or generate questions using AI.</span>",
                 "<span class='tip-part'>Search for ready-made tests in the</span><i data-lucide='graduation-cap' class='tip-icon'></i><span class='tip-part'>GRADUS shared knowledge base.</span>",
                 "<span class='tip-part'>Continue interrupted tests from the</span><i data-lucide='play-circle' class='tip-icon'></i><span class='tip-part'>'Continue' section on the main screen.</span>",
+                "<span class='tip-part'>Click on files in</span><i data-lucide='history' class='tip-icon'></i><span class='tip-part'>'Recently used' to load them instantly.</span>",
                 "<span class='tip-part'>Customize the app's appearance by pressing</span><i data-lucide='sun-moon' class='tip-icon'></i><span class='tip-part'>and choosing your favorite theme.</span>",
-                "<span class='tip-part'>Press</span><i data-lucide='message-circle' class='tip-icon'></i><span class='tip-part'>to open the general chat to communicate and share tests.</span>",
                 "<span class='tip-part'>Practice specific topics using the</span><i data-lucide='filter' class='tip-icon'></i><span class='tip-part'>category filter before starting a test.</span>",
+                "<span class='tip-part'>Practice only a part of the test by setting the desired</span><i data-lucide='sliders-horizontal' class='tip-icon'></i><span class='tip-part'>'Question Range' with the slider.</span>",
                 "<span class='tip-part'>Create a random set of N questions for a quick knowledge check with the</span><i data-lucide='shuffle' class='tip-icon'></i><span class='tip-part'>'Random Set' option.</span>",
                 "<span class='tip-part'>Study material in an interactive 'question-answer' card mode by enabling</span><i data-lucide='layers' class='tip-icon'></i><span class='tip-part'>'Flashcards Mode'.</span>",
+                "<span class='tip-part'>Enable</span><i data-lucide='book-open' class='tip-icon'></i><span class='tip-part'>'Reading Mode' to quickly review all questions with the correct answers already marked.</span>",
+                "<span class='tip-part'>Set a</span><i data-lucide='timer' class='tip-icon'></i><span class='tip-part'>'Time Limit' to simulate real exam conditions.</span>",
+                "<span class='tip-part'>Generate a compact</span><i data-lucide='file-text' class='tip-icon'></i><span class='tip-part'>'cheat sheet' from the questions right on the settings screen.</span>",
                 "<span class='tip-part'>Enable</span><i data-lucide='zap' class='tip-icon'></i><span class='tip-part'>'Quick Mode' to automatically advance to the next question after answering.</span>",
                 "<span class='tip-part'>Activate</span><i data-lucide='highlighter' class='tip-icon'></i><span class='tip-part'>'Trigger Words' to highlight key terms in questions for memorization.</span>",
                 "<span class='tip-part'>Use</span><i data-lucide='languages' class='tip-icon'></i><span class='tip-part'>to instantly translate a question into another language during the test.</span>",
+                "<span class='tip-part'>Press</span><i data-lucide='search' class='tip-icon'></i><span class='tip-part'>in the test header to search for the current question's answer on Google, Yandex, or Perplexity.</span>",
                 "<span class='tip-part'>The</span><i data-lucide='star' class='tip-icon'></i><span class='tip-part'>button adds the current question to 'Favorites' in your chat profile.</span>",
                 "<span class='tip-part'>Didn't understand an answer? The</span><i data-lucide='brain-circuit' class='tip-icon'></i><span class='tip-part'>button under the answer will provide a detailed AI explanation.</span>",
                 "<span class='tip-part'>After the test, save your mistakes</span><i data-lucide='download' class='tip-icon'></i><span class='tip-part'>or review them in 'Review Mistakes' mode.</span>",
                 "<span class='tip-part'>Get a personal analysis of your mistakes from the</span><i data-lucide='bot' class='tip-icon'></i><span class='tip-part'>on the results screen.</span>",
+                // --- AI Assistant ---
+                "<span class='tip-part'>The</span><i data-lucide='move' class='tip-icon'></i><span class='tip-part'>AI assistant button can be dragged to any convenient spot on the screen.</span>",
+                "<span class='tip-part'>In the</span><i data-lucide='sliders-horizontal' class='tip-icon'></i><span class='tip-part'>AI chat settings, you can choose the model (fast or smart) and response style.</span>",
+                "<span class='tip-part'>Enable</span><i data-lucide='globe' class='tip-icon'></i><span class='tip-part'>'Google Search' in the AI chat to get answers based on up-to-date information from the internet.</span>",
                 "<span class='tip-part'>In the AI assistant, attach files with</span><i data-lucide='plus' class='tip-icon'></i><span class='tip-part'>to ask questions about their content.</span>",
-                "<span class='tip-part'>Turn any AI response into a ready-made test by pressing the</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>button under the message.</span>"
+                "<span class='tip-part'>Turn any AI response into a ready-made test by pressing the</span><i data-lucide='clipboard-list' class='tip-icon'></i><span class='tip-part'>button under the message.</span>",
+                "<span class='tip-part'>Press the</span><i data-lucide='user-round-search' class='tip-icon'></i><span class='tip-part'>button in the AI chat to see a list of only your messages for quick navigation.</span>",
+                "<span class='tip-part'>Hover over the</span><i data-lucide='mouse-pointer-2' class='tip-icon'></i><span class='tip-part'>dots on the AI chat scrollbar to see a preview of your messages.</span>",
+                "<span class='tip-part'>Long-press on a message in the AI chat's right panel</span><i data-lucide='palette' class='tip-icon'></i><span class='tip-part'>to mark it with a color and create your own legend.</span>",
+                "<span class='tip-part'>Edit your messages in the AI chat to clarify a request, and the AI will</span><i data-lucide='pencil' class='tip-icon'></i><span class='tip-part'>regenerate its response based on the changes.</span>",
+                // --- Chat (Audiences) ---
+                "<span class='tip-part'>The AI chat is divided into</span><i data-lucide='lock' class='tip-icon'></i><span class='tip-part'>Private Chats and</span><i data-lucide='users' class='tip-icon'></i><span class='tip-part'>Public Audiences.</span>",
+                "<span class='tip-part'>Create your own</span><i data-lucide='plus-square' class='tip-icon'></i><span class='tip-part'>Public Audiences to discuss topics and share materials with other users.</span>",
+                "<span class='tip-part'>Protect your Audience with a</span><i data-lucide='key-round' class='tip-icon'></i><span class='tip-part'>password in the settings to restrict access.</span>",
+                "<span class='tip-part'>Pin important messages or rules in an Audience topic using the</span><i data-lucide='pin' class='tip-icon'></i><span class='tip-part'>pin icon.</span>",
+                "<span class='tip-part'>Express yourself by adding</span><i data-lucide='smile-plus' class='tip-icon'></i><span class='tip-part'>reactions to other members' messages.</span>"
             ],
             session_save_new_button: "Save as New"
         }
@@ -7776,7 +7836,6 @@ const mainApp = (function() {
 
             if (timeDifference < doubleTapDelay && timeDifference > 0) {
                 // Это двойной тап или двойной клик
-                console.log("Двойной тап/клик по заголовку зарегистрирован!");
 
                 e.preventDefault(); // Предотвращаем нежелательное выделение текста
 
@@ -16797,7 +16856,6 @@ const mainApp = (function() {
      * @param {string} topicId - ID темы внутри аудитории.
      */
     function renderPublicAudience(audienceId, topicId) {
-        console.log(`[renderPublicAudience] Начинаю рендер Аудитории ID: ${audienceId}, TopicID: ${topicId}`);
         if (!db) return;
 
         if (currentTopicListener) {
@@ -16837,8 +16895,7 @@ const mainApp = (function() {
         }, error => {
             console.error(`Ошибка при получении данных Темы ${topicId}:`, error);
         });
-        
-        console.log(`[renderPublicAudience] Начинаю слушать сообщения из Firestore...`);
+
         currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId).collection('messages')
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
@@ -17698,38 +17755,41 @@ const mainApp = (function() {
      */
     function showAttachmentPreview() {
         const previewEl = getEl('aiAttachmentPreview');
-        if (!previewEl || !attachedFile) return;
+        const inputRow = getEl('aiChatMainInputRow');
+        if (!previewEl || !attachedFile || !inputRow) return;
 
-        let previewContent = '';
-        if (attachedFile.thumbnailDataUrl) {
-            // Если есть миниатюра, показываем ее
-            previewContent = `<img src="${attachedFile.thumbnailDataUrl}" alt="Превью">`;
-        } else {
-            // Иначе показываем иконку
-            previewContent = `<i data-lucide="file-text"></i>`;
-        }
+        // Очищаем старое содержимое и добавляем класс-маркер
+        previewEl.innerHTML = '';
+        inputRow.classList.add('has-attachment');
+
+        // Создаем HTML для превью с кнопками
+        // Показываем миниатюру, если она есть, иначе иконку
+        const previewContent = attachedFile.thumbnailDataUrl
+            ? `<img src="${attachedFile.thumbnailDataUrl}" alt="Превью вложения">`
+            : `<div class="ai-attachment-icon-placeholder"><i data-lucide="file-text"></i></div>`;
 
         previewEl.innerHTML = `
             ${previewContent}
-            <span class="ai-attachment-name">${escapeHTML(attachedFile.name)}</span>
-            <button class="ai-attachment-remove-btn" title="Удалить файл"><i data-lucide="x-circle"></i></button>
+            <div class="ai-attachment-actions">
+                <button class="ai-attachment-action-btn" id="aiAttachmentEditBtn" title="Выбрать другой файл">
+                    <i data-lucide="pencil"></i>
+                </button>
+                <button class="ai-attachment-action-btn" id="aiAttachmentRemoveBtn" title="Удалить файл">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
         `;
         
-        // --- ИЗМЕНЕНИЕ: Делаем всю плашку кликабельной ---
-        previewEl.onclick = (e) => {
-            // Предотвращаем открытие файла, если кликнули по кнопке "удалить"
-            if (e.target.closest('.ai-attachment-remove-btn')) return;
-            openAIAttachment(attachedFile);
-        };
-
-        previewEl.querySelector('.ai-attachment-remove-btn').onclick = (e) => {
-            e.stopPropagation(); // Важно, чтобы не сработал клик по всей плашке
-            removeAIAttachment();
-        };
+        // Назначаем обработчики на новые кнопки
+        getEl('aiAttachmentEditBtn').onclick = () => getEl('aiChatFileInput').click();
+        getEl('aiAttachmentRemoveBtn').onclick = removeAIAttachment;
 
         previewEl.classList.remove('hidden');
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) {
+            lucide.createIcons();
+        }
         
+        // Активируем кнопку отправки, так как файл прикреплен
         aiChatSendBtn.disabled = false;
     }
 
@@ -17848,14 +17908,34 @@ const mainApp = (function() {
         const previewEl = getEl('aiAttachmentPreview');
         if (!previewEl || !attachedFile) return;
 
+        // Очищаем старое содержимое
+        previewEl.innerHTML = '';
+
+        // Создаем HTML для превью с кнопками
+        const previewContent = attachedFile.thumbnailDataUrl
+            ? `<img src="${attachedFile.thumbnailDataUrl}" alt="Превью вложения">`
+            : `<div class="ai-attachment-icon-placeholder"><i data-lucide="file-text"></i></div>`;
+
         previewEl.innerHTML = `
-            <span class="ai-attachment-name">${escapeHTML(attachedFile.name)}</span>
-            <button class="ai-attachment-remove-btn" title="Удалить файл"><i data-lucide="x-circle"></i></button>
+            ${previewContent}
+            <div class="ai-attachment-actions">
+                <button class="ai-attachment-action-btn" id="aiAttachmentEditBtn" title="Выбрать другой файл">
+                    <i data-lucide="pencil"></i>
+                </button>
+                <button class="ai-attachment-action-btn" id="aiAttachmentRemoveBtn" title="Удалить файл">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
         `;
         
-        previewEl.querySelector('.ai-attachment-remove-btn').onclick = removeAIAttachment;
+        // Назначаем обработчики на новые кнопки
+        getEl('aiAttachmentEditBtn').onclick = () => getEl('aiChatFileInput').click();
+        getEl('aiAttachmentRemoveBtn').onclick = removeAIAttachment;
+
         previewEl.classList.remove('hidden');
-        if (window.lucide) lucide.createIcons();
+        if (window.lucide) {
+            lucide.createIcons();
+        }
         
         // Активируем кнопку отправки, так как файл прикреплен
         aiChatSendBtn.disabled = false;
@@ -17867,16 +17947,18 @@ const mainApp = (function() {
     function removeAIAttachment() {
         attachedFile = null;
         const previewEl = getEl('aiAttachmentPreview');
-        previewEl.classList.add('hidden');
-        previewEl.innerHTML = '';
+
+        if (previewEl) {
+            previewEl.classList.add('hidden');
+            previewEl.innerHTML = '';
+        }
         
+        // Блокируем кнопку отправки, если нет текста
         if (aiChatInput.value.trim().length === 0) {
             aiChatSendBtn.disabled = true;
         }
-        updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
+        updateGroundingToggleState();
     }
-
-
     // ======== НАЧАЛО НОВЫХ ФУНКЦИЙ ========
 
     /**
@@ -18957,7 +19039,7 @@ const mainApp = (function() {
             
             // Перезапускаем таймер
             clearTimeout(tipTimer);
-            tipTimer = setTimeout(showNextTip, 5000); // 5 секунд на подсказку
+            tipTimer = setTimeout(showNextTip, 6000); // 6 секунд на подсказку
         };
 
         // Добавляем transition для плавности
