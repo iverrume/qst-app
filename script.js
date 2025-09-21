@@ -2521,7 +2521,36 @@ const ChatModule = (function() {
                 
                 const editedIndicator = message.editedAt ? `<span class="edited-indicator">${_chat('edited_indicator')}</span>` : '';
                 const pinnedIcon = message.isPinned ? `<span class="pinned-icon" title="Закреплено"><i data-lucide="pin" style="width:12px; height:12px;"></i></span>` : '';
+                
+                // === НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ===
+                let attachmentsHTML = '';
+                if (message.attachments && message.attachments.length > 0) {
+                    message.attachments.forEach((attachment, index) => {
+                        const { name, mimeType, thumbnailDataUrl } = attachment;
+                        const type = mimeType.split('/')[0] || 'файл';
+                        
+                        const previewImage = thumbnailDataUrl 
+                            ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
+                            : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
+        
+                        // data-index теперь хранит индекс вложения в массиве
+                        attachmentsHTML += `
+                            <a href="#" class="ai-message-attachment" data-index="${index}">
+                                ${previewImage}
+                                <div class="ai-attachment-file-info">
+                                    <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
+                                    <div class="ai-attachment-file-type">${type}</div>
+                                </div>
+                            </a>
+                        `;
+                    });
+                }
+                
+                // Сначала добавляем текст, потом вложения
                 contentDiv.innerHTML = `${pinnedIcon} ${escapeHTML(messageText.trim())} ${editedIndicator}`;
+                contentDiv.insertAdjacentHTML('beforeend', attachmentsHTML);
+                // === КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ===
+
                 contentContainer.appendChild(contentDiv);
                 break;
         }
@@ -2541,7 +2570,7 @@ const ChatModule = (function() {
             });
         }
 
-        // 7. Формируем и вставляем панель действий (ИЗМЕНЕНО)
+        // 7. Формируем и вставляем панель действий
         const actionsToolbar = messageEl.querySelector('.message-actions-toolbar');
         let actionsHTML = `
             <button title="${_chat('tooltip_reply')}" data-action="reply"><i data-lucide="reply"></i></button>
@@ -2552,12 +2581,10 @@ const ChatModule = (function() {
         
         const isAuthorOrAdmin = message.authorId === currentUser?.uid || isAdmin;
 
-        // Условие для кнопки "Редактировать": только для автора и только для обычных текстовых сообщений.
         if (isAuthorOrAdmin && message.type !== 'question_link' && message.type !== 'file_share') {
             actionsHTML += `<button title="${_chat('tooltip_edit_message')}" data-action="edit"><i data-lucide="pencil"></i></button>`;
         }
         
-        // Условие для кнопки "Удалить": для автора ЛЮБОГО типа сообщения.
         if (isAuthorOrAdmin) {
             actionsHTML += `<button title="${_chat('tooltip_delete_message')}" data-action="delete"><i data-lucide="trash-2"></i></button>`;
         }
@@ -2585,7 +2612,6 @@ const ChatModule = (function() {
         // 9. Возвращаем полностью собранный DOM-элемент
         return messageEl;
     }
-
 
 
 
@@ -14679,7 +14705,7 @@ const mainApp = (function() {
     const AI_CHATS_STORAGE_KEY = 'allUserAIChats'; // Ключ для localStorage
 
 
-    let attachedFile = null; 
+    let attachedFiles = []; 
     let generatedTestsFromAI = new Map(); // Карта для хранения сгенерированных тестов { messageIndex: qstContent }
     const AI_GENERATED_TESTS_KEY = 'aiGeneratedTests'; // Ключ для localStorage
     let isAIResponding = false;
@@ -14814,7 +14840,8 @@ const mainApp = (function() {
                 const handleMove = (moveEvent) => {
                     if (!longPressTimer) return;
                     const moveTouch = moveEvent.touches ? moveEvent.touches[0] : moveEvent;
-                    if (Math.abs(moveTouch.clientX - startX) > MOVE_THRESHOLD || Math.abs(moveTouch.clientY - startY) > MOVE_THRESHOLD) {
+                    // === ИСПРАВЛЕНИЕ ЗДЕСЬ: startX и startY заменены на touchStartX и touchStartY ===
+                    if (Math.abs(moveTouch.clientX - touchStartX) > MOVE_THRESHOLD || Math.abs(moveTouch.clientY - touchStartY) > MOVE_THRESHOLD) {
                         clearTimeout(longPressTimer);
                         longPressTimer = null;
                     }
@@ -15038,7 +15065,7 @@ const mainApp = (function() {
                 if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); sendAIChatMessage(); }
             });
             aiChatInput.addEventListener('input', () => {
-                const hasText = aiChatInput.value.trim().length > 0 || attachedFile;
+                const hasText = aiChatInput.value.trim().length > 0 || attachedFiles.length > 0;
                 aiChatSendBtn.disabled = !hasText;
                 aiChatInput.style.height = 'auto';
                 aiChatInput.style.height = `${aiChatInput.scrollHeight}px`;
@@ -15148,16 +15175,14 @@ const mainApp = (function() {
             const targetAttachment = e.target.closest('.ai-message-attachment');
             const targetReply = e.target.closest('.ai-reply-context');
             const targetImage = e.target.closest('.ai-message-image');
-            const groundedIcon = e.target.closest('.ai-grounded-icon'); // <-- ВОТ ИСПРАВЛЕНИЕ
+            const groundedIcon = e.target.closest('.ai-grounded-icon'); 
 
-            // --- НОВЫЙ БЛОК ДЛЯ ОБРАБОТКИ КЛИКА ПО ИКОНКЕ ---
             if (groundedIcon) {
                 e.preventDefault();
                 e.stopPropagation();
                 showGroundedIconTooltip(groundedIcon);
-                return; // Завершаем обработку, чтобы не сработали другие клики
+                return; 
             }
-            // --- КОНЕЦ НОВОГО БЛОКА ---
 
             if (targetButton) {
                 const action = targetButton.dataset.action;
@@ -15173,11 +15198,16 @@ const mainApp = (function() {
                 }
             } else if (targetAttachment) {
                 e.preventDefault();
-                const index = parseInt(targetAttachment.dataset.index, 10);
-                const message = getAIChatMessageByIndex(index);
-                if (message?.attachment) {
-                    openAIAttachment(message.attachment);
+                // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+                const attachmentIndex = parseInt(targetAttachment.dataset.index, 10);
+                const messageContainer = targetAttachment.closest('.ai-message-container');
+                const messageIndex = parseInt(messageContainer.id.replace('ai-message-container-', ''), 10);
+                const message = getAIChatMessageByIndex(messageIndex);
+                
+                if (message && message.attachments && message.attachments[attachmentIndex]) {
+                    openAIAttachment(message.attachments[attachmentIndex]);
                 }
+                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
             } else if (targetReply) {
                 const index = parseInt(targetReply.dataset.index, 10);
                 scrollToAIMessage(index);
@@ -15215,7 +15245,6 @@ const mainApp = (function() {
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
     }
-
 
 
     /**
@@ -17669,49 +17698,48 @@ const mainApp = (function() {
 
 
 
-
     /**
-     * НОВАЯ ФУНКЦИЯ: Обрабатывает выбор файла, читает его, создает миниатюру и показывает превью.
+     * НОВАЯ ФУНКЦИЯ (v2): Обрабатывает выбор НЕСКОЛЬКИХ файлов, читает их и добавляет в массив.
      */
     async function handleAIAttachment(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
 
-        if (file.size > 10 * 1024 * 1024) {
-            alert('Файл слишком большой. Максимальный размер - 10 МБ.');
-            event.target.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const fullDataUrl = e.target.result;
-            let thumbnailDataUrl = null;
-
-            if (file.type.startsWith('image/')) {
-                try {
-                    thumbnailDataUrl = await createThumbnail(fullDataUrl, 64);
-                } catch (thumbError) {
-                    console.error("Не удалось создать миниатюру:", thumbError);
-                }
+        for (const file of files) {
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`Файл "${file.name}" слишком большой. Максимальный размер - 10 МБ.`);
+                continue; // Пропускаем этот файл и переходим к следующему
             }
 
-            attachedFile = {
-                name: file.name,
-                mimeType: file.type,
-                base64Data: fullDataUrl,
-                thumbnailDataUrl: thumbnailDataUrl
-            };
-            showAttachmentPreview();
-            updateGroundingToggleState(); // <-- ДОБАВЛЕНА ЭТА СТРОКА
-        };
-        reader.onerror = (e) => {
-            console.error("Ошибка чтения файла:", e);
-            alert('Не удалось прочитать файл.');
-        };
-        reader.readAsDataURL(file);
-        
-        event.target.value = '';
+            try {
+                const fullDataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.onerror = e => reject(e);
+                    reader.readAsDataURL(file);
+                });
+
+                let thumbnailDataUrl = null;
+                if (file.type.startsWith('image/')) {
+                    thumbnailDataUrl = await createThumbnail(fullDataUrl, 72);
+                }
+
+                attachedFiles.push({
+                    name: file.name,
+                    mimeType: file.type,
+                    base64Data: fullDataUrl,
+                    thumbnailDataUrl: thumbnailDataUrl
+                });
+
+            } catch (error) {
+                console.error(`Ошибка чтения файла "${file.name}":`, error);
+                alert(`Не удалось прочитать файл: ${file.name}`);
+            }
+        }
+
+        showAttachmentPreview();
+        updateGroundingToggleState();
+        event.target.value = ''; // Сбрасываем input, чтобы можно было выбрать те же файлы снова
     }
 
 
@@ -17750,48 +17778,7 @@ const mainApp = (function() {
         });
     }
 
-    /**
-     * НОВАЯ ФУНКЦИЯ: Отображает плашку с информацией о прикрепленном файле.
-     */
-    function showAttachmentPreview() {
-        const previewEl = getEl('aiAttachmentPreview');
-        const inputRow = getEl('aiChatMainInputRow');
-        if (!previewEl || !attachedFile || !inputRow) return;
 
-        // Очищаем старое содержимое и добавляем класс-маркер
-        previewEl.innerHTML = '';
-        inputRow.classList.add('has-attachment');
-
-        // Создаем HTML для превью с кнопками
-        // Показываем миниатюру, если она есть, иначе иконку
-        const previewContent = attachedFile.thumbnailDataUrl
-            ? `<img src="${attachedFile.thumbnailDataUrl}" alt="Превью вложения">`
-            : `<div class="ai-attachment-icon-placeholder"><i data-lucide="file-text"></i></div>`;
-
-        previewEl.innerHTML = `
-            ${previewContent}
-            <div class="ai-attachment-actions">
-                <button class="ai-attachment-action-btn" id="aiAttachmentEditBtn" title="Выбрать другой файл">
-                    <i data-lucide="pencil"></i>
-                </button>
-                <button class="ai-attachment-action-btn" id="aiAttachmentRemoveBtn" title="Удалить файл">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-        `;
-        
-        // Назначаем обработчики на новые кнопки
-        getEl('aiAttachmentEditBtn').onclick = () => getEl('aiChatFileInput').click();
-        getEl('aiAttachmentRemoveBtn').onclick = removeAIAttachment;
-
-        previewEl.classList.remove('hidden');
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-        
-        // Активируем кнопку отправки, так как файл прикреплен
-        aiChatSendBtn.disabled = false;
-    }
 
     /**
      * НОВАЯ ФУНКЦИЯ v4: Открывает прикрепленный файл в соответствующем модальном окне.
@@ -17902,64 +17889,73 @@ const mainApp = (function() {
 
 
     /**
-     * НОВАЯ ФУНКЦИЯ: Отображает плашку с информацией о прикрепленном файле.
+     * НОВАЯ ФУНКЦИЯ (v2): Отображает галерею превью для всех прикрепленных файлов.
      */
     function showAttachmentPreview() {
         const previewEl = getEl('aiAttachmentPreview');
-        if (!previewEl || !attachedFile) return;
+        const inputRow = getEl('aiChatMainInputRow');
+        if (!previewEl || !inputRow) return;
 
-        // Очищаем старое содержимое
-        previewEl.innerHTML = '';
+        previewEl.innerHTML = ''; // Очищаем старое содержимое
 
-        // Создаем HTML для превью с кнопками
-        const previewContent = attachedFile.thumbnailDataUrl
-            ? `<img src="${attachedFile.thumbnailDataUrl}" alt="Превью вложения">`
-            : `<div class="ai-attachment-icon-placeholder"><i data-lucide="file-text"></i></div>`;
+        if (attachedFiles.length === 0) {
+            previewEl.classList.add('hidden');
+            inputRow.classList.remove('has-attachment');
+            // Если текста нет, блокируем кнопку отправки
+            if (aiChatInput.value.trim().length === 0) {
+                aiChatSendBtn.disabled = true;
+            }
+            return;
+        }
 
-        previewEl.innerHTML = `
-            ${previewContent}
-            <div class="ai-attachment-actions">
-                <button class="ai-attachment-action-btn" id="aiAttachmentEditBtn" title="Выбрать другой файл">
-                    <i data-lucide="pencil"></i>
-                </button>
-                <button class="ai-attachment-action-btn" id="aiAttachmentRemoveBtn" title="Удалить файл">
-                    <i data-lucide="x"></i>
-                </button>
-            </div>
-        `;
+        inputRow.classList.add('has-attachment');
         
-        // Назначаем обработчики на новые кнопки
-        getEl('aiAttachmentEditBtn').onclick = () => getEl('aiChatFileInput').click();
-        getEl('aiAttachmentRemoveBtn').onclick = removeAIAttachment;
+        attachedFiles.forEach((file, index) => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'ai-attachment-preview-item';
 
+            const previewContent = file.thumbnailDataUrl
+                ? `<img src="${file.thumbnailDataUrl}" alt="Превью вложения">`
+                : `<div class="ai-attachment-icon-placeholder"><i data-lucide="file-text"></i></div>`;
+
+            previewItem.innerHTML = `
+                ${previewContent}
+                <button class="ai-attachment-preview-remove-btn" data-index="${index}" title="Удалить файл">
+                    ×
+                </button>
+            `;
+            previewEl.appendChild(previewItem);
+        });
+        
         previewEl.classList.remove('hidden');
         if (window.lucide) {
             lucide.createIcons();
         }
         
-        // Активируем кнопку отправки, так как файл прикреплен
+        // Активируем кнопку отправки, так как файлы прикреплены
         aiChatSendBtn.disabled = false;
+        
+        // Используем делегирование событий для кнопок удаления
+        previewEl.onclick = function(event) {
+            const removeBtn = event.target.closest('.ai-attachment-preview-remove-btn');
+            if (removeBtn) {
+                const indexToRemove = parseInt(removeBtn.dataset.index, 10);
+                removeAIAttachment(indexToRemove);
+            }
+        };
     }
 
     /**
-     * НОВАЯ ФУНКЦИЯ: Удаляет прикрепленный файл и скрывает превью.
+     * НОВАЯ ФУНКЦИЯ (v2): Удаляет прикрепленный файл из массива по индексу.
+     * @param {number} index - Индекс файла для удаления.
      */
-    function removeAIAttachment() {
-        attachedFile = null;
-        const previewEl = getEl('aiAttachmentPreview');
-
-        if (previewEl) {
-            previewEl.classList.add('hidden');
-            previewEl.innerHTML = '';
+    function removeAIAttachment(index) {
+        if (index >= 0 && index < attachedFiles.length) {
+            attachedFiles.splice(index, 1);
+            showAttachmentPreview(); // Перерисовываем превью
+            updateGroundingToggleState();
         }
-        
-        // Блокируем кнопку отправки, если нет текста
-        if (aiChatInput.value.trim().length === 0) {
-            aiChatSendBtn.disabled = true;
-        }
-        updateGroundingToggleState();
     }
-    // ======== НАЧАЛО НОВЫХ ФУНКЦИЙ ========
 
     /**
      * Настраивает логику работы для кастомного выпадающего списка.
@@ -18326,26 +18322,43 @@ const mainApp = (function() {
                     }
                     messageEl.appendChild(contentWrapper);
         
-                    if (msg.attachment) {
-                        const { name, mimeType, thumbnailDataUrl } = msg.attachment;
-                        const type = mimeType.split('/')[0] || 'файл';
+
+
+
+                    // === НАЧАЛО БЛОКА НА ЗАМЕНУ ===
+                    if (msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+                        // Создаем контейнер-сетку
+                        const attachmentsGrid = document.createElement('div');
+                        attachmentsGrid.className = 'ai-message-attachments-grid';
+
+                        let attachmentsHTML = ''; // Начинаем с пустой строки для всех вложений
+                        msg.attachments.forEach((attachment, attachmentIndex) => {
+                            const { name, mimeType, thumbnailDataUrl } = attachment;
+                            const type = mimeType.split('/')[0] || 'файл';
+
+                            const previewImage = thumbnailDataUrl 
+                                ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
+                                : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
+
+                            attachmentsHTML += `
+                                <a href="#" class="ai-message-attachment" data-index="${attachmentIndex}">
+                                    ${previewImage}
+                                    <div class="ai-attachment-file-info">
+                                        <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
+                                        <div class="ai-attachment-file-type">${type}</div>
+                                    </div>
+                                </a>
+                            `;
+                        });
                         
-                        const previewImage = thumbnailDataUrl 
-                            ? `<img src="${thumbnailDataUrl}" class="ai-attachment-thumbnail" alt="Превью">`
-                            : `<div class="ai-attachment-icon"><i data-lucide="file-text"></i></div>`;
-        
-                        const attachmentHTML = `
-                            <a href="#" class="ai-message-attachment" data-action="open-attachment" data-index="${index}">
-                                ${previewImage}
-                                <div class="ai-attachment-file-info">
-                                    <div class="ai-attachment-file-name">${escapeHTML(name)}</div>
-                                    <div class="ai-attachment-file-type">${type}</div>
-                                </div>
-                            </a>
-                        `;
-                        messageEl.insertAdjacentHTML('beforeend', attachmentHTML);
+                        attachmentsGrid.innerHTML = attachmentsHTML;
+                        // Добавляем готовую сетку в основной "пузырь" сообщения
+                        messageEl.appendChild(attachmentsGrid);
                     }
+                    // === КОНЕЦ БЛОКА НА ЗАМЕНУ ===
         
+
+
                     if (msg.role === 'model' && msg.generatedTest) {
                         const testData = msg.generatedTest;
                         const attachmentHTML = `
@@ -18438,7 +18451,7 @@ const mainApp = (function() {
                 return;
             }
             const userInput = aiChatInput.value.trim();
-            if (!userInput && !attachedFile) {
+            if (!userInput && attachedFiles.length === 0) { // ИЗМЕНЕНИЕ: проверяем массив
                 return;
             }
 
@@ -18448,66 +18461,35 @@ const mainApp = (function() {
             }
 
             const replyContextToSend = aiReplyContext;
-            const fileToSend = attachedFile;
+            const filesToSend = [...attachedFiles]; // Копируем массив файлов
 
             aiChatInput.value = '';
             resetAIInputHeight(); 
-            removeAIAttachment();
+            attachedFiles = []; // Очищаем массив
+            showAttachmentPreview(); // Скрываем превью
             cancelAIReply();
 
             const message = { 
                 role: 'user', 
                 content: userInput,
                 replyTo: replyContextToSend,
-                attachment: fileToSend
+                attachments: filesToSend // ИЗМЕНЕНИЕ: теперь это attachments (множественное число)
             };
             
-            if (fileToSend) {
-                try {
-                    allAIChats[currentAIChatId].push({ role: 'model', content: 'Анализ файла...' });
-                    renderAIChatMessages();
-                    
-                    const response = await fetch(googleAppScriptUrl, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            action: 'generateAttachmentDescription',
-                            file: { base64Data: fileToSend.base64Data.split(',')[1], mimeType: fileToSend.mimeType },
-                            userText: userInput,
-                            targetLanguage: localStorage.getItem('appLanguage') || 'ru'
-                        })
-                    });
-                    const result = await response.json();
-
-                    allAIChats[currentAIChatId].pop();
-                    
-                    if (result.success && result.description) {
-                        message.attachmentDescription = result.description;
-                    } else {
-                        message.attachmentDescription = `(Описание файла "${fileToSend.name}" недоступно)`;
-                    }
-                } catch (error) {
-                    console.error("Ошибка получения описания файла:", error);
-                    message.attachmentDescription = `(Ошибка при анализе файла "${fileToSend.name}")`;
-                    if(allAIChats[currentAIChatId].slice(-1)[0]?.content === 'Анализ файла...') {
-                        allAIChats[currentAIChatId].pop();
-                    }
-                }
-            }
+            // Логика получения описаний теперь полностью на сервере, здесь ее убираем.
             
             allAIChats[currentAIChatId].push(message);
             
             await saveAIChatsToStorage();
             
             renderAIChatList();
-
             renderAIChatMessages(); 
             
-            getAIResponseForCurrentHistory(fileToSend);
+            getAIResponseForCurrentHistory(filesToSend);
         } finally {
             console.groupEnd();
         }
     }
-
 
     /**
      * Отправляет сообщение в публичную Аудиторию (только для владельца).
@@ -18531,17 +18513,24 @@ const mainApp = (function() {
                 showToast("Только владелец и модераторы могут отправлять сообщения.", "error");
                 return;
             }
-
+            
+            // === НАЧАЛО ИСПРАВЛЕНИЙ ===
+            const filesToSend = [...attachedFiles]; // Копируем массив файлов
+            
             aiChatInput.value = '';
             resetAIInputHeight();
+            attachedFiles = []; // Очищаем глобальный массив
+            showAttachmentPreview(); // Скрываем превью
             
             const userMessage = {
                 role: 'user',
                 content: userInput,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 authorId: currentUser.uid,
-                authorName: currentUser.displayName || 'Аноним'
+                authorName: currentUser.displayName || 'Аноним',
+                attachments: filesToSend // Добавляем массив вложений в объект сообщения
             };
+            // === КОНЕЦ ИСПРАВЛЕНИЙ ===
 
             if (aiReplyContext) {
                 userMessage.replyTo = aiReplyContext;
@@ -18558,7 +18547,6 @@ const mainApp = (function() {
             showToast("Не удалось отправить сообщение.", "error");
         }
     }
-
 
     /**
      * Получает ответ ИИ для публичной Аудитории.
@@ -18623,7 +18611,7 @@ const mainApp = (function() {
     }
 
 
-    async function getAIResponseForCurrentHistory(file = null) {
+    async function getAIResponseForCurrentHistory(files = []) { // ИЗМЕНЕНИЕ: параметр теперь files
         try {
             if (isAIResponding || !currentAIChatId) {
                 return;
@@ -18633,24 +18621,17 @@ const mainApp = (function() {
             
             const currentChat = allAIChats[currentAIChatId];
             
+            // Формируем историю для API. Логика описаний теперь на сервере, так что она здесь не нужна.
             const historyForAPI = currentChat
                 .filter(msg => msg.content !== 'typing...')
-                .map(msg => {
-                    const cleanMsg = {
-                        role: msg.role,
-                        content: msg.content || ''
-                    };
-                    if (msg.attachmentDescription) {
-                        cleanMsg.content = `${msg.attachmentDescription}\n\n${cleanMsg.content}`;
-                    }
-                    return cleanMsg;
-                });
-
+                .map(msg => ({
+                    role: msg.role,
+                    content: msg.content || ''
+                }));
 
             currentChat.push({ role: 'model', content: 'typing...' });
             const aiResponseIndex = currentChat.length - 1;
             renderAIChatMessages();
-
 
             const aiSettings = getAIChatSettings();
             
@@ -18661,11 +18642,12 @@ const mainApp = (function() {
                 targetLanguage: localStorage.getItem('appLanguage') || 'ru'
             };
 
-            if (file) {
-                requestBody.file = {
-                    mimeType: file.mimeType,
-                    base64Data: file.base64Data.split(',')[1] 
-                };
+            // ИЗМЕНЕНИЕ: Добавляем массив файлов в тело запроса
+            if (files && files.length > 0) {
+                requestBody.files = files.map(f => ({
+                    mimeType: f.mimeType,
+                    base64Data: f.base64Data.split(',')[1] 
+                }));
             }
 
             const response = await fetch(googleAppScriptUrl, {
@@ -18674,7 +18656,6 @@ const mainApp = (function() {
             });
 
             const rawResponseText = await response.text();
-            
             const result = JSON.parse(rawResponseText);
             
             if (result.success && result.reply) {
@@ -18703,14 +18684,13 @@ const mainApp = (function() {
             }
         } finally {
             isAIResponding = false;
-            aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFile);
+            aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFiles.length > 0); // ИЗМЕНЕНИЕ: Проверяем массив
             await saveAIChatsToStorage();
             renderAIChatMessages();
             console.groupEnd();
         }
     }
 
-    // НОВЫЙ КОД ДЛЯ ВСТАВКИ
     /**
      * ВЕРСИЯ 5.0 (ФИНАЛЬНАЯ): Корректно обрабатывает структуру ответа Gemini 1.5.
      * Находит подтвержденные сегменты в тексте и заменяет их на интерактивные HTML-элементы.
