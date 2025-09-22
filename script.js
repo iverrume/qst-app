@@ -8132,7 +8132,6 @@ const mainApp = (function() {
     function parseAndRenderQuestionBlock(blockText) {
         if (!blockText) return '<div class="question-text-detail">Нет данных.</div>';
 
-        // РЕШЕНИЕ: Регулярное выражение для удаления всех ненужных тегов
         const tagRemovalRegex = /<\/?(question|variant|вопрос|вариант|qst)>/gi;
 
         const correctedText = blockText.replace(/\\n/g, '\n');
@@ -8150,20 +8149,32 @@ const mainApp = (function() {
                 let icon = trimmedLine.startsWith('+') || trimmedLine.startsWith('=') ? '✓' : '✗';
                 if (icon === '✓') className += ' correct';
                 
-                // Очищаем текст ответа от тегов
                 const answerText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
-                optionsHTML.push(`<div class="${className}">${icon} ${escapeHTML(answerText)}</div>`);
+                // === ИЗМЕНЕНИЕ: Обрабатываем Markdown в ответе ===
+                const formattedAnswer = window.marked ? marked.parseInline(answerText) : escapeHTML(answerText);
+                optionsHTML.push(`<div class="${className}">${icon} ${formattedAnswer}</div>`);
+                // === КОНЕЦ ИЗМЕНЕНИЯ ===
             } else if (!foundOptions) {
-                // Очищаем текст вопроса от тегов
                 const cleanLine = (trimmedLine.startsWith('?') ? trimmedLine.substring(1).trim() : trimmedLine).replace(tagRemovalRegex, '').trim();
-                questionContentLines.push(escapeHTML(cleanLine));
+                // === ИЗМЕНЕНИЕ: Обрабатываем Markdown в вопросе ===
+                const formattedQuestionLine = window.marked ? marked.parseInline(cleanLine) : escapeHTML(cleanLine);
+                questionContentLines.push(formattedQuestionLine);
+                // === КОНЕЦ ИЗМЕНЕНИЯ ===
             }
         });
-
+        
+        // Собираем финальный HTML и рендерим в нем математику
         const questionHTML = `<div class="question-text-detail">${questionContentLines.join('<br>')}</div>`;
         const optionsContainerHTML = optionsHTML.length > 0 ? `<div class="answer-options-container">${optionsHTML.join('')}</div>` : '';
         
-        return questionHTML + optionsContainerHTML;
+        const finalHTML = questionHTML + optionsContainerHTML;
+        
+        // Создаем временный элемент для рендеринга KaTeX
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = finalHTML;
+        renderMathInElement(tempDiv);
+        
+        return tempDiv.innerHTML;
     }
 
 
@@ -8982,36 +8993,39 @@ const mainApp = (function() {
         return text.split(/(\s+|[.,;:!?()"“”«»-]+)/g).filter(token => token.length > 0);
     }
 
-    function renderQuestionTextWithTriggers(question) {
-        const tokens = tokenizeText(question.text);
-        let html = '';
-        let wordIndex = 0;
+    /**
+     * НОВАЯ ФУНКЦИЯ-ПОМОЩНИК
+     * Парсит строку, извлекая чистый текст и индексы триггер-слов.
+     * @param {string} rawText - Исходный текст, который может содержать ~триггеры~.
+     * @returns {{text: string, triggeredWordIndices: number[]}} - Объект с очищенным текстом и массивом индексов.
+     */
+    function parseTextAndExtractTriggers(rawText) {
+        const tokens = tokenizeText(rawText);
+        let cleanText = '';
+        const indices = [];
+        let wordCounter = 0;
+
         tokens.forEach(token => {
-            const isWord = /\S/.test(token) && !/^[.,;:!?()"“”«»-]+$/.test(token);
-            if (isWord) {
-                const isTriggered = question.triggeredWordIndices && question.triggeredWordIndices.includes(wordIndex);
-                let spanClasses = [];
-                if (isTriggered) {
-                    spanClasses.push('triggered-word');
-                }
-                if (triggerWordModeEnabled) {
-                    spanClasses.push('triggerable-word');
-                }
-                if (spanClasses.length > 0) {
-                    html += `<span class="${spanClasses.join(' ')}" data-word-index="${wordIndex}">${token}</span>`;
-                } else {
-                    html += token;
-                }
-                wordIndex++;
+            // Проверяем, является ли токен словом, обернутым в тильды
+            if (token.startsWith('~') && token.endsWith('~') && token.length > 2) {
+                const cleanWord = token.slice(1, -1); // Убираем тильды
+                cleanText += cleanWord;
+                indices.push(wordCounter); // Сохраняем индекс этого слова
+                wordCounter++;
             } else {
-                html += token;
+                cleanText += token;
+                // Увеличиваем счетчик слов, только если это не знак препинания
+                if (/\S/.test(token) && !/^[.,;:!?()"“”«»-]+$/.test(token)) {
+                    wordCounter++;
+                }
             }
         });
-        return html;
+
+        return {
+            text: cleanText,
+            triggeredWordIndices: indices
+        };
     }
-
-
-
 
     function handleWordTriggerClick(event) {
         if (!triggerWordModeEnabled) return;
@@ -9023,30 +9037,22 @@ const mainApp = (function() {
 
         const wordIndex = parseInt(clickedElement.dataset.wordIndex, 10);
         
-        // --- НАЧАЛО ИЗМЕНЕНИЙ: Логика выбора правильного объекта для модификации ---
+        let questionObjectToModify;
 
-        let questionObjectToModify; // Эта переменная будет хранить либо оригинал, либо перевод
-
-        // 1. Определяем, с каким объектом мы сейчас работаем
         if (isTranslateModeEnabled) {
-            // Если включен перевод, наша цель - объект перевода в кэше
             const lang = localStorage.getItem('appLanguage') || 'ru';
             const originalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
             const cacheKey = getCacheKey(originalQuestion.originalIndex, lang);
             
-            // Если перевод есть в кэше, он становится нашей целью
             if (currentQuizTranslations.has(cacheKey)) {
                 questionObjectToModify = currentQuizTranslations.get(cacheKey);
             } else {
-                // Если перевода почему-то нет, на всякий случай работаем с оригиналом
                 questionObjectToModify = questionsForCurrentQuiz[currentQuestionIndex];
             }
         } else {
-            // Если перевод выключен, наша цель - это оригинальный вопрос
             questionObjectToModify = questionsForCurrentQuiz[currentQuestionIndex];
         }
 
-        // 2. Модифицируем массив triggeredWordIndices ТОЛЬКО у целевого объекта
         if (!questionObjectToModify.triggeredWordIndices) {
             questionObjectToModify.triggeredWordIndices = [];
         }
@@ -9056,19 +9062,21 @@ const mainApp = (function() {
             questionObjectToModify.triggeredWordIndices.splice(indexInArray, 1);
         } else {
             questionObjectToModify.triggeredWordIndices.push(wordIndex);
-            // Глобальный флаг, что триггеры использовались, ставим в любом случае
             if (!triggerWordsUsedInQuiz && questionObjectToModify.triggeredWordIndices.length > 0) {
                 triggerWordsUsedInQuiz = true;
             }
         }
 
-        // 3. Перерисовываем текст, используя тот же самый модифицированный объект
-        questionTextEl.innerHTML = renderQuestionTextWithTriggers(questionObjectToModify);
+        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+        // Вместо вызова удаленной функции, используем новый правильный порядок отрисовки.
+        // 1. Сначала рендерим Markdown и KaTeX из текста.
+        renderFormattedText(questionTextEl, questionObjectToModify.text);
+        // 2. Затем поверх готового HTML оборачиваем слова в <span> для триггеров.
+        wrapWordsForTriggers(questionTextEl, questionObjectToModify);
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
-        // 4. Заново навешиваем обработчики кликов на новые <span>
+        // Переназначаем слушатели на новые <span>
         addTriggerClickListeners();
-        
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
     }
 
 
@@ -9822,21 +9830,17 @@ const mainApp = (function() {
         const lines = content.replace(/\r\n/g, '\n').split('\n');
         
         let currentQuestion = null;
-        // Эвристика: считаем, что вопрос закончился, если у него уже есть 4+ варианта и встречается новый "+"
         const MIN_OPTIONS_BEFORE_SPLIT = 4; 
-        // Храним несколько последних текстовых строк как кандидатов на текст вопроса
         let lastTextLines = []; 
 
         const saveCurrentQuestion = () => {
             if (currentQuestion && currentQuestion.options.length > 0 && currentQuestion.correctAnswerIndex > -1) {
-                // Финальная очистка текста вопроса от всех тегов
                 currentQuestion.text = currentQuestion.text
                     .replace(/<\/?(question|вопрос|qst)>/gi, '')
                     .trim();
-                // Убираем возможную нумерацию в начале (например, "1. ", "2) ")
                 currentQuestion.text = currentQuestion.text.replace(/^\s*\d+[\.\)]\s*/, '');
 
-                if (currentQuestion.text) { // Сохраняем, только если есть текст вопроса
+                if (currentQuestion.text) {
                     parsedItems.push(currentQuestion);
                 }
             }
@@ -9847,7 +9851,7 @@ const mainApp = (function() {
             const trimmedLine = line.trim();
             const tagRemovalRegex = /<\/?(variant|вариант)>/gi;
 
-            if (!trimmedLine) continue; // Пропускаем пустые строки
+            if (!trimmedLine) continue;
 
             if (trimmedLine.startsWith('#_#') && trimmedLine.endsWith('#_#')) {
                 saveCurrentQuestion();
@@ -9859,60 +9863,63 @@ const mainApp = (function() {
 
             if (trimmedLine.startsWith('?')) {
                 saveCurrentQuestion();
+                
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+                // Используем новую функцию для обработки текста вопроса
+                const questionParseResult = parseTextAndExtractTriggers(trimmedLine.substring(1).trim());
+                
                 currentQuestion = {
-                    text: trimmedLine.substring(1).trim(),
+                    text: questionParseResult.text,
                     options: [],
                     correctAnswerIndex: -1,
-                    originalRaw: [line]
+                    originalRaw: [line],
+                    triggeredWordIndices: questionParseResult.triggeredWordIndices // Сохраняем найденные индексы
                 };
-                lastTextLines = []; // Сбрасываем кандидатов
+                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+                
+                lastTextLines = [];
             } else if (trimmedLine.startsWith('+')) {
-                // ЭВРИСТИКА: Если у текущего вопроса уже есть правильный ответ и достаточно вариантов,
-                // то это, скорее всего, начало нового "склеенного" вопроса.
                 if (currentQuestion && currentQuestion.correctAnswerIndex > -1 && currentQuestion.options.length >= MIN_OPTIONS_BEFORE_SPLIT) {
                     saveCurrentQuestion();
                 }
 
                 if (!currentQuestion) {
-                    // Если вопроса нет, создаем его из последних текстовых строк.
+                    const questionParseResult = parseTextAndExtractTriggers(lastTextLines.join(' ').trim());
                     currentQuestion = {
-                        text: lastTextLines.join(' ').trim(),
+                        text: questionParseResult.text,
                         options: [],
                         correctAnswerIndex: -1,
-                        originalRaw: [...lastTextLines, line]
+                        originalRaw: [...lastTextLines, line],
+                        triggeredWordIndices: questionParseResult.triggeredWordIndices
                     };
                 }
                 
                 const optionText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
                 currentQuestion.options.push({ text: optionText, isCorrect: true });
-                // Перезаписываем индекс правильного ответа, если их несколько
                 currentQuestion.correctAnswerIndex = currentQuestion.options.length - 1;
-                lastTextLines = []; // Вариант ответа не может быть текстом вопроса
+                lastTextLines = [];
             
             } else if (trimmedLine.startsWith('-')) {
                 if (currentQuestion) {
                     const optionText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
                     currentQuestion.options.push({ text: optionText, isCorrect: false });
                     currentQuestion.originalRaw.push(line);
-                    lastTextLines = []; // Вариант ответа не может быть текстом вопроса
+                    lastTextLines = [];
                 }
             } else if (trimmedLine.length > 0) {
-                // Если это не команда, то это либо продолжение текста вопроса, либо сам текст вопроса
                 if (currentQuestion) {
                     currentQuestion.text += ' ' + trimmedLine;
                     currentQuestion.originalRaw.push(line);
                 }
-                // В любом случае, запоминаем эту строку как потенциальный заголовок следующего вопроса
                 lastTextLines.push(trimmedLine);
-                if(lastTextLines.length > 3) lastTextLines.shift(); // Храним не больше 3-х последних строк
+                if(lastTextLines.length > 3) lastTextLines.shift();
             }
         }
         
-        saveCurrentQuestion(); // Сохраняем самый последний вопрос в файле
+        saveCurrentQuestion();
 
         return parsedItems;
     }
-
 
     // Новая вспомогательная функция
     function formatQuestionObjectToQstString(questionObject) {
@@ -10402,11 +10409,11 @@ const mainApp = (function() {
             <div class="flashcard-viewport">
                 <div class="flashcard" id="currentFlashcard">
                     <div class="flashcard-face flashcard-front">
-                        <div class="flashcard-text-content" id="flashcardFrontText">${escapeHTML(question.text)}</div>
+                        <div class="flashcard-text-content" id="flashcardFrontText"></div>
                     </div>
                     <div class="flashcard-face flashcard-back" id="flashcardBack">
                         <div class="flashcard-answer-text">
-                            <div class="flashcard-text-content" id="flashcardBackText">${escapeHTML(originalCorrectAnswerText)}</div>
+                            <div class="flashcard-text-content" id="flashcardBackText"></div>
                         </div>
                         <button id="explainFlashcardBtn" class="explain-flashcard-btn"><i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}</button>
                     </div>
@@ -10422,6 +10429,11 @@ const mainApp = (function() {
         const frontFaceTextContainer = getEl('flashcardFrontText');
         const backFaceTextContainer = getEl('flashcardBackText');
         
+        // === ИЗМЕНЕНИЕ: Отображаем текст через новую функцию ===
+        renderFormattedText(frontFaceTextContainer, question.text);
+        renderFormattedText(backFaceTextContainer, originalCorrectAnswerText);
+        // === КОНЕЦ ИЗМЕНЕНИЯ ===
+
         const resizeCard = () => {
             if (!cardElement || !frontFace || !backFace) return;
             requestAnimationFrame(() => {
@@ -10440,7 +10452,6 @@ const mainApp = (function() {
             });
         }
 
-        // === НАЧАЛО ИЗМЕНЕНИЙ В ЛОГИКЕ ПЕРЕВОДА КАРТОЧЕК ===
         if (isTranslateModeEnabled) {
             const lang = localStorage.getItem('appLanguage') || 'ru';
             const cacheKey = getCacheKey(question.originalIndex, lang);
@@ -10459,29 +10470,25 @@ const mainApp = (function() {
                 const translatedQuestion = translationResult.question;
                 const translatedCorrectAnswerText = translatedQuestion.options[translatedQuestion.correctAnswerIndex].text;
 
-                // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Проверяем, нужна ли анимация ===
                 if (options.animateTranslation) {
                     await Promise.all([
                         animateTextTransformation(frontFaceTextContainer, question.text, translatedQuestion.text),
                         animateTextTransformation(backFaceTextContainer, originalCorrectAnswerText, translatedCorrectAnswerText)
                     ]);
                 } else {
-                    // Если не нужна - обновляем текст мгновенно
-                    frontFaceTextContainer.textContent = translatedQuestion.text;
-                    backFaceTextContainer.textContent = translatedCorrectAnswerText;
+                    // === ИЗМЕНЕНИЕ: Также используем новую функцию для мгновенного обновления ===
+                    renderFormattedText(frontFaceTextContainer, translatedQuestion.text);
+                    renderFormattedText(backFaceTextContainer, translatedCorrectAnswerText);
+                    // === КОНЕЦ ИЗМЕНЕНИЯ ===
                 }
-                // =======================================================
 
                 resizeCard();
             } else {
                 alert(_('error_flashcard_translation_failed'));
             }
         }
-
         
-        // Пересчитываем размер в любом случае
         resizeCard();
-        // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
         if (cardElement) {
             cardElement.addEventListener('click', (e) => {
@@ -10494,49 +10501,6 @@ const mainApp = (function() {
     }
 
 
-
-
-    /**
-     * Отображает СОДЕРЖИМОЕ вопроса (текст и варианты) БЕЗ картинки.
-     * @param {object} question - Объект вопроса для отображения.
-     */
-    function displayQuestionContent(question) {
-        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
-
-        if (triggerWordModeEnabled) {
-            addTriggerClickListeners();
-        }
-        
-        displayQuestionOptions(question);
-    }
-
-    /**
-     * Отображает только варианты ответов для указанного вопроса.
-     * @param {object} question - Объект вопроса, чьи варианты нужно отобразить.
-     */
-    function displayQuestionOptions(question) {
-        answerOptionsEl.innerHTML = '';
-        const answerState = userAnswers[currentQuestionIndex];
-
-        question.options.forEach((option, index) => {
-            const li = document.createElement('li');
-            li.textContent = option.text;
-            li.dataset.index = index;
-
-            if (answerState && answerState.answered) {
-                li.classList.add('answered');
-                if (index === question.correctAnswerIndex) {
-                    li.classList.add('actual-correct');
-                }
-                if (index === answerState.selectedOptionIndex) {
-                    li.classList.add(answerState.correct ? 'correct' : 'incorrect');
-                }
-            } else {
-                li.addEventListener('click', handleAnswerSelect);
-            }
-            answerOptionsEl.appendChild(li);
-        });
-    }
 
     /**
      * Отображает категорию в виде специальной непереворачиваемой карточки.
@@ -11615,6 +11579,87 @@ const mainApp = (function() {
             }
         }
     }
+
+
+    /**
+     * НОВАЯ УНИВЕРСАЛЬНАЯ ФУНКЦИЯ
+     * Вставляет текст в элемент, применяя форматирование Markdown и рендеринг KaTeX.
+     * @param {HTMLElement} element - Элемент, куда будет вставлен отформатированный HTML.
+     * @param {string} text - Исходный текст для обработки.
+     */
+    function renderFormattedText(element, text) {
+        if (!element) return;
+        
+        // 1. Обрабатываем Markdown. Используем parse, чтобы он корректно работал с блоками (списки и т.д.).
+        if (window.marked) {
+            element.innerHTML = marked.parse(text || '', { breaks: true });
+        } else {
+            element.textContent = text || ''; // Безопасный fallback
+        }
+        
+        // 2. В уже готовом HTML ищем и рендерим математические формулы.
+        renderMathInElement(element);
+    }
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ ДЛЯ ТРИГГЕР-СЛОВ (v2)
+     * Рекурсивно обходит DOM-узлы и оборачивает текстовые "слова" в <span>.
+     * Класс для подсветки (.triggered-word) добавляется всегда.
+     * Класс для интерактивности (.triggerable-word) - только если режим включен.
+     * @param {HTMLElement} parentElement - Элемент, внутри которого нужно обработать текст.
+     * @param {object} questionObject - Объект вопроса, содержащий triggeredWordIndices.
+     */
+    function wrapWordsForTriggers(parentElement, questionObject) {
+        let wordCounter = 0;
+        const triggeredIndices = new Set(questionObject.triggeredWordIndices || []);
+
+        function walk(node) {
+            if (node.nodeType === 3) { // Node.TEXT_NODE
+                const text = node.textContent;
+                const tokens = tokenizeText(text);
+                
+                if (tokens.length > 1 || (tokens.length === 1 && /\S/.test(tokens[0]))) {
+                    const fragment = document.createDocumentFragment();
+                    tokens.forEach(token => {
+                        const isWord = /\S/.test(token) && !/^[.,;:!?()"“”«»-]+$/.test(token);
+                        if (isWord) {
+                            const isTriggered = triggeredIndices.has(wordCounter);
+                            let classesToApply = [];
+
+                            // Класс для подсветки добавляем всегда, если слово отмечено
+                            if (isTriggered) {
+                                classesToApply.push('triggered-word');
+                            }
+                            // Класс для интерактивности добавляем только в активном режиме
+                            if (triggerWordModeEnabled) {
+                                classesToApply.push('triggerable-word');
+                            }
+
+                            if (classesToApply.length > 0) {
+                                const span = document.createElement('span');
+                                span.textContent = token;
+                                span.className = classesToApply.join(' ');
+                                span.dataset.wordIndex = wordCounter;
+                                fragment.appendChild(span);
+                            } else {
+                                fragment.appendChild(document.createTextNode(token));
+                            }
+                            wordCounter++;
+                        } else {
+                            fragment.appendChild(document.createTextNode(token));
+                        }
+                    });
+                    node.parentNode.replaceChild(fragment, node);
+                }
+            } else if (node.nodeType === 1 && node.nodeName !== 'SCRIPT' && node.nodeName !== 'STYLE') {
+                Array.from(node.childNodes).forEach(walk);
+            }
+        }
+
+        walk(parentElement);
+    }
+
 
     async function hashPassword(password) {
         if (!password) return null;
@@ -13381,7 +13426,13 @@ const mainApp = (function() {
             });
             const result = await response.json();
             if (result.success) {
-                // === ИЗМЕНЕНИЕ: Возвращаем объект с результатом и названием движка ===
+                // === ВОТ ОНО, ГЛАВНОЕ ИСПРАВЛЕНИЕ! ===
+                // Принудительно удаляем унаследованные индексы триггеров из переведенного объекта.
+                if (result.translatedQuestion) {
+                    delete result.translatedQuestion.triggeredWordIndices;
+                }
+                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
                 return { question: result.translatedQuestion, engine: initialEngine };
             } else {
                 console.error(`Ошибка перевода на сервере (${initialEngine}):`, result.error);
@@ -13404,8 +13455,11 @@ const mainApp = (function() {
                     const fallbackResult = await fallbackResponse.json();
                     if (fallbackResult.success) {
                         
+                        // Также очищаем результат и для резервного варианта
+                        if (fallbackResult.translatedQuestion) {
+                            delete fallbackResult.translatedQuestion.triggeredWordIndices;
+                        }
 
-                        // === ИЗМЕНЕНИЕ: Возвращаем результат fallback'а с правильным названием движка ===
                         return { question: fallbackResult.translatedQuestion, engine: 'google' };
                     }
                 } catch (fallbackError) {
@@ -13416,7 +13470,6 @@ const mainApp = (function() {
             return null; // Возвращаем null, если все попытки провалились
         }
     }
-
 
 
 
@@ -13549,18 +13602,21 @@ const mainApp = (function() {
      * Анимирует одну строку с эффектом курсора
      */
     async function animateSingleLine(element, startText, endText) {
-        const cursor = '|';
+        const cursor = '<span class="blinking-cursor">|</span>'; // Используем span для курсора
         const charDelay = 7;
         const totalSteps = Math.max(startText.length, endText.length);
 
         for (let i = 0; i <= totalSteps; i++) {
             const newPart = endText.substring(0, i);
             const oldPart = startText.substring(i);
-            element.textContent = newPart + cursor + oldPart;
+            
+            element.innerHTML = newPart + cursor + oldPart;
             await new Promise(resolve => setTimeout(resolve, charDelay));
         }
-        element.textContent = endText;
+        // В конце убираем курсор и рендерим финальный отформатированный текст
+        renderFormattedText(element, endText);
     }
+
 
     /**
      * Основная "умная" функция анимации трансформации многострочного текста
@@ -13602,9 +13658,10 @@ const mainApp = (function() {
             await Promise.all(animations);
             
         } finally {
-            // Фаза очистки: восстанавливаем оригинальную структуру
-            element.innerHTML = '';
-            element.textContent = endText;
+            // === ФАЗА ОЧИСТКИ (ИСПРАВЛЕНО) ===
+            // Вместо того чтобы просто вставить текст, используем нашу новую функцию
+            renderFormattedText(element, endText);
+            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
         }
     }
 
@@ -13682,21 +13739,14 @@ const mainApp = (function() {
     }
 
 
-
-    /**
-     * Главная функция, которая управляет отображением переведенного вопроса.
-     * @param {object} originalQuestion - Исходный (непереведенный) объект вопроса.
-     */
     async function displayTranslatedQuestion(originalQuestion, options = { animateTranslation: true }) {
         const indexAtRequestTime = currentQuestionIndex;
         const targetLang = localStorage.getItem('appLanguage') || 'ru';
         const cacheKey = getCacheKey(originalQuestion.originalIndex, targetLang);
         const isCached = currentQuizTranslations.has(cacheKey);
 
-        // Показываем оригинал как "начальный кадр", чтобы было от чего анимировать
         displayQuestionContent(originalQuestion);
 
-        // Показываем индикатор загрузки, только если данных нет в кэше
         if (!isCached) {
             translateQuestionBtn?.classList.add('translating');
         }
@@ -13704,7 +13754,6 @@ const mainApp = (function() {
         try {
             const result = await getCachedOrFetchTranslation(originalQuestion, originalQuestion.originalIndex, targetLang);
 
-            // Если пользователь переключил вопрос, пока шёл перевод, или перевод не удался - выходим
             if (indexAtRequestTime !== currentQuestionIndex || !result) {
                 if (!result) alert("Не удалось перевести вопрос. Будет показан оригинал.");
                 return;
@@ -13713,7 +13762,6 @@ const mainApp = (function() {
             const translatedQuestion = result.question;
             const optionElements = answerOptionsEl.querySelectorAll('li');
 
-            // Запускаем анимацию только если это новый, некэшированный перевод и опция включена
             if (options.animateTranslation && !result.fromCache) {
                 const allAnimations = [
                     animateTextTransformation(questionTextEl, originalQuestion.text, translatedQuestion.text)
@@ -13728,27 +13776,28 @@ const mainApp = (function() {
                 await Promise.all(allAnimations);
             }
 
-            // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
-            // Вне зависимости от того, была ли анимация, теперь мы ПЕРЕРИСОВЫВАЕМ финальный результат,
-            // используя функцию, которая добавляет интерактивные <span> для триггеров.
-            questionTextEl.innerHTML = renderQuestionTextWithTriggers(translatedQuestion);
+            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            // 1. Отображаем отформатированный текст вопроса.
+            renderFormattedText(questionTextEl, translatedQuestion.text);
             
-            // Также обновляем текст вариантов ответов на случай, если анимации не было
-            optionElements.forEach((li, i) => {
-                li.textContent = translatedQuestion.options[i]?.text || '';
-            });
-
-            // И заново привязываем обработчики кликов к новым <span>
+            // 2. ВСЕГДА вызываем обработку триггеров.
+            wrapWordsForTriggers(questionTextEl, translatedQuestion);
+            
+            // 3. Слушатели кликов добавляем только в активном режиме.
             if (triggerWordModeEnabled) {
                 addTriggerClickListeners();
             }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+
+            // 4. Обновляем текст вариантов ответа.
+            optionElements.forEach((li, i) => {
+                renderFormattedText(li, translatedQuestion.options[i]?.text || '');
+            });
+            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
             
         } finally {
             translateQuestionBtn?.classList.remove('translating');
         }
     }
-
 
 
     function displayQuestionAsTest(question, options = { animateTranslation: true }) {
@@ -13775,16 +13824,18 @@ const mainApp = (function() {
         }
         questionTextEl.innerHTML = '';
 
-        // Рендерим текст + варианты
+        // === НАЧАЛО ГЛАВНОГО ИСПРАВЛЕНИЯ ===
+        // Теперь эта функция делегирует отображение контента другим, правильным функциям
         if (isTranslateModeEnabled) {
+            // Если включен перевод, вызываем функцию, которая сама все обработает
             displayTranslatedQuestion(question, options);
         } else {
-            questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
-            if (triggerWordModeEnabled) addTriggerClickListeners();
-            displayQuestionOptions(question);
+            // Если перевод выключен, вызываем нашу основную функцию рендеринга
+            displayQuestionContent(question);
         }
+        // === КОНЕЦ ГЛАВНОГО ИСПРАВЛЕНИЯ ===
 
-        // Вставляем картинку
+        // Вставляем картинку (эта логика остается)
         if (question.image && questionContainer) {
             const imgWrap = document.createElement('div');
             imgWrap.className = 'question-image-wrapper';
@@ -13796,17 +13847,15 @@ const mainApp = (function() {
             questionContainer.insertBefore(imgWrap, questionTextEl);
         }
 
-        // Восстановление состояния ответа
+        // Восстановление состояния ответа (эта логика остается)
         const answerState = userAnswers[currentQuestionIndex];
         if (answerState && answerState.answered) {
             const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
             feedbackAreaEl.className = `feedback-area ${answerState.correct ? 'correct' : 'incorrect'}-feedback`;
             
-            // === НАЧАЛО ИСПРАВЛЕНИЯ ===
             const textNode = document.createTextNode(feedbackText);
             const explainBtn = document.createElement('button');
             
-            // 1. Создаем кнопку точно так же, как в `handleAnswerSelect`, с тегом иконки
             explainBtn.innerHTML = `<i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}`;
             explainBtn.className = 'explain-btn';
             
@@ -13817,33 +13866,29 @@ const mainApp = (function() {
             feedbackAreaEl.appendChild(textNode);
             feedbackAreaEl.appendChild(explainBtn);
             
-            // 2. Сразу после добавления кнопки в DOM, вызываем Lucide для её отрисовки
             if (window.lucide) {
                 lucide.createIcons();
             }
-            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
         }
     }
 
 
 
-    /**
-     * Отображает СОДЕРЖИМОЕ вопроса (текст и варианты) БЕЗ картинки.
-     * Вызывается, когда у вопроса нет связанного изображения.
-     * @param {object} question - Объект вопроса для отображения.
-     */
     function displayQuestionContent(question) {
-        // Эта функция теперь отвечает ТОЛЬКО за отображение текста и вариантов.
-        questionTextEl.innerHTML = renderQuestionTextWithTriggers(question);
+        // 1. Используем универсальную функцию для рендеринга Markdown и KaTeX
+        renderFormattedText(questionTextEl, question.text);
 
+        // 2. ВСЕГДА вызываем обработку триггеров. Новая функция сама решит, какие классы добавить.
+        wrapWordsForTriggers(questionTextEl, question);
+        
+        // 3. Слушатели кликов добавляем по-прежнему только в активном режиме.
         if (triggerWordModeEnabled) {
             addTriggerClickListeners();
         }
         
-        // Вызываем новую вспомогательную функцию для отображения вариантов ответа.
+        // 4. Отображаем варианты ответов
         displayQuestionOptions(question);
     }
-    // ======== КОНЕЦ НОВОГО КОДА ДЛЯ ЗАМЕНЫ ========
 
 
     /**
@@ -13857,8 +13902,11 @@ const mainApp = (function() {
 
         question.options.forEach((option, index) => {
             const li = document.createElement('li');
-            li.textContent = option.text;
             li.dataset.index = index;
+            
+            // === ИЗМЕНЕНИЕ: Используем нашу новую универсальную функцию ===
+            renderFormattedText(li, option.text);
+            // === КОНЕЦ ИЗМЕНЕНИЯ ===
 
             if (answerState && answerState.answered) {
                 li.classList.add('answered');
@@ -13874,6 +13922,7 @@ const mainApp = (function() {
             answerOptionsEl.appendChild(li);
         });
     }
+
 
     // === НАЧАЛО НОВОГО КОДА ===
     function updateDownloadButtonsText() {
