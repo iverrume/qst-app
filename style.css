@@ -9083,9 +9083,11 @@ body.glass-dark #confirmModalYesBtn:hover {
     background: var(--button-primary-bg);
     color: var(--button-primary-text);
     border-bottom-right-radius: 6px;
-    max-width: 85%; /* <-- Ограничение ТОЛЬКО для пользователя */
-    padding: 8px 10px; /* <-- ВОТ ИЗМЕНЕНИЕ: Уменьшаем вертикальные отступы */
+    max-width: 85%;
+    padding: 8px 10px;
     line-height: 1.4; 
+    border-left: 5px solid transparent; /* <-- ДОБАВЛЕНО: Прозрачная рамка-заглушка */
+    transition: border-color 0.3s ease; /* <-- ДОБАВЛЕНО: Плавный переход цвета */
 }
 
 /* Сообщение ИИ: прижимаем влево, БЕЗ ограничения ширины */
@@ -9280,6 +9282,9 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
     display: flex;
     flex-direction: column;
 }
+
+
+
 .ai-message-container.is-user {
     align-items: flex-end;
 }
@@ -12237,3 +12242,8 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     border-width: 3px; /* Делаем спиннер чуть тоньше */
 }
 
+
+/* === Финальный стиль для окраски уголка сообщения === */
+.ai-message-container.is-user.has-color-indicator .ai-message.user {
+    border-left-color: var(--user-message-color);
+}

@@ -17560,7 +17560,6 @@ const mainApp = (function() {
     function drawOrUpdateScrollbar() {
         if (!aiChatMessages || !aiCustomScrollbar) return;
 
-        // Скрываем/показываем скроллбар в зависимости от необходимости
         const scrollHeight = aiChatMessages.scrollHeight;
         const clientHeight = aiChatMessages.clientHeight;
         aiCustomScrollbar.classList.toggle('hidden', scrollHeight <= clientHeight);
@@ -17569,36 +17568,45 @@ const mainApp = (function() {
         updateScrollbarThumbPosition();
         aiScrollbarDots.innerHTML = '';
 
-        const userMessages = Array.from(aiChatMessages.querySelectorAll('.ai-message-container.is-user'));
-        if (userMessages.length === 0) return;
+        // === НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ===
+        
+        // 1. Получаем все DOM-элементы пользовательских сообщений со страницы.
+        const userMessageElements = aiChatMessages.querySelectorAll('.ai-message-container.is-user');
+        if (userMessageElements.length === 0) return;
 
-        // --- НАЧАЛО НОВОЙ ЛОГИКИ КЛАСТЕРИЗАЦИИ ---
+        // 2. Создаем карту для быстрого поиска сообщения по его DOM ID.
+        let currentChatMap = new Map();
+        const currentChat = (currentAIChatType === 'public') ? currentPublicChatMessages : allAIChats[currentAIChatId];
+        if (currentChat) {
+            currentChat.forEach((msg, index) => {
+                const domId = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? msg.id : `${currentAIChatId}_${index}`)}`;
+                currentChatMap.set(domId, msg);
+            });
+        }
 
         const clusters = [];
-        const MIN_PIXEL_DISTANCE = 25; // Минимальное расстояние для объединения в кластер
+        const MIN_PIXEL_DISTANCE = 25;
         const trackHeight = aiCustomScrollbar.clientHeight;
         const minPercentDistance = (MIN_PIXEL_DISTANCE / trackHeight) * 100;
 
-        userMessages.forEach(msgContainer => {
-            const indexStr = msgContainer.id.split('_').pop() || msgContainer.id.split('-').pop();
-            const index = parseInt(indexStr, 10);
-            
-            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
-            if (isNaN(index)) {
-                return; // Пропускаем элементы без валидного индекса (например, 'typing...')
+        userMessageElements.forEach(msgContainer => {
+            const domId = msgContainer.id;
+            // 3. Находим соответствующее сообщение в нашей карте.
+            const messageData = currentChatMap.get(domId);
+            // Находим реальный индекс сообщения в его массиве.
+            const index = currentChat ? currentChat.indexOf(messageData) : -1;
+
+            if (index === -1) {
+                return; // Пропускаем, если по какой-то причине сообщение не найдено
             }
-            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
             const topPercent = (msgContainer.offsetTop / scrollHeight) * 100;
-
             const lastCluster = clusters[clusters.length - 1];
 
-            // Проверяем, можно ли добавить точку к последнему кластеру
             if (lastCluster && (topPercent - lastCluster.endPercent) < minPercentDistance) {
                 lastCluster.indices.push(index);
-                lastCluster.endPercent = topPercent; // Обновляем "хвост" кластера
+                lastCluster.endPercent = topPercent;
             } else {
-                // Создаем новый кластер
                 clusters.push({
                     startPercent: topPercent,
                     endPercent: topPercent,
@@ -17606,10 +17614,8 @@ const mainApp = (function() {
                 });
             }
         });
+        // === КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ===
 
-        // --- КОНЕЦ ЛОГИКИ КЛАСТЕРИЗАЦИИ ---
-
-        // Рендерим точки или кластеры
         clusters.forEach(cluster => {
             const dot = document.createElement('div');
             dot.className = 'scrollbar-dot';
@@ -17623,24 +17629,19 @@ const mainApp = (function() {
             const midPercent = (cluster.startPercent + cluster.endPercent) / 2;
             dot.style.top = `${midPercent}%`;
 
-            // --- ИСПРАВЛЕНИЕ СИНХРОНИЗАЦИИ ЦВЕТА (v2) ---
             const firstColoredMessage = cluster.indices
-                .map(index => getAIChatMessageByIndex(index)) // Используем нашу универсальную функцию
+                .map(index => getAIChatMessageByIndex(index))
                 .find(msg => msg && msg.dotColor);
 
             if (firstColoredMessage) {
                 dot.style.backgroundColor = firstColoredMessage.dotColor;
-                // Для кластеров также меняем цвет тени, чтобы он соответствовал
                 if (dot.classList.contains('is-cluster')) {
                     dot.style.boxShadow = `0 0 5px ${firstColoredMessage.dotColor}`;
                 }
             }
-            // --- КОНЕЦ ИСПРАВЛЕНИЯ СИНХРОНИЗАЦИИ ЦВЕТА ---
-            
             aiScrollbarDots.appendChild(dot);
         });
     }
-
 
     // Глобальная переменная для отслеживания активной подсказки
     let activePreviewTooltip = null;
@@ -18774,7 +18775,17 @@ const mainApp = (function() {
             currentChat.forEach((msg, index) => {
                 try {
                     const messageContainer = document.createElement('div');
+                    
+                    // === НАЧАЛО ИСПРАВЛЕНИЯ: Правильный порядок присвоения классов ===
+                    // Сначала присваиваем основные классы
                     messageContainer.className = `ai-message-container is-${msg.role}`;
+                    // И только потом добавляем дополнительный класс, если нужно
+                    if (msg.role === 'user' && msg.dotColor) {
+                        messageContainer.style.setProperty('--user-message-color', msg.dotColor);
+                        messageContainer.classList.add('has-color-indicator');
+                    }
+                    // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
                     messageContainer.id = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? msg.id : `${currentAIChatId}_${index}`)}`;
                     
                     const replyContextContainer = document.createElement('div');
@@ -18820,16 +18831,11 @@ const mainApp = (function() {
                     }
                     messageEl.appendChild(contentWrapper);
         
-
-
-
-                    // === НАЧАЛО БЛОКА НА ЗАМЕНУ ===
                     if (msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0) {
-                        // Создаем контейнер-сетку
                         const attachmentsGrid = document.createElement('div');
                         attachmentsGrid.className = 'ai-message-attachments-grid';
 
-                        let attachmentsHTML = ''; // Начинаем с пустой строки для всех вложений
+                        let attachmentsHTML = '';
                         msg.attachments.forEach((attachment, attachmentIndex) => {
                             const { name, mimeType, thumbnailDataUrl } = attachment;
                             const type = mimeType.split('/')[0] || 'файл';
@@ -18850,13 +18856,9 @@ const mainApp = (function() {
                         });
                         
                         attachmentsGrid.innerHTML = attachmentsHTML;
-                        // Добавляем готовую сетку в основной "пузырь" сообщения
                         messageEl.appendChild(attachmentsGrid);
                     }
-                    // === КОНЕЦ БЛОКА НА ЗАМЕНУ ===
         
-
-
                     if (msg.role === 'model' && msg.generatedTest) {
                         const testData = msg.generatedTest;
                         const attachmentHTML = `
@@ -18937,20 +18939,14 @@ const mainApp = (function() {
                 }
             }
             updateScrollToBottomButtonVisibility();
-        // --- НАЧАЛО НОВОГО КОДА: Выполняем отложенную подсветку ---
             if (pendingHighlight && getEl(pendingHighlight.messageDomId)) {
-                // Если есть задача на подсветку и нужный элемент уже отрисован, выполняем ее.
                 highlightAndScrollToMessage(pendingHighlight.messageDomId, pendingHighlight.query);
-                // Сбрасываем задачу, чтобы она не выполнилась снова.
                 pendingHighlight = null;
             }
-            // --- КОНЕЦ НОВОГО КОДА ---
         } finally {
-           
+            console.groupEnd();
         }
     }
-    
-
 
 
 
