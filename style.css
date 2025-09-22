@@ -8892,16 +8892,17 @@ body.glass-dark #confirmModalYesBtn:hover {
 
 /* Применяем стили только на экранах шире 800px (планшеты и ПК) */
 @media (min-width: 800px) {
-    /* Ограничиваем ширину и центрируем и область сообщений, и область ввода */
+    /* Ограничиваем ширину и центрируем все ключевые элементы чата */
     .ai-chat-messages,
-    .ai-chat-input-area {
+    .ai-chat-input-area,
+    .ai-chat-search-container,
+    .ai-chat-search-results {
         max-width: 800px; /* Максимальная ширина контента */
         margin-left: auto;
         margin-right: auto;
         width: 100%; /* Важно для правильной работы внутри max-width */
     }
 }
-
 
 /* Шапка модального окна чата */
 .ai-chat-header {
@@ -10426,7 +10427,33 @@ body.claude-mode .ai-chat-history-item.active {
   transform: translateX(16px);
 }
 
-/* Уменьшаем кнопку справа */
+/* Главный контейнер в футере (без изменений, но для контекста) */
+.ai-main-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 0 5px 2px 5px;
+    border-bottom: 1px solid var(--dashed-border-color);
+    margin-bottom: 6px;
+}
+
+/* === НАЧАЛО НОВОГО КОДА === */
+/* Новая левая группа для поисковых элементов */
+.ai-chat-footer-main-group {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Расстояние между "Поиск в Google" и иконкой лупы */
+}
+/* === КОНЕЦ НОВОГО КОДА === */
+
+/* Правая группа для остальных кнопок */
+.ai-chat-footer-actions {
+    display: flex;
+    gap: 4px; /* Компактный отступ между кнопками */
+}
+
+/* Стили для всех кнопок-иконок в футере */
 .ai-main-controls .ai-action-btn {
     width: 30px;
     height: 30px;
@@ -12041,3 +12068,172 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     overflow: hidden;        /* Скрываем все, что не помещается */
     text-overflow: ellipsis; /* Добавляем "..." в конце */
 }
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ГЛОБАЛЬНОГО ПОИСКА В AI-ЧАТЕ    === */
+/* ======================================================= */
+
+/* Контейнер для поля поиска, который появляется внизу */
+.ai-chat-search-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--container-bg-color);
+    padding: 8px 15px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1002;
+    position: relative; /* <-- ДОБАВЛЕНА ЭТА СТРОКА */
+}
+
+/* Поле ввода для поиска */
+#aiChatSearchInputGlobal {
+    flex-grow: 1;
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.95em;
+    color: var(--text-color);
+    outline: none;
+    transition: all 0.2s ease;
+}
+#aiChatSearchInputGlobal:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 15%, transparent);
+}
+
+/* Кнопка закрытия поиска */
+#aiCloseSearchBtn {
+    flex-shrink: 0;
+}
+
+/* Контейнер для результатов поиска (появляется над полем ввода) */
+/* Контейнер для результатов поиска (появляется над полем ввода) */
+.ai-chat-search-results {
+    position: absolute;
+    bottom: calc(100% + 5px); /* Располагаем над родительским контейнером */
+    left: 0;   /* <-- ИЗМЕНЕНИЕ */
+    right: 0;  /* <-- ИЗМЕНЕНИЕ */
+    max-height: 250px;
+    overflow-y: auto;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 -5px 20px var(--shadow-light-color);
+    z-index: -1;
+}
+
+/* Элемент в списке результатов */
+.search-result-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--dashed-border-color);
+}
+.search-result-item:last-child {
+    border-bottom: none;
+}
+.search-result-item:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+/* Заголовок (название чата) */
+.search-result-title {
+    font-weight: 500;
+    font-size: 0.9em;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+
+/* Подсветка найденного текста */
+.search-highlight {
+    background-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--text-color);
+    font-weight: bold;
+    border-radius: 3px;
+    padding: 1px 2px;
+}
+
+/* Сообщение, если ничего не найдено */
+.search-results-empty {
+    padding: 15px;
+    text-align: center;
+    color: var(--secondary-text-color);
+    font-style: italic;
+}
+
+.search-result-snippet-list {
+    margin-top: 6px;
+    padding-left: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.search-result-snippet {
+    font-size: 0.85em;
+    color: var(--secondary-text-color);
+    line-height: 1.4;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.search-result-snippet:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+.search-result-snippet {
+    -webkit-tap-highlight-color: transparent; /* iOS, Android */
+    -webkit-touch-callout: none; /* Запрещает меню при долгом нажатии на iOS */
+    user-select: none; /* Запрещает выделение текста */
+}
+
+.search-result-snippet:focus,
+.search-result-snippet:focus-visible,
+.search-result-snippet:active {
+    outline: none !important; /* !important для гарантии */
+    box-shadow: none !important; /* Убираем любые тени при фокусе */
+    -webkit-appearance: none; /* Сброс стандартных стилей Webkit */
+    -moz-appearance: none; /* Сброс стандартных стилей Mozilla */
+    appearance: none; /* Общий сброс */
+}
+
+.search-result-snippet.active-highlight {
+    background-color: color-mix(in srgb, var(--accent) 25%, transparent);
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.search-highlight.temp-active {
+    animation: highlight-fade-ai 1.5s ease-out;
+    box-shadow: 0 0 8px 3px var(--accent);
+}
+
+/* === Стили для нового индикатора загрузки в результатах поиска === */
+.search-results-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    gap: 15px;
+    color: var(--secondary-text-color);
+    font-size: 1em;
+}
+
+.search-results-loader .loading-spinner {
+    width: 30px;
+    height: 30px;
+    border-width: 3px; /* Делаем спиннер чуть тоньше */
+}
+

@@ -736,16 +736,28 @@
 
 
 
+
+
                         <div class="ai-main-controls">
-                            <div class="ai-setting-group">
-                                <label for="aiGroundingToggleMain" data-lang-key="ai_grounding_label">Поиск в Google</label>
-                                <label class="ai-toggle-switch">
-                                    <input type="checkbox" id="aiGroundingToggleMain">
-                                    <span class="ai-toggle-slider"></span>
-                                </label>
+                            <!-- Левая группа: все, что связано с поиском -->
+                            <div class="ai-chat-footer-main-group">
+                                <div class="ai-setting-group">
+                                    <label for="aiGroundingToggleMain" data-lang-key="ai_grounding_label">Поиск в Google</label>
+                                    <label class="ai-toggle-switch">
+                                        <input type="checkbox" id="aiGroundingToggleMain">
+                                        <span class="ai-toggle-slider"></span>
+                                    </label>
+                                </div>
+
+
+                                
                             </div>
-                            <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                            
+                            <!-- Правая группа: действия с диалогом -->
                             <div class="ai-chat-footer-actions">
+                                <button id="aiShowSearchBtn" class="ai-action-btn" title="Поиск по всем чатам">
+                                    <i data-lucide="search"></i>
+                                </button>
                                 <button id="aiGenerateTestFromDialogBtn" class="ai-action-btn" title="Создать тест из всего диалога">
                                     <i data-lucide="clipboard-list"></i>
                                 </button>
@@ -753,13 +765,13 @@
                                     <i data-lucide="user-round-search"></i>
                                 </button>
                             </div>
-                            <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
                         </div>
 
-
-
-
                         <div id="aiReplyPanel" class="ai-reply-panel hidden">
+
+
+
+                            
                             <div class="ai-reply-info">
                                 <span class="ai-reply-title">Ответ на сообщение:</span>
                                 <p id="aiReplyText" class="ai-reply-snippet"></p>
@@ -783,6 +795,15 @@
                             </div>
                         </div>
                     </div>
+                                        <!-- === НАЧАЛО НОВОГО КОДА: Глобальный поиск по чатам === -->
+                    <div id="aiChatSearchContainer" class="ai-chat-search-container hidden">
+                        <input type="text" id="aiChatSearchInputGlobal" placeholder="Поиск по всем чатам...">
+                        <button id="aiCloseSearchBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
+                        <div id="aiChatSearchResults" class="ai-chat-search-results hidden">
+                            <!-- Результаты поиска будут здесь -->
+                        </div>
+                    </div>
+                    <!-- === КОНЕЦ НОВОГО КОДА === -->
                 </div>
             </div>
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>

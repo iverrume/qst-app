@@ -43,7 +43,30 @@
 
 const ChatModule = (function() {
     'use strict';
+// === НАЧАЛО НОВОГО КОДА: Вспомогательная функция Debounce ===
+    /**
+     * Создает и возвращает новую debounced-версию переданной функции.
+     */
+    function debounce(func, wait) {
+        let timeout;
 
+        const debounced = function(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+
+        // Добавляем метод для отмены
+        debounced.cancel = function() {
+            clearTimeout(timeout);
+        };
+
+        return debounced;
+    }
+    // === КОНЕЦ НОВОГО КОДА ===
     const getEl = (id) => document.getElementById(id);
 
     const LOCALE_MAP = {
@@ -985,18 +1008,6 @@ const ChatModule = (function() {
         return `${messageId}_${lang}`;
     }
 
-    // --- НАЧАЛО НОВОГО КОДА: Вставляем функции сюда ---
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    };
 
     function handleSearch(event) {
         const query = event.target.value.toLowerCase().trim();
@@ -5833,7 +5844,30 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91g
 
 const mainApp = (function() {
     'use strict';
+// === НАЧАЛО НОВОГО КОДА: Вспомогательная функция Debounce ===
+    /**
+     * Создает и возвращает новую debounced-версию переданной функции.
+     */
+    function debounce(func, wait) {
+        let timeout;
 
+        const debounced = function(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+
+        // Добавляем метод для отмены
+        debounced.cancel = function() {
+            clearTimeout(timeout);
+        };
+
+        return debounced;
+    }
+    // === КОНЕЦ НОВОГО КОДА ===
 
     const THEMES = {
         'glass-dark': { name: 'Стекло (тёмная)', icon: '🔮' },
@@ -7203,6 +7237,7 @@ const mainApp = (function() {
     // --- State Variables ---
     let activeSourceTooltip = null;
     let allParsedQuestions = [];
+    let pendingHighlight = null; // Для отложенной подсветки после рендеринга
     let questionsForCurrentQuiz = [];
     let currentQuestionIndex = 0;
     let userAnswers = [];
@@ -10537,43 +10572,31 @@ const mainApp = (function() {
 
 
     function handleAnswerSelect(event) {
-        // 1. Проверяем, не был ли уже дан ответ на этот вопрос
         if (userAnswers[currentQuestionIndex].answered) return;
 
-        // 2. Получаем данные о клике и текущем вопросе
-        const selectedOptionLi = event.target;
+        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+        // Ищем ближайший родительский элемент LI, чтобы всегда получать правильный индекс
+        const selectedOptionLi = event.target.closest('li');
+        if (!selectedOptionLi) return; // Если клик был мимо LI, ничего не делаем
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
         const selectedIndex = parseInt(selectedOptionLi.dataset.index);
         
-        // --- НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ ПРОВЕРКИ ---
-        
-        // Всегда получаем оригинальный (непереведенный) вопрос как источник истины
         const originalQuestion = questionsForCurrentQuiz[currentQuestionIndex];
-        
-        // По умолчанию, вопрос для проверки - это оригинал
         let questionForValidation = originalQuestion;
 
-        // Если режим перевода активен, пытаемся найти переведенную версию для ПРОВЕРКИ
         if (isTranslateModeEnabled) {
             const lang = localStorage.getItem('appLanguage') || 'ru';
             const cacheKey = getCacheKey(originalQuestion.originalIndex, lang);
-            
             if (currentQuizTranslations.has(cacheKey)) {
-                // Если перевод есть в кэше, используем его для проверки
                 questionForValidation = currentQuizTranslations.get(cacheKey);
             }
-            // Если перевода в кэше нет (например, он еще грузится),
-            // проверка пройдет по оригинальному вопросу, что предотвратит ошибку.
         }
 
-        // Проверяем правильность, используя ВЫБРАННЫЙ для валидации объект вопроса
         const isCorrect = selectedIndex === questionForValidation.correctAnswerIndex;
 
-        // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ПРОВЕРКИ ---
-
-        // 3. Сохраняем результат ответа пользователя
         userAnswers[currentQuestionIndex] = { answered: true, correct: isCorrect, selectedOptionIndex: selectedIndex };
 
-        // 4. Обновляем интерфейс в зависимости от правильности ответа
         if (isCorrect) {
             selectedOptionLi.classList.add('correct');
             feedbackAreaEl.textContent = _('feedback_correct');
@@ -10584,41 +10607,33 @@ const mainApp = (function() {
             feedbackAreaEl.textContent = _('feedback_incorrect');
             feedbackAreaEl.className = 'feedback-area incorrect-feedback';
 
-            // Подсвечиваем правильный ответ, используя данные из объекта для валидации
             const correctLi = answerOptionsEl.querySelector(`li[data-index="${questionForValidation.correctAnswerIndex}"]`);
             if (correctLi) correctLi.classList.add('actual-correct');
 
-            // Если включен режим обратной связи, сохраняем данные об ошибке
             if (quizSettings.feedbackMode) {
-                // Для сохранения ошибки используем ВСЕГДА ОРИГИНАЛЬНЫЙ вопрос для консистентности
                 let errorQstBlock = `? ${originalQuestion.text.replace(/\n/g, ' ')}\n`;
-
                 originalQuestion.options.forEach((option, index) => {
                     const prefix = (index === originalQuestion.correctAnswerIndex) ? '+' : '-';
                     errorQstBlock += `${prefix} ${option.text.replace(/\n/g, ' ')}\n`;
                 });
-
                 incorrectlyAnsweredQuestionsData.push(errorQstBlock, "");
 
-                // Для ИИ-анализа также используем оригинальный вопрос, но ответ пользователя берем из того, что он видел
+                const userAnswerText = questionForValidation.options[selectedIndex] ? questionForValidation.options[selectedIndex].text : "Ответ не определен";
                 const errorDetails = {
                   questionText: originalQuestion.text,
                   correctAnswer: originalQuestion.options[originalQuestion.correctAnswerIndex].text,
-                  userAnswer: questionForValidation.options[selectedIndex].text // Ответ пользователя из того языка, на котором он отвечал
+                  userAnswer: userAnswerText
                 };
                 currentQuizErrorData.push(errorDetails);
             }
         }
 
-        // 5. Блокируем все варианты ответа, чтобы предотвратить повторный клик
         Array.from(answerOptionsEl.children).forEach(li => {
             li.removeEventListener('click', handleAnswerSelect);
             li.classList.add('answered');
         });
       
-        // 6. Создаем панель обратной связи с кнопкой "Объяснить"
         const feedbackText = isCorrect ? _('feedback_correct') : _('feedback_incorrect');
-        
         const explainBtn = document.createElement('button');
         explainBtn.innerHTML = `<i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}`;
         explainBtn.className = 'explain-btn';
@@ -10626,33 +10641,27 @@ const mainApp = (function() {
         if (isCorrect) {
             explainBtn.onclick = () => showAIExplanation(originalQuestion, null, originalQuestion.image);
         } else {
-            const incorrectAnswerText = questionForValidation.options[selectedIndex].text;
+            const incorrectAnswerText = questionForValidation.options[selectedIndex] ? questionForValidation.options[selectedIndex].text : null;
             explainBtn.onclick = () => showAIExplanation(originalQuestion, incorrectAnswerText, originalQuestion.image);
         }
         
-        // Очищаем старое содержимое и добавляем новые элементы
         feedbackAreaEl.innerHTML = ''; 
         const textNode = document.createTextNode(feedbackText);
         feedbackAreaEl.appendChild(textNode);
         feedbackAreaEl.appendChild(explainBtn);
 
-        // === ВОТ ОНО, ИСПРАВЛЕНИЕ! ===
-        // Принудительно перерисовываем иконки Lucide, чтобы наша новая иконка появилась.
         if (window.lucide) {
             lucide.createIcons();
         }
       
-        // 7. Обновляем все остальные элементы интерфейса
         updateScoreDisplay();
         updateNavigationButtons();
         updateQuickNavButtons();
           
-        // 8. Если включен быстрый режим, переходим к следующему вопросу с задержкой
         if (quickModeEnabled && currentQuestionIndex < questionsForCurrentQuiz.length - 1) {
             setTimeout(() => handleNextButtonClick(), QUICK_MODE_DELAY);
         }
     }
-
 
 
     function handleNextButtonClick() {
@@ -13801,7 +13810,6 @@ const mainApp = (function() {
 
 
     function displayQuestionAsTest(question, options = { animateTranslation: true }) {
-        // UI
         feedbackAreaEl.className = 'feedback-area';
         getEl('score').style.visibility = 'visible';
         copyQuestionBtnQuiz?.classList.remove('hidden');
@@ -13809,13 +13817,11 @@ const mainApp = (function() {
         translateQuestionBtn?.classList.remove('hidden');
         webSearchDropdown?.classList.remove('hidden');
 
-        // Номер вопроса
         const questionNumber = questionsForCurrentQuiz
             .slice(0, currentQuestionIndex + 1)
             .filter(q => q.type !== 'category').length;
         currentQuestionNumEl.textContent = questionNumber;
 
-        // Контейнеры
         const questionContainer = questionTextEl?.parentElement;
 
         if (questionContainer) {
@@ -13824,18 +13830,12 @@ const mainApp = (function() {
         }
         questionTextEl.innerHTML = '';
 
-        // === НАЧАЛО ГЛАВНОГО ИСПРАВЛЕНИЯ ===
-        // Теперь эта функция делегирует отображение контента другим, правильным функциям
         if (isTranslateModeEnabled) {
-            // Если включен перевод, вызываем функцию, которая сама все обработает
             displayTranslatedQuestion(question, options);
         } else {
-            // Если перевод выключен, вызываем нашу основную функцию рендеринга
             displayQuestionContent(question);
         }
-        // === КОНЕЦ ГЛАВНОГО ИСПРАВЛЕНИЯ ===
 
-        // Вставляем картинку (эта логика остается)
         if (question.image && questionContainer) {
             const imgWrap = document.createElement('div');
             imgWrap.className = 'question-image-wrapper';
@@ -13847,7 +13847,6 @@ const mainApp = (function() {
             questionContainer.insertBefore(imgWrap, questionTextEl);
         }
 
-        // Восстановление состояния ответа (эта логика остается)
         const answerState = userAnswers[currentQuestionIndex];
         if (answerState && answerState.answered) {
             const feedbackText = answerState.correct ? _('feedback_correct') : _('feedback_incorrect');
@@ -13859,7 +13858,10 @@ const mainApp = (function() {
             explainBtn.innerHTML = `<i data-lucide="brain-circuit"></i> ${_('ai_explain_button')}`;
             explainBtn.className = 'explain-btn';
             
-            const incorrectAnswerText = !answerState.correct ? question.options[answerState.selectedOptionIndex].text : null;
+            // === ИЗМЕНЕНИЕ №3: Добавляем проверку существования и здесь ===
+            const incorrectAnswerText = !answerState.correct && question.options[answerState.selectedOptionIndex] 
+                ? question.options[answerState.selectedOptionIndex].text 
+                : null;
             explainBtn.onclick = () => showAIExplanation(question, incorrectAnswerText, question.image);
             
             feedbackAreaEl.innerHTML = '';
@@ -13904,9 +13906,7 @@ const mainApp = (function() {
             const li = document.createElement('li');
             li.dataset.index = index;
             
-            // === ИЗМЕНЕНИЕ: Используем нашу новую универсальную функцию ===
             renderFormattedText(li, option.text);
-            // === КОНЕЦ ИЗМЕНЕНИЯ ===
 
             if (answerState && answerState.answered) {
                 li.classList.add('answered');
@@ -14760,6 +14760,10 @@ const mainApp = (function() {
     let isAIResponding = false;
     let isAIChatExpanded = false;
     let aiReplyContext = null; // Для хранения контекста ответа
+    // === НАЧАЛО НОВОГО КОДА ===
+    let aiShowSearchBtn, aiChatSearchContainer, aiChatSearchInputGlobal, aiCloseSearchBtn, aiChatSearchResults;
+    let debouncedGlobalSearch;
+    // === КОНЕЦ НОВОГО КОДА ===
     let unlockedAudiences = new Set();
 
     let currentPublicChatMessages = []; // Хранит сообщения текущей открытой Аудитории
@@ -15287,6 +15291,47 @@ const mainApp = (function() {
                 behavior: 'smooth'
             });
         });
+        // === НАЧАЛО НОВОГО КОДА ===
+        aiShowSearchBtn = getEl('aiShowSearchBtn');
+        aiChatSearchContainer = getEl('aiChatSearchContainer');
+        aiChatSearchInputGlobal = getEl('aiChatSearchInputGlobal');
+        aiCloseSearchBtn = getEl('aiCloseSearchBtn');
+        aiChatSearchResults = getEl('aiChatSearchResults');
+
+
+
+        debouncedGlobalSearch = debounce(performGlobalChatSearch, 300);
+
+        aiShowSearchBtn?.addEventListener('click', toggleGlobalChatSearch);
+        aiCloseSearchBtn?.addEventListener('click', toggleGlobalChatSearch);
+
+        // === НАЧАЛО НОВОГО, НАДЕЖНОГО ОБРАБОТЧИКА ===
+        aiChatSearchInputGlobal?.addEventListener('input', () => {
+            const query = aiChatSearchInputGlobal.value.trim();
+
+            if (query.length < 3) {
+                // Если текста мало или нет — НЕМЕДЛЕННО отменяем поиск,
+                // очищаем и скрываем результаты.
+                debouncedGlobalSearch.cancel();
+                aiChatSearchResults.innerHTML = '';
+                aiChatSearchResults.classList.add('hidden');
+            } else {
+                // Если текста достаточно — запускаем поиск с задержкой.
+                debouncedGlobalSearch();
+            }
+        });
+        // === КОНЕЦ НОВОГО, НАДЕЖНОГО ОБРАБОТЧИКА ===
+
+
+        
+
+        aiChatSearchResults?.addEventListener('click', (e) => {
+            const item = e.target.closest('.search-result-item');
+            if(item) {
+                handleSearchResultClick(item);
+            }
+        });
+        // === КОНЕЦ НОВОГО КОДА ===
         if (window.lucide) {
             lucide.createIcons();
         }
@@ -15710,6 +15755,387 @@ const mainApp = (function() {
         const incorrectCategoryRegex = /^# (.*)/gm;
         return qstText.replace(incorrectCategoryRegex, '#_#$1#_#');
     }
+
+    function formatAICategories(qstText) {
+        if (!qstText) return '';
+        // Регулярное выражение находит строки, которые начинаются с # и пробела,
+        // и заменяет их, оборачивая текст в #_#...#_#
+        const incorrectCategoryRegex = /^# (.*)/gm;
+        return qstText.replace(incorrectCategoryRegex, '#_#$1#_#');
+    }
+
+    // === НАЧАЛО НОВОГО КОДА ===
+
+    /**
+     * Показывает или скрывает панель глобального поиска по чатам.
+     */
+    function toggleGlobalChatSearch() {
+        if (!aiChatSearchContainer) return;
+        
+        const isHidden = aiChatSearchContainer.classList.toggle('hidden');
+        aiChatSearchResults.classList.add('hidden'); // Всегда скрываем результаты при переключении
+        aiChatSearchInputGlobal.value = '';
+        // Убираем активную подсветку в списке при закрытии
+        aiChatSearchResults.querySelector('.active-highlight')?.classList.remove('active-highlight');
+
+        if (!isHidden) {
+            aiChatSearchInputGlobal.focus();
+        }
+    }
+    
+    /**
+     * Выполняет поиск по всем приватным и публичным чатам.
+     */
+    async function performGlobalChatSearch() {
+        const query = aiChatSearchInputGlobal.value.trim().toLowerCase();
+        
+        if (query.length < 3) {
+            // Вызываем рендер с пустым массивом и пустым запросом для очистки
+            renderGlobalSearchResults([], ''); 
+            return;
+        }
+
+        // Показываем панель результатов и вставляем в нее индикатор загрузки
+        aiChatSearchResults.innerHTML = `
+            <div class="search-results-loader">
+                <div class="loading-spinner"></div>
+                <p>Поиск "${escapeHTML(query)}"...</p>
+            </div>
+        `;
+        // <<< ГЛАВНОЕ ИЗМЕНЕНИЕ: Показываем панель только СЕЙЧАС >>>
+        aiChatSearchResults.classList.remove('hidden');
+
+        try {
+            // --- Задача 1: Поиск по приватным чатам (локально и быстро) ---
+            const searchPrivateChats = () => {
+                const privateResults = [];
+                for (const chatId in allAIChats) {
+                    const chat = allAIChats[chatId];
+                    const chatTitle = getAIChatTitle(chatId);
+                    
+                    chat.forEach((msg, index) => {
+                        if (msg.content && typeof msg.content === 'string' && msg.content.toLowerCase().includes(query)) {
+                            privateResults.push({
+                                type: 'private',
+                                chatId: chatId,
+                                messageDomId: `ai-msg-private-${chatId}_${index}`,
+                                title: chatTitle,
+                                content: msg.content
+                            });
+                        }
+                    });
+                }
+                return privateResults;
+            };
+
+            // --- Задача 2: Поиск по всем публичным чатам (через сервер) ---
+            const searchPublicChats = async () => {
+                if (!currentUser || !db) return []; // Не выполняем, если пользователь не вошел
+                
+                try {
+                    const response = await fetch(googleAppScriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'globalPublicSearch',
+                            query: query,
+                            userId: currentUser.uid // Отправляем ID пользователя для проверки доступов
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        return result.results;
+                    } else {
+                        console.error("Ошибка публичного поиска на сервере:", result.error);
+                        return []; // Возвращаем пустой массив в случае ошибки
+                    }
+                } catch (error) {
+                    console.error("Сетевая ошибка при публичном поиске:", error);
+                    return [];
+                }
+            };
+
+            // --- Выполняем обе задачи одновременно для максимальной скорости ---
+            const [privateResults, publicResults] = await Promise.all([
+                searchPrivateChats(),
+                searchPublicChats()
+            ]);
+
+            // Объединяем результаты
+            const allResults = [...publicResults, ...privateResults];
+            
+            // Отображаем
+            renderGlobalSearchResults(allResults, query);
+
+        } catch (error) {
+            console.error("Критическая ошибка при глобальном поиске:", error);
+            aiChatSearchResults.innerHTML = `<div class="search-results-empty">Произошла ошибка поиска.</div>`;
+        } finally {
+
+        }
+    }
+
+
+
+    /**
+     * Отображает результаты глобального поиска.
+     */
+    function renderGlobalSearchResults(results, query) {
+        aiChatSearchResults.innerHTML = '';
+
+        if (results.length === 0) {
+            const message = query ? "Ничего не найдено" : ""; // Если запроса нет, показываем пустоту
+            aiChatSearchResults.innerHTML = `<div class="search-results-empty">${message}</div>`;
+            // Если сообщения нет (пустой запрос), можно скрыть панель полностью
+            aiChatSearchResults.classList.toggle('hidden', !query); 
+            return;
+        }
+
+        // Группируем результаты по ID сообщения
+        const groupedResults = results.reduce((acc, res) => {
+            if (!acc[res.messageDomId]) {
+                acc[res.messageDomId] = {
+                    ...res,
+                    snippets: []
+                };
+            }
+            acc[res.messageDomId].snippets.push(res.content);
+            return acc;
+        }, {});
+
+        const queryRegex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+        Object.values(groupedResults).forEach(group => {
+            const itemContainer = document.createElement('div');
+            itemContainer.className = 'search-result-item';
+
+            // Создаем кликабельные сниппеты для каждого совпадения
+            let snippetIndexCounter = 0;
+            const snippetsHTML = group.content.split(queryRegex).reduce((html, part, index) => {
+                if (part && index % 2 === 1) {
+                    const snippetContextStart = Math.max(0, group.content.lastIndexOf(' ', group.content.toLowerCase().indexOf(part.toLowerCase()) - 20));
+                    const snippetContextEnd = Math.min(group.content.length, group.content.toLowerCase().indexOf(part.toLowerCase()) + part.length + 20);
+                    let context = group.content.substring(snippetContextStart, snippetContextEnd).trim();
+                    if (snippetContextStart > 0) context = '... ' + context;
+                    if (snippetContextEnd < group.content.length) context += ' ...';
+                    
+                    const highlightedContext = escapeHTML(context).replace(queryRegex, '<span class="search-highlight">$1</span>');
+                    
+                    // Каждый сниппет - это отдельный кликабельный элемент
+                    html += `<div class="search-result-snippet" 
+                                  data-type="${group.type}" 
+                                  data-chat-id="${group.chatId || ''}" 
+                                  data-audience-id="${group.audienceId || ''}" 
+                                  data-topic-id="${group.topicId || ''}" 
+                                  data-message-dom-id="${group.messageDomId}"
+                                  data-snippet-index="${snippetIndexCounter++}">
+                                ${highlightedContext}
+                           </div>`;
+                }
+                return html;
+            }, '');
+
+            itemContainer.innerHTML = `
+                <div class="search-result-title">${escapeHTML(group.title)}</div>
+                <div class="search-result-snippet-list">${snippetsHTML}</div>
+            `;
+            aiChatSearchResults.appendChild(itemContainer);
+        });
+
+        aiChatSearchResults.classList.remove('hidden');
+
+        // Используем делегирование событий для кликов по сниппетам
+        aiChatSearchResults.onclick = function(event) {
+            const snippet = event.target.closest('.search-result-snippet');
+            if (snippet) {
+                // Убираем подсветку со старого активного сниппета
+                aiChatSearchResults.querySelector('.active-highlight')?.classList.remove('active-highlight');
+                // Подсвечиваем новый
+                snippet.classList.add('active-highlight');
+                handleSearchResultClick(snippet);
+            }
+        };
+    }
+
+    /**
+     * Обрабатывает клик по результату поиска.
+     */
+    async function handleSearchResultClick(item) {
+        // Убираем старую подсветку, если она была
+        document.querySelectorAll('.search-highlight.temp-active').forEach(el => el.classList.remove('temp-active'));
+        
+        const { type, chatId, audienceId, topicId, messageDomId, snippetIndex } = item.dataset;
+        const query = aiChatSearchInputGlobal.value.trim();
+
+        const switchToChatIfNeeded = async () => {
+            let chatHasSwitched = false;
+            if (type === 'private' && currentAIChatId !== chatId) {
+                await switchToAIChat(chatId, null, 'private');
+                chatHasSwitched = true;
+            } else if (type === 'public' && (currentAudienceId !== audienceId || currentTopicId !== topicId)) {
+                await switchToAIChat(audienceId, topicId, 'public');
+                chatHasSwitched = true;
+            }
+            return chatHasSwitched;
+        };
+
+        const highlightTarget = () => {
+            highlightAndScrollToMessage(messageDomId, query, parseInt(snippetIndex));
+        };
+
+        // Сначала переключаем чат и ЖДЕМ, пока он полностью загрузится
+        await switchToChatIfNeeded();
+        
+        // И только потом, когда все готово, вызываем подсветку
+        highlightTarget();
+    }
+    
+    /**
+     * Прокручивает к сообщению и подсвечивает в нем найденный текст.
+     */
+    async function highlightAndScrollToMessage(messageDomId, query, snippetIndex) {
+        // === НАЧАЛО НОВОГО КОДА ===
+        // Финальная проверка: если по какой-то причине запрос пустой, ничего не делаем.
+        if (!query || query.trim() === '') {
+            console.warn("Попытка подсветки с пустым запросом была предотвращена.");
+            return; 
+        }
+        // === КОНЕЦ НОВОГО КОДА ===
+        const element = getEl(messageDomId);
+        if (!element) {
+            return;
+        }
+
+        const contentEl = element.querySelector('.ai-message-content-wrapper');
+        if (!contentEl) {
+             return;
+        }
+        
+        // Сначала убираем все старые подсветки
+        removeHighlightsInNode(contentEl);
+        // Затем подсвечиваем все совпадения заново
+        highlightTextInNode(contentEl, query);
+
+        // Находим все подсвеченные элементы
+        const highlights = contentEl.querySelectorAll('.search-highlight');
+        
+        if (highlights[snippetIndex]) {
+            const targetHighlight = highlights[snippetIndex];
+            
+            // Прокручиваем к конкретному подсвеченному элементу
+            targetHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Добавляем временный класс для особой анимации
+            targetHighlight.classList.add('temp-active');
+            
+            // Убираем временную подсветку через 3 секунды
+            setTimeout(() => {
+                targetHighlight.classList.remove('temp-active');
+                // НЕ убираем общую подсветку от highlightTextInNode,
+                // чтобы пользователь видел все совпадения в сообщении.
+            }, 3000); 
+        } else {
+             // Если по какой-то причине нужный фрагмент не найден, просто скроллим к началу сообщения
+             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    /**
+     * НОВАЯ ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ
+     * Рекурсивно находит и оборачивает текст, совпадающий с запросом, внутри элемента,
+     * не нарушая существующую HTML-структуру.
+     * @param {HTMLElement} element - Элемент-контейнер для поиска.
+     * @param {string} query - Текст для поиска и подсветки.
+     */
+    function highlightTextInNode(element, query) {
+
+        if (!query || !element) {
+            console.error("ОШИБКА: В highlightTextInNode не передан элемент или запрос."); // <<< ЛОГ
+            return;
+        }
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        const nodesToReplace = [];
+        let foundTextNodes = 0; // <<< ЛОГ
+
+        while (node = walker.nextNode()) {
+            foundTextNodes++; // <<< ЛОГ
+            if (node.textContent.toLowerCase().includes(query.toLowerCase())) {
+                nodesToReplace.push(node);
+            }
+        }
+
+        
+
+        nodesToReplace.forEach((textNode, i) => {
+            
+            const parent = textNode.parentNode;
+            if (!parent) {
+
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            const parts = textNode.textContent.split(regex);
+
+
+            let highlighted = false; // <<< ЛОГ
+
+            parts.forEach((part, index) => {
+                if (part && index % 2 === 1) {
+                    const span = document.createElement('span');
+                    span.className = 'search-highlight';
+                    span.textContent = part;
+                    fragment.appendChild(span);
+                    highlighted = true; // <<< ЛОГ
+
+                } else if (part) {
+                    fragment.appendChild(document.createTextNode(part));
+                }
+            });
+            
+            if (highlighted) {
+
+                parent.replaceChild(fragment, textNode);
+            } else {
+
+            }
+        });
+    }
+
+    /**
+     * НОВАЯ ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ
+     * Находит все подсвеченные span'ы и заменяет их обратно на обычный текст.
+     * @param {HTMLElement} element - Элемент-контейнер для очистки.
+     */
+    function removeHighlightsInNode(element) {
+        if (!element) return;
+        const highlights = element.querySelectorAll('span.search-highlight, span.temp-active'); // Ищем оба класса
+        highlights.forEach(span => {
+            const parent = span.parentNode;
+            if (parent) {
+                parent.replaceChild(document.createTextNode(span.textContent), span);
+                parent.normalize();
+            }
+        });
+    }
+
+
+    /**
+     * Получает заголовок для приватного чата.
+     */
+    function getAIChatTitle(chatId) {
+        const chat = allAIChats[chatId];
+        if (!chat) return 'Неизвестный чат';
+        const firstUserMessage = chat.find(msg => msg.role === 'user' && msg.content);
+        let title = firstUserMessage ? firstUserMessage.content : 'Новый чат';
+        if (title.length > 30) title = title.substring(0, 30) + '...';
+        return title;
+    }
+
+    // === КОНЕЦ НОВОГО КОДА ===
+
     /**
      * НОВАЯ ФУНКЦИЯ: Сохраняет карту сгенерированных тестов в localStorage.
      */
@@ -16196,7 +16622,7 @@ const mainApp = (function() {
 
 
 
-    function switchToAIChat(audienceId, topicId, chatType = 'private', dataPayload = null) {
+    async function switchToAIChat(audienceId, topicId, chatType = 'private', dataPayload = null) {
 
         if (currentAudienceListener) {
             currentAudienceListener();
@@ -16230,7 +16656,8 @@ const mainApp = (function() {
             currentTopicId = topicId;
             
             aiChatMessages.innerHTML = '<div class="empty-state">Загрузка...</div>';
-            renderPublicAudience(audienceId, topicId);
+            // <<< ИЗМЕНЕНИЕ: Дожидаемся полной загрузки и отрисовки сообщений >>>
+            await renderPublicAudience(audienceId, topicId);
 
         } else { // private
             publicSection.classList.remove('hidden');
@@ -16934,6 +17361,7 @@ const mainApp = (function() {
      * @param {string} topicId - ID темы внутри аудитории.
      */
     function renderPublicAudience(audienceId, topicId) {
+    return new Promise((resolve, reject) => {
         if (!db) return;
 
         if (currentTopicListener) {
@@ -16975,18 +17403,20 @@ const mainApp = (function() {
         });
 
         currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId).collection('messages')
-            .orderBy('timestamp', 'asc')
-            .onSnapshot(snapshot => {
-                const messages = [];
-                snapshot.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
-                currentPublicChatMessages = messages; 
-                renderAIChatMessages(); 
-                renderColorLegends();
-            }, error => {
+                .orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    const messages = [];
+                    snapshot.forEach(doc => messages.push({ id: doc.id, ...doc.data() }));
+                    currentPublicChatMessages = messages; 
+                    renderAIChatMessages(); 
+                    renderColorLegends();
+                    resolve(); // <<< ИЗМЕНЕНИЕ: Сообщаем, что отрисовка завершена
+                }, error => {
                 console.error(`[onSnapshot] Ошибка при получении сообщений Темы ${topicId}:`, error);
                 aiChatMessages.innerHTML = `<div class="empty-state">Не удалось загрузить сообщения.</div>`;
-            });
-    }
+        });
+            }); // <<< ИЗМЕНЕНИЕ: Закрываем Promise
+        }
 
 
 
@@ -18327,7 +18757,7 @@ const mainApp = (function() {
                 try {
                     const messageContainer = document.createElement('div');
                     messageContainer.className = `ai-message-container is-${msg.role}`;
-                    messageContainer.id = `ai-message-container-${index}`; 
+                    messageContainer.id = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? msg.id : `${currentAIChatId}_${index}`)}`;
                     
                     const replyContextContainer = document.createElement('div');
                     replyContextContainer.className = 'ai-reply-context-container';
@@ -18348,6 +18778,7 @@ const mainApp = (function() {
                     messageEl.classList.add('ai-message', msg.role);
                     
                     const contentWrapper = document.createElement('div');
+                    contentWrapper.className = 'ai-message-content-wrapper';
                     if (msg.content === 'typing...') {
                         contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
                     } else {
@@ -18488,11 +18919,23 @@ const mainApp = (function() {
                 }
             }
             updateScrollToBottomButtonVisibility();
+        // --- НАЧАЛО НОВОГО КОДА: Выполняем отложенную подсветку ---
+            if (pendingHighlight && getEl(pendingHighlight.messageDomId)) {
+                // Если есть задача на подсветку и нужный элемент уже отрисован, выполняем ее.
+                highlightAndScrollToMessage(pendingHighlight.messageDomId, pendingHighlight.query);
+                // Сбрасываем задачу, чтобы она не выполнилась снова.
+                pendingHighlight = null;
+            }
+            // --- КОНЕЦ НОВОГО КОДА ---
         } finally {
             console.groupEnd();
         }
     }
     
+
+
+
+
 
     async function sendAIChatMessage() {
         try {
