@@ -4844,7 +4844,7 @@ const ChatModule = (function() {
         const isPdf = decodedFileName.toLowerCase().endsWith('.pdf');
         const logTag = `[TEST][fromChat] ${decodedFileName}`;
 
-        console.groupCollapsed(`${logTag} — startTestFromShare`);
+    
         try {
             closeModal('fileActionsModal');
             
@@ -4902,7 +4902,7 @@ const ChatModule = (function() {
                     isPractice: options?.isPractice === false ? false : true
                 };
                 window.mainApp.processFile(decodedFileName, data.content, quizContext);
-                console.groupEnd();
+       
                 return;
             }
 
@@ -4943,7 +4943,7 @@ const ChatModule = (function() {
             alert(_chat('error_start_test_failed').replace('{error}', error.message));
         } finally {
             window.mainApp.hideGlobalLoader?.();
-            console.groupEnd();
+      
         }
     }
 
@@ -14936,23 +14936,38 @@ const mainApp = (function() {
             };
 
             const handleClick = (e) => {
-                // ГЛАВНОЕ ПРАВИЛО: Если предыдущее действие было долгим нажатием,
-                // мы полностью игнорируем этот клик.
+              
                 if (wasLongPress) {
                     e.preventDefault();
                     e.stopPropagation();
-                    // Сбрасываем флаг и выходим.
                     wasLongPress = false;
+
+        
                     return;
                 }
                 
-                // Если это был обычный, короткий клик, выполняем действие.
                 const item = e.target.closest('.ai-user-message-item');
                 if (item) {
                     const index = parseInt(item.dataset.index, 10);
-                    scrollToAIMessage(index, 'start');
+
+                    
+                    const message = getAIChatMessageByIndex(index);
+                    if (!message) {
+                     
+                         return;
+                    }
+    
+                    
+                    const messageDomId = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? message.id : `${currentAIChatId}_${index}`)}`;
+                  
+
+                    scrollToAIMessage(messageDomId, 'start');
+
                     toggleUserMessagesSidebar();
+                } else {
+                
                 }
+                
             };
             
             // Используем 'mousedown' и 'touchstart' вместо 'click' для инициации логики.
@@ -17565,7 +17580,15 @@ const mainApp = (function() {
         const minPercentDistance = (MIN_PIXEL_DISTANCE / trackHeight) * 100;
 
         userMessages.forEach(msgContainer => {
-            const index = parseInt(msgContainer.id.replace('ai-message-container-', ''), 10);
+            const indexStr = msgContainer.id.split('_').pop() || msgContainer.id.split('-').pop();
+            const index = parseInt(indexStr, 10);
+            
+            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            if (isNaN(index)) {
+                return; // Пропускаем элементы без валидного индекса (например, 'typing...')
+            }
+            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
             const topPercent = (msgContainer.offsetTop / scrollHeight) * 100;
 
             const lastCluster = clusters[clusters.length - 1];
@@ -17628,71 +17651,89 @@ const mainApp = (function() {
      * ВЕРСИЯ 2.0: Полностью переработанная логика для надежного закрытия всплывающих подсказок.
      */
     function initScrollbarInteraction() {
-        if (!aiScrollbarDots) return;
+        if (!aiScrollbarDots) {
+           
+            return;
+        }
+    
 
-        // Глобальная переменная для хранения функции-обработчика, чтобы мы могли ее удалить
-        let handleOutsideClick = null;
-
-        // Наша новая, улучшенная функция скрытия
         const hideActiveTooltip = () => {
             if (activePreviewTooltip) {
+               
                 activePreviewTooltip.classList.remove('visible');
                 const tooltipToRemove = activePreviewTooltip;
                 activePreviewTooltip = null;
                 setTimeout(() => tooltipToRemove.remove(), 200);
             }
-            // Всегда удаляем глобальный слушатель, когда подсказка скрывается
-            if (handleOutsideClick) {
-                window.removeEventListener('click', handleOutsideClick, true);
-                handleOutsideClick = null;
-            }
         };
 
-        // Функция для показа подсказки
         const showTooltip = (dotElement) => {
-            // Сначала закрываем любую предыдущую подсказку и ее слушатели
+          
             hideActiveTooltip();
 
-            const indices = JSON.parse(dotElement.dataset.clusterIndices);
+            const indicesStr = dotElement.dataset.clusterIndices;
+            if (!indicesStr) {
+         
+                
+                return;
+            }
+            
+            const indices = JSON.parse(indicesStr);
+       
+            
             const tooltip = document.createElement('div');
             tooltip.className = 'scrollbar-preview-tooltip';
             const ul = document.createElement('ul');
 
             indices.forEach(index => {
                 const msg = getAIChatMessageByIndex(index);
-                if (!msg) return;
-
+                if (!msg) {
+                     
+                     return;
+                }
                 const li = document.createElement('li');
                 li.dataset.index = index;
-
                 if (msg.dotColor) {
                     const colorIndicator = document.createElement('span');
                     colorIndicator.className = 'preview-color-indicator';
                     colorIndicator.style.backgroundColor = msg.dotColor;
                     li.appendChild(colorIndicator);
                 }
-
                 const content = msg.content || 'Вложение';
                 const snippet = content.substring(0, 100) + (content.length > 100 ? '...' : '');
                 li.appendChild(document.createTextNode(snippet));
                 ul.appendChild(li);
             });
 
+            if (ul.children.length === 0) {
+                
+       
+                return;
+            }
+
             tooltip.appendChild(ul);
             document.body.appendChild(tooltip);
             activePreviewTooltip = tooltip;
 
-            // --- ОБРАБОТЧИК КЛИКОВ ВНУТРИ ПОДСКАЗКИ ---
+
             tooltip.addEventListener('click', (e) => {
                 const li = e.target.closest('li');
                 if (li) {
                     const index = parseInt(li.dataset.index, 10);
-                    scrollToAIMessage(index);
-                    hideActiveTooltip(); // Закрываем после клика
+                    const message = getAIChatMessageByIndex(index);
+                    if (message) {
+                        const domId = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? message.id : `${currentAIChatId}_${index}`)}`;
+                        scrollToAIMessage(domId); // Передаем готовый ID
+                    }
+                    hideActiveTooltip();
                 }
             });
+            
+            tooltip.addEventListener('mouseleave', () => {
 
-            // Позиционирование (остается без изменений)
+                hideActiveTooltip();
+            });
+
             requestAnimationFrame(() => {
                 const dotRect = dotElement.getBoundingClientRect();
                 const scrollbarRect = aiCustomScrollbar.getBoundingClientRect();
@@ -17705,43 +17746,32 @@ const mainApp = (function() {
                 }
                 tooltip.style.top = `${topPos}px`;
                 tooltip.classList.add('visible');
-            });
 
-            // --- НОВАЯ ЛОГИКА ЗАКРЫТИЯ ---
-            // Создаем функцию-слушатель для закрытия
-            handleOutsideClick = (event) => {
-                // Закрываем, если клик был не по самой подсказке и не по точке, которая ее вызвала
-                if (activePreviewTooltip && !activePreviewTooltip.contains(event.target) && !dotElement.contains(event.target)) {
-                    hideActiveTooltip();
-                }
-            };
-            // Добавляем слушатель с небольшой задержкой, чтобы он не сработал на тот же клик, который открыл подсказку
-            setTimeout(() => {
-                window.addEventListener('click', handleOutsideClick, true);
-            }, 0);
+            });
+       
         };
 
-        // --- УПРОЩЕННЫЕ ГЛАВНЫЕ СЛУШАТЕЛИ ---
-        // Для ПК: показываем по наведению
         aiScrollbarDots.addEventListener('mouseover', (e) => {
-            if (e.target.classList.contains('scrollbar-dot')) {
-                showTooltip(e.target);
+            const dot = e.target.closest('.scrollbar-dot');
+            if (dot) {
+                showTooltip(dot);
             }
         });
 
-        // Для ПК: скрываем, когда уводим мышь с области точек и не наводим на подсказку
         aiScrollbarDots.addEventListener('mouseout', (e) => {
-            setTimeout(() => {
-                if (activePreviewTooltip && !activePreviewTooltip.matches(':hover') && !e.target.matches(':hover')) {
-                    hideActiveTooltip();
-                }
-            }, 300);
+            if (activePreviewTooltip && !activePreviewTooltip.contains(e.relatedTarget) && !e.target.closest('.scrollbar-dot')) {
+                 setTimeout(() => {
+                    if (activePreviewTooltip && !activePreviewTooltip.matches(':hover')) {
+                       hideActiveTooltip();
+                    }
+                 }, 300);
+            }
         });
 
-        // Для мобильных: показываем по клику
         aiScrollbarDots.addEventListener('click', (e) => {
-            if (e.target.classList.contains('scrollbar-dot')) {
-                showTooltip(e.target);
+            const dot = e.target.closest('.scrollbar-dot');
+            if (dot) {
+                showTooltip(dot);
             }
         });
     }
@@ -17755,19 +17785,6 @@ const mainApp = (function() {
             const tooltipToRemove = activePreviewTooltip;
             activePreviewTooltip = null;
             setTimeout(() => tooltipToRemove.remove(), 200); // Удаляем после анимации
-        }
-    }
-
-    /**
-     * Прокручивает к указанному сообщению и подсвечивает его.
-     * @param {number} index - Индекс сообщения в истории.
-     */
-    function scrollToAIMessage(index) {
-        const element = getEl(`ai-message-container-${index}`);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            element.classList.add('highlighted');
-            setTimeout(() => element.classList.remove('highlighted'), 2000);
         }
     }
 
@@ -17900,7 +17917,7 @@ const mainApp = (function() {
                 }
 
                 messageRef.update(updateData).catch(error => {
-                    console.error("Ошибка обновления цвета в Firestore:", error);
+      
                     showToast("Не удалось синхронизировать цвет.", "error");
                 });
             }
@@ -18161,20 +18178,21 @@ const mainApp = (function() {
     }
     
 
-    /**
-     * Прокручивает к указанному сообщению и подсвечивает его.
-     * @param {number} index - Индекс сообщения в истории.
-     * @param {'start' | 'center' | 'end'} blockAlignment - Как выровнять сообщение в окне.
-     */
-    function scrollToAIMessage(index, blockAlignment = 'start') {
-        const element = getEl(`ai-message-container-${index}`);
+    function scrollToAIMessage(messageDomId, blockAlignment = 'start') {
+        if (!messageDomId) {
+      
+            return;
+        }
+        
+        const element = getEl(messageDomId);
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: blockAlignment });
             element.classList.add('highlighted');
             setTimeout(() => element.classList.remove('highlighted'), 2000);
+        } else {
+
         }
     }
-
 
 
     /**
@@ -18928,7 +18946,7 @@ const mainApp = (function() {
             }
             // --- КОНЕЦ НОВОГО КОДА ---
         } finally {
-            console.groupEnd();
+           
         }
     }
     
@@ -18979,7 +18997,7 @@ const mainApp = (function() {
             
             getAIResponseForCurrentHistory(filesToSend);
         } finally {
-            console.groupEnd();
+           
         }
     }
 
@@ -19179,7 +19197,7 @@ const mainApp = (function() {
             aiChatSendBtn.disabled = !(aiChatInput.value.trim().length > 0 || attachedFiles.length > 0); // ИЗМЕНЕНИЕ: Проверяем массив
             await saveAIChatsToStorage();
             renderAIChatMessages();
-            console.groupEnd();
+       
         }
     }
 
