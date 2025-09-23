@@ -2299,9 +2299,9 @@ body.synthwave-mode .option-vote-btn.correct {
 
 /* --- ФИНАЛЬНАЯ ВЕРСИЯ СТИЛЕЙ ДЛЯ КНОПОК ПАНЕЛИ ВВОДА --- */
 .input-action-btn {
-    background: var(--container-bg-color);
-    border: 1px solid var(--border-color);
-    color: var(--secondary-text-color);
+    background: none; /* <-- УБРАЛИ ФОН */
+    border: none; /* <-- УБРАЛИ РАМКУ */
+    color: var(--secondary-text-color); /* <-- Сделали цвет приглушенным */
     border-radius: 8px;
     width: 40px;
     height: 40px;
@@ -2346,14 +2346,15 @@ body.synthwave-mode .input-action-btn.active:hover {
 
 /* Основной контейнер для textarea и кнопки "Отправить" */
 .input-wrapper {
+    position: relative; /* <-- ДОБАВЛЕНО: Для позиционирования кнопки */
     display: flex;
-    gap: 10px;
     align-items: flex-end;
 }
 
 #chatInput {
     flex: 1;
-    padding: 10px 15px;
+    /* Отступ справа теперь больше, чтобы освободить место для кнопки */
+    padding: 10px 55px 10px 15px; /* <-- ИЗМЕНЕНО */
     border: 1px solid var(--border-color);
     border-radius: 12px;
     background: var(--container-bg-color);
@@ -2373,9 +2374,17 @@ body.synthwave-mode .input-action-btn.active:hover {
 }
 
 .advanced-send-btn {
+    /* Новые стили для позиционирования внутри поля ввода */
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+
+    /* Делаем кнопку чуть компактнее */
+    width: 36px; /* <-- ИЗМЕНЕНО */
+    height: 36px; /* <-- ИЗМЕНЕНО */
+    
+    /* Остальные стили */
     flex-shrink: 0;
-    width: 44px;
-    height: 44px;
     border-radius: 50%;
     font-size: 1.5em;
     padding: 0;
@@ -2383,14 +2392,13 @@ body.synthwave-mode .input-action-btn.active:hover {
     align-items: center;
     justify-content: center;
     background: var(--button-primary-bg);
-
     color: white;
     border: none;
     transition: all 0.2s ease;
 }
 
 .advanced-send-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.1); /* Упрощенный эффект, чтобы не было вращения */
 }
 
 
@@ -5149,6 +5157,7 @@ body.claude-mode .message.mine.pinned .message-content {
     background-color: var(--button-secondary-hover-bg);
 }
 
+
 /* ===== НОВЫЕ СТИЛИ ДЛЯ ПОИСКА И СКРОЛЛИНГА В САЙДБАРЕ ===== */
 
 /* Контейнер для поля поиска */
@@ -5172,6 +5181,16 @@ body.claude-mode .message.mine.pinned .message-content {
 .sidebar-search-input:focus {
     border-color: var(--button-primary-bg);
     box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+}
+
+/* ГЛАВНОЕ: Устанавливаем максимальную высоту и скроллинг */
+#channelsList,
+#privateChatsList,
+#onlineUsersList {
+    max-height: 180px; /* Вы можете изменить это значение по своему вкусу */
+    overflow-y: auto;  /* Показывать скроллбар, только если нужно */
+    padding-right: 5px; /* Небольшой отступ, чтобы скроллбар не прилипал к тексту */
+    -webkit-overflow-scrolling: touch; /* <-- "Магия" для плавного скролла на iOS */
 }
 
 /* ГЛАВНОЕ: Устанавливаем максимальную высоту и скроллинг */
@@ -8744,7 +8763,7 @@ body.dark-mode #generateTestFromTopicBtn:hover {
 
 
 /* ======================================================= */
-/* ===         СТИЛИ ДЛЯ ОБЛАСТИ ВВОДА (v3, ФИНАЛ)     === */
+/* ===      СТИЛИ ДЛЯ ОБЛАСТИ ВВОДА (v5, ФИНАЛ)         === */
 /* ======================================================= */
 
 /* --- Область ввода --- */
@@ -8757,16 +8776,16 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     gap: 8px;
 }
 
-/* 1. Главный контейнер ("пилюля") теперь тоже колонка */
+/* 1. Главный контейнер ("пилюля") теперь является КОЛОНКОЙ */
 .ai-chat-input-container {
     display: flex;
-    flex-direction: column; /* КЛЮЧЕВОЕ ИЗМЕНЕНИЕ */
+    flex-direction: column; /* <-- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: для превью над полем ввода */
     width: 100%;
     background-color: var(--input-bg-color);
     border: 1px solid var(--border-color);
-    border-radius: 18px; /* Сделаем менее круглым для лучшего вида */
-    padding: 4px 8px;
-    gap: 5px;
+    border-radius: 18px;
+    padding: 2px 2px; /* Уменьшили вертикальные отступы с 4px до 2px */
+    gap: 5px; /* Отступ между превью и строкой ввода */
     transition: all 0.2s ease;
 }
 
@@ -8776,44 +8795,52 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
+/* 2. Основная СТРОКА с кнопками и полем ввода */
 .ai-chat-main-input-row {
     display: flex;
-    align-items: flex-end; /* По умолчанию все элементы прижаты к низу */
+    align-items: flex-end; /* Выравниваем все по низу */
     gap: 8px;
 }
 
-/* Когда появляется превью, выравниваем все по верху для красивого вида */
-.ai-chat-main-input-row.has-attachment {
-    align-items: flex-start;
+/* 3. Обертка для textarea, чтобы она могла расти */
+.ai-chat-textarea-wrapper {
+    flex-grow: 1; /* Занимает все свободное место */
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Необходимо для позиционирования кнопки отправки */
 }
-
-/* 3. Кнопка "+" слева */
-.ai-chat-attach-btn {
-    margin-bottom: 6px; /* Небольшая коррекция для идеального выравнивания с текстом */
-}
-
-/* 4. Обертка для поля ввода текста (убрана, теперь стили напрямую) */
+/* 4. Поле ввода текста */
 #aiChatInput {
-    flex-grow: 1;
+    width: 100%;
     resize: none;
     border: none;
     background: transparent;
-    padding: 8px 5px; /* Увеличили вертикальный отступ */
-    font-size: 1em;
-    line-height: 1.4;
-    min-height: 36px;
+    padding: 3px 45px 3px 5px; /* Уменьшили вертикальные отступы с 8px до 6px */
+    font-size: 1.2em;
+    line-height: 0.7;
+    min-height: 8px; /* Уменьшили минимальную высоту */
     max-height: 180px;
     color: var(--text-color);
     outline: none;
     overflow-y: auto;
 }
 
-/* 5. Кнопка "Отправить" */
+#aiChatInput:focus {
+    box-shadow: none !important;
+}
+
+/* 5. Кнопки "+" и "Отправить" */
+.advanced-send-btn {
+    position: absolute; /* Позиционируем относительно обертки */
+    right: 4px; /* Отступ от правого края обертки */
+    bottom: 4px; /* Отступ от нижнего края обертки */
+    flex-shrink: 0;
+    z-index: 2; /* Гарантируем, что кнопка будет поверх textarea */
+}
+
 .advanced-send-btn {
     width: 36px;
     height: 36px;
-    margin-bottom: 0;
-    flex-shrink: 0;
     background: var(--button-secondary-bg);
     color: var(--button-secondary-text);
     opacity: 0.6;
@@ -8829,8 +8856,6 @@ body.dark-mode #generateTestFromTopicBtn:hover {
 
 
 
-/* Убираем старый ненужный класс */
-.ai-chat-textarea-wrapper { display: contents; }
 /* ======================================================= */
 /* === ИСПРАВЛЕНИЕ ЦВЕТА ИКОНКИ "+" В СВЕТЛЫХ ТЕМАХ    === */
 /* ======================================================= */
@@ -8849,6 +8874,36 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
 /* ======================================================= */
 /* ===    СТИЛИ ДЛЯ КНОПОК-ДЕЙСТВИЙ В AI-ЧАТЕ          === */
 /* ======================================================= */
+
+/* --- Стили для кнопок действий пользователя (v3, финальные) --- */
+.ai-user-message-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    
+    /* Свойства для плавного "схлопывания" и "разворачивания" */
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0; /* Убираем отступ, когда скрыто */
+    padding: 0 5px;
+    
+    /* Анимируем все свойства для плавности */
+    transition: all 0.25s ease-in-out;
+}
+
+/* --- Общее правило для ПОКАЗА кнопок --- */
+/* Оно сработает и на ПК (:hover) и на мобильных (.actions-visible) */
+.ai-message-container.is-user:hover .ai-user-message-actions,
+.ai-message-container.is-user.actions-visible .ai-user-message-actions {
+    /* "Разворачиваем" контейнер до достаточной высоты */
+    max-height: 50px; 
+    opacity: 1;
+    /* Возвращаем отступ, когда кнопки видны */
+    margin-top: 8px; 
+}
+
+
 
 .ai-message-container {
     display: flex;
@@ -9110,26 +9165,12 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
     height: 18px;
 }
 
-/* --- Стили для кнопок действий пользователя --- */
-.ai-user-message-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    padding: 0 5px;
-    justify-content: flex-end; /* Выравниваем по правому краю */
-    opacity: 0; /* Скрыты по умолчанию */
-    transition: opacity 0.2s ease;
-}
 
-.ai-message-container:hover .ai-user-message-actions {
-    opacity: 1; /* Показываем при наведении */
-}
 
 /* ======================================================= */
 /* ===         СТИЛИ ДЛЯ ПРИКРЕПЛЕНИЯ ФАЙЛОВ          === */
 /* ======================================================= */
 
-/* 1. Стилизуем кнопку "+" */
 .ai-chat-attach-btn {
     display: inline-flex;
     align-items: center;
@@ -9139,7 +9180,7 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
     padding: 0;
     cursor: pointer;
     flex-shrink: 0;
-    margin-bottom: 8px; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
+    margin-bottom: 2px; /* <-- ИЗМЕНЕНИЕ: Задаем небольшой отступ */
 }
 
 /* 2. Обертка для поля ввода и превью */
@@ -11944,4 +11985,29 @@ display: none;
 .advanced-chat-header .header-controls {
     grid-column: 3 / 4;
 }
+}
+
+/* ======================================================= */
+/* ===        АНИМАЦИЯ ПОДСВЕТКИ НОВОГО ЭЛЕМЕНТА       === */
+/* ======================================================= */
+
+/* Описание самой анимации "свечения" */
+@keyframes highlight-new-item {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 12px 5px color-mix(in srgb, var(--accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 50%, transparent);
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+}
+
+/* Класс, который будет запускать анимацию */
+.highlight-new-test {
+    animation: highlight-new-item 2s ease-out;
 }

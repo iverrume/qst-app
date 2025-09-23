@@ -753,8 +753,8 @@
 
 
                     <div class="ai-chat-input-area">
+                        <!-- Панель с переключателем поиска и кнопками -->
                         <div class="ai-main-controls">
-                            <!-- Левая группа: все, что связано с поиском -->
                             <div class="ai-chat-footer-main-group">
                                 <div class="ai-setting-group">
                                     <label for="aiGroundingToggleMain" data-lang-key="ai_grounding_label">Поиск в Google</label>
@@ -764,8 +764,6 @@
                                     </label>
                                 </div>
                             </div>
-                            
-                            <!-- Правая группа: действия с диалогом -->
                             <div class="ai-chat-footer-actions">
                                 <button id="aiShowSearchBtn" class="ai-action-btn" title="Поиск по всем чатам" data-lang-key="ai_search_all_chats_title" data-lang-skip-content="true">
                                     <i data-lucide="search"></i>
@@ -779,6 +777,7 @@
                             </div>
                         </div>
 
+                        <!-- Панель ответа на сообщение -->
                         <div id="aiReplyPanel" class="ai-reply-panel hidden">
                             <div class="ai-reply-info">
                                 <span class="ai-reply-title" data-lang-key="ai_reply_to_message">Ответ на сообщение:</span>
@@ -786,18 +785,29 @@
                             </div>
                             <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ" data-lang-key="ai_cancel_reply_title" data-lang-skip-content="true"><i data-lucide="x"></i></button>
                         </div>
+
+                        <!-- Главный контейнер-пилюля для ввода -->
                         <div class="ai-chat-input-container">
                             <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain" multiple>
+                            <!-- Превью для файлов теперь ВНУТРИ контейнера -->
                             <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
+                            <!-- Основная строка ввода -->
                             <div id="aiChatMainInputRow" class="ai-chat-main-input-row">
                                 <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл" data-lang-key="ai_attach_file_title" data-lang-skip-content="true">
                                     <i data-lucide="plus" class="ai-chat-input-icon"></i>
                                 </button>
-                                <textarea id="aiChatInput" placeholder="Спросите что-нибудь..." data-lang-key="ai_chat_placeholder"></textarea>
-                                <button id="aiChatSendBtn" class="advanced-send-btn">
-                                    <i data-lucide="arrow-up"></i>
+
+
+                                <div class="ai-chat-textarea-wrapper">
+                                    <textarea id="aiChatInput" placeholder="Спросите что-нибудь..." data-lang-key="ai_chat_placeholder"></textarea>
+                                    <button id="aiChatSendBtn" class="advanced-send-btn">
+                                        <i data-lucide="arrow-up"></i>
                                 </button>
+
+                                </div>
+
                             </div>
+
                         </div>
                     </div>
 

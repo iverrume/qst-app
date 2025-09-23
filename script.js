@@ -1202,10 +1202,14 @@ const ChatModule = (function() {
                                 </div>
                             </div>
                             <input type="file" id="chatFileInput" class="hidden" accept=".qst,.txt,.pdf">
+
+
                             <div class="input-wrapper">
                                 <textarea id="chatInput" placeholder="${_chat('chat_input_placeholder')}"></textarea>
                                 <button id="sendBtn" class="advanced-send-btn"><i data-lucide="send"></i></button>
                             </div>
+
+
                         </div>    
                     </div>
                 </div>
@@ -4248,31 +4252,6 @@ const ChatModule = (function() {
       });
     }
 
-    /** Возвращает 'save' | 'finish' | 'cancel' */
-    function askWhatToDoWithActiveQuiz() {
-      return new Promise(resolve => {
-        const modalId = 'activeQuizModal';
-        const saveBtn   = document.getElementById('activeQuizSaveAndOpenBtn');
-        const finishBtn = document.getElementById('activeQuizFinishBtn');
-        const cancelBtn = document.querySelector(`#${modalId} button[onclick*="closeModal"]`);
-
-        const cleanup = () => {
-          saveBtn?.removeEventListener('click', onSave);
-          finishBtn?.removeEventListener('click', onFinish);
-          cancelBtn?.removeEventListener('click', onCancel);
-          closeModal(modalId);
-        };
-        const onSave   = () => { cleanup(); resolve('save'); };
-        const onFinish = () => { cleanup(); resolve('finish'); };
-        const onCancel = () => { cleanup(); resolve('cancel'); };
-
-        saveBtn?.addEventListener('click', onSave);
-        finishBtn?.addEventListener('click', onFinish);
-        cancelBtn?.addEventListener('click', onCancel);
-
-        showModal(modalId);
-      });
-    }
 
 
 
@@ -6356,7 +6335,49 @@ const mainApp = (function() {
             ai_searching_for: 'Поиск "{query}"...',
             ai_welcome_message: "Привет! Я ваш AI-помощник. Чем могу помочь?",
             modal_save_button: "Сохранить",
-            session_save_new_button: "Сохранить как новую"
+            session_save_new_button: "Сохранить как новую",
+
+            
+            // Новые ключи для тостов и подсказок (v8)
+            toast_invalid_password: "Неверный пароль.",
+            toast_test_created_success: "Тест успешно создан!",
+            toast_audience_deleted_success: "Аудитория успешно удалена.",
+            toast_audience_delete_failed: "Не удалось удалить Аудиторию.",
+            toast_topic_deleted_success: "Тема успешно удалена.",
+            toast_topic_delete_failed: "Не удалось удалить тему.",
+            toast_chat_copied: "Чат успешно скопирован!",
+            toast_chat_copy_failed: "Не удалось скопировать чат.",
+            toast_audience_settings_saved: "Настройки успешно сохранены.",
+            toast_audience_settings_failed: "Не удалось сохранить настройки.",
+            toast_moderator_added: '"{username}" назначен модератором.',
+            toast_moderator_add_failed: "Не удалось добавить модератора.",
+            toast_moderator_removed: "Модератор удален.",
+            toast_moderator_remove_failed: "Не удалось удалить модератора.",
+            toast_topic_create_failed: "Не удалось создать тему.",
+            toast_legend_save_failed: "Не удалось сохранить описание.",
+            toast_legend_edit_permission_denied: "Только владелец может изменять цвета.",
+            toast_message_deleted: "Сообщение удалено.",
+            toast_message_delete_failed: "Не удалось удалить сообщение.",
+            toast_message_delete_permission_denied: "Только владелец может удалять сообщения в Аудитории.",
+            toast_test_no_source_message: "Ошибка: исходное сообщение не найдено.",
+            toast_test_no_text: "Нет текста для создания теста.",
+            toast_no_publish_audiences: "У вас нет публичных Аудиторий, в которые вы можете публиковать.",
+            toast_empty_chat_copy_failed: "Нельзя скопировать пустой чат.",
+            ai_creating_test: "ИИ создает тест...",
+            ai_open_test_actions_tooltip: "Открыть действия для теста",
+            
+            // Новые ключи для глобального лоадера (v9)
+            loader_processing_pdf: "Обработка PDF...",
+            loader_processing_files: "Обработка файлов...",
+            loader_deleting_audience: "Удаление Аудитории...",
+            loader_deleting_topic: "Удаление темы...",
+            loader_saving_settings: "Сохранение...",
+            loader_adding_moderator: "Добавление модератора...",
+            loader_removing_moderator: "Удаление модератора...",
+            ai_topic_deleted_select_another: "Тема удалена. Выберите другую.",
+            ai_no_moderators_assigned: "Модераторы не назначены.",
+            loader_copying_chat: "Копирование чата...",
+            ai_loading_moderators: "Загрузка..."
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -6858,7 +6879,49 @@ const mainApp = (function() {
             ai_searching_for: '"{query}" бойынша іздеу...',
             ai_welcome_message: "Сәлем! Мен сіздің AI-көмекшіңізбін. Қандай көмек көрсете аламын?", 
             modal_save_button: "Сақтау",
-            session_save_new_button: "Жаңа ретінде сақтау"
+            session_save_new_button: "Жаңа ретінде сақтау",
+
+
+            // Новые ключи для тостов и подсказок (v8)
+            toast_invalid_password: "Қате құпия сөз.",
+            toast_test_created_success: "Тест сәтті жасалды!",
+            toast_audience_deleted_success: "Аудитория сәтті жойылды.",
+            toast_audience_delete_failed: "Аудиторияны жою мүмкін болмады.",
+            toast_topic_deleted_success: "Тақырып сәтті жойылды.",
+            toast_topic_delete_failed: "Тақырыпты жою мүмкін болмады.",
+            toast_chat_copied: "Чат сәтті көшірілді!",
+            toast_chat_copy_failed: "Чатты көшіру мүмкін болмады.",
+            toast_audience_settings_saved: "Баптаулар сәтті сақталды.",
+            toast_audience_settings_failed: "Баптауларды сақтау мүмкін болмады.",
+            toast_moderator_added: '"{username}" модератор болып тағайындалды.',
+            toast_moderator_add_failed: "Модераторды қосу мүмкін болмады.",
+            toast_moderator_removed: "Модератор жойылды.",
+            toast_moderator_remove_failed: "Модераторды жою мүмкін болмады.",
+            toast_topic_create_failed: "Тақырыпты жасау мүмкін болмады.",
+            toast_legend_save_failed: "Сипаттаманы сақтау мүмкін болмады.",
+            toast_legend_edit_permission_denied: "Түстерді тек иесі өзгерте алады.",
+            toast_message_deleted: "Хабарлама жойылды.",
+            toast_message_delete_failed: "Хабарламаны жою мүмкін болмады.",
+            toast_message_delete_permission_denied: "Аудиториядағы хабарламаларды тек иесі жоя алады.",
+            toast_test_no_source_message: "Қате: бастапқы хабарлама табылмады.",
+            toast_test_no_text: "Тест жасау үшін мәтін жоқ.",
+            toast_no_publish_audiences: "Сізде жариялауға болатын жария Аудиториялар жоқ.",
+            toast_empty_chat_copy_failed: "Бос чатты көшіруге болмайды.",
+            ai_creating_test: "ЖИ тест жасауда...",
+            ai_open_test_actions_tooltip: "Тест әрекеттерін ашу",
+
+            // Новые ключи для глобального лоадера (v9)
+            loader_processing_pdf: "PDF өңделуде...",
+            loader_processing_files: "Файлдар өңделуде...",
+            loader_deleting_audience: "Аудитория жойылуда...",
+            loader_deleting_topic: "Тақырып жойылуда...",
+            loader_saving_settings: "Сақталуда...",
+            loader_adding_moderator: "Модератор қосылуда...",
+            loader_removing_moderator: "Модератор жойылуда...",
+            ai_topic_deleted_select_another: "Тақырып жойылды. Басқасын таңдаңыз.",
+            ai_no_moderators_assigned: "Модераторлар тағайындалмаған.",
+            ai_loading_moderators: "Жүктелуде...",
+            loader_copying_chat: "Чат көшірілуде..."
 
         },
         en: {
@@ -7367,7 +7430,48 @@ const mainApp = (function() {
             ai_searching_for: 'Searching for "{query}"...',
             ai_welcome_message: "Hello! I'm your AI assistant. How can I help?", 
             modal_save_button: "Save",
-            session_save_new_button: "Save as New"
+            session_save_new_button: "Save as New",
+
+            // New keys for toasts and tooltips (v8)
+            toast_invalid_password: "Invalid password.",
+            toast_test_created_success: "Test created successfully!",
+            toast_audience_deleted_success: "Audience deleted successfully.",
+            toast_audience_delete_failed: "Failed to delete the Audience.",
+            toast_topic_deleted_success: "Topic deleted successfully.",
+            toast_topic_delete_failed: "Failed to delete the topic.",
+            toast_chat_copied: "Chat copied successfully!",
+            toast_chat_copy_failed: "Failed to copy the chat.",
+            toast_audience_settings_saved: "Settings saved successfully.",
+            toast_audience_settings_failed: "Failed to save settings.",
+            toast_moderator_added: '"{username}" has been appointed as a moderator.',
+            toast_moderator_add_failed: "Failed to add moderator.",
+            toast_moderator_removed: "Moderator removed.",
+            toast_moderator_remove_failed: "Failed to remove moderator.",
+            toast_topic_create_failed: "Failed to create topic.",
+            toast_legend_save_failed: "Failed to save description.",
+            toast_legend_edit_permission_denied: "Only the owner can change colors.",
+            toast_message_deleted: "Message deleted.",
+            toast_message_delete_failed: "Failed to delete message.",
+            toast_message_delete_permission_denied: "Only the owner can delete messages in an Audience.",
+            toast_test_no_source_message: "Error: source message not found.",
+            toast_test_no_text: "No text to create a test from.",
+            toast_no_publish_audiences: "You have no public Audiences where you can publish.",
+            toast_empty_chat_copy_failed: "Cannot copy an empty chat.",
+            ai_creating_test: "AI is creating the test...",
+            ai_open_test_actions_tooltip: "Open test actions",
+
+            // New keys for the global loader (v9)
+            loader_processing_pdf: "Processing PDF...",
+            loader_processing_files: "Processing files...",
+            loader_deleting_audience: "Deleting Audience...",
+            loader_deleting_topic: "Deleting topic...",
+            loader_saving_settings: "Saving...",
+            loader_adding_moderator: "Adding moderator...",
+            loader_removing_moderator: "Removing moderator...",
+            ai_topic_deleted_select_another: "Topic deleted. Please select another one.",
+            ai_no_moderators_assigned: "No moderators assigned.",
+            ai_loading_moderators: "Loading...",
+            loader_copying_chat: "Copying chat..."
         }
 
     };
@@ -7541,6 +7645,34 @@ const mainApp = (function() {
         // Chrome требует, чтобы returnValue был установлен.
         event.returnValue = '';
     };
+
+
+
+    /** Возвращает 'save' | 'finish' | 'cancel' */
+    function askWhatToDoWithActiveQuiz() {
+      return new Promise(resolve => {
+        const modalId = 'activeQuizModal';
+        const saveBtn   = document.getElementById('activeQuizSaveAndOpenBtn');
+        const finishBtn = document.getElementById('activeQuizFinishBtn');
+        const cancelBtn = document.querySelector(`#${modalId} button[onclick*="closeModal"]`);
+
+        const cleanup = () => {
+          saveBtn?.removeEventListener('click', onSave);
+          finishBtn?.removeEventListener('click', onFinish);
+          cancelBtn?.removeEventListener('click', onCancel);
+          ChatModule.closeModal(modalId); // ИЗМЕНЕНИЕ ЗДЕСЬ
+        };
+        const onSave   = () => { cleanup(); resolve('save'); };
+        const onFinish = () => { cleanup(); resolve('finish'); };
+        const onCancel = () => { cleanup(); resolve('cancel'); };
+
+        saveBtn?.addEventListener('click', onSave);
+        finishBtn?.addEventListener('click', onFinish);
+        cancelBtn?.addEventListener('click', onCancel);
+
+        ChatModule.showModal(modalId); // И ИЗМЕНЕНИЕ ЗДЕСЬ
+      });
+    }
 
 
   /**
@@ -9510,10 +9642,8 @@ const mainApp = (function() {
         const files = event.target.files;
         if (!files || files.length === 0) return;
 
-        // --- НОВАЯ ЛОГИКА ---
-        // Если выбран один PDF-файл, используем новый обработчик с картинками
         if (files.length === 1 && files[0].name.toLowerCase().endsWith('.pdf')) {
-            showGlobalLoader('Обработка PDF с изображениями...');
+            showGlobalLoader(_('loader_processing_pdf'));
             try {
                 await processPdfWithImages(files[0]);
             } catch (error) {
@@ -9522,12 +9652,10 @@ const mainApp = (function() {
             } finally {
                 hideGlobalLoader();
             }
-            return; // Завершаем выполнение
+            return;
         }
-        // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
-
-        // Если выбрано несколько файлов или не PDF, используем старую логику объединения текста
-        showGlobalLoader('Обработка файлов...');
+        
+        showGlobalLoader(_('loader_processing_files'));
 
         let combinedText = '';
         let combinedFileName = files.length > 1 ? 'Combined_Test' : files[0].name;
@@ -10036,6 +10164,27 @@ const mainApp = (function() {
      * @param {object|null} quizContext - Дополнительный контекст, передаваемый из чата (для официальных тестов).
      */
     async function processFile(fileName, fileContent, quizContext = null) {
+        // === НАЧАЛО ИСПРАВЛЕНИЯ: Проверка на активный тест ===
+        const quizArea = getEl('quizArea');
+        if (quizArea && !quizArea.classList.contains('hidden')) {
+            const decision = await askWhatToDoWithActiveQuiz();
+
+            if (decision === 'cancel') {
+                // Пользователь отменил, ничего не делаем
+                return;
+            } else if (decision === 'save') {
+                // Сохраняем текущий тест и затем продолжаем
+                getEl('continueLaterButton')?.click();
+                // Даем небольшую паузу, чтобы сохранение завершилось
+                await new Promise(resolve => setTimeout(resolve, 100));
+            } else if (decision === 'finish') {
+                // Завершаем текущий тест и выходим
+                getEl('finishTestButton')?.click();
+                return;
+            }
+        }
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
         isPdfSession = false;
         originalFileNameForReview = fileName;
         
@@ -10072,18 +10221,19 @@ const mainApp = (function() {
 
         saveRecentFile(fileName, fileContent);
         
-        // Вызываем нашу новую универсальную функцию для показа настроек
         setupQuizScreen(fileName, allParsedQuestions);
 
-        // --- Логика, специфичная для файлов, открытых НЕ из GRADUS ---
         const categories = allParsedQuestions.filter(item => item.type === 'category').map(item => item.text);
         if (categories.length > 0) {
-            categoryCheckboxesContainer.innerHTML = categories.map(category => `
-                <label class="category-checkbox-label">
-                    <input type="checkbox" name="category" value="${escapeHTML(category)}">
-                    <span>${escapeHTML(category)}</span>
-                </label>
-            `).join('');
+            categoryCheckboxesContainer.innerHTML = categories.map(category => {
+                const formattedCategory = window.marked ? marked.parseInline(category) : escapeHTML(category);
+                return `
+                    <label class="category-checkbox-label">
+                        <input type="checkbox" name="category" value="${escapeHTML(category)}">
+                        <span>${formattedCategory}</span>
+                    </label>
+                `;
+            }).join('');
             categoryFilterGroup.classList.remove('hidden');
             updateQuestionCountForFilters();
         } else {
@@ -10092,7 +10242,7 @@ const mainApp = (function() {
         }
         
         const langFilterGroup = getEl('languageFilterGroup');
-        langFilterGroup.classList.add('hidden'); // Скрываем фильтр языка для обычных файлов
+        langFilterGroup.classList.add('hidden');
         
         if (quizContext && !quizContext.isPractice) {
             shuffleQuestionsCheckbox.checked = true;
@@ -10148,8 +10298,6 @@ const mainApp = (function() {
             if (trimmedLine.startsWith('?')) {
                 saveCurrentQuestion();
                 
-                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
-                // Используем новую функцию для обработки текста вопроса
                 const questionParseResult = parseTextAndExtractTriggers(trimmedLine.substring(1).trim());
                 
                 currentQuestion = {
@@ -10157,9 +10305,8 @@ const mainApp = (function() {
                     options: [],
                     correctAnswerIndex: -1,
                     originalRaw: [line],
-                    triggeredWordIndices: questionParseResult.triggeredWordIndices // Сохраняем найденные индексы
+                    triggeredWordIndices: questionParseResult.triggeredWordIndices
                 };
-                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
                 
                 lastTextLines = [];
             } else if (trimmedLine.startsWith('+')) {
@@ -10178,14 +10325,21 @@ const mainApp = (function() {
                     };
                 }
                 
+                // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+                // Просто очищаем текст от маркера и тегов. Ничего не экранируем.
                 const optionText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
+                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
                 currentQuestion.options.push({ text: optionText, isCorrect: true });
                 currentQuestion.correctAnswerIndex = currentQuestion.options.length - 1;
                 lastTextLines = [];
             
             } else if (trimmedLine.startsWith('-')) {
                 if (currentQuestion) {
+                    // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+                    // Просто очищаем текст от маркера и тегов. Ничего не экранируем.
                     const optionText = trimmedLine.substring(1).trim().replace(tagRemovalRegex, '').trim();
+                    // === КОНЕЦ ИСПРАВЛЕНИЯ ===
                     currentQuestion.options.push({ text: optionText, isCorrect: false });
                     currentQuestion.originalRaw.push(line);
                     lastTextLines = [];
@@ -10560,7 +10714,10 @@ const mainApp = (function() {
                 if (item.type === 'category') {
                     const categoryHeader = document.createElement('div');
                     categoryHeader.className = 'quick-nav-category';
-                    categoryHeader.textContent = item.text;
+                    // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+                    // Используем innerHTML и marked.parseInline вместо textContent
+                    categoryHeader.innerHTML = window.marked ? marked.parseInline(item.text) : escapeHTML(item.text);
+                    // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
                     quickNavButtonsContainer.appendChild(categoryHeader);
                 } 
                 // ЕСЛИ ЭТО ОБЫЧНЫЙ ВОПРОС
@@ -10579,7 +10736,6 @@ const mainApp = (function() {
             quickNavPanel.classList.add('hidden');
         }
     }
-
 
 
 
@@ -10612,17 +10768,18 @@ const mainApp = (function() {
 
 
     function displayCategoryPage(categoryName) {
-        // Показываем основной контейнер вопроса9
+        // Показываем основной контейнер вопроса
         questionContainer.classList.remove('hidden');
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-        // Очищаем и форматируем текст, используя систему переводов
+        // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+        // Используем marked.parseInline для форматирования Markdown без добавления лишних <p> тегов
+        const formattedCategoryName = window.marked ? marked.parseInline(categoryName) : escapeHTML(categoryName);
         questionTextEl.innerHTML = `
             <div class="quiz-category-screen">
                 <span>${_('flashcard_category_label')}</span>
-                <h2>${escapeHTML(categoryName)}</h2>
+                <h2>${formattedCategoryName}</h2>
             </div>
         `;
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+        // --- КОНЕЦ ИСПРАВЛЕНИЙ ---
         getEl('score').style.visibility = 'hidden';
 
         // Прячем ненужные элементы
@@ -11814,6 +11971,29 @@ const mainApp = (function() {
 
 
     /**
+     * НОВАЯ ФУНКЦИЯ: Экранирует специальные символы Markdown в строке.
+     * @param {string} text - Исходный текст.
+     * @returns {string} - Безопасный текст для вставки в Markdown-парсер.
+     */
+    function escapeMarkdown(text) {
+        if (!text) return '';
+        return text
+            .replace(/\\/g, '\\\\')  // Сначала сам обратный слэш
+            .replace(/#/g, '\\#')   // Заголовки
+            .replace(/\*/g, '\\*') // Выделение
+            .replace(/_/g, '\\_')   // Выделение
+            .replace(/-/g, '\\-')   // Списки и линии
+            .replace(/\+/g, '\\+') // Списки
+            .replace(/`/g, '\\`')   // Код
+            .replace(/\[/g, '\\[') // Ссылки
+            .replace(/\]/g, '\\]') // Ссылки
+            .replace(/\(/g, '\\(') // Ссылки
+            .replace(/\)/g, '\\)') // Ссылки
+            .replace(/</g, '&lt;')   // HTML-теги
+            .replace(/>/g, '&gt;');  // HTML-теги и цитаты
+    }
+
+    /**
      * НОВАЯ УНИВЕРСАЛЬНАЯ ФУНКЦИЯ
      * Вставляет текст в элемент, применяя форматирование Markdown и рендеринг KaTeX.
      * @param {HTMLElement} element - Элемент, куда будет вставлен отформатированный HTML.
@@ -11822,14 +12002,17 @@ const mainApp = (function() {
     function renderFormattedText(element, text) {
         if (!element) return;
         
-        // 1. Обрабатываем Markdown. Используем parse, чтобы он корректно работал с блоками (списки и т.д.).
+        // === ГЛАВНОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ===
+        // Сначала экранируем текст, а потом передаем его в парсер.
+        const safeText = escapeMarkdown(text || '');
+
         if (window.marked) {
-            element.innerHTML = marked.parse(text || '', { breaks: true });
+            // Используем parseInline, чтобы избежать создания лишних <p> тегов
+            element.innerHTML = marked.parseInline(safeText, { breaks: true });
         } else {
-            element.textContent = text || ''; // Безопасный fallback
+            element.textContent = text || ''; // Fallback оставляет оригинальный текст
         }
         
-        // 2. В уже готовом HTML ищем и рендерим математические формулы.
         renderMathInElement(element);
     }
 
@@ -14957,7 +15140,7 @@ const mainApp = (function() {
 // Переменные для нового чата
     let aiChatFab, aiChatModal, aiChatModalContent, aiChatCloseBtn, aiChatMessages, aiChatInput, aiChatSendBtn, aiChatResizeBtn,
         aiChatHistoryBtn, aiChatSidebar, aiNewChatBtn, aiChatHistoryList, aiChatScrollWrapper, aiChatsListener = null; // <-- ИСПРАВЛЕНИЕ: Добавили aiChatScrollWrapper сюда
-
+    let activeMessageActionsContainer = null;
     let isAllTooltipsVisible = false;
     // === НАЧАЛО НОВЫХ ПЕРЕМЕННЫХ ===
     let aiTopicsView, aiTopicsList, aiTopicsBreadcrumb, aiBackToAudiencesBtn, aiNewTopicBtn;
@@ -15467,6 +15650,29 @@ const mainApp = (function() {
         });
 
         aiChatMessages?.addEventListener('click', (e) => {
+            // --- НАЧАЛО НОВОГО КОДА: Логика для показа/скрытия кнопок на мобильных ---
+            const clickedUserMessage = e.target.closest('.ai-message-container.is-user');
+            
+            // Если клик был по кнопке действий, ничего не делаем, чтобы не скрыть панель сразу после нажатия
+            if (e.target.closest('.ai-user-message-actions')) {
+                 // Оставляем пустым, чтобы обработчик продолжил выполнение
+            }
+            // Если клик был по сообщению пользователя
+            else if (clickedUserMessage) {
+                // Если это сообщение уже было активно, скрываем кнопки
+                if (clickedUserMessage === activeMessageActionsContainer) {
+                    hideActiveMessageActions();
+                } else {
+                // Иначе, показываем кнопки для этого сообщения
+                    showActionsForMessage(clickedUserMessage);
+                }
+            } 
+            // Если клик был по пустому месту (не по сообщению)
+            else {
+                hideActiveMessageActions();
+            }
+            // --- КОНЕЦ НОВОГО КОДА ---
+
             // Определяем все возможные цели клика в самом начале
             const editActionBtn = e.target.closest('[data-action="save-edit"], [data-action="cancel-edit"]');
             const actionBtn = e.target.closest('.ai-action-btn');
@@ -15553,6 +15759,7 @@ const mainApp = (function() {
         });
 
         initCustomScrollbar();
+        initCustomScrollbarTooltipEvents();
         initScrollbarInteraction();
         aiChatMessages?.addEventListener('scroll', handleChatScroll);
         aiScrollToBottomBtn?.addEventListener('click', () => {
@@ -15608,6 +15815,30 @@ const mainApp = (function() {
         setupCustomSelect('aiModelSelectContainer');
         setupCustomSelect('aiResponseLengthSelectContainer');
         loadAIChatSettings();
+    }
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Скрывает кнопки действий для активного сообщения.
+     */
+    function hideActiveMessageActions() {
+        if (activeMessageActionsContainer) {
+            activeMessageActionsContainer.classList.remove('actions-visible');
+            activeMessageActionsContainer = null;
+        }
+    }
+
+
+
+    /**
+     * НОВАЯ ФУНКЦИЯ: Показывает кнопки действий для указанного сообщения.
+     * @param {HTMLElement} container - DOM-элемент .ai-message-container.
+     */
+    function showActionsForMessage(container) {
+        // Сначала скрываем любые другие открытые кнопки
+        hideActiveMessageActions();
+        // Затем показываем новые
+        container.classList.add('actions-visible');
+        activeMessageActionsContainer = container;
     }
 
 
@@ -15891,37 +16122,28 @@ const mainApp = (function() {
     async function generateAITestFromMessage() {
         const index = parseInt(getEl('aiTestFromMessageIndex').value, 10);
         let textToProcess;
-        let fileNameBase;
-
-        // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+        
         if (index === -1) {
             const currentChat = (currentAIChatType === 'public') ? currentPublicChatMessages : allAIChats[currentAIChatId];
             if (!currentChat) {
-                showToast("Ошибка: текущий диалог не найден.", "error");
+                showToast(_('toast_test_no_source_message'), "error");
                 return;
             }
             textToProcess = currentChat
                 .filter(msg => msg.role === 'model' && msg.content && msg.content !== 'typing...')
                 .map(msg => msg.content)
                 .join('\n\n---\n\n');
-            
-            // ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем правильный ID в зависимости от типа чата
-            const idForName = currentAIChatType === 'public' ? currentTopicId : currentAIChatId;
-            fileNameBase = `ai_test_from_dialog_${idForName ? idForName.slice(-4) : 'public'}`;
-
         } else {
-        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
             const msg = getAIChatMessageByIndex(index);
             if (!msg) {
-                showToast("Ошибка: исходное сообщение не найдено.", "error");
+                showToast(_('toast_test_no_source_message'), "error");
                 return;
             }
             textToProcess = msg.content;
-            fileNameBase = `ai_test_from_msg_${index + 1}`;
         }
 
         if (!textToProcess || textToProcess.trim() === '') {
-            showToast("Нет текста для создания теста.", "error");
+            showToast(_('toast_test_no_text'), "error");
             return;
         }
 
@@ -15931,7 +16153,7 @@ const mainApp = (function() {
         const autoCategorize = getEl('aiTestMsgAutoCategory').checked;
 
         ChatModule.closeModal('aiTestFromMessageModal');
-        showGlobalLoader('ИИ создает тест...');
+        showGlobalLoader(_('ai_creating_test'));
 
         try {
             const response = await fetch(googleAppScriptUrl, {
@@ -15950,10 +16172,10 @@ const mainApp = (function() {
             const result = await response.json();
             hideGlobalLoader();
 
-            if (result.success && result.qst) {
+            if (result.success && result.qst && result.fileName) { // Проверяем наличие fileName
                 const testData = {
                     qstContent: formatAICategories(result.qst),
-                    fileName: `${fileNameBase}.qst`
+                    fileName: result.fileName // ИСПОЛЬЗУЕМ ИМЯ ФАЙЛА ОТ СЕРВЕРА
                 };
                 
                 if (index === -1) {
@@ -15965,28 +16187,36 @@ const mainApp = (function() {
                             generatedTest: testData 
                         };
                         
-                        // === НАЧАЛО ИСПРАВЛЕНИЯ ДЛЯ ПУБЛИЧНЫХ ЧАТОВ ===
                         if (currentAIChatType === 'public') {
                             if (currentUser && db && currentAudienceId && currentTopicId) {
-                                // Добавляем сообщение в Firestore
                                 newModelMessage.timestamp = firebase.firestore.FieldValue.serverTimestamp();
                                 db.collection('ai_audiences').doc(currentAudienceId).collection('topics').doc(currentTopicId).collection('messages').add(newModelMessage);
-                                // onSnapshot сам обновит UI
                             }
                         } else {
-                            // Для приватных чатов, как и раньше
                             currentChat.push(newModelMessage);
                             saveAIChatsToStorage();
                             renderAIChatMessages();
                         }
-                        // === КОНЕЦ ИСПРАВЛЕНИЯ ДЛЯ ПУБЛИЧНЫХ ЧАТОВ ===
                     }
                 } else {
                     generatedTestsFromAI.set(index, testData);
                     saveGeneratedAITests();
                     renderAIChatMessages();
+                    
                     setTimeout(() => {
-                        const messageContainer = getEl(`ai-message-container-${index}`);
+                        let messageDomId;
+                        if (currentAIChatType === 'public') {
+                            const sourceMessage = currentPublicChatMessages[index];
+                            if (sourceMessage && sourceMessage.id) {
+                                messageDomId = `ai-msg-public-${sourceMessage.id}`;
+                            }
+                        } else {
+                            messageDomId = `ai-msg-private-${currentAIChatId}_${index}`;
+                        }
+
+                        if (!messageDomId) return;
+
+                        const messageContainer = getEl(messageDomId);
                         if (messageContainer) {
                             const chatContainer = getEl('aiChatMessages');
                             if (chatContainer) {
@@ -16005,7 +16235,7 @@ const mainApp = (function() {
                     }, 100);
                 }
 
-                showToast("Тест успешно создан!", "success");
+                showToast(_('toast_test_created_success'), "success");
             } else {
                 throw new Error(result.error || _('ai_error_generation'));
             }
@@ -16016,6 +16246,7 @@ const mainApp = (function() {
             showToast(error.message, "error");
         }
     }
+
 
     /**
      * НОВАЯ ФУНКЦИЯ: Инициирует создание теста из всего диалога.
@@ -16513,7 +16744,7 @@ const mainApp = (function() {
             
             renderAIChatMessages();
             renderColorLegends();
-            showToast("Сообщение удалено.", "success");
+            showToast(_('toast_message_deleted'), "success");
 
         } else {
             const messageToDelete = currentPublicChatMessages[index];
@@ -16923,25 +17154,30 @@ const mainApp = (function() {
 
 
 
-    async function switchToAIChat(audienceId, topicId, chatType = 'private', dataPayload = null) {
+    async function switchToAIChat(audienceId, topicId, chatType = 'private', options = { restoreScroll: false, savedScrollTop: 0 }) {
 
         if (currentAudienceListener) {
             currentAudienceListener();
             currentAudienceListener = null;
         }
-        // --- НАЧАЛО ИЗМЕНЕНИЙ ---
-        // Отписываемся от слушателя предыдущей темы
         if (currentTopicListener) {
             currentTopicListener();
             currentTopicListener = null;
         }
-        // --- КОНЕЦ ИЗМЕНЕНИЙ ---
 
         currentAIChatType = chatType;
 
         const publicSection = getEl('aiPublicAudiencesSection');
         const privateSection = getEl('aiPrivateChatsSection');
         const topicsView = getEl('aiTopicsView');
+
+        if (chatType === 'public' && audienceId && topicId) {
+            localStorage.setItem('lastActiveAIChat', JSON.stringify({ type: 'public', audienceId, topicId }));
+            localStorage.removeItem('currentAIChatId');
+        } else {
+            localStorage.setItem('currentAIChatId', audienceId);
+            localStorage.removeItem('lastActiveAIChat');
+        }
 
         if (chatType === 'public' && audienceId) {
             publicSection.classList.add('hidden');
@@ -16957,8 +17193,7 @@ const mainApp = (function() {
             currentTopicId = topicId;
             
             aiChatMessages.innerHTML = '<div class="empty-state">Загрузка...</div>';
-            // <<< ИЗМЕНЕНИЕ: Дожидаемся полной загрузки и отрисовки сообщений >>>
-            await renderPublicAudience(audienceId, topicId);
+            await renderPublicAudience(audienceId, topicId, options);
 
         } else { // private
             publicSection.classList.remove('hidden');
@@ -16970,12 +17205,11 @@ const mainApp = (function() {
             currentTopicId = null;
             
             currentPublicLegends = {};
-            // --- ИЗМЕНЕНИЕ: Сбрасываем кэш легенд темы ---
             currentTopicLegends = {};
             
             currentPublicChatMessages = [];
-            localStorage.setItem('currentAIChatId', currentAIChatId);
-            renderAIChatMessages(true);
+            
+            renderAIChatMessages(!options.restoreScroll, options.savedScrollTop);
             aiChatInput.disabled = false;
             aiChatInput.placeholder = _('ai_chat_placeholder');
         }
@@ -17066,38 +17300,33 @@ const mainApp = (function() {
         );
 
         if (confirmed) {
-            showGlobalLoader('Удаление Аудитории...');
+            showGlobalLoader(_('loader_deleting_audience'));
             try {
                 const audienceRef = db.collection('ai_audiences').doc(audienceId);
                 const topicsSnapshot = await audienceRef.collection('topics').get();
 
-                // Пакетный запрос для эффективности
                 const batch = db.batch();
 
-                // Удаляем все сообщения во всех темах
                 for (const topicDoc of topicsSnapshot.docs) {
                     const messagesSnapshot = await topicDoc.ref.collection('messages').get();
                     messagesSnapshot.forEach(msgDoc => {
                         batch.delete(msgDoc.ref);
                     });
-                    // Удаляем саму тему
                     batch.delete(topicDoc.ref);
                 }
 
-                // Удаляем саму аудиторию
                 batch.delete(audienceRef);
 
                 await batch.commit();
 
-                showToast("Аудитория успешно удалена.", "success");
+                showToast(_('toast_audience_deleted_success'), "success");
                 
-                // Если удалили активную, переключаемся на приватный чат
                 if (currentAudienceId === audienceId) {
                     closeAudienceFolder();
                 }
             } catch (error) {
                 console.error("Ошибка удаления Аудитории:", error);
-                showToast("Не удалось удалить Аудиторию.", "error");
+                showToast(_('toast_audience_delete_failed'), "error");
             } finally {
                 hideGlobalLoader();
             }
@@ -17159,16 +17388,13 @@ const mainApp = (function() {
             .then(snapshot => {
                 aiTopicsList.innerHTML = '';
                 if (snapshot.empty) {
-                    aiTopicsList.innerHTML = '<li class="ai-chat-history-item-placeholder">Тем пока нет. Создайте первую!</li>';
+                    aiTopicsList.innerHTML = `<li class="ai-chat-history-item-placeholder">${_('ai_empty_topics_list')}</li>`;
                     return;
                 }
                 
-                // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-                // Получаем данные об аудитории ОДИН РАЗ перед циклом
                 const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
                 const isAudienceOwner = currentUser && audienceData && currentUser.uid === audienceData.ownerId;
-                // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
-
+                
                 snapshot.forEach(doc => {
                     const topic = { id: doc.id, ...doc.data() };
                     const li = document.createElement('li');
@@ -17178,25 +17404,20 @@ const mainApp = (function() {
                         li.classList.add('active');
                     }
                     
-                    // Используем уже готовую переменную isAudienceOwner
                     const deleteBtnHtml = isAudienceOwner 
                         ? `<button class="ai-chat-history-delete" title="Удалить тему"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
                         : '';
 
                     li.innerHTML = `<span class="ai-chat-history-title">${escapeHTML(topic.title)}</span>${deleteBtnHtml}`;
                     
-                    // --- НАЧАЛО ИСПРАВЛЕНИЯ: Упрощаем обработчики ---
                     li.addEventListener('click', (e) => {
-                        // Клик по кнопке удаления
                         if (e.target.closest('.ai-chat-history-delete')) {
                             e.stopPropagation();
                             deleteTopic(audienceId, topic.id, topic.title);
                         } else {
-                        // Клик по самому элементу
                             switchToAIChat(audienceId, topic.id, 'public');
                         }
                     });
-                    // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
                     
                     aiTopicsList.appendChild(li);
                 });
@@ -17204,7 +17425,7 @@ const mainApp = (function() {
             })
             .catch(error => {
                 console.error("Ошибка загрузки тем:", error);
-                aiTopicsList.innerHTML = '<li class="ai-chat-history-item-placeholder">Ошибка загрузки.</li>';
+                aiTopicsList.innerHTML = `<li class="ai-chat-history-item-placeholder">${_('ai_error_loading_topics')}</li>`;
             });
     }
 
@@ -17255,41 +17476,40 @@ const mainApp = (function() {
         );
 
         if (confirmed) {
-            showGlobalLoader('Удаление темы...');
+            showGlobalLoader(_('loader_deleting_topic'));
             try {
                 const topicRef = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId);
                 const messagesSnapshot = await topicRef.collection('messages').get();
                 
                 const batch = db.batch();
 
-                // Удаляем все сообщения
                 messagesSnapshot.forEach(doc => {
                     batch.delete(doc.ref);
                 });
 
-                // Удаляем саму тему
                 batch.delete(topicRef);
 
                 await batch.commit();
                 
-                showToast("Тема успешно удалена.", "success");
+                showToast(_('toast_topic_deleted_success'), "success");
 
-                // Если удалили активную тему, очищаем вид
                 if (currentTopicId === topicId) {
                     currentTopicId = null;
-                    aiChatMessages.innerHTML = '<div class="empty-state">Тема удалена. Выберите другую.</div>';
+                    aiChatMessages.innerHTML = `<div class="empty-state">${_('ai_topic_deleted_select_another')}</div>`;
                 }
 
-                renderTopicsList(audienceId); // Обновляем список тем
+                renderTopicsList(audienceId);
 
             } catch (error) {
                 console.error("Ошибка удаления темы:", error);
-                showToast("Не удалось удалить тему.", "error");
+                showToast(_('toast_topic_delete_failed'), "error");
             } finally {
                 hideGlobalLoader();
             }
         }
     }
+
+
 
     /**
      * НОВАЯ ФУНКЦИЯ: Обрабатывает клик по Аудитории, проверяя пароль.
@@ -17332,7 +17552,7 @@ const mainApp = (function() {
                 localStorage.setItem(`unlockedAudiences_${currentUser.uid}`, JSON.stringify(Array.from(unlockedAudiences)));
                 proceedToAudience();
             } else {
-                showToast("Неверный пароль.", "error");
+                showToast(_('toast_invalid_password'), "error");
             }
         } else {
             // Если пароля нет, заходим свободно
@@ -17347,8 +17567,6 @@ const mainApp = (function() {
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         if (!modal || !audienceData) return;
 
-        // === НАЧАЛО ИСПРАВЛЕНИЙ ===
-        // 1. Находим все элементы модального окна
         const titleEl = getEl('audienceEditModalTitle');
         const nameInput = getEl('audienceNameEditInput');
         const passwordInput = getEl('audiencePasswordEditInput');
@@ -17357,17 +17575,14 @@ const mainApp = (function() {
         const cancelBtn = getEl('cancelAudienceEditBtn');
         const saveBtn = getEl('saveAudienceSettingsBtn');
 
-        // 2. Применяем переводы ко всем элементам
         titleEl.textContent = _('ai_settings_for_audience').replace('{audienceName}', audienceData.title);
         nameInput.value = audienceData.title;
         passwordInput.value = ''; 
         getEl('moderatorEmailInput').value = '';
         cancelBtn.textContent = _('modal_cancel_button');
         saveBtn.textContent = _('modal_save_button'); 
-        // === КОНЕЦ ИСПРАВЛЕНИЙ ===
-
-        // Загружаем и отображаем список модераторов
-        moderatorsListEl.innerHTML = '<li>Загрузка...</li>';
+        
+        moderatorsListEl.innerHTML = `<li>${_('ai_loading_moderators')}</li>`;
         
         const moderators = audienceData.moderators || [];
         if (moderators.length > 0) {
@@ -17385,10 +17600,9 @@ const mainApp = (function() {
                 `;
             }).join('');
         } else {
-            moderatorsListEl.innerHTML = '<li>Модераторы не назначены.</li>';
+            moderatorsListEl.innerHTML = `<li>${_('ai_no_moderators_assigned')}</li>`;
         }
         
-        // Привязываем обработчики
         saveBtn.onclick = () => saveAudienceSettings(audienceId);
         cancelBtn.onclick = () => ChatModule.closeModal('audienceEditModal');
         addModeratorBtn.onclick = () => addModeratorToAudience(audienceId);
@@ -17416,33 +17630,28 @@ const mainApp = (function() {
             return;
         }
 
-        showGlobalLoader("Сохранение...");
+        showGlobalLoader(_('loader_saving_settings'));
         try {
             const audienceRef = db.collection('ai_audiences').doc(audienceId);
             
-            // 1. Начинаем с объекта, который содержит только те данные, что мы обновляем всегда.
             const updateData = { title: newName };
 
-            // 2. Проверяем, ввел ли пользователь новый пароль.
             if (newPassword) {
-                // Если да - добавляем в наш объект данные для обновления пароля.
                 updateData.hasPassword = true;
                 updateData.passwordHash = await hashPassword(newPassword);
             }
-            // 3. Если поле newPassword пустое, мы НИЧЕГО не делаем.
-            //    В объект updateData не попадут поля hasPassword и passwordHash,
-            //    и Firestore не будет трогать существующие значения в базе.
-
+            
             await audienceRef.update(updateData);
-            showToast("Настройки успешно сохранены.", "success");
+            showToast(_('toast_audience_settings_saved'), "success");
             ChatModule.closeModal('audienceEditModal');
         } catch (error) {
             console.error("Ошибка сохранения настроек:", error);
-            showToast("Не удалось сохранить настройки.", "error");
+            showToast(_('toast_audience_settings_failed'), "error");
         } finally {
             hideGlobalLoader();
         }
     }
+
 
     /**
      * НОВАЯ ФУНКЦИЯ: Добавляет нового модератора в Аудиторию.
@@ -17454,7 +17663,7 @@ const mainApp = (function() {
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         if (!audienceData) return;
 
-        showGlobalLoader("Добавление модератора...");
+        showGlobalLoader(_('loader_adding_moderator'));
         try {
             const userQuery = await db.collection('users').where('email', '==', email).limit(1).get();
             if (userQuery.empty) {
@@ -17466,18 +17675,17 @@ const mainApp = (function() {
                 throw new Error("Владелец не может быть модератором.");
             }
 
-            // Обновляем массив модераторов в самой Аудитории
             const audienceRef = db.collection('ai_audiences').doc(audienceId);
             await audienceRef.update({
                 moderators: firebase.firestore.FieldValue.arrayUnion(user.uid)
             });
 
-            showToast(`"${user.username}" назначен модератором.`, "success");
+            showToast(_('toast_moderator_added').replace('{username}', user.username), "success");
             showAudienceEditModal(audienceId);
 
         } catch (error) {
             console.error("Ошибка добавления модератора:", error);
-            showToast(error.message || "Не удалось добавить модератора.", "error");
+            showToast(error.message || _('toast_moderator_add_failed'), "error");
         } finally {
             hideGlobalLoader();
         }
@@ -17487,22 +17695,21 @@ const mainApp = (function() {
      * НОВАЯ ФУНКЦИЯ: Удаляет модератора из Аудитории.
      */
     async function removeModeratorFromAudience(audienceId, uid) {
-        showGlobalLoader("Удаление модератора...");
+        showGlobalLoader(_('loader_removing_moderator'));
         try {
             const audienceRef = db.collection('ai_audiences').doc(audienceId);
             
-            // Удаляем из массива модераторов в Аудитории
             await audienceRef.update({
                 moderators: firebase.firestore.FieldValue.arrayRemove(uid)
             });
 
 
-            showToast("Модератор удален.", "success");
+            showToast(_('toast_moderator_removed'), "success");
             showAudienceEditModal(audienceId);
 
         } catch (error) {
             console.error("Ошибка удаления модератора:", error);
-            showToast("Не удалось удалить модератора.", "error");
+            showToast(_('toast_moderator_remove_failed'), "error");
         } finally {
             hideGlobalLoader();
         }
@@ -17732,17 +17939,16 @@ const mainApp = (function() {
 
         const privateChatMessages = allAIChats[privateChatId];
         if (!privateChatMessages || privateChatMessages.length <= 1) {
-            showToast("Нельзя скопировать пустой чат.", "info");
+            showToast(_('toast_empty_chat_copy_failed'), "info");
             return;
         }
 
         const targetAudienceId = await promptForAudienceSelection();
-        if (!targetAudienceId) return; // Пользователь нажал "Отмена"
+        if (!targetAudienceId) return;
 
-        showGlobalLoader("Копирование чата...");
+        showGlobalLoader(_('loader_copying_chat'));
 
         try {
-            // Создаем новую Тему в выбранной Аудитории
             const chatTitle = getAIChatTitle(privateChatId);
             const newTopicRef = await db.collection('ai_audiences').doc(targetAudienceId).collection('topics').add({
                 title: chatTitle,
@@ -17752,40 +17958,34 @@ const mainApp = (function() {
             const newTopicId = newTopicRef.id;
             const messagesRef = db.collection('ai_audiences').doc(targetAudienceId).collection('topics').doc(newTopicId).collection('messages');
 
-            // Используем batch для атомарной записи всех сообщений
             const batch = db.batch();
             
-            // === НАЧАЛО ИЗМЕНЕНИЙ ===
-            const startTime = new Date().getTime(); // Берем текущее время как точку отсчета
+            const startTime = new Date().getTime();
 
             privateChatMessages.forEach((msg, index) => {
-                // Пропускаем системное приветственное сообщение
                 if (msg.type === 'welcome_message') return;
 
-                const newDocRef = messagesRef.doc(); // Генерируем новый ID для сообщения
+                const newDocRef = messagesRef.doc();
                 const messageToCopy = {
                     ...msg,
-                    authorId: currentUser.uid, // Авторство присваивается текущему пользователю
+                    authorId: currentUser.uid,
                     authorName: currentUser.displayName || 'Аноним',
-                    // Создаем временную метку, добавляя по 1 миллисекунде к каждому сообщению
                     timestamp: new Date(startTime + index) 
                 };
                 batch.set(newDocRef, messageToCopy);
             });
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
-
+            
             await batch.commit();
 
             hideGlobalLoader();
-            showToast("Чат успешно скопирован!", "success");
+            showToast(_('toast_chat_copied'), "success");
 
-            // Автоматически переключаемся на новую созданную тему
             switchToAIChat(targetAudienceId, newTopicId, 'public');
 
         } catch (error) {
             hideGlobalLoader();
             console.error("Ошибка копирования чата:", error);
-            showToast("Не удалось скопировать чат.", "error");
+            showToast(_('toast_chat_copy_failed'), "error");
         }
     }
 
@@ -17795,7 +17995,7 @@ const mainApp = (function() {
      * @param {string} audienceId - ID аудитории.
      * @param {string} topicId - ID темы внутри аудитории.
      */
-    function renderPublicAudience(audienceId, topicId) {
+    function renderPublicAudience(audienceId, topicId, options = { restoreScroll: false, savedScrollTop: 0 }) {
         return new Promise((resolve) => {
             if (!db) return resolve();
 
@@ -17835,34 +18035,29 @@ const mainApp = (function() {
                 }
             });
 
-            let isInitialLoad = true; // Флаг для первой загрузки
+            let isInitialLoad = true;
             currentAudienceListener = db.collection('ai_audiences').doc(audienceId).collection('topics').doc(topicId).collection('messages')
                 .orderBy('timestamp', 'asc')
                 .onSnapshot(snapshot => {
-                    // Первая загрузка: полная перерисовка
                     if (isInitialLoad) {
                         currentPublicChatMessages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        renderAIChatMessages();
+                        renderAIChatMessages(!options.restoreScroll, options.savedScrollTop);
                         isInitialLoad = false;
-                        resolve(); // Завершаем Promise после первой отрисовки
+                        resolve();
                     } else {
-                        // Последующие обновления: точечные изменения
+                        // ... (остальной код точечных обновлений) ...
                         snapshot.docChanges().forEach(change => {
                             const messageData = { id: change.doc.id, ...change.doc.data() };
                             const messageDomId = `ai-msg-public-${messageData.id}`;
                             const existingElement = getEl(messageDomId);
 
                             if (change.type === 'added') {
-                                if (!existingElement) { // Добавляем, только если элемента еще нет
+                                if (!existingElement) {
                                     currentPublicChatMessages.push(messageData);
                                     const newElement = createAIMessageContainer(messageData, currentPublicChatMessages.length - 1);
                                     aiChatMessages.appendChild(newElement);
-                                    // Плавная прокрутка к новому сообщению
                                     newElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                 }
-
-
-
                             } else if (change.type === 'modified') {
                                 const index = currentPublicChatMessages.findIndex(m => m.id === messageData.id);
                                 if (index > -1) {
@@ -17870,30 +18065,21 @@ const mainApp = (function() {
                                     if (existingElement) {
                                         const newElement = createAIMessageContainer(messageData, index);
                                         existingElement.replaceWith(newElement);
-                                        
-                                        // === НАЧАЛО НОВОГО КОДА ===
-                                        // Находим сообщение пользователя, которое было ПЕРЕД ответом ИИ
                                         const userPromptElement = newElement.previousElementSibling;
                                         if (userPromptElement && userPromptElement.classList.contains('is-user')) {
-                                            // Прокручиваем к сообщению пользователя, выравнивая его по ВЕРХНЕМУ краю
                                             userPromptElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                         } else {
-                                            // Запасной вариант: если вдруг не нашли, скроллим к ответу ИИ
                                             newElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
                                         }
-                                        // === КОНЕЦ НОВОГО КОДА ===
                                     }
                                 }
                             } else if (change.type === 'removed') {
-
-
                                 currentPublicChatMessages = currentPublicChatMessages.filter(m => m.id !== messageData.id);
                                 if (existingElement) {
                                     existingElement.remove();
                                 }
                             }
                         });
-                        // Перерисовываем элементы, которые зависят от данных, но не вызывают "моргания"
                         renderColorLegends();
                         drawOrUpdateScrollbar();
                         if(window.lucide) lucide.createIcons();
@@ -17901,11 +18087,10 @@ const mainApp = (function() {
                 }, error => {
                     console.error(`Ошибка при получении сообщений Темы ${topicId}:`, error);
                     aiChatMessages.innerHTML = `<div class="empty-state">Не удалось загрузить сообщения.</div>`;
-                    resolve(); // Завершаем Promise даже в случае ошибки
+                    resolve();
                 });
         });
     }
-
 
 
 
@@ -17972,7 +18157,7 @@ const mainApp = (function() {
      * Инициализирует все слушатели событий для кастомного скроллбара.
      */
     function initCustomScrollbar() {
-        if (!aiChatMessages || !aiCustomScrollbar) return;
+        if (!aiChatMessages || !aiCustomScrollbar || !aiScrollbarThumb) return;
 
         // 1. Слушаем скролл в основном окне чата, чтобы двигать ползунок
         aiChatMessages.addEventListener('scroll', () => {
@@ -17982,7 +18167,7 @@ const mainApp = (function() {
         // 2. Слушаем изменение размера окна чата или добавление/удаление сообщений
         const observer = new ResizeObserver(() => {
             drawOrUpdateScrollbar();
-            updateScrollToBottomButtonVisibility(); // Добавляем вызов при изменении размера
+            updateScrollToBottomButtonVisibility();
         });
         observer.observe(aiChatMessages);
         const mutationObserver = new MutationObserver(drawOrUpdateScrollbar);
@@ -18011,6 +18196,7 @@ const mainApp = (function() {
         });
 
         window.addEventListener('mouseup', () => {
+            if (!isDraggingThumb) return;
             isDraggingThumb = false;
             aiScrollbarThumb.style.cursor = 'grab';
             document.body.style.cursor = '';
@@ -18020,11 +18206,113 @@ const mainApp = (function() {
 
 
     function initCustomScrollbarTooltipEvents() {
-        if (!aiScrollbarDots || !aiScrollbarTooltip) return;
-        // Пустая функция, так как вся логика перенесена в drawOrUpdateScrollbar
+        if (!aiScrollbarDots || !aiChatScrollWrapper) return;
+
+        // Переменная для отслеживания активной подсказки
+        let activeTooltip = null;
+
+        // Функция, которая надежно скрывает и очищает активную подсказку
+        const hideActiveTooltip = () => {
+            if (activeTooltip) {
+                activeTooltip.classList.remove('visible');
+                const tooltipToRemove = activeTooltip;
+                activeTooltip = null;
+                // Удаляем элемент из DOM после анимации затухания
+                setTimeout(() => tooltipToRemove.remove(), 200);
+            }
+        };
+
+        // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ №1: Слушатель теперь на контейнере чата ***
+        // Этот слушатель будет ловить ВСЕ клики и касания внутри области сообщений.
+        const handleWrapperClick = (event) => {
+            // Если есть активная подсказка и клик был НЕ внутри нее, скрываем ее.
+            if (activeTooltip && !activeTooltip.contains(event.target)) {
+                hideActiveTooltip();
+            }
+        };
+        aiChatScrollWrapper.addEventListener('click', handleWrapperClick);
+        aiChatScrollWrapper.addEventListener('touchstart', handleWrapperClick);
+
+
+        // Обработчик для кликов по точкам на скроллбаре
+        aiScrollbarDots.addEventListener('click', (e) => {
+            const dot = e.target.closest('.scrollbar-dot');
+            if (!dot) return;
+            
+            // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ №2: Останавливаем "всплытие" события ***
+            // Это не дает клику по точке "просочиться" до нашего слушателя на wrapper'е,
+            // который бы тут же закрыл только что открытую подсказку.
+            e.stopPropagation();
+
+            // Если кликнули по той же точке, которая уже открыла подсказку, скрываем ее
+            if (activeTooltip && activeTooltip.dataset.sourceDotId === dot.dataset.clusterIndices) {
+                hideActiveTooltip();
+                return;
+            }
+
+            // Сначала скрываем старую подсказку, а затем показываем новую
+            hideActiveTooltip();
+
+            const indices = JSON.parse(dot.dataset.clusterIndices);
+            const tooltip = document.createElement('div');
+            tooltip.className = 'scrollbar-preview-tooltip';
+            tooltip.dataset.sourceDotId = dot.dataset.clusterIndices;
+            const ul = document.createElement('ul');
+
+            indices.forEach(index => {
+                const msg = getAIChatMessageByIndex(index);
+                if (!msg) return;
+                const li = document.createElement('li');
+                li.dataset.index = index;
+                if (msg.dotColor) {
+                    const colorIndicator = document.createElement('span');
+                    colorIndicator.className = 'preview-color-indicator';
+                    colorIndicator.style.backgroundColor = msg.dotColor;
+                    li.appendChild(colorIndicator);
+                }
+                const content = msg.content || 'Вложение';
+                const snippet = content.substring(0, 100) + (content.length > 100 ? '...' : '');
+                li.appendChild(document.createTextNode(snippet));
+                ul.appendChild(li);
+            });
+
+            if (ul.children.length === 0) return;
+
+            tooltip.appendChild(ul);
+            document.body.appendChild(tooltip);
+            activeTooltip = tooltip; // Сохраняем новую подсказку как активную
+
+            // *** КЛЮЧЕВОЕ ИЗМЕНЕНИЕ №3: Останавливаем "всплытие" и здесь ***
+            tooltip.addEventListener('click', (event) => {
+                event.stopPropagation(); // Предотвращаем закрытие при клике внутри подсказки
+                 const li = event.target.closest('li');
+                 if (li) {
+                     const index = parseInt(li.dataset.index, 10);
+                     const message = getAIChatMessageByIndex(index);
+                     if (message) {
+                        const domId = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? message.id : `${currentAIChatId}_${index}`)}`;
+                        scrollToAIMessage(domId);
+                     }
+                     hideActiveTooltip();
+                 }
+            });
+
+            // Позиционирование (без изменений)
+            requestAnimationFrame(() => {
+                const dotRect = dot.getBoundingClientRect();
+                const scrollbarRect = aiCustomScrollbar.getBoundingClientRect();
+                const tooltipRect = tooltip.getBoundingClientRect();
+                tooltip.style.left = `${scrollbarRect.left - tooltipRect.width - 10}px`;
+                let topPos = dotRect.top + (dotRect.height / 2) - (tooltipRect.height / 2);
+                if (topPos < 10) topPos = 10;
+                if (topPos + tooltipRect.height > window.innerHeight - 10) {
+                    topPos = window.innerHeight - tooltipRect.height - 10;
+                }
+                tooltip.style.top = `${topPos}px`;
+                tooltip.classList.add('visible');
+            });
+        });
     }
-
-
 
     /**
      * Перерисовывает весь кастомный скроллбар: ползунок и точки.
@@ -18121,49 +18409,70 @@ const mainApp = (function() {
 
     /**
      * Инициализирует делегированные обработчики событий для скроллбара.
-     * ВЕРСИЯ 2.0: Полностью переработанная логика для надежного закрытия всплывающих подсказок.
+     * ВЕРСИЯ 3.0 (ФИНАЛ): Единый обработчик 'click' для всех устройств.
      */
     function initScrollbarInteraction() {
-        if (!aiScrollbarDots) {
-           
-            return;
-        }
-    
+        if (!aiScrollbarDots || !aiChatScrollWrapper) return;
 
+        // Переменная для отслеживания активной подсказки и ее "родительской" точки
+        let activeTooltip = null;
+        let activeDot = null;
+
+        // Универсальный обработчик для закрытия подсказки
+        const handleCloseAction = (event) => {
+            // Проверяем, существует ли подсказка и был ли клик НЕ внутри нее
+            if (activeTooltip && !activeTooltip.contains(event.target)) {
+                hideActiveTooltip();
+            }
+        };
+
+        // Функция, которая надежно скрывает и очищает активную подсказку
         const hideActiveTooltip = () => {
-            if (activePreviewTooltip) {
-               
-                activePreviewTooltip.classList.remove('visible');
-                const tooltipToRemove = activePreviewTooltip;
-                activePreviewTooltip = null;
+            if (activeTooltip) {
+                activeTooltip.classList.remove('visible');
+                const tooltipToRemove = activeTooltip;
+                
+                // Сбрасываем состояние
+                activeTooltip = null;
+                activeDot = null;
+
+                // Удаляем глобальные слушатели, чтобы они не висели в памяти
+                document.body.removeEventListener('click', handleCloseAction, true);
+                document.body.removeEventListener('touchstart', handleCloseAction, true);
+
+                // Удаляем элемент из DOM после анимации затухания
                 setTimeout(() => tooltipToRemove.remove(), 200);
             }
         };
 
-        const showTooltip = (dotElement) => {
-          
-            hideActiveTooltip();
+        // Главный и ЕДИНСТВЕННЫЙ слушатель для открытия подсказок
+        aiScrollbarDots.addEventListener('click', (e) => {
+            const dot = e.target.closest('.scrollbar-dot');
+            if (!dot) return;
 
-            const indicesStr = dotElement.dataset.clusterIndices;
-            if (!indicesStr) {
-         
-                
+            // Останавливаем "всплытие" клика, чтобы он не активировал наш слушатель на body
+            e.stopPropagation();
+
+            // Если кликнули по той же точке, которая уже открыла подсказку, просто скрываем ее
+            if (activeDot === dot) {
+                hideActiveTooltip();
                 return;
             }
-            
-            const indices = JSON.parse(indicesStr);
-       
-            
+
+            // Если была другая открытая подсказка, сначала скрываем ее
+            hideActiveTooltip();
+
+            // --- Логика создания и отображения новой подсказки ---
+            activeDot = dot; // Запоминаем новую активную точку
+
+            const indices = JSON.parse(dot.dataset.clusterIndices);
             const tooltip = document.createElement('div');
             tooltip.className = 'scrollbar-preview-tooltip';
             const ul = document.createElement('ul');
 
             indices.forEach(index => {
                 const msg = getAIChatMessageByIndex(index);
-                if (!msg) {
-                     
-                     return;
-                }
+                if (!msg) return;
                 const li = document.createElement('li');
                 li.dataset.index = index;
                 if (msg.dotColor) {
@@ -18178,37 +18487,15 @@ const mainApp = (function() {
                 ul.appendChild(li);
             });
 
-            if (ul.children.length === 0) {
-                
-       
-                return;
-            }
+            if (ul.children.length === 0) return;
 
             tooltip.appendChild(ul);
             document.body.appendChild(tooltip);
-            activePreviewTooltip = tooltip;
+            activeTooltip = tooltip; // Сохраняем новую подсказку как активную
 
-
-            tooltip.addEventListener('click', (e) => {
-                const li = e.target.closest('li');
-                if (li) {
-                    const index = parseInt(li.dataset.index, 10);
-                    const message = getAIChatMessageByIndex(index);
-                    if (message) {
-                        const domId = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? message.id : `${currentAIChatId}_${index}`)}`;
-                        scrollToAIMessage(domId); // Передаем готовый ID
-                    }
-                    hideActiveTooltip();
-                }
-            });
-            
-            tooltip.addEventListener('mouseleave', () => {
-
-                hideActiveTooltip();
-            });
-
+            // Позиционирование
             requestAnimationFrame(() => {
-                const dotRect = dotElement.getBoundingClientRect();
+                const dotRect = dot.getBoundingClientRect();
                 const scrollbarRect = aiCustomScrollbar.getBoundingClientRect();
                 const tooltipRect = tooltip.getBoundingClientRect();
                 tooltip.style.left = `${scrollbarRect.left - tooltipRect.width - 10}px`;
@@ -18219,35 +18506,31 @@ const mainApp = (function() {
                 }
                 tooltip.style.top = `${topPos}px`;
                 tooltip.classList.add('visible');
-
             });
-       
-        };
 
-        aiScrollbarDots.addEventListener('mouseover', (e) => {
-            const dot = e.target.closest('.scrollbar-dot');
-            if (dot) {
-                showTooltip(dot);
-            }
-        });
+            // Добавляем слушатель для закрытия при клике/тапе вне области
+            setTimeout(() => {
+                document.body.addEventListener('click', handleCloseAction, true);
+                document.body.addEventListener('touchstart', handleCloseAction, true);
+            }, 0);
 
-        aiScrollbarDots.addEventListener('mouseout', (e) => {
-            if (activePreviewTooltip && !activePreviewTooltip.contains(e.relatedTarget) && !e.target.closest('.scrollbar-dot')) {
-                 setTimeout(() => {
-                    if (activePreviewTooltip && !activePreviewTooltip.matches(':hover')) {
-                       hideActiveTooltip();
-                    }
-                 }, 300);
-            }
-        });
-
-        aiScrollbarDots.addEventListener('click', (e) => {
-            const dot = e.target.closest('.scrollbar-dot');
-            if (dot) {
-                showTooltip(dot);
-            }
+            // Обработчик для клика ВНУТРИ подсказки
+            tooltip.addEventListener('click', (event) => {
+                 const li = event.target.closest('li');
+                 if (li) {
+                     const index = parseInt(li.dataset.index, 10);
+                     const message = getAIChatMessageByIndex(index);
+                     if (message) {
+                        const domId = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? message.id : `${currentAIChatId}_${index}`)}`;
+                        scrollToAIMessage(domId);
+                     }
+                     hideActiveTooltip();
+                 }
+            });
         });
     }
+
+
 
     /**
      * Скрывает и удаляет активную всплывающую подсказку.
@@ -18313,12 +18596,26 @@ const mainApp = (function() {
             return;
         }
         scrollRAF = requestAnimationFrame(() => {
-            updateScrollToBottomButtonVisibility(); // Теперь просто вызывает нашу новую функцию
+            updateScrollToBottomButtonVisibility();
+            
+            let scrollCacheKey;
+            if (currentAIChatType === 'public' && currentAudienceId && currentTopicId) {
+                scrollCacheKey = `ai_scroll_pos_public_${currentAudienceId}_${currentTopicId}`;
+            } else if (currentAIChatType === 'private' && currentAIChatId) {
+                scrollCacheKey = `ai_scroll_pos_private_${currentAIChatId}`;
+            }
+
+            // === ЛОГИРОВАНИЕ ===
+            if (scrollCacheKey) {
+                const scrollTop = aiChatMessages.scrollTop;
+                sessionStorage.setItem(scrollCacheKey, scrollTop);
+                console.log(`[SCROLL SAVE] Сохранено значение ${scrollTop} для ключа: ${scrollCacheKey}`);
+            }
+            // === КОНЕЦ ЛОГИРОВАНИЯ ===
+
             scrollRAF = null;
         });
     }
-     
-
 
 
     /**
@@ -19176,20 +19473,41 @@ const mainApp = (function() {
        document.body.classList.add('chat-open'); 
        aiChatModal.classList.remove('hidden');
 
-      // ======== НАЧАЛО ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ОТРИСОВКИ ИКОНОК (v4) ========
-      // Используем setTimeout с задержкой, равной длительности анимации появления окна.
-      // Это гарантирует, что к моменту вызова lucide.createIcons() модальное окно
-      // будет полностью видимо и отрисовано, решая проблему "гонки состояний".
       setTimeout(() => {
           if (window.lucide) {
               lucide.createIcons();
           }
-      }, 450); // Анимация slideUp длится 0.4s (400ms), берем с небольшим запасом.
-      // ======== КОНЕЦ ФИНАЛЬНОГО ИСПРАВЛЕНИЯ ========
+      }, 450);
 
        if (!detectMobileDevice()) { aiChatInput.focus(); }
-       // Загружаем и отображаем текущий активный чат
-       switchToAIChat(currentAIChatId);
+       
+       try {
+           const lastActiveChatData = JSON.parse(localStorage.getItem('lastActiveAIChat'));
+           let savedScroll = 0; // Значение по умолчанию
+
+           if (lastActiveChatData && lastActiveChatData.type === 'public') {
+               const { audienceId, topicId } = lastActiveChatData;
+               // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Читаем скролл ЗДЕСЬ ===
+               const scrollKey = `ai_scroll_pos_public_${audienceId}_${topicId}`;
+               savedScroll = parseInt(sessionStorage.getItem(scrollKey), 10) || 0;
+               
+               openAudienceFolder(audienceId, getEl(`aiAudiencesList [data-chat-id="${audienceId}"] .ai-chat-history-title`)?.textContent || 'Аудитория');
+               // Передаем сохраненный скролл дальше
+               switchToAIChat(audienceId, topicId, 'public', { restoreScroll: true, savedScrollTop: savedScroll });
+           } else {
+               const privateChatId = localStorage.getItem('currentAIChatId');
+               // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Читаем скролл ЗДЕСЬ ===
+               const scrollKey = `ai_scroll_pos_private_${privateChatId}`;
+               savedScroll = parseInt(sessionStorage.getItem(scrollKey), 10) || 0;
+               // Передаем сохраненный скролл дальше
+               switchToAIChat(privateChatId, null, 'private', { restoreScroll: true, savedScrollTop: savedScroll });
+           }
+       } catch (e) {
+           console.error("Ошибка восстановления сессии AI-чата:", e);
+           const privateChatId = localStorage.getItem('currentAIChatId');
+           switchToAIChat(privateChatId, null, 'private', { restoreScroll: true, savedScrollTop: 0 });
+       }
+       
        updateGroundingToggleState();
        translateAIChatUI();
     }
@@ -19299,7 +19617,7 @@ const mainApp = (function() {
         if (msg.role === 'model' && msg.generatedTest) {
             const testData = msg.generatedTest;
             const attachmentHTML = `
-                <div class="ai-message-attachment" onclick="mainApp.showFileActionsForAIGeneratedTest(-1, JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(testData))}')))">
+                <div class="ai-message-attachment" title="${_('ai_open_test_actions_tooltip')}" onclick="mainApp.showFileActionsForAIGeneratedTest(-1, JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(testData))}')))">
                     <div class="ai-attachment-icon"><i data-lucide="file-question"></i></div>
                     <div class="ai-attachment-file-info">
                         <div class="ai-attachment-file-name">${escapeHTML(testData.fileName)}</div>
@@ -19329,8 +19647,9 @@ const mainApp = (function() {
             
             let createTestElementHTML = '';
             if (generatedTestsFromAI.has(index)) {
-                createTestElementHTML = `<button class="ai-action-btn ai-generated-test-file-btn" title="Открыть действия для теста" onclick="mainApp.showFileActionsForAIGeneratedTest(${index})"><i data-lucide="file-question"></i></button>`;
+                createTestElementHTML = `<button class="ai-action-btn ai-generated-test-file-btn" title="${_('ai_open_test_actions_tooltip')}" onclick="mainApp.showFileActionsForAIGeneratedTest(${index})"><i data-lucide="file-question"></i></button>`;
             } else if (!msg.generatedTest) {
+
                 createTestElementHTML = `<button class="ai-action-btn" title="${_('ai_create_test_tooltip')}" onclick="mainApp.showAITestFromMessageModal(${index})"><i data-lucide="clipboard-list"></i></button>`;
             }
 
@@ -19364,7 +19683,7 @@ const mainApp = (function() {
      * Отображает сообщения в AI-чате. Автоматически определяет, какой чат активен
      * (приватный или публичный) и использует правильный источник данных.
      */
-    function renderAIChatMessages(scrollToEnd = true) {
+    function renderAIChatMessages(scrollToEnd = true, savedScrollTop = -1) {
         let currentChat;
         if (currentAIChatType === 'public') {
             currentChat = currentPublicChatMessages;
@@ -19381,13 +19700,12 @@ const mainApp = (function() {
         }
         
         const scrollThreshold = 100;
-        const isScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
+        const wasScrolledToBottom = aiChatMessages.scrollHeight - aiChatMessages.clientHeight <= aiChatMessages.scrollTop + scrollThreshold;
 
         aiChatMessages.innerHTML = '';
 
         currentChat.forEach((msg, index) => {
             try {
-                // Используем новую функцию для создания элемента
                 const messageContainer = createAIMessageContainer(msg, index);
                 aiChatMessages.appendChild(messageContainer);
             } catch (err) {
@@ -19402,22 +19720,46 @@ const mainApp = (function() {
         renderMathInElement(aiChatMessages);
         drawOrUpdateScrollbar();
 
-        if (scrollToEnd && isScrolledToBottom) {
-            const lastMessage = aiChatMessages.lastElementChild;
-            if (lastMessage) {
-                // Используем 'auto', чтобы избежать "дергания" при полной перерисовке
-                lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' });
+        const applyScrollPosition = () => {
+            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем переданное значение, а не читаем из хранилища ===
+            if (!scrollToEnd && savedScrollTop >= 0) {
+                aiChatMessages.scrollTop = savedScrollTop;
+            } else if (scrollToEnd || wasScrolledToBottom) {
+                const lastMessage = aiChatMessages.lastElementChild;
+                if (lastMessage) {
+                    lastMessage.scrollIntoView({ behavior: 'auto', block: 'end' });
+                }
             }
+            updateScrollToBottomButtonVisibility();
+        };
+
+        const images = aiChatMessages.querySelectorAll('img');
+        if (images.length === 0) {
+            setTimeout(applyScrollPosition, 0);
+        } else {
+            let loadedImages = 0;
+            const totalImages = images.length;
+            const onImageLoad = () => {
+                loadedImages++;
+                if (loadedImages === totalImages) {
+                    applyScrollPosition();
+                }
+            };
+            images.forEach(img => {
+                if (img.complete) {
+                    onImageLoad();
+                } else {
+                    img.addEventListener('load', onImageLoad);
+                    img.addEventListener('error', onImageLoad);
+                }
+            });
         }
-        updateScrollToBottomButtonVisibility();
+
         if (pendingHighlight && getEl(pendingHighlight.messageDomId)) {
             highlightAndScrollToMessage(pendingHighlight.messageDomId, pendingHighlight.query);
             pendingHighlight = null;
         }
     }
-
-
-
 
     async function sendAIChatMessage() {
         try {
