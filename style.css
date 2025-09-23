@@ -203,41 +203,6 @@ body.synthwave-mode {
 
 
 
-/* --- Стеклянная темная тема (как на скриншоте) --- */
-body.glass-dark {
-    --bg-color: #121212;
-    --container-bg-color: rgba(42, 42, 42, 0.7); /* <-- ИЗМЕНЕНО: сделали фон плотнее */
-    --text-color: #e0e0e0;
-    --secondary-text-color: #a0a0a0;
-    --heading-color: #ffffff;
-    --border-color: rgba(255, 255, 255, 0.1); /* Светлая рамка для контраста */
-    --dashed-border-color: rgba(255, 255, 255, 0.2);
-    --input-bg-color: rgba(255, 255, 255, 0.05);
-    --input-hover-bg-color: rgba(255, 255, 255, 0.1);
-    --input-border-color: rgba(255, 255, 255, 0.2);
-    --input-hover-border-color: rgba(255, 255, 255, 0.4);
-    --button-primary-bg: #4A4A4A;
-    --button-primary-hover-bg: #5A5A5A;
-    --button-primary-text: #FFFFFF;
-    --theme-toggle-border: rgba(255, 255, 255, 0.2);
-    --theme-toggle-hover-bg: rgba(255, 255, 255, 0.1);
-/* Новые, стильные цвета для обратной связи */
-    --feedback-correct-bg: rgba(34, 197, 94, 0.15);  /* Полупрозрачный зеленый */
-    --feedback-correct-text: #4ADE80;                 /* Яркий зеленый текст */
-    --feedback-correct-border: rgba(74, 222, 128, 0.4); /* Полупрозрачная зеленая рамка */
-    --feedback-incorrect-bg: rgba(239, 68, 68, 0.15); /* Полупрозрачный красный */
-    --feedback-incorrect-text: #F87171;                /* Яркий красный текст */
-    --feedback-incorrect-border: rgba(248, 113, 113, 0.4); /* Полупрозрачная красная рамка */
-
-    --accent-color: #4A90E2; /* Яркий синий, хорошо видимый на темном фоне */
-    /* === НАЧАЛО НОВОГО КОДА === */
-    --update-notification-bg: rgba(74, 74, 74, 0.8); /* Полупрозрачный серый */
-    --update-notification-text: #FFFFFF;
-    --update-notification-button-bg: #FFFFFF;
-    --update-notification-button-text: #333333;
-    /* === КОНЕЦ НОВОГО КОДА === */
-
-}
 
 /* Общие стили */
 html {
@@ -276,10 +241,8 @@ body::before {
     transition: opacity 0.5s ease-in-out;
 }
 
-/* Показываем фон только для наших новых тем */
-body.glass-dark::before {
-    opacity: 1;
-}
+
+
 
 .app-wrapper {
     display: flex;
@@ -318,28 +281,11 @@ body.glass-dark::before {
     }
 }
 
-/* Применяем эффект стекла к основным элементам в наших новых темах */
-body.glass-dark .container,
-body.glass-dark .advanced-chat-modal, 
-body.glass-dark .modal-content,
-body.glass-dark .auth-modal,
-body.glass-dark .dropdown-content, 
-/* УБРАЛИ .style-dropdown-content ОТСЮДА, чтобы задать ему особое правило ниже */
-body.glass-dark .filter-dropdown,
-body.glass-dark .theme-picker-dropdown { 
-    backdrop-filter: blur(50px); /* <-- ИЗМЕНЕНО: размытие стало сильнее */
-    -webkit-backdrop-filter: blur(50px); /* <-- ИЗМЕНЕНО: для Safari */
-}
 
-/* НОВЫЙ БЛОК: Особое, более сильное размытие для списка стилей ИИ */
-body.glass-dark .style-dropdown-content {
-    /* 1. Делаем фон элемента почти полностью прозрачным, оставляя лишь легкий оттенок */
-    background-color: rgba(42, 42, 42, 0.2); 
 
-    /* 2. Значительно увеличиваем степень размытия фона за элементом */
-    backdrop-filter: blur(75px);
-    -webkit-backdrop-filter: blur(75px);
-}
+
+
+
 
 /* --- ЭТО НОВЫЙ КОД (ВСТАВЬТЕ ЕГО) --- */
 .header-buttons {
@@ -1041,33 +987,33 @@ button:disabled {
     transition: all 0.2s ease-in-out;
 }
 
-body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #activateSearchBtn,
-body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #searchButton {
+
+body:not(.dark-mode):not(.synthwave-mode) #activateSearchBtn,
+body:not(.dark-mode):not(.synthwave-mode) #searchButton {
     background: var(--button-primary-bg);
     color: var(--button-primary-text);
     border: none;
     box-shadow: 0 2px 5px var(--shadow-light-color);
 }
-body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #activateSearchBtn:hover,
-body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) #searchButton:hover {
+body:not(.dark-mode):not(.synthwave-mode) #activateSearchBtn:hover,
+body:not(.dark-mode):not(.synthwave-mode) #searchButton:hover {
     background-position: right center;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px var(--shadow-color);
 }
 
 body.dark-mode #activateSearchBtn, body.dark-mode #searchButton,
-body.synthwave-mode #activateSearchBtn, body.synthwave-mode #searchButton,
-body.glass-dark #activateSearchBtn, body.glass-dark #searchButton {
+body.synthwave-mode #activateSearchBtn, body.synthwave-mode #searchButton {
     background: var(--input-bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
 }
  body.dark-mode #activateSearchBtn:hover, body.dark-mode #searchButton:hover,
-body.synthwave-mode #activateSearchBtn:hover, body.synthwave-mode #searchButton:hover,
-body.glass-dark #activateSearchBtn:hover, body.glass-dark #searchButton:hover {
+body.synthwave-mode #activateSearchBtn:hover, body.synthwave-mode #searchButton:hover {
     background: var(--input-hover-bg-color);
     border-color: var(--accent-color);
 }
+
 
 @media (max-width: 600px) {
     .main-actions-grid {
@@ -1559,28 +1505,9 @@ body.dark-mode {
     z-index: 2;
 }
 
-/* 6. Особые, перекрывающие стили ТОЛЬКО для темы glass-dark */
-body.glass-dark .auth-tab.active {
-    /* ВАЖНО: Используем НЕПРОЗРАЧНЫЙ фон, который визуально совпадает с фоном модального окна */
-    background-color: #2a2a2a;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
 
-/* 7. Страховочная "маска" ТОЛЬКО для темы glass-dark */
-body.glass-dark .auth-tab.active::after {
-    content: "";
-    position: absolute;
-    left: -1px;
-    right: -1px;
-    bottom: -1px;
-    height: 2px;
-    /* Используем тот же НЕПРОЗРАЧНЫЙ фон для идеального перекрытия */
-    background: #2a2a2a;
-    border-bottom-left-radius: 8px;
-    border-bottom-right-radius: 8px;
-    pointer-events: none;
-}
+
+
 
 
 
@@ -1652,10 +1579,7 @@ body.glass-dark .auth-tab.active::after {
     animation: fadeIn 0.3s ease;
 }
 
-/* Делаем оверлей чата прозрачным только для стеклянных тем */
-body.glass-dark .advanced-chat-overlay {
-    background: transparent;
-}
+
 
 .advanced-chat-modal {
     background: var(--container-bg-color);
@@ -1672,23 +1596,25 @@ body.glass-dark .advanced-chat-overlay {
 }
 
 
-/* --- И ЗАМЕНИТЕ ЕГО НА ЭТОТ --- */
-/* Header */
+
 .advanced-chat-header {
-    padding: 10px 25px; /* ИЗМЕНЕНИЕ: Уменьшили вертикальные отступы */
-    background: var(--container-bg-color); 
-    color: var(--text-color); 
-    display: flex;
-    justify-content: space-between;
+    padding: 10px 15px;
+    background: var(--container-bg-color);
+    color: var(--text-color);
+    display: grid; 
+    grid-template-columns: auto 1fr auto;
     align-items: center;
+    gap: 10px;
     flex-shrink: 0;
-    border-bottom: 1px solid var(--border-color); 
+    border-bottom: 1px solid var(--border-color);
 }
 
 .chat-title {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px; /* Уменьшили отступ */
+    flex-grow: 1; /* Позволяем занимать все свободное место */
+    min-width: 0; /* Разрешаем сжиматься меньше содержимого */
 }
 
 .chat-title h3 {
@@ -1737,6 +1663,13 @@ body.quiz-active .container > .header-controls {
     transition: all 0.3s ease;
     font-size: 1em;
     position: relative;
+    /* === НОВЫЕ СВОЙСТВА ДЛЯ ОБРЕЗКИ ТЕКСТА === */
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #currentUser:hover {
@@ -1754,7 +1687,6 @@ body.quiz-active .container > .header-controls {
 /* ===   ИСПРАВЛЕНИЕ РАЗМЕРА КНОПОК В ШАПКЕ ЧАТА (v2)  === */
 /* ======================================================= */
 
-/* 1. Задаем единый стиль для ВСЕХ кнопок в шапке чата */
 .advanced-chat-header .header-controls button {
     /* Убираем старые размеры и паддинги */
     padding: 0;
@@ -1769,10 +1701,12 @@ body.quiz-active .container > .header-controls {
     align-items: center;
     justify-content: center;
     
+    /* УБИРАЕМ ФОН И РАМКУ */
+    background: none;
+    border: none;
+    color: var(--secondary-text-color); /* Делаем цвет иконки приглушенным */
+    
     /* Оставляем общие стили */
-    background: var(--input-bg-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -1780,8 +1714,8 @@ body.quiz-active .container > .header-controls {
 
 /* 2. Эффект при наведении */
 .advanced-chat-header .header-controls button:hover {
-    background: var(--input-hover-bg-color);
-    border-color: var(--input-hover-border-color);
+    background: var(--input-hover-bg-color); /* При наведении появляется легкий фон */
+    color: var(--text-color); /* Иконка становится ярче */
     transform: scale(1.05);
 }
 
@@ -2391,20 +2325,7 @@ body.synthwave-mode .option-vote-btn.correct {
     box-shadow: 0 0 8px var(--button-primary-bg);
 }
 
-/* 
-  Переопределяем стиль для АКТИВНОЙ кнопки ТОЛЬКО в теме glass-dark,
-  чтобы сделать ее заметной.
-*/
-body.glass-dark .input-action-btn.active {
-    /* Яркая, полупрозрачная подсветка */
-    background: rgba(56, 189, 248, 0.4) !important; 
-    /* Яркая иконка */
-    color: #E2E8F0 !important;
-    /* Светящаяся рамка */
-    border-color: rgba(56, 189, 248, 0.7) !important;
-    /* Голубое свечение */
-    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
-}
+
 
 /* 
   Стиль для темных тем, чтобы активная кнопка не "тухла" при наведении.
@@ -3458,36 +3379,8 @@ body.synthwave-mode .result-counter {
 /* ===== ФИНАЛЬНЫЕ СТИЛИ ДЛЯ АДАПТИВНОСТИ ЧАТА (v3.0) ===== */
 /* ======================================================= */
 
-/* Кнопка-бургер, которая видна только на мобильных */
-.sidebar-toggle-btn {
-    display: none; /* Скрыта по умолчанию на больших экранах */
-    background: none;
-    border: none;
-    color: var(--text-color);
-    font-size: 1.2em; /* <-- ИЗМЕНЕНО: Уменьшаем размер */
-    line-height: 1; /* <-- ДОБАВЛЕНО: Улучшает вертикальное выравнивание */
-    cursor: pointer;
-    padding: 5px 10px;
-}
-
 /* --- СТИЛИ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ (до 768px) --- */
 @media (max-width: 768px) {
-    
-    /* Показываем кнопку-бургер и делаем ее "точкой отсчета" */
-    .sidebar-toggle-btn {
-        display: block;
-        position: absolute;
-        left: 5px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 2100; /* Выше чем сайдбар */
-    }
-
-    /* Делаем шапку "точкой отсчета" для бургера */
-    .advanced-chat-header {
-        position: relative;
-        padding-left: 50px; /* Освобождаем место для кнопки */
-    }
     
     /* Контейнер сайдбара становится оверлеем */
     .sidebar-container {
@@ -3498,13 +3391,18 @@ body.synthwave-mode .result-counter {
         height: 100%;
         z-index: 2050;
         
+        /* По умолчанию невидим и не кликабелен */
         visibility: hidden;
+        pointer-events: none;
+        
         background: rgba(0,0,0,0);
         transition: background 0.3s ease, visibility 0s 0.3s;
     }
 
+    /* Когда сайдбар открыт, оверлей становится видимым и кликабельным */
     .sidebar-container.open {
         visibility: visible;
+        pointer-events: auto;
         background: rgba(0,0,0,0.5);
         transition-delay: 0s;
     }
@@ -3521,8 +3419,9 @@ body.synthwave-mode .result-counter {
         transition: transform 0.3s ease;
         border-right: 1px solid var(--border-color);
         z-index: 1;
-        /* Убираем старые ограничения, если они были */
         max-height: none; 
+        /* Разрешаем клики внутри самого сайдбара */
+        pointer-events: auto;
     }
 
     .sidebar-container.open .chat-sidebar {
@@ -3534,6 +3433,10 @@ body.synthwave-mode .result-counter {
         width: 100%;
     }
 }
+
+
+
+
 
 /* ===== СТИЛИ ДЛЯ ЗАКРЕПЛЕННЫХ СООБЩЕНИЙ ===== */
 
@@ -5288,44 +5191,38 @@ body.claude-mode .message.mine.pinned .message-content {
 
 /* Группируем все кастомные темы для применения общих стилей */
 body.dark-mode,
-body.synthwave-mode,
-body.glass-dark { /* <-- ДОБАВЛЕНО */
+body.synthwave-mode {
     /* Стили для Firefox */
     scrollbar-width: thin;
-    scrollbar-color: var(--secondary-text-color) transparent; /* <-- ИЗМЕНЕНО */
+    scrollbar-color: var(--secondary-text-color) transparent;
 }
 
 /* Стили для Webkit-браузеров (Chrome, Safari, Edge) */
 body.dark-mode ::-webkit-scrollbar,
-body.synthwave-mode ::-webkit-scrollbar,
-body.glass-dark ::-webkit-scrollbar { /* <-- ДОБАВЛЕНО */
+body.synthwave-mode ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 body.dark-mode ::-webkit-scrollbar-track,
-body.synthwave-mode ::-webkit-scrollbar-track,
-body.glass-dark ::-webkit-scrollbar-track { /* <-- ДОБАВЛЕНО */
+body.synthwave-mode ::-webkit-scrollbar-track {
     background: transparent; /* Делаем дорожку полностью прозрачной */
 }
 
 body.dark-mode ::-webkit-scrollbar-thumb,
-body.synthwave-mode ::-webkit-scrollbar-thumb,
-body.glass-dark ::-webkit-scrollbar-thumb { /* <-- ДОБАВЛЕНО */
+body.synthwave-mode ::-webkit-scrollbar-thumb {
     /* Используем переменные вместо жестко заданных цветов */
-    background-color: var(--secondary-text-color); /* <-- ИЗМЕНЕНО */
+    background-color: var(--secondary-text-color);
     border-radius: 4px;
     /* Убираем рамку, так как дорожка теперь прозрачная */
     border: none;
 }
 
 body.dark-mode ::-webkit-scrollbar-thumb:hover,
-body.synthwave-mode ::-webkit-scrollbar-thumb:hover,
-body.glass-dark ::-webkit-scrollbar-thumb:hover { /* <-- ДОБАВЛЕНО */
+body.synthwave-mode ::-webkit-scrollbar-thumb:hover {
     /* При наведении делаем ползунок чуть ярче */
-    background-color: var(--text-color); /* <-- ИЗМЕНЕНО */
+    background-color: var(--text-color);
 }
-
 
 
 
@@ -6628,39 +6525,7 @@ body.glass-dark .header-buttons button {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ ЗАКРЕПЛЕННЫХ СООБЩЕНИЙ В GLASS-ТЕМАХ === */
-/* ======================================================= */
 
-
-
-/* Темная стеклянная тема */
-body.glass-dark .message.pinned .message-content {
-    background: rgba(56, 189, 248, 0.1); /* Полупрозрачная голубая подсветка */
-    border-left: 4px solid var(--button-primary-bg); /* Яркая голубая рамка */
-}
-
-/* 
-  Это правило гарантирует, что на ваших собственных закрепленных сообщениях
-  текст останется читаемым (белым), а не станет черным.
-*/
-body.glass-dark .message.mine.pinned .message-content {
-    color: var(--text-color);
-}
-
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ КНОПКИ "ОБЪЯСНИТЬ" В GLASS-DARK ТЕМЕ  === */
-/* ======================================================= */
-
-body.glass-dark #feedbackArea .explain-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-body.glass-dark #feedbackArea .explain-btn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-}
 
 /* ======================================================= */
 /* ===  ИСПРАВЛЕНИЕ ФОНА МОБИЛЬНОГО МЕНЮ (ФИНАЛЬНОЕ)  === */
@@ -6677,31 +6542,6 @@ body.glass-dark #feedbackArea .explain-btn:hover {
     }
 }
 
-/* ======================================================= */
-/* ===         СТЕКЛЯННЫЕ КНОПКИ ДЛЯ GLASS-ТЕМ         === */
-/* ======================================================= */
-
-/* Применяем стили к обычным кнопкам в обеих стеклянных темах */
-body.glass-dark button {
-    background-color: var(--input-bg-color); /* Полупрозрачный фон */
-    color: var(--text-color);
-    border: 1px solid var(--input-border-color); /* Полупрозрачная рамка */
-    backdrop-filter: blur(10px); /* Легкое размытие для самой кнопки */
-    -webkit-backdrop-filter: blur(10px);
-}
-
-/* Эффект при наведении */
-body.glass-dark button:hover:not(:disabled) {
-    background-color: var(--input-hover-bg-color);
-    border-color: var(--input-hover-border-color);
-}
-
-/* Стили для красной кнопки "Завершить тест" */
-body.glass-dark #finishTestButton.finish-test-early {
-    background-color: var(--feedback-incorrect-bg);
-    color: var(--feedback-incorrect-text);
-    border-color: var(--feedback-incorrect-border);
-}
 
 
 
@@ -6827,93 +6667,8 @@ body.glass-dark .advanced-send-btn {
     border: none !important;
 }
 
-/* ======================================================= */
-/* === СТЕКЛЯННЫЕ СТИЛИ ДЛЯ КНОПОК БЫСТРОЙ НАВИГАЦИИ   === */
-/* ======================================================= */
-
-/* Базовый стиль для кнопок навигации в стеклянных темах */
-body.glass-dark .quick-nav-btn {
-    background-color: var(--input-bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--input-border-color);
-}
-
-/* Стиль для текущей активной кнопки */
-body.glass-dark .quick-nav-btn.current {
-    background-color: var(--button-primary-bg);
-    color: var(--button-primary-text);
-    border-color: var(--button-primary-bg);
-}
 
 
-/* ======================================================= */
-/* === СТИЛИ ДЛЯ РЕЗУЛЬТАТОВ ПОИСКА (GLASS-DARK)       === */
-/* ======================================================= */
-
-/* Фон для шапки с заголовком "Результаты поиска" */
-body.glass-dark .search-results-header {
-    /* Убираем фон, так как основной контейнер уже полупрозрачный */
-    background-color: transparent; 
-}
-
-/* Навигационная панель (< 1/50 >) */
-body.glass-dark .search-navigation {
-    background-color: var(--input-bg-color);
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-body.glass-dark .nav-arrow:disabled {
-    background-color: var(--border-color);
-    opacity: 0.5;
-}
-
-/* Сама карточка с вопросом */
-body.glass-dark .result-card {
-    background-color: var(--input-bg-color);
-    border-color: var(--border-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-/* Шапка карточки (теги "База данных", "Релевантность") */
-body.glass-dark .result-card-header {
-    background-color: rgba(0,0,0,0.1); /* Чуть темнее для контраста */
-    border-bottom-color: var(--border-color);
-}
-
-/* Текст вопроса */
-body.glass-dark .question-text-detail {
-    color: var(--text-color);
-}
-
-/* Варианты ответов */
-body.glass-dark .answer-option {
-    background: transparent;
-    border-color: var(--border-color);
-    color: var(--secondary-text-color);
-}
-
-/* Правильный вариант ответа */
-body.glass-dark .answer-option.correct {
-    background-color: var(--feedback-correct-bg);
-    color: var(--feedback-correct-text);
-    border-color: var(--feedback-correct-border);
-    font-weight: bold;
-}
-
-/* Тег "База данных" */
-body.glass-dark .provider-tag {
-    background: var(--input-hover-bg-color);
-    color: var(--secondary-text-color);
-}
-
-/* Иконки действий в шапке карточки (объяснить, копировать, в избранное) */
-body.glass-dark .result-card-actions button {
-    color: var(--secondary-text-color) !important;
-}
-body.glass-dark .result-card-actions button:hover {
-    color: var(--text-color) !important;
-}
 
 /* ======================================================= */
 /* ===         СТИЛИ ДЛЯ ССЫЛКИ В ПОДВАЛЕ (FOOTER)     === */
@@ -6930,25 +6685,7 @@ footer p a:hover {
     text-decoration: underline;      /* И добавляем подчеркивание для наглядности */
 }
 
-/* ======================================================= */
-/* === ИСПРАВЛЕНИЕ АКТИВНЫХ КНОПОК ДЛЯ GLASS-DARK ТЕМЫ === */
-/* ======================================================= */
 
-body.glass-dark #quickModeToggle.active,
-body.glass-dark #triggerWordToggle.active,
-body.glass-dark #translateQuestionBtn.active {
-    /* Яркий, но полупрозрачный фон для эффекта "включено" */
-    background-color: rgba(56, 189, 248, 0.4) !important; /* Голубой из темы synthwave, но прозрачный */
-    
-    /* Яркий цвет текста/иконки */
-    color: #E2E8F0 !important;
-    
-    /* Светящаяся рамка */
-    border-color: rgba(56, 189, 248, 0.7) !important;
-    
-    /* Добавим легкую тень для эффекта свечения */
-    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
-}
 
 /* ======================================================= */
 /* ===  ИСПРАВЛЕНИЕ КАРТОЧЕК ВОПРОСОВ В ТЕМЕ SYNTHWAVE  === */
@@ -7085,85 +6822,6 @@ body.claude-mode .option-votes-badge {
 
 
 
-
-
-
-/* ======================================================= */
-/* ===  СТИЛИ ДЛЯ КАРТОЧЕК ВОПРОСОВ В ТЕМЕ GLASS-DARK   === */
-/* ======================================================= */
-
-/* 1. Основной стиль для фона и рамки карточки */
-body.glass-dark .question-bubble,
-body.glass-dark .favorite-item {
-    background: var(--input-bg-color); /* Полупрозрачный фон, как у полей ввода */
-    border: 1px solid var(--border-color); /* Полупрозрачная светлая рамка */
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Более подходящая тень */
-}
-
-/* 2. Стилизуем иконку "Q" и значок с голосами */
-body.glass-dark .question-square {
-    background: var(--button-primary-bg); /* Нейтральный серый, как у кнопок */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-body.glass-dark .question-square.has-votes {
-    background: linear-gradient(135deg, #22C55E, #16a34a); /* Сочный зеленый для акцента */
-}
-
-body.glass-dark .vote-indicator {
-    border-color: var(--input-bg-color); /* Рамка значка должна совпадать с фоном карточки */
-}
-
-/* 3. Делаем текст читаемым */
-body.glass-dark .question-content p {
-    color: var(--text-color); /* Основной светлый текст */
-}
-
-body.glass-dark .question-content p strong {
-    color: var(--secondary-text-color); /* Приглушенный цвет для подписей "Автор", "Дата" */
-}
-
-/* 4. Стилизуем кнопки с вариантами ответов */
-body.glass-dark .option-vote-btn {
-    background-color: transparent; /* Делаем кнопки частью карточки */
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-body.glass-dark .option-vote-btn:hover {
-    background-color: var(--input-hover-bg-color); /* Легкая подсветка при наведении */
-    border-color: var(--input-hover-border-color);
-}
-
-/* 5. Значок с количеством голосов на кнопке ответа */
-body.glass-dark .option-votes-badge {
-    background-color: var(--button-secondary-bg); /* Нейтральный серый фон */
-    color: var(--button-secondary-text);
-}
-
-/* 6. Стили для кнопок, за которые проголосовал пользователь */
-body.glass-dark .option-vote-btn.voted-by-user {
-    border-color: #38BDF8; /* Яркий голубой акцент */
-    background-color: rgba(56, 189, 248, 0.1);
-}
-
-/* 7. Кнопки действий "В избранное" и "Копировать" */
-body.glass-dark .question-actions button {
-    background-color: var(--input-hover-bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-}
-
-body.glass-dark .question-actions button:hover {
-    border-color: var(--text-color);
-}
-
-/* Делаем кнопку "В избранное" особенной */
-body.glass-dark .question-actions .add-to-favorites-btn {
-    background-color: var(--feedback-correct-bg);
-    color: var(--feedback-correct-text);
-    border-color: var(--feedback-correct-border);
-}
 
 /* ======================================================= */
 /* ===     СТИЛИ ДЛЯ МИНИАТЮРНОГО ВЫПАДАЮЩЕГО СПИСКА   === */
@@ -7696,75 +7354,7 @@ body.glass-dark .translate-engine-container #translateEngineToggle::before{
     width: 100%;
 }
 
-/* ======================================================= */
-/* ===  GLASS-DARK: Tabs merge fix v5 (финальный)       === */
-/* ======================================================= */
 
-/* Линия-база под вкладками */
-body.glass-dark .parser-tabs {
-  display: flex;
-  margin-bottom: 25px;
-  border-bottom: 1px solid var(--border-color);
-  position: relative;
-  z-index: 0;
-}
-
-/* Базовые вкладки: рамки по бокам и сверху, НЕТ нижней; вкладки «садятся» на линию */
-body.glass-dark .parser-tab {
-  border: 1px solid var(--border-color);
-  border-bottom: none !important;          /* Глушим глобальный underline */
-  border-radius: 8px 8px 0 0;
-  margin-left: -1px;                        /* Сшиваем боковые рамки */
-  margin-bottom: -1px;                      /* Опускаем на линию контейнера */
-  background: transparent;
-  color: var(--secondary-text-color);
-  transition: all .2s ease;
-  position: relative;
-  z-index: 0;
-}
-
-/* Первая вкладка без сдвига влево */
-body.glass-dark .parser-tab:first-child { margin-left: 0; }
-
-/* Наведение на неактивные */
-body.glass-dark .parser-tab:hover:not(.active) {
-  background-color: var(--input-hover-bg-color);
-  color: var(--text-color);
-  z-index: 1;
-}
-
-/* АКТИВНАЯ вкладка: делаем фон НЕПРОЗРАЧНЫМ и перекрываем линию снизу */
-body.glass-dark .parser-tab.active {
-  /* === ИЗМЕНЕНИЕ ЗДЕСЬ === */
-  /* ВАЖНО: фон теперь берется из переменной темы, обеспечивая идеальное совпадение */
-  background-color: var(--container-bg-color);
-  /* === КОНЕЦ ИЗМЕНЕНИЯ === */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--heading-color);
-  font-weight: 600;
-  border-color: var(--border-color);
-  border-bottom: none !important;
-  margin-bottom: -1px;
-  position: relative;
-  z-index: 2;
-}
-
-/* Страховочная «маска»: забивает 1–2px зоны шва... */
-body.glass-dark .parser-tab.active::after {
-  content: "";
-  position: absolute;
-  left: -1px;
-  right: -1px;
-  bottom: -1px;
-  height: 2px;
-  /* === ИЗМЕНЕНИЕ ЗДЕСЬ === */
-  background: var(--container-bg-color);
-  /* === КОНЕЦ ИЗМЕНЕНИЯ === */
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  pointer-events: none;
-}
 
 /* ======================================================= */
 /* ===         СТИЛИ ДЛЯ ШАПКИ РЕЗУЛЬТАТА ПАРСЕРА      === */
@@ -8264,16 +7854,7 @@ body.glass-dark .parser-tab.active::after {
   color: var(--button-primary-text);
 }
 
-/* Стеклянная тема: лёгкая дымка и корректные контрасты */
-body.glass-dark .translate-engine-container{
-  background: rgba(30,30,30,0.40);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-color: rgba(255,255,255,0.22);
-}
-body.glass-dark .translate-engine-container button:hover{
-  background: rgba(255,255,255,0.06);
-}
+
 
 /* Безопасные стили для «вторичных» кнопок по умолчанию */
 button.btn, .btn-secondary, .quiz-nav-btn, .question-nav-btn {
@@ -8801,16 +8382,7 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     border-color: var(--accent);
 }
 
-/* Стеклянные темы */
-body.glass-dark #confirmModalYesBtn {
-    background-color: var(--feedback-incorrect-bg) !important;
-    color: var(--feedback-incorrect-text) !important;
-    border-color: var(--feedback-incorrect-border) !important;
-}
-body.glass-dark #confirmModalYesBtn:hover {
-     background-color: var(--accent) !important;
-     color: white !important;
-}
+
 
 /* ======================================================= */
 /* ===   СТИЛИ ДЛЯ AI ЧАТ-БОТА (FAB И МОДАЛЬНОЕ ОКНО)    === */
@@ -9292,11 +8864,11 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
     align-items: flex-start;
 }
 
-.ai-message-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 8px;
-    padding: 0 5px;
+/* Принудительно убираем фон и рамку у кнопок-иконок */
+.ai-message-actions .ai-action-btn,
+.ai-user-message-actions .ai-action-btn {
+    background-color: transparent !important;
+    border: none !important;
 }
 
 .ai-action-btn {
@@ -9317,28 +8889,6 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
     width: 8px; /* <-- ИЗМЕНЕНО */
     height: 8px; /* <-- ИЗМЕНЕНО */
 }
-
-/* ======================================================= */
-/* ===  ИСПРАВЛЕНИЕ КНОПОК В AI-ЧАТЕ ДЛЯ GLASS-DARK    === */
-/* ======================================================= */
-
-/* Применяем стили к кнопкам в шапке (закрыть, развернуть) и под сообщениями (копировать и т.д.) */
-body.glass-dark .ai-chat-control-btn,
-body.glass-dark .ai-action-btn {
-    /* Убираем фон и рамку, делая их невидимыми по умолчанию */
-    background: none !important;
-    border: none !important;
-    /* Убираем эффект размытия, так как фона нет */
-    backdrop-filter: none !important;
-}
-
-/* Добавляем эффект подсветки при наведении, как в темной теме */
-body.glass-dark .ai-chat-control-btn:hover,
-body.glass-dark .ai-action-btn:hover {
-    /* Используем стандартный полупрозрачный фон для наведения */
-    background-color: var(--input-hover-bg-color) !important;
-}
-
 
 
 
@@ -9390,11 +8940,7 @@ body.glass-dark .ai-action-btn:hover {
 }
 
 
-body.glass-dark .ai-chat-settings-panel {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    background-color: rgba(42, 42, 42, 0.85);
-}
+
 
 .ai-setting-group {
     display: flex;
@@ -9932,7 +9478,6 @@ body.glass-dark .ai-chat-settings-panel {
     /* Используем `background` для корректной работы с градиентами */
     background: var(--button-primary-bg);
     color: var(--button-primary-text);
-    
     /* Общие стили для солидного вида */
     width: 100%; /* Растягиваем на всю ширину для мобильных */
     max-width: 350px; /* Ограничиваем ширину на больших экранах */
@@ -10214,12 +9759,14 @@ body.glass-dark .ai-chat-settings-panel {
     padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease; /* Добавили border-color */
     margin-bottom: 4px;
+    border: 1px solid transparent; /* Рамка по умолчанию невидима */
 }
 
 .ai-chat-history-item:hover {
     background-color: var(--input-hover-bg-color);
+    border-color: var(--border-color); /* Показываем рамку при наведении */
 }
 
 
@@ -12246,4 +11793,155 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
 /* === Финальный стиль для окраски уголка сообщения === */
 .ai-message-container.is-user.has-color-indicator .ai-message.user {
     border-left-color: var(--user-message-color);
+}
+
+
+/* === СТИЛИ ДЛЯ КОПИРОВАНИЯ ЧАТА В АУДИТОРИЮ === */
+
+/* Кнопка "Поделиться" в списке приватных чатов */
+.ai-chat-share-btn {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
+}
+
+.ai-chat-history-item:hover .ai-chat-share-btn {
+    opacity: 1; /* Показываем полностью при наведении на элемент чата */
+}
+
+.ai-chat-share-btn:hover {
+    color: var(--button-primary-bg); /* Делаем иконку цветной при наведении */
+}
+
+/* Список для выбора аудитории в модальном окне */
+.audience-select-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.audience-select-list li {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--dashed-border-color);
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.audience-select-list li:last-child {
+    border-bottom: none;
+}
+
+.audience-select-list li:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ БОКОВОЙ РУЧКИ САЙДБАРА        === */
+/* ======================================================= */
+
+/* Анимация появления ручки */
+@keyframes slideInFromLeft {
+    from { transform: translateX(-20px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 0.6; }
+}
+
+/* Область для клика/свайпа, расположенная справа от сайдбара */
+.sidebar-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%; /* Начинается там, где заканчивается сайдбар */
+    width: 20px;
+    cursor: pointer;
+    z-index: 10;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Визуальный индикатор ручки (вертикальная полоска) */
+.sidebar-handle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 40px;
+    background-color: var(--accent);
+    border-radius: 2px;
+    opacity: 0.6; /* Сделали ручку более заметной */
+    transition: opacity 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+    /* Применяем анимацию появления */
+    animation: slideInFromLeft 0.5s ease-out backwards;
+}
+
+/* Делаем ручку ярче и больше при наведении */
+.sidebar-handle:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+}
+
+
+
+
+/* ======================================================= /
+/ === КНОПКА ОТКРЫТИЯ САЙДБАРА (МОБИЛЬНАЯ ВЕРСИЯ) === /
+/ ======================================================= */
+/* По умолчанию кнопка скрыта (для ПК) */
+.sidebar-toggle-btn {
+display: none;
+}
+
+/* Стили для мобильных устройств (до 768px) */
+@media (max-width: 768px) {
+    /* Показываем кнопку-меню */
+    .sidebar-toggle-btn {
+        display: flex; /* Используем flex для центрирования иконки */
+        align-items: center;
+        justify-content: center;
+        
+        /* УБИРАЕМ ФОН И РАМКУ */
+        background: none;
+        border: none;
+        color: var(--secondary-text-color); /* Делаем иконку приглушенной */
+        
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        flex-shrink: 0; /* Запрещаем кнопке сжиматься */
+        grid-column: 1 / 2; /* Явно указываем, что это первый элемент в гриде */
+    }
+
+    .sidebar-toggle-btn:hover {
+        background: var(--input-hover-bg-color); /* При наведении появляется фон */
+        color: var(--text-color); /* Иконка становится яркой */
+    }
+
+.sidebar-toggle-btn i[data-lucide] {
+    width: 22px;
+    height: 22px;
+}
+
+/* Заголовок чата теперь занимает 2-ю колонку */
+.advanced-chat-header .chat-title {
+   grid-column: 2 / 3;
+}
+
+/* Блок управления (имя, уведомления, закрыть) - 3-ю колонку */
+.advanced-chat-header .header-controls {
+    grid-column: 3 / 4;
+}
 }

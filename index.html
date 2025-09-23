@@ -1119,5 +1119,24 @@
     </div>
     <!-- ======================================================= -->
 
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВЫБОРА АУДИТОРИИ     === -->
+    <!-- ======================================================= -->
+    <div id="audienceSelectModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px; text-align: left;">
+            <h3 id="audienceSelectModalTitle">Копировать чат в Аудиторию</h3>
+            <p id="audienceSelectModalText" style="margin: 20px 0; line-height: 1.6;">Выберите публичную Аудиторию, в которую будет скопирована история этого чата как новая Тема.</p>
+            
+            <ul id="audienceSelectList" class="audience-select-list">
+                <!-- Список аудиторий будет вставлен сюда через JS -->
+            </ul>
+
+            <div class="modal-buttons" style="margin-top: 25px;">
+                <button id="audienceSelectCancelBtn" class="btn btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+
 </body>
 </html>
