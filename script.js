@@ -4007,28 +4007,32 @@ const ChatModule = (function() {
             return;
         }
 
-        const updates = {
-            name: newName,
-            description: newDesc
-        };
-
-        if (newPassword) {
-            updates.hasPassword = true;
-            updates.passwordHash = await mainApp.hashPassword(newPassword);
-        } else {
-            updates.hasPassword = false;
-            updates.passwordHash = null;
-        }
-
         try {
-            await db.collection('channels').doc(channelId).update(updates);
+            const channelRef = db.collection('channels').doc(channelId);
+            
+            // 1. Начинаем с объекта, который содержит только те данные, что мы обновляем всегда.
+            const updates = {
+                name: newName,
+                description: newDesc
+            };
+
+            // 2. Проверяем, ввел ли пользователь новый пароль.
+            if (newPassword) {
+                // Если да - добавляем в наш объект данные для обновления пароля.
+                updates.hasPassword = true;
+                updates.passwordHash = await mainApp.hashPassword(newPassword);
+            }
+            // 3. Если поле newPassword пустое, мы НИЧЕГО не делаем с паролем.
+            //    Firestore не будет трогать существующие значения hasPassword и passwordHash.
+
+            await channelRef.update(updates);
             closeModal('channelEditModal');
+
         } catch (error) {
             console.error("Ошибка сохранения канала:", error);
             alert(_chat('error_save_channel_failed'));
         }
     }
-
 
 
 
@@ -6247,6 +6251,76 @@ const mainApp = (function() {
                 "<span class='tip-part'>Закрепляйте важные сообщения или правила в теме Аудитории с помощью</span><i data-lucide='pin' class='tip-icon'></i><span class='tip-part'>иконки-скрепки.</span>",
                 "<span class='tip-part'>Выражайте эмоции, добавляя</span><i data-lucide='smile-plus' class='tip-icon'></i><span class='tip-part'>реакции на сообщения других участников.</span>"
             ],
+            // === ПОЛНЫЙ ПАКЕТ ПЕРЕВОДОВ ДЛЯ AI-ПОМОЩНИКА ===
+            ai_fab_title: "AI Помощник",
+
+            ai_close_chat_title: "Закрыть",
+            ai_legend_editor_placeholder: "Описание для цвета...",
+            ai_settings_title: "Настройки ИИ",
+            ai_resize_title: "Развернуть / Свернуть",
+            ai_scroll_to_bottom_title: "Перейти к последнему сообщению",
+            ai_model_label: "Модель ИИ",
+            ai_model_flash: "Flash 2.5 (самая умная)",
+            ai_model_gemma_27b: "Gemma 3.27b (умная)",
+            ai_model_gemma_12b: "Gemma 3.12b (баланс)",
+            ai_response_style_label: "Стиль ответа",
+            ai_response_short: "Короткий",
+            ai_response_medium: "Обычный",
+            ai_response_long: "Развернутый",
+            ai_creativity_label: "Креативность",
+            ai_creativity_low: "Низкая",
+            ai_creativity_medium: "Средняя",
+            ai_creativity_high: "Высокая",
+            ai_private_chats: "Приватные чаты",
+            ai_new_private_chat_title: "Создать новый приватный чат",
+            ai_audiences: "Аудитории",
+            ai_new_audience_title: "Создать новую Аудиторию (видна всем)",
+            ai_back_to_audiences_title: "Назад к списку Аудиторий",
+            ai_new_topic_title: "Создать новую Тему в этой Аудитории",
+            ai_grounding_label: "Поиск в Google",
+            ai_attach_file_title: "Прикрепить файл",
+            ai_cancel_reply_title: "Отменить ответ",
+            ai_search_all_chats_title: "Поиск по всем чатам",
+            ai_create_test_from_dialog_title: "Создать тест из всего диалога",
+            ai_search_all_chats_placeholder: "Поиск по всем чатам...",
+            ai_audience_settings_title: "Настройки Аудитории",
+            ai_audience_name_label: "Название Аудитории:",
+            ai_audience_name_placeholder: "Новое название...",
+            ai_audience_password_label: "Пароль (пусто = без пароля):",
+            ai_audience_password_placeholder: "Новый пароль...",
+            ai_moderator_management: "Управление модераторами",
+            ai_moderator_email_placeholder: "Email нового модератора...",
+            ai_moderator_add_btn: "Добавить",
+            ai_legend_edit_title: "Редактирование легенды",
+            ai_legend_edit_text: "Введите новое описание для этого цвета.",
+            ai_legend_edit_placeholder: "Описание...",
+            ai_reply_tooltip: "Ответить",
+            ai_copy_tooltip: "Копировать",
+            ai_create_test_tooltip: "Создать тест из сообщения",
+            ai_share_tooltip: "Поделиться",
+            ai_delete_tooltip: "Удалить сообщение",
+            ai_edit_tooltip: "Редактировать и отправить заново",
+            ai_regenerate_tooltip: "Перегенерировать ответ",
+            ai_confirm_delete_chat_title: "Удалить чат?",
+            ai_confirm_delete_chat_text: "Вы уверены, что хотите удалить этот чат? Это действие необратимо.",
+            ai_confirm_delete_audience_title: "Удалить Аудиторию?",
+            ai_confirm_delete_audience_text: "Вы уверены, что хотите удалить эту Аудиторию? Все темы и сообщения в ней будут безвозвратно удалены.",
+            ai_choose_topic_prompt: "Выберите тему для начала общения.",
+            ai_welcome_message: "Привет! Я ваш AI-помощник. Чем могу помочь?",
+            ai_new_chat_default_title: "Новый чат",
+            ai_empty_topics_list: "Тем пока нет. Создайте первую!",
+            ai_error_loading_topics: "Ошибка загрузки тем.",
+            ai_search_no_results: "Ничего не найдено",
+            ai_search_error: "Произошла ошибка поиска.",
+            ai_search_placeholder: "Поиск...",
+            ai_settings_for_audience: "Настройки: {audienceName}",
+            ai_audience_delete_tooltip: "Удалить аудиторию",
+            ai_audience_settings_tooltip: "Настройки Аудитории",
+            ai_private_chat_delete_tooltip: "Удалить чат",
+            ai_choose_chat_prompt: "Выберите чат для начала.",
+            ai_searching_for: 'Поиск "{query}"...',
+            ai_welcome_message: "Привет! Я ваш AI-помощник. Чем могу помочь?",
+            modal_save_button: "Сохранить",
             session_save_new_button: "Сохранить как новую"
         },
         kk: {
@@ -6679,6 +6753,76 @@ const mainApp = (function() {
                 "<span class='tip-part'>Аудитория тақырыбындағы маңызды хабарламаларды немесе ережелерді</span><i data-lucide='pin' class='tip-icon'></i><span class='tip-part'>белгішесі арқылы бекітіңіз.</span>",
                 "<span class='tip-part'>Басқа қатысушылардың хабарламаларына</span><i data-lucide='smile-plus' class='tip-icon'></i><span class='tip-part'>реакциялар қосып, эмоцияларыңызды білдіріңіз.</span>"
             ],
+            // === ПОЛНЫЙ ПАКЕТ ПЕРЕВОДОВ ДЛЯ AI-ПОМОЩНИКА ===
+            ai_fab_title: "AI Көмекші",
+
+            ai_close_chat_title: "Жабу",
+            ai_legend_editor_placeholder: "Түс сипаттамасы...",
+            ai_settings_title: "ЖИ Баптаулары",
+            ai_resize_title: "Жаю / Жию",
+            ai_scroll_to_bottom_title: "Соңғы хабарламаға өту",
+            ai_model_label: "ЖИ Моделі",
+            ai_model_flash: "Flash 2.5 (ең ақылды)",
+            ai_model_gemma_27b: "Gemma 3.27b (ақылды)",
+            ai_model_gemma_12b: "Gemma 3.12b (теңгерім)",
+            ai_response_style_label: "Жауап стилі",
+            ai_response_short: "Қысқа",
+            ai_response_medium: "Қалыпты",
+            ai_response_long: "Егжей-тегжейлі",
+            ai_creativity_label: "Шығармашылық",
+            ai_creativity_low: "Төмен",
+            ai_creativity_medium: "Орташа",
+            ai_creativity_high: "Жоғары",
+            ai_private_chats: "Жеке чаттар",
+            ai_new_private_chat_title: "Жаңа жеке чат құру",
+            ai_audiences: "Аудиториялар",
+            ai_new_audience_title: "Жаңа Аудитория құру (барлығына көрінеді)",
+            ai_back_to_audiences_title: "Аудиториялар тізіміне оралу",
+            ai_new_topic_title: "Осы Аудиторияда жаңа Тақырып құру",
+            ai_grounding_label: "Google-да іздеу",
+            ai_attach_file_title: "Файл тіркеу",
+            ai_cancel_reply_title: "Жауаптан бас тарту",
+            ai_search_all_chats_title: "Барлық чаттар бойынша іздеу",
+            ai_create_test_from_dialog_title: "Барлық диалогтан тест жасау",
+            ai_search_all_chats_placeholder: "Барлық чаттар бойынша іздеу...",
+            ai_audience_settings_title: "Аудитория Баптаулары",
+            ai_audience_name_label: "Аудитория Атауы:",
+            ai_audience_name_placeholder: "Жаңа атауы...",
+            ai_audience_password_label: "Құпия сөз (бос = құпия сөзсіз):",
+            ai_audience_password_placeholder: "Жаңа құпия сөз...",
+            ai_moderator_management: "Модераторларды Басқару",
+            ai_moderator_email_placeholder: "Жаңа модератордың Email-і...",
+            ai_moderator_add_btn: "Қосу",
+            ai_legend_edit_title: "Аңызды өңдеу",
+            ai_legend_edit_text: "Бұл түс үшін жаңа сипаттама енгізіңіз.",
+            ai_legend_edit_placeholder: "Сипаттама...",
+            ai_reply_tooltip: "Жауап беру",
+            ai_copy_tooltip: "Көшіру",
+            ai_create_test_tooltip: "Хабарламадан тест жасау",
+            ai_share_tooltip: "Бөлісу",
+            ai_delete_tooltip: "Хабарламаны жою",
+            ai_edit_tooltip: "Өңдеп, қайта жіберу",
+            ai_regenerate_tooltip: "Жауапты қайта құру",
+            ai_confirm_delete_chat_title: "Чатты жою?",
+            ai_confirm_delete_chat_text: "Осы чатты жойғыңыз келетініне сенімдісіз бе? Бұл әрекетті қайтару мүмкін емес.",
+            ai_confirm_delete_audience_title: "Аудиторияны жою?",
+            ai_confirm_delete_audience_text: "Осы Аудиторияны жойғыңыз келетініне сенімдісіз бе? Ондағы барлық тақырыптар мен хабарламалар жойылады.",
+            ai_choose_topic_prompt: "Сөйлесуді бастау үшін тақырыпты таңдаңыз.",
+            ai_welcome_message: "Сәлем! Мен сіздің AI-көмекшіңізбін. Қандай көмек көрсете аламын?",
+            ai_new_chat_default_title: "Жаңа чат",
+            ai_empty_topics_list: "Тақырыптар әлі жоқ. Біріншісін жасаңыз!",
+            ai_error_loading_topics: "Тақырыптарды жүктеу қатесі.",
+            ai_search_no_results: "Ештеңе табылмады",
+            ai_search_error: "Іздеу қатесі орын алды.",
+            ai_search_placeholder: "Іздеу...",
+            ai_settings_for_audience: "Баптаулар: {audienceName}",
+            ai_audience_delete_tooltip: "Аудиторияны жою",
+            ai_audience_settings_tooltip: "Аудитория Баптаулары",
+            ai_private_chat_delete_tooltip: "Чатты жою",
+            ai_choose_chat_prompt: "Сөйлесуді бастау үшін чатты таңдаңыз.",
+            ai_searching_for: '"{query}" бойынша іздеу...',
+            ai_welcome_message: "Сәлем! Мен сіздің AI-көмекшіңізбін. Қандай көмек көрсете аламын?", 
+            modal_save_button: "Сақтау",
             session_save_new_button: "Жаңа ретінде сақтау"
 
         },
@@ -7118,6 +7262,76 @@ const mainApp = (function() {
                 "<span class='tip-part'>Pin important messages or rules in an Audience topic using the</span><i data-lucide='pin' class='tip-icon'></i><span class='tip-part'>pin icon.</span>",
                 "<span class='tip-part'>Express yourself by adding</span><i data-lucide='smile-plus' class='tip-icon'></i><span class='tip-part'>reactions to other members' messages.</span>"
             ],
+            // === COMPLETE TRANSLATION PACK FOR AI ASSISTANT ===
+            ai_fab_title: "AI Assistant",
+
+            ai_close_chat_title: "Close",
+            ai_legend_editor_placeholder: "Description for color...",
+            ai_settings_title: "AI Settings",
+            ai_resize_title: "Expand / Collapse",
+            ai_scroll_to_bottom_title: "Scroll to last message",
+            ai_model_label: "AI Model",
+            ai_model_flash: "Flash 2.5 (smartest)",
+            ai_model_gemma_27b: "Gemma 3.27b (smart)",
+            ai_model_gemma_12b: "Gemma 3.12b (balanced)",
+            ai_response_style_label: "Response Style",
+            ai_response_short: "Short",
+            ai_response_medium: "Normal",
+            ai_response_long: "Detailed",
+            ai_creativity_label: "Creativity",
+            ai_creativity_low: "Low",
+            ai_creativity_medium: "Medium",
+            ai_creativity_high: "High",
+            ai_private_chats: "Private Chats",
+            ai_new_private_chat_title: "Create a new private chat",
+            ai_audiences: "Audiences",
+            ai_new_audience_title: "Create a new Audience (visible to all)",
+            ai_back_to_audiences_title: "Back to Audiences list",
+            ai_new_topic_title: "Create a new Topic in this Audience",
+            ai_grounding_label: "Search on Google",
+            ai_attach_file_title: "Attach file",
+            ai_cancel_reply_title: "Cancel reply",
+            ai_search_all_chats_title: "Search all chats",
+            ai_create_test_from_dialog_title: "Create test from entire dialog",
+            ai_search_all_chats_placeholder: "Search all chats...",
+            ai_audience_settings_title: "Audience Settings",
+            ai_audience_name_label: "Audience Name:",
+            ai_audience_name_placeholder: "New name...",
+            ai_audience_password_label: "Password (empty = no password):",
+            ai_audience_password_placeholder: "New password...",
+            ai_moderator_management: "Moderator Management",
+            ai_moderator_email_placeholder: "New moderator's email...",
+            ai_moderator_add_btn: "Add",
+            ai_legend_edit_title: "Edit Legend",
+            ai_legend_edit_text: "Enter a new description for this color.",
+            ai_legend_edit_placeholder: "Description...",
+            ai_reply_tooltip: "Reply",
+            ai_copy_tooltip: "Copy",
+            ai_create_test_tooltip: "Create test from message",
+            ai_share_tooltip: "Share",
+            ai_delete_tooltip: "Delete message",
+            ai_edit_tooltip: "Edit and resubmit",
+            ai_regenerate_tooltip: "Regenerate response",
+            ai_confirm_delete_chat_title: "Delete Chat?",
+            ai_confirm_delete_chat_text: "Are you sure you want to delete this chat? This action is irreversible.",
+            ai_confirm_delete_audience_title: "Delete Audience?",
+            ai_confirm_delete_audience_text: "Are you sure you want to delete this Audience? All topics and messages within it will be permanently deleted.",
+            ai_choose_topic_prompt: "Select a topic to start chatting.",
+            ai_welcome_message: "Hello! I'm your AI assistant. How can I help?",
+            ai_new_chat_default_title: "New Chat",
+            ai_empty_topics_list: "No topics yet. Create the first one!",
+            ai_error_loading_topics: "Error loading topics.",
+            ai_search_no_results: "No results found",
+            ai_search_error: "A search error occurred.",
+            ai_search_placeholder: "Search...",
+            ai_settings_for_audience: "Settings: {audienceName}",
+            ai_audience_delete_tooltip: "Delete audience",
+            ai_audience_settings_tooltip: "Audience Settings",
+            ai_private_chat_delete_tooltip: "Delete chat",
+            ai_choose_chat_prompt: "Select a chat to begin.",
+            ai_searching_for: 'Searching for "{query}"...',
+            ai_welcome_message: "Hello! I'm your AI assistant. How can I help?", 
+            modal_save_button: "Save",
             session_save_new_button: "Save as New"
         }
 
@@ -11369,93 +11583,67 @@ const mainApp = (function() {
      * @param {string} lang - Код языка для установки ('ru', 'en', 'kk').
      */
     function setLanguage(lang) {
-        // 1. Сохраняем выбор пользователя в localStorage для будущих сессий.
+        // 1. Сохраняем выбор пользователя.
         localStorage.setItem('appLanguage', lang);
         
-        // 2. Вызываем метод setLanguage из модуля чата, чтобы он тоже обновился.
-        // Добавлена проверка на случай, если модуль чата не инициализирован.
+        // 2. Обновляем модуль чата.
         if (window.ChatModule) {
             ChatModule.setLanguage(lang);
         }
 
-        // 3. Получаем соответствующий пакет переводов для основного интерфейса.
+        // 3. Получаем пакет переводов.
         const translations = LANG_PACK[lang];
         if (!translations) {
             console.error(`Пакет переводов для языка "${lang}" не найден.`);
             return;
         }
 
-        // 4. Обновляем текст на всех элементах с атрибутом data-lang-key.
-        // Это основной механизм перевода статических элементов интерфейса.
+        // 4. Обновляем все элементы с ключами.
         document.querySelectorAll('[data-lang-key]').forEach(el => {
-            if (el.hasAttribute('data-lang-skip-content')) return; // <-- ДОБАВЛЕНО: Пропускаем элементы с меткой
-
             const key = el.dataset.langKey;
             if (translations[key]) {
-                // Устанавливаем текст для плейсхолдеров или для содержимого элемента.
-                if (el.placeholder) {
-                    el.placeholder = translations[key];
-                } else {
-                    // Используем innerHTML, так как в некоторых переводах могут быть теги (например, <span>)
-                    el.innerHTML = translations[key];
+                const translationText = translations[key];
+
+                // === ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ v3 ===
+                
+                // Сначала всегда обновляем title, если он есть.
+                if (el.hasAttribute('title')) {
+                    el.title = translationText;
+                }
+
+                // Если это поле ввода или текстовая область, обновляем ТОЛЬКО placeholder.
+                if (el.nodeName === 'TEXTAREA' || el.nodeName === 'INPUT') {
+                    if (el.placeholder !== undefined) {
+                       el.placeholder = translationText;
+                    }
+                } 
+                // Иначе, если это не кнопка с иконкой, обновляем ее содержимое.
+                else if (!el.hasAttribute('data-lang-skip-content')) {
+                    el.innerHTML = translationText;
                 }
             }
         });
         
-        // 5. Обновляем всплывающие подсказки (атрибут title) у кнопок в шапке.
-        const copyBtn = getEl('copyQuestionBtnQuiz');
-        if (copyBtn) copyBtn.title = translations.copy_question_title;
-        
-        const searchWebBtn = getEl('searchWebButton');
-        if (searchWebBtn) searchWebBtn.title = translations.search_web_title;
-        
-        const chatBtn = getEl('chatToggle');
-        if (chatBtn) chatBtn.title = translations.chat_button_title;
-        
-        const quickModeBtn = getEl('quickModeToggle');
-        if (quickModeBtn) quickModeBtn.title = translations.quick_mode_title;
-        
-        const triggerBtn = getEl('triggerWordToggle');
-        if (triggerBtn) triggerBtn.title = translations.trigger_words_title;
-        
-        const themeBtn = getEl('themeDropdownButton');
-        if (themeBtn) themeBtn.title = translations.theme_button_title;
-        
-        const langBtn = getEl('languageToggle');
-        if (langBtn) langBtn.title = translations.language_toggle_title;
-        
-        const favoriteBtn = getEl('favoriteQuestionBtn');
-        if (favoriteBtn) favoriteBtn.title = translations.favorite_button_title;
-        
-        const translateBtn = getEl('translateQuestionBtn');
-        if (translateBtn) translateBtn.title = translations.translate_question_title;
-        
-// 6. Обновляем текст на самой кнопке переключения языка.
-        // Кнопка должна показывать аббревиатуру ТЕКУЩЕГО языка.
+        // 5. Обновляем текст на самой кнопке переключения языка.
         if (languageToggle && SUPPORTED_LANGS[lang]) {
             languageToggle.textContent = SUPPORTED_LANGS[lang];
         }
 
-        // 7. Если открыт экран результатов поиска, перерисовываем его, чтобы применился новый язык.
+        // 6. Перерисовываем динамические элементы, если они видны.
         if (searchResultsContainer && !searchResultsContainer.classList.contains('hidden') && searchResultsData.length > 0) {
-           
             displaySingleResult(currentResultIndex);
         }
         
-// 9. Обновляем текст на кнопках скачивания перевода, если они видимы.
         updateDownloadButtonsText();
-
-        // 10. (НОВЫЙ ШАГ) Перерисовываем выпадающий список парсера с новым языком.
         populateParserPatterns();
 
-        // --- НАЧАЛО ИСПРАВЛЕНИЯ: Динамическое обновление текста с количеством вопросов ---
-        // Проверяем, виден ли экран настроек и загружены ли вопросы
         if (quizSetupArea && !quizSetupArea.classList.contains('hidden') && allParsedQuestions.length > 0) {
             const questionCount = allParsedQuestions.filter(q => q.type !== 'category').length;
-            // Принудительно пересобираем строку с уже переведенными частями
             maxQuestionsInfoEl.textContent = `(${_('total_questions_label')} ${questionCount} ${_('questions_label_for_range')})`;
         }
-        // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
+        
+        // 7. Вызываем специальную функцию для перевода AI-чата.
+        translateAIChatUI();
     }
 
 
@@ -15810,14 +15998,16 @@ const mainApp = (function() {
             return;
         }
 
-        // Показываем панель результатов и вставляем в нее индикатор загрузки
+        // === НАЧАЛО ИСПРАВЛЕНИЯ ===
+        const loadingText = _('ai_searching_for').replace('{query}', escapeHTML(query));
         aiChatSearchResults.innerHTML = `
             <div class="search-results-loader">
                 <div class="loading-spinner"></div>
-                <p>Поиск "${escapeHTML(query)}"...</p>
+                <p>${loadingText}</p>
             </div>
         `;
-        // <<< ГЛАВНОЕ ИЗМЕНЕНИЕ: Показываем панель только СЕЙЧАС >>>
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
         aiChatSearchResults.classList.remove('hidden');
 
         try {
@@ -15884,11 +16074,8 @@ const mainApp = (function() {
         } catch (error) {
             console.error("Критическая ошибка при глобальном поиске:", error);
             aiChatSearchResults.innerHTML = `<div class="search-results-empty">Произошла ошибка поиска.</div>`;
-        } finally {
-
         }
     }
-
 
 
     /**
@@ -16579,9 +16766,6 @@ const mainApp = (function() {
 
 
 
-
-
-
     /**
      * Рендерит список чатов в боковой панели.
      */
@@ -16597,7 +16781,7 @@ const mainApp = (function() {
             const chat = allAIChats[chatId];
             // Генерируем заголовок из первого сообщения пользователя, если оно есть
             const firstUserMessage = chat.find(msg => msg.role === 'user' && msg.content);
-            let title = firstUserMessage ? firstUserMessage.content : 'Новый чат';
+            let title = firstUserMessage ? firstUserMessage.content : _('ai_new_chat_default_title');
             if (title.length > 25) title = title.substring(0, 25) + '...';
 
             const li = document.createElement('li');
@@ -16608,7 +16792,7 @@ const mainApp = (function() {
             }
             li.innerHTML = `
                 <span class="ai-chat-history-title">${escapeHTML(title)}</span>
-                <button class="ai-chat-history-delete" title="Удалить чат">
+                <button class="ai-chat-history-delete" title="${_('ai_private_chat_delete_tooltip')}">
                     <i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i>
                 </button>
             `;
@@ -16616,6 +16800,7 @@ const mainApp = (function() {
         });
         if (window.lucide) lucide.createIcons();
     }
+
 
     /**
      * Создает новую сессию чата.
@@ -16625,7 +16810,7 @@ const mainApp = (function() {
         const newId = generateChatId();
         allAIChats[newId] = [{
             role: 'model',
-            content: 'Привет! Я ваш AI-помощник. Чем могу помочь?'
+            type: 'welcome_message', 
         }];
         currentAIChatId = newId;
         saveAIChatsToStorage();
@@ -16747,11 +16932,11 @@ const mainApp = (function() {
 
             const isOwner = currentUser && currentUser.uid === audience.ownerId;
             const settingsBtnHtml = isOwner
-                ? `<button class="audience-settings-btn" title="Настройки Аудитории"><i data-lucide="settings-2" style="width: 16px; height: 16px; pointer-events: none;"></i></button>`
+                ? `<button class="audience-settings-btn" title="${_('ai_audience_settings_tooltip')}"><i data-lucide="settings-2" style="width: 16px; height: 16px; pointer-events: none;"></i></button>`
                 : '';
 
             const deleteBtnHtml = isOwner 
-                ? `<button class="ai-chat-history-delete" title="Удалить аудиторию"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
+                ? `<button class="ai-chat-history-delete" title="${_('ai_audience_delete_tooltip')}"><i data-lucide="trash-2" style="width:14px; height:14px; pointer-events: none;"></i></button>`
                 : '';
 
             li.innerHTML = `
@@ -16774,8 +16959,8 @@ const mainApp = (function() {
         if (!currentUser || currentUser.uid !== ownerId) return;
 
         const confirmed = await showConfirmationModal(
-            'Подтверждение',
-            'Вы уверены, что хотите удалить эту Аудиторию? Все темы и сообщения в ней будут безвозвратно удалены.',
+            'ai_confirm_delete_audience_title',
+            'ai_confirm_delete_audience_text',
             'confirm_button_delete'
         );
 
@@ -17061,14 +17246,26 @@ const mainApp = (function() {
         const audienceData = window.aiAudiencesCache?.find(a => a.id === audienceId);
         if (!modal || !audienceData) return;
 
-        // Заполняем поля
-        getEl('audienceEditModalTitle').textContent = `Настройки: ${audienceData.title}`;
-        getEl('audienceNameEditInput').value = audienceData.title;
-        getEl('audiencePasswordEditInput').value = ''; // Пароль всегда пуст для безопасности
+        // === НАЧАЛО ИСПРАВЛЕНИЙ ===
+        // 1. Находим все элементы модального окна
+        const titleEl = getEl('audienceEditModalTitle');
+        const nameInput = getEl('audienceNameEditInput');
+        const passwordInput = getEl('audiencePasswordEditInput');
+        const moderatorsListEl = getEl('moderatorsList');
+        const addModeratorBtn = getEl('addModeratorBtn');
+        const cancelBtn = getEl('cancelAudienceEditBtn');
+        const saveBtn = getEl('saveAudienceSettingsBtn');
+
+        // 2. Применяем переводы ко всем элементам
+        titleEl.textContent = _('ai_settings_for_audience').replace('{audienceName}', audienceData.title);
+        nameInput.value = audienceData.title;
+        passwordInput.value = ''; 
         getEl('moderatorEmailInput').value = '';
+        cancelBtn.textContent = _('modal_cancel_button');
+        saveBtn.textContent = _('modal_save_button'); 
+        // === КОНЕЦ ИСПРАВЛЕНИЙ ===
 
         // Загружаем и отображаем список модераторов
-        const moderatorsListEl = getEl('moderatorsList');
         moderatorsListEl.innerHTML = '<li>Загрузка...</li>';
         
         const moderators = audienceData.moderators || [];
@@ -17091,9 +17288,9 @@ const mainApp = (function() {
         }
         
         // Привязываем обработчики
-        getEl('saveAudienceSettingsBtn').onclick = () => saveAudienceSettings(audienceId);
-        getEl('cancelAudienceEditBtn').onclick = () => ChatModule.closeModal('audienceEditModal');
-        getEl('addModeratorBtn').onclick = () => addModeratorToAudience(audienceId);
+        saveBtn.onclick = () => saveAudienceSettings(audienceId);
+        cancelBtn.onclick = () => ChatModule.closeModal('audienceEditModal');
+        addModeratorBtn.onclick = () => addModeratorToAudience(audienceId);
         moderatorsListEl.onclick = (e) => {
             const removeBtn = e.target.closest('.remove-moderator-btn');
             if (removeBtn) {
@@ -17121,19 +17318,19 @@ const mainApp = (function() {
         showGlobalLoader("Сохранение...");
         try {
             const audienceRef = db.collection('ai_audiences').doc(audienceId);
+            
+            // 1. Начинаем с объекта, который содержит только те данные, что мы обновляем всегда.
             const updateData = { title: newName };
 
+            // 2. Проверяем, ввел ли пользователь новый пароль.
             if (newPassword) {
+                // Если да - добавляем в наш объект данные для обновления пароля.
                 updateData.hasPassword = true;
                 updateData.passwordHash = await hashPassword(newPassword);
-            } else {
-                // Если поле пароля пустое, проверяем, был ли пароль до этого, и если да - удаляем
-                const doc = await audienceRef.get();
-                if (doc.exists && doc.data().hasPassword) {
-                    updateData.hasPassword = false;
-                    updateData.passwordHash = firebase.firestore.FieldValue.delete();
-                }
             }
+            // 3. Если поле newPassword пустое, мы НИЧЕГО не делаем.
+            //    В объект updateData не попадут поля hasPassword и passwordHash,
+            //    и Firestore не будет трогать существующие значения в базе.
 
             await audienceRef.update(updateData);
             showToast("Настройки успешно сохранены.", "success");
@@ -17385,7 +17582,7 @@ const mainApp = (function() {
         }
 
         if (!topicId) {
-            aiChatMessages.innerHTML = '<div class="empty-state">Выберите тему для начала общения.</div>';
+            aiChatMessages.innerHTML = `<div class="empty-state">${_('ai_choose_topic_prompt')}</div>`;
             return;
         }
 
@@ -17443,8 +17640,8 @@ const mainApp = (function() {
      */
     async function deleteAIChat(chatId) {
         const confirmed = await showConfirmationModal(
-            'Подтверждение',
-            'Вы уверены, что хотите удалить этот чат? Это действие необратимо.',
+            'ai_confirm_delete_chat_title',
+            'ai_confirm_delete_chat_text',
             'confirm_button_delete'
         );
         if (!confirmed) return;
@@ -17819,30 +18016,16 @@ const mainApp = (function() {
         const btn = getEl('aiScrollToBottomBtn');
         if (!btn || !aiChatMessages) return;
 
-        // --- Логирование для отладки ---
         const scrollHeight = aiChatMessages.scrollHeight;
         const clientHeight = aiChatMessages.clientHeight;
         const scrollTop = aiChatMessages.scrollTop;
-        // --- Конец логирования ---
-
+        
         const threshold = 200; 
         const isNearBottom = scrollHeight - clientHeight - scrollTop < threshold;
         const shouldBeVisible = !isNearBottom && scrollHeight > clientHeight;
 
-        const wasVisible = btn.classList.contains('visible');
+        // Просто переключаем класс видимости в зависимости от того, нужна кнопка или нет
         btn.classList.toggle('visible', shouldBeVisible);
-        const isVisibleNow = btn.classList.contains('visible');
-
-        // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ ---
-        // Если кнопка НЕ была видна, а СЕЙЧАС стала видна,
-        // это идеальный момент для глобальной перерисовки иконок.
-        if (!wasVisible && isVisibleNow) {
-            if (window.lucide) {
-                // Вызываем глобальную перерисовку без аргументов.
-                // Это именно то, что происходит при изменении размера окна и "чинит" иконку.
-                lucide.createIcons();
-            }
-        }
     }
 
     /**
@@ -18522,7 +18705,7 @@ const mainApp = (function() {
         const creativityValue = getEl('aiCreativityValue');
         if (creativitySlider) creativitySlider.value = settings.creativity;
         if (creativityValue) {
-            const creativityLevels = ['Низкая', 'Средняя', 'Высокая'];
+            const creativityLevels = [_('ai_creativity_low'), _('ai_creativity_medium'), _('ai_creativity_high')];
             creativityValue.textContent = creativityLevels[settings.creativity] || 'Средняя';
         }
 
@@ -18733,6 +18916,7 @@ const mainApp = (function() {
        // Загружаем и отображаем текущий активный чат
        switchToAIChat(currentAIChatId);
        updateGroundingToggleState();
+       translateAIChatUI();
     }
 
     /**
@@ -18761,7 +18945,7 @@ const mainApp = (function() {
                 return;
             }
             if (!currentChat) {
-                aiChatMessages.innerHTML = '<div class="empty-state">Выберите чат для начала.</div>';
+                aiChatMessages.innerHTML = `<div class="empty-state">${_('ai_choose_chat_prompt')}</div>`;
                 return;
             }
             
@@ -18776,15 +18960,11 @@ const mainApp = (function() {
                 try {
                     const messageContainer = document.createElement('div');
                     
-                    // === НАЧАЛО ИСПРАВЛЕНИЯ: Правильный порядок присвоения классов ===
-                    // Сначала присваиваем основные классы
                     messageContainer.className = `ai-message-container is-${msg.role}`;
-                    // И только потом добавляем дополнительный класс, если нужно
                     if (msg.role === 'user' && msg.dotColor) {
                         messageContainer.style.setProperty('--user-message-color', msg.dotColor);
                         messageContainer.classList.add('has-color-indicator');
                     }
-                    // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
                     messageContainer.id = `ai-msg-${currentAIChatType}-${(currentAIChatType === 'public' ? msg.id : `${currentAIChatId}_${index}`)}`;
                     
@@ -18811,7 +18991,14 @@ const mainApp = (function() {
                     if (msg.content === 'typing...') {
                         contentWrapper.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
                     } else {
-                        let contentToRender = msg.content || '';
+                        let contentToRender;
+                        // Если это специальное приветственное сообщение, берем свежий перевод
+                        if (msg.type === 'welcome_message') {
+                            contentToRender = _('ai_welcome_message');
+                        } else {
+                        // Для всех остальных сообщений просто показываем их содержимое
+                            contentToRender = msg.content || '';
+                        }
                         let baseHtml = window.marked ? marked.parse(contentToRender) : escapeHTML(contentToRender);
         
                         if (msg.role === 'model' && msg.grounded && msg.groundingMetadata) {
@@ -18875,9 +19062,8 @@ const mainApp = (function() {
         
                     messageContainer.appendChild(messageEl);
         
-                    const isLastMessage = index === currentChat.length - 1;
                     const deleteButtonHTML = userCanDelete 
-                        ? `<button class="ai-action-btn" title="Удалить сообщение" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
+                        ? `<button class="ai-action-btn" title="${_('ai_delete_tooltip')}" data-action="delete-ai" data-index="${index}"><i data-lucide="trash-2"></i></button>`
                         : '';
         
                     if (msg.role === 'model' && msg.content !== 'typing...') {
@@ -18887,21 +19073,21 @@ const mainApp = (function() {
                         const isRegeneratable = index > 0 && currentChat[index - 1]?.role === 'user';
                         
                         const regenerateButtonHTML = (isRegeneratable && userCanDelete)
-                            ? `<button class="ai-action-btn" title="${_('ai_regenerate_response')}" data-action="regenerate-ai" data-index="${index}"><i data-lucide="refresh-cw"></i></button>`
+                            ? `<button class="ai-action-btn" title="${_('ai_regenerate_tooltip')}" data-action="regenerate-ai" data-index="${index}"><i data-lucide="refresh-cw"></i></button>`
                             : '';
                         
                         let createTestElementHTML = '';
                         if (generatedTestsFromAI.has(index)) {
                             createTestElementHTML = `<button class="ai-action-btn ai-generated-test-file-btn" title="Открыть действия для теста" onclick="mainApp.showFileActionsForAIGeneratedTest(${index})"><i data-lucide="file-question"></i></button>`;
                         } else if (!msg.generatedTest) {
-                            createTestElementHTML = `<button class="ai-action-btn" title="Создать тест из сообщения" onclick="mainApp.showAITestFromMessageModal(${index})"><i data-lucide="clipboard-list"></i></button>`;
+                            createTestElementHTML = `<button class="ai-action-btn" title="${_('ai_create_test_tooltip')}" onclick="mainApp.showAITestFromMessageModal(${index})"><i data-lucide="clipboard-list"></i></button>`;
                         }
 
                         actionsContainer.innerHTML = `
-                            <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
-                            <button class="ai-action-btn" title="${_('ai_copy_response')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_reply_tooltip')}" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_copy_tooltip')}" data-action="copy-ai" data-index="${index}"><i data-lucide="copy"></i></button>
                             ${createTestElementHTML}
-                            <button class="ai-action-btn" title="${_('ai_share_response')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_share_tooltip')}" data-action="share-ai" data-index="${index}"><i data-lucide="share-2"></i></button>
                             ${deleteButtonHTML}
                             ${regenerateButtonHTML}
                         `;
@@ -18911,9 +19097,9 @@ const mainApp = (function() {
                         const actionsContainer = document.createElement('div');
                         actionsContainer.className = 'ai-user-message-actions';
                         actionsContainer.innerHTML = `
-                            <button class="ai-action-btn" title="Ответить" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
-                            <button class="ai-action-btn" title="Копировать" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
-                            <button class="ai-action-btn" title="Редактировать и отправить заново" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_reply_tooltip')}" data-action="reply-ai" data-index="${index}"><i data-lucide="message-square-reply"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_copy_tooltip')}" data-action="copy-user" data-index="${index}"><i data-lucide="copy"></i></button>
+                            <button class="ai-action-btn" title="${_('ai_edit_tooltip')}" data-action="edit-user" data-index="${index}"><i data-lucide="pencil"></i></button>
                             ${deleteButtonHTML}
                         `;
                         messageContainer.appendChild(actionsContainer);
@@ -19541,6 +19727,57 @@ const mainApp = (function() {
         // Запускаем автоматическую смену
         tipTimer = setTimeout(showNextTip, 5000);
     }
+
+ 
+    /**
+     * НОВАЯ ФУНКЦИЯ: Применяет переводы ко всем элементам внутри модального окна AI-чата.
+     */
+    function translateAIChatUI() {
+        const modal = getEl('aiChatModal');
+        if (!modal) return;
+        const currentLang = localStorage.getItem('appLanguage') || 'ru';
+        const translations = LANG_PACK[currentLang];
+        if (!translations) return;
+
+        modal.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.dataset.langKey;
+            if (translations[key]) {
+                const translationText = translations[key];
+
+                // === ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ v3 ===
+
+                // Обновляем title, если он есть.
+                if (el.hasAttribute('title')) {
+                    el.title = translationText;
+                }
+
+                // Если это поле ввода или текстовая область, обновляем ТОЛЬКО placeholder.
+                if (el.nodeName === 'TEXTAREA' || el.nodeName === 'INPUT') {
+                    if (el.placeholder !== undefined) {
+                       el.placeholder = translationText;
+                    }
+                } 
+                // Иначе, если это не кнопка с иконкой, обновляем ее содержимое.
+                else if (!el.hasAttribute('data-lang-skip-content')) {
+                    el.innerHTML = translationText;
+                }
+            }
+        });
+        
+        // Обновляем текст для креативности и кастомных селектов
+        loadAIChatSettings();
+        const modelContainer = getEl('aiModelSelectContainer');
+        if (modelContainer) {
+            const selectedModelOption = modelContainer.querySelector(`a[data-value="${modelContainer.dataset.currentValue}"]`);
+            if (selectedModelOption) getEl('aiModelSelectText').textContent = selectedModelOption.textContent;
+        }
+        const lengthContainer = getEl('aiResponseLengthSelectContainer');
+        if (lengthContainer) {
+            const selectedLengthOption = lengthContainer.querySelector(`a[data-value="${lengthContainer.dataset.currentValue}"]`);
+            if (selectedLengthOption) getEl('aiResponseLengthSelectText').textContent = selectedLengthOption.textContent;
+        }
+    }
+
 
 
     // --- Public methods exposed from mainApp ---

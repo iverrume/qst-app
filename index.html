@@ -434,7 +434,7 @@
                             <label for="aiAnswerCount" data-lang-key="ai_answer_count_label">3. Количество вариантов ответа:</label>
                             <select id="aiAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
                                 <option value="3">3</option>
-                                <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
+                                <option value="4" selected><span data-lang-key="ai_option_default">4 (стандарт)</span></option>
                                 <option value="5">5</option>
                                 <option value="6">6</option>
                             </select>
@@ -474,7 +474,7 @@
                             <label for="aiTopicAnswerCount" data-lang-key="ai_topic_answer_count_label">Количество вариантов ответа (если не указано в теме):</label>
                             <select id="aiTopicAnswerCount" style="width: 100%; padding: 8px; border-radius: 4px; margin-top: 10px;">
                                 <option value="3">3</option>
-                                <option value="4" selected>4 <span data-lang-key="ai_option_default">(стандарт)</span></option>
+                                <option value="4" selected><span data-lang-key="ai_option_default">4 (стандарт)</span></option>
                                 <option value="5">5</option>
                                 <option value="6">6</option>
                             </select>
@@ -562,7 +562,7 @@
         <!-- ======================================================= -->
         <!-- ===      НОВАЯ КНОПКА (FAB) ДЛЯ AI-ЧАТА             === -->
         <!-- ======================================================= -->
-        <button id="aiChatFab" class="ai-chat-fab" title="AI Помощник">
+        <button id="aiChatFab" class="ai-chat-fab" title="AI Помощник" data-lang-key="ai_fab_title" data-lang-skip-content="true">
             <i data-lucide="bot"></i>
         </button>
 
@@ -573,86 +573,91 @@
                 <div class="modal-content ai-chat-modal-content">
 
                     <div class="ai-chat-header">
-                        <h3><i data-lucide="brain-circuit"></i></h3>
+                        <h3><i data-lucide="brain-circuit"></i> <span data-lang-key="ai_chat_title"></span></h3>
 
                         <div id="aiColorLegendsWithEditor" class="ai-color-legend-container hidden">
+
+
                             <div id="aiColorLegendsWithList" class="ai-color-legend-list">
                                 <!-- Сюда JS будет вставлять элементы легенды -->
                             </div>
                             <div id="aiColorLegendEditor" class="ai-color-legend-editor hidden">
                                 <div class="legend-editor-header">
                                     <span id="aiLegendEditorColor" class="legend-color-swatch"></span>
-                                    <input type="text" id="aiLegendTextInput" placeholder="Описание для цвета...">
+                                    <input type="text" id="aiLegendTextInput" placeholder="Описание для цвета..." data-lang-key="ai_legend_editor_placeholder">
                                 </div>
                                 <div class="legend-editor-actions">
-                                    <button id="aiLegendCancelBtn" class="btn-secondary-small">Отмена</button>
-                                    <button id="aiLegendSaveBtn">Сохранить</button>
+                                    <button id="aiLegendCancelBtn" class="btn-secondary-small" data-lang-key="modal_cancel_button">Отмена</button>
+                                    <button id="aiLegendSaveBtn" data-lang-key="modal_save_button">Сохранить</button>
                                 </div>
                             </div>
                         </div>
 
+
                         <!-- Новый контейнер для кнопок -->
                         <div class="ai-chat-header-controls">
-                            <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ"><i data-lucide="sliders-horizontal"></i></button>
-                            <button id="aiChatResizeBtn" class="ai-chat-control-btn" title="Развернуть / Свернуть"><i data-lucide="maximize-2"></i></button>
-                            <button id="aiChatCloseBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
+                            <button id="aiChatSettingsBtn" class="ai-chat-control-btn" title="Настройки ИИ" data-lang-key="ai_settings_title" data-lang-skip-content="true"><i data-lucide="sliders-horizontal"></i></button>
+                            <button id="aiChatResizeBtn" class="ai-chat-control-btn" title="Развернуть / Свернуть" data-lang-key="ai_resize_title" data-lang-skip-content="true"><i data-lucide="maximize-2"></i></button>
+                            <button id="aiChatCloseBtn" class="ai-chat-control-btn" title="Закрыть" data-lang-key="ai_close_chat_title" data-lang-skip-content="true"><i data-lucide="x"></i></button>
                         </div>
+
+
                     </div> <!-- Закрывающий </div> для .ai-chat-header -->
+
 
 
                     <!-- ======== НАЧАЛО НОВОЙ ПАНЕЛИ НАСТРОЕК ======== -->
                     <div id="aiChatSettingsPanel" class="ai-chat-settings-panel hidden">
 
-
                         <div class="ai-setting-group">
-                            <label for="aiModelSelectContainer">Модель ИИ</label>
+                            <label for="aiModelSelectContainer" data-lang-key="ai_model_label">Модель ИИ</label>
                             <div class="ai-custom-select" id="aiModelSelectContainer">
                                 <button class="ai-select-button">
                                     <span id="aiModelSelectText">Flash (самая умная и быстрая)</span>
                                     <i data-lucide="chevron-down"></i>
                                 </button>
                                 <div class="ai-select-dropdown hidden">
-                                    <a href="#" data-value="gemini-2.5-flash-lite">Flash 2.5 (самая умная)</a>
-                                    <a href="#" data-value="gemma-3-27b-it">Gemma 3.27b (умная)</a>
-                                    <a href="#" data-value="gemma-3-12b-it">Gemma 3.12b (баланс)</a>
+                                    <a href="#" data-value="gemini-2.5-flash-lite" data-lang-key="ai_model_flash">Flash 2.5 (самая умная)</a>
+                                    <a href="#" data-value="gemma-3-27b-it" data-lang-key="ai_model_gemma_27b">Gemma 3.27b (умная)</a>
+                                    <a href="#" data-value="gemma-3-12b-it" data-lang-key="ai_model_gemma_12b">Gemma 3.12b (баланс)</a>
                                 </div>
                             </div>
                         </div>
                         <div class="ai-setting-group">
-                            <label for="aiResponseLengthSelectContainer">Стиль ответа</label>
+                            <label for="aiResponseLengthSelectContainer" data-lang-key="ai_response_style_label">Стиль ответа</label>
                             <div class="ai-custom-select" id="aiResponseLengthSelectContainer">
                                 <button class="ai-select-button">
                                     <span id="aiResponseLengthSelectText">Обычный</span>
                                     <i data-lucide="chevron-down"></i>
                                 </button>
                                 <div class="ai-select-dropdown hidden">
-                                    <a href="#" data-value="short">Короткий</a>
-                                    <a href="#" data-value="medium">Обычный</a>
-                                    <a href="#" data-value="long">Развернутый</a>
+                                    <a href="#" data-value="short" data-lang-key="ai_response_short">Короткий</a>
+                                    <a href="#" data-value="medium" data-lang-key="ai_response_medium">Обычный</a>
+                                    <a href="#" data-value="long" data-lang-key="ai_response_long">Развернутый</a>
                                 </div>
                             </div>
                         </div>
 
-
-
                         <div class="ai-setting-group">
-                            <label for="aiCreativitySlider">Креативность</label>
-                            <span id="aiCreativityValue">Средняя</span>
+                            <label for="aiCreativitySlider" data-lang-key="ai_creativity_label">Креативность</label>
+                            <span id="aiCreativityValue" data-creativity-key="medium">Средняя</span>
                         </div>
                         <input type="range" id="aiCreativitySlider" min="0" max="2" value="1" step="1">
                         
                     </div>
 
-
-
                     <div class="ai-chat-body-wrapper">  
 
                         <div id="aiChatSidebar" class="ai-chat-sidebar">
+
+
+
+
                             <!-- === ВЕРХНЯЯ СЕКЦИЯ: ПРИВАТНЫЕ ЧАТЫ === -->
                             <div class="ai-sidebar-section" id="aiPrivateChatsSection">
                                 <div class="ai-sidebar-section-header">
-                                    <h4><i data-lucide="lock"></i> Приватные чаты</h4>
-                                    <button id="aiNewPrivateChatBtn" class="ai-sidebar-action-btn" title="Создать новый приватный чат">
+                                    <h4><i data-lucide="lock"></i> <span data-lang-key="ai_private_chats">Приватные чаты</span></h4>
+                                    <button id="aiNewPrivateChatBtn" class="ai-sidebar-action-btn" title="Создать новый приватный чат" data-lang-key="ai_new_private_chat_title" data-lang-skip-content="true">
                                         <i data-lucide="plus"></i>
                                     </button>
                                 </div>
@@ -661,40 +666,49 @@
                                 </ul>
                             </div>
 
+
+
+
                             <!-- === РАЗДЕЛИТЕЛЬ === -->
                             <div class="ai-sidebar-divider"></div>
+
+
+
 
                             <!-- === НИЖНЯЯ СЕКЦИЯ: ПУБЛИЧНЫЕ АУДИТОРИИ === -->
                             <div class="ai-sidebar-section" id="aiPublicAudiencesSection">
                                 <div class="ai-sidebar-section-header">
-                                    <h4><i data-lucide="users"></i> Аудитории</h4>
-                                    <button id="aiNewAudienceBtn" class="ai-sidebar-action-btn" title="Создать новую Аудиторию (видна всем)">
+                                    <h4><i data-lucide="users"></i> <span data-lang-key="ai_audiences">Аудитории</span></h4>
+                                    <button id="aiNewAudienceBtn" class="ai-sidebar-action-btn" title="Создать новую Аудиторию (видна всем)" data-lang-key="ai_new_audience_title" data-lang-skip-content="true">
                                         <i data-lucide="plus"></i>
                                     </button>
                                 </div>
+
+
                                 <ul id="aiAudiencesList" class="ai-chat-history-list">
                                      <!-- Сюда JS добавит публичные аудитории -->
                                 </ul>
                             </div>
 
-
                             <!-- === НОВЫЙ БЛОК: ЭКРАН ПРОСМОТРА ТЕМ ВНУТРИ АУДИТОРИИ === -->
                             <div class="ai-sidebar-section hidden" id="aiTopicsView">
+
+
                                 <div class="ai-sidebar-section-header">
-                                    <button id="aiBackToAudiencesBtn" class="ai-sidebar-action-btn" title="Назад к списку Аудиторий">
+                                    <button id="aiBackToAudiencesBtn" class="ai-sidebar-action-btn" title="Назад к списку Аудиторий" data-lang-key="ai_back_to_audiences_title" data-lang-skip-content="true">
                                         <i data-lucide="arrow-left"></i>
                                     </button>
                                     <div id="aiTopicsBreadcrumb" class="ai-topics-breadcrumb"></div>
-                                    <button id="aiNewTopicBtn" class="ai-sidebar-action-btn" title="Создать новую Тему в этой Аудитории">
+                                    <button id="aiNewTopicBtn" class="ai-sidebar-action-btn" title="Создать новую Тему в этой Аудитории" data-lang-key="ai_new_topic_title" data-lang-skip-content="true">
                                         <i data-lucide="plus"></i>
                                     </button>
                                 </div>
+
+
                                 <ul id="aiTopicsList" class="ai-chat-history-list">
                                      <!-- Сюда JS добавит список тем (чатов) -->
                                 </ul>
                             </div>  
-
-
 
                             <!-- РУЧКА ДЛЯ ИЗМЕНЕНИЯ РАЗМЕРА (остается без изменений) -->
                             <div id="aiSidebarHandle" class="ai-sidebar-handle"></div>
@@ -712,7 +726,7 @@
                                 <div id="aiScrollbarThumb" class="scrollbar-thumb"></div>
                             </div>
 
-                        <button id="aiScrollToBottomBtn" class="ai-scroll-to-bottom-btn" title="Перейти к последнему сообщению">
+                        <button id="aiScrollToBottomBtn" class="ai-scroll-to-bottom-btn" title="Перейти к последнему сообщению" data-lang-key="ai_scroll_to_bottom_title" data-lang-skip-content="true">
                             ↓
                         </button>
 
@@ -726,18 +740,19 @@
                         </div>
 
 
-
                         <!-- ======== КОНЕЦ НОВОЙ ПРАВОЙ ПАНЕЛИ ======== -->
 
                     </div> <!-- === ЗАКРЫВАЮЩИЙ тег для ai-chat-body-wrapper === -->
 
-                    <!-- === НОВЫЙ ФУТЕР, ВЫНЕСЕННЫЙ ИЗ BODY-WRAPPER === -->
+
+
+
+
+
+
+
+
                     <div class="ai-chat-input-area">
-
-
-
-
-
                         <div class="ai-main-controls">
                             <!-- Левая группа: все, что связано с поиском -->
                             <div class="ai-chat-footer-main-group">
@@ -748,62 +763,58 @@
                                         <span class="ai-toggle-slider"></span>
                                     </label>
                                 </div>
-
-
-                                
                             </div>
                             
                             <!-- Правая группа: действия с диалогом -->
                             <div class="ai-chat-footer-actions">
-                                <button id="aiShowSearchBtn" class="ai-action-btn" title="Поиск по всем чатам">
+                                <button id="aiShowSearchBtn" class="ai-action-btn" title="Поиск по всем чатам" data-lang-key="ai_search_all_chats_title" data-lang-skip-content="true">
                                     <i data-lucide="search"></i>
                                 </button>
-                                <button id="aiGenerateTestFromDialogBtn" class="ai-action-btn" title="Создать тест из всего диалога">
+                                <button id="aiGenerateTestFromDialogBtn" class="ai-action-btn" title="Создать тест из всего диалога" data-lang-key="ai_create_test_from_dialog_title" data-lang-skip-content="true">
                                     <i data-lucide="clipboard-list"></i>
                                 </button>
-                                <button id="aiShowAllUserMessagesBtn" class="ai-action-btn" title="Показать все мои сообщения">
+                                <button id="aiShowAllUserMessagesBtn" class="ai-action-btn" title="Показать все мои сообщения" data-lang-key="ai_show_all_user_messages_tooltip" data-lang-skip-content="true">
                                     <i data-lucide="user-round-search"></i>
                                 </button>
                             </div>
                         </div>
 
                         <div id="aiReplyPanel" class="ai-reply-panel hidden">
-
-
-
-                            
                             <div class="ai-reply-info">
-                                <span class="ai-reply-title">Ответ на сообщение:</span>
+                                <span class="ai-reply-title" data-lang-key="ai_reply_to_message">Ответ на сообщение:</span>
                                 <p id="aiReplyText" class="ai-reply-snippet"></p>
                             </div>
-                            <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ"><i data-lucide="x"></i></button>
+                            <button id="aiCancelReplyBtn" class="ai-cancel-reply-btn" title="Отменить ответ" data-lang-key="ai_cancel_reply_title" data-lang-skip-content="true"><i data-lucide="x"></i></button>
                         </div>
                         <div class="ai-chat-input-container">
                             <input type="file" id="aiChatFileInput" class="hidden" accept="image/*,application/pdf,audio/*,text/plain" multiple>
                             <div id="aiAttachmentPreview" class="ai-attachment-preview hidden"></div>
                             <div id="aiChatMainInputRow" class="ai-chat-main-input-row">
-                                <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл">
+                                <button id="aiChatAttachBtn" class="ai-chat-attach-btn" title="Прикрепить файл" data-lang-key="ai_attach_file_title" data-lang-skip-content="true">
                                     <i data-lucide="plus" class="ai-chat-input-icon"></i>
                                 </button>
-                                <textarea id="aiChatInput" placeholder="Спросите что-нибудь..."></textarea>
-
-
-
+                                <textarea id="aiChatInput" placeholder="Спросите что-нибудь..." data-lang-key="ai_chat_placeholder"></textarea>
                                 <button id="aiChatSendBtn" class="advanced-send-btn">
                                     <i data-lucide="arrow-up"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                                        <!-- === НАЧАЛО НОВОГО КОДА: Глобальный поиск по чатам === -->
+
+
+
+
+
+
+
                     <div id="aiChatSearchContainer" class="ai-chat-search-container hidden">
-                        <input type="text" id="aiChatSearchInputGlobal" placeholder="Поиск по всем чатам...">
+                        <input type="text" id="aiChatSearchInputGlobal" placeholder="Поиск по всем чатам..." data-lang-key="ai_search_all_chats_placeholder">
                         <button id="aiCloseSearchBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
                         <div id="aiChatSearchResults" class="ai-chat-search-results hidden">
                             <!-- Результаты поиска будут здесь -->
                         </div>
                     </div>
-                    <!-- === КОНЕЦ НОВОГО КОДА === -->
+
                 </div>
             </div>
         <audio id="notificationSound" src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" preload="auto"></audio>
@@ -917,6 +928,11 @@
             </div>
         </div>
     </div>
+
+
+
+
+
     <!-- ======================================================= -->
     <!-- ===  НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ АУДИТОРИИ    === -->
     <!-- ======================================================= -->
@@ -933,6 +949,10 @@
             </div>
         </div>
     </div>
+
+
+
+
     <!-- ======================================================= -->
     <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ ТЕМЫ       === -->
     <!-- ======================================================= -->
@@ -976,25 +996,25 @@
     <!-- ======================================================= -->
     <div id="audienceEditModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 480px;">
-            <h3 id="audienceEditModalTitle">Настройки Аудитории</h3>
+            <h3 id="audienceEditModalTitle" data-lang-key="ai_audience_settings_title">Настройки Аудитории</h3>
             
             <div class="settings-group" style="text-align: left; border-bottom: none; padding-bottom: 0;">
-                <label for="audienceNameEditInput" style="font-weight: 500;">Название Аудитории:</label>
-                <input type="text" id="audienceNameEditInput" class="auth-input" placeholder="Новое название...">
+                <label for="audienceNameEditInput" style="font-weight: 500;" data-lang-key="ai_audience_name_label">Название Аудитории:</label>
+                <input type="text" id="audienceNameEditInput" class="auth-input" placeholder="Новое название..." data-lang-key="ai_audience_name_placeholder">
 
-                <label for="audiencePasswordEditInput" style="font-weight: 500; margin-top: 15px;">Пароль (пусто = без пароля):</label>
+                <label for="audiencePasswordEditInput" style="font-weight: 500; margin-top: 15px;" data-lang-key="ai_audience_password_label">Пароль (пусто = без пароля):</label>
                 <div class="password-wrapper">
-                    <input type="password" id="audiencePasswordEditInput" class="auth-input" placeholder="Новый пароль...">
+                    <input type="password" id="audiencePasswordEditInput" class="auth-input" placeholder="Новый пароль..." data-lang-key="ai_audience_password_placeholder">
                     <span class="toggle-password"><i data-lucide="eye"></i></span>
                 </div>
             </div>
 
             <!-- Блок управления модераторами -->
             <div class="moderator-management-section">
-                <h4>Управление модераторами</h4>
+                <h4 data-lang-key="ai_moderator_management">Управление модераторами</h4>
                 <div class="moderator-add-form">
-                    <input type="email" id="moderatorEmailInput" class="auth-input" placeholder="Email нового модератора...">
-                    <button id="addModeratorBtn" class="btn-secondary-small">Добавить</button>
+                    <input type="email" id="moderatorEmailInput" class="auth-input" placeholder="Email нового модератора..." data-lang-key="ai_moderator_email_placeholder">
+                    <button id="addModeratorBtn" class="btn-secondary-small" data-lang-key="ai_moderator_add_btn">Добавить</button>
                 </div>
                 <ul id="moderatorsList" class="moderator-list">
                     <!-- Сюда JS добавит список модераторов -->
@@ -1002,11 +1022,16 @@
             </div>
 
             <div id="audienceEditModalButtons" class="modal-buttons" style="margin-top: 25px;">
-                <button id="cancelAudienceEditBtn" class="btn btn-secondary">Отмена</button>
-                <button id="saveAudienceSettingsBtn" class="btn">Сохранить</button>
+                <button id="cancelAudienceEditBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="saveAudienceSettingsBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
             </div>
         </div>
     </div>
+
+
+
+
+
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ЛЕГЕНДЫ === -->
     <!-- ======================================================= -->
@@ -1014,18 +1039,22 @@
         <div class="modal-content" style="max-width: 420px;">
             <h3 id="legendEditModalTitle" style="display: flex; align-items: center; gap: 10px;">
                 <span id="legendEditModalColorSwatch" class="legend-color-swatch"></span>
-                Редактирование легенды
+                <span data-lang-key="ai_legend_edit_title">Редактирование легенды</span>
             </h3>
-            <p style="margin: 20px 0; line-height: 1.6;">Введите новое описание для этого цвета.</p>
+            <p style="margin: 20px 0; line-height: 1.6;" data-lang-key="ai_legend_edit_text">Введите новое описание для этого цвета.</p>
             
-            <input type="text" id="legendNameInput" class="auth-input" placeholder="Описание..." style="margin-bottom: 25px;">
+            <input type="text" id="legendNameInput" class="auth-input" placeholder="Описание..." data-lang-key="ai_legend_edit_placeholder" style="margin-bottom: 25px;">
 
             <div class="modal-buttons">
-                <button id="legendEditCancelBtn" class="btn btn-secondary">Отмена</button>
-                <button id="legendEditConfirmBtn" class="btn">Сохранить</button>
+                <button id="legendEditCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="legendEditConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
             </div>
         </div>
     </div>
+
+
+
+
 
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ГЕНЕРАЦИИ ТЕСТА ИЗ AI-ЧАТА === -->
