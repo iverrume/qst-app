@@ -517,10 +517,12 @@
 
                 <div class="courses-header">
                     <h2 data-lang-key="courses_title">Курсы</h2>
+
                     <div class="courses-header-actions">
-                        <button id="createCourseBtn" class="hidden" data-lang-key="create_course_button">Создать курс</button>
-                        <button id="backToMainFromCoursesBtn" class="btn btn-secondary" data-lang-key="back_to_main">На главный экран</button>
+                        <button id="createCourseBtn" class="hidden" title="Создать новый курс" data-lang-key="create_course_button" data-lang-skip-content="true"><i data-lucide="plus"></i></button>
+                        <button id="backToMainFromCoursesBtn" class="btn btn-secondary" title="Назад к главному экрану" data-lang-key="back_to_main" data-lang-skip-content="true"><i data-lucide="arrow-left"></i></button>
                     </div>
+
                 </div>
 
                 <div id="coursesList">
@@ -533,8 +535,8 @@
                     <div class="courses-header">
                     <h2 id="courseDetailTitle">Название курса</h2>
                     <div class="courses-header-actions">
-                        <button id="createLessonBtn" class="hidden" data-lang-key="create_lesson_button">Создать урок</button>
-                        <button id="backToCoursesListBtn" class="btn btn-secondary" data-lang-key="back_to_courses_list">К списку курсов</button>
+                        <button id="createLessonBtn" class="hidden" title="Создать новый урок" data-lang-key="create_lesson_button" data-lang-skip-content="true"><i data-lucide="plus"></i></button>
+                        <button id="backToCoursesListBtn" class="btn btn-secondary" title="К списку курсов" data-lang-key="back_to_courses_list" data-lang-skip-content="true"><i data-lucide="arrow-left"></i></button>
                     </div>
                 </div>
                 <div id="courseLessonsList">
@@ -542,18 +544,23 @@
                 </div>
             </div>
             <!-- ======== КОНЕЦ НОВЫХ ЭКРАНОВ ДЛЯ КУРСОВ ======== -->
+
+
+
             <!-- ======== НАЧАЛО НОВОГО ЭКРАНА ДЛЯ УРОКА ======== -->
             <div id="lessonViewArea" class="view hidden">
-
-                    <div class="courses-header">
+                <!-- ======== НАЧАЛО ИСПРАВЛЕННОГО БЛОКА ======== -->
+                <div class="courses-header">
                     <h2 id="lessonViewTitle">Название урока</h2>
                     <div class="courses-header-actions">
-                        <button id="saveLessonBtn" class="hidden" data-lang-key="save_lesson_button">Сохранить</button>
-                        <button id="backToLessonsListBtn" class="btn btn-secondary" data-lang-key="back_to_lessons_list">К списку уроков</button>
+                        <button id="saveLessonBtn" class="hidden" title="Сохранить урок" data-lang-key="save_lesson_button" data-lang-skip-content="true"><i data-lucide="save"></i></button>
+                        <button id="toggleViewModeBtn" class="hidden" title="Режим просмотра" data-lang-key="toggle_view_mode_button" data-lang-skip-content="true"><i data-lucide="eye"></i></button>
+                        <button id="backToLessonsListBtn" class="btn btn-secondary" title="К списку уроков" data-lang-key="back_to_lessons_list" data-lang-skip-content="true"><i data-lucide="arrow-left"></i></button>
                     </div>
                 </div>
+                <!-- ======== КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ======== -->
                 <div id="lessonContentContainer" class="lesson-content-container">
-                    <!-- Содержимое урока (блоки) будет здесь -->
+     
                 </div>
             </div>
         </div> 
@@ -606,6 +613,7 @@
                     <button class="btn-delete"></button>
                 </div>
             </div>
+
         </template>
         <!-- ========== КОНЕЦ ШАБЛОНОВ ========== -->
 
@@ -671,6 +679,62 @@
             </div>
         </template>
         <!-- ======== КОНЕЦ НОВОГО ШАБЛОНА ======== -->
+
+
+        <!-- ======== НАЧАЛО НОВОГО ШАБЛОНА ДЛЯ РЕДАКТОРА ======== -->
+        <template id="addBlockMenuTemplate">
+            <div id="addBlockMenu" class="add-block-menu">
+                <div class="add-block-item" data-type="paragraph">
+                    <i data-lucide="pilcrow"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_text">Текст</strong>
+                        <span data-lang-key="block_menu_text_desc">Обычный абзац текста.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="h2">
+                    <i data-lucide="heading-2"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_header">Заголовок</strong>
+                        <span data-lang-key="block_menu_header_desc">Крупный заголовок раздела.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="image">
+                    <i data-lucide="image"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_image">Изображение</strong>
+                        <span data-lang-key="block_menu_image_desc">Вставить картинку по ссылке.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="video">
+                    <i data-lucide="youtube"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_video">Видео</strong>
+                        <span data-lang-key="block_menu_video_desc">Встроить видео с YouTube.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="hr">
+                    <i data-lucide="minus"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_divider">Разделитель</strong>
+                        <span data-lang-key="block_menu_divider_desc">Визуальная линия-разделитель.</span>
+                    </div>
+                </div>
+                <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                <div class="add-block-item" data-type="test">
+                    <i data-lucide="clipboard-check"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_test">Тест</strong>
+                        <span data-lang-key="block_menu_test_desc">Встроить тест из .qst файла.</span>
+                    </div>
+                </div>
+                <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
+            </div>
+
+        </template>
+        <!-- ======== КОНЕЦ НОВОГО ШАБЛОНА ======== -->
+
+
+
         <footer>
             <p>
                 <a href="https://chromewebstore.google.com/detail/qstium-helper/ekamfcpbkcekmmbclpnlmhcimnenabcl?hl=ru&utm_source=ext_sidebar" target="_blank" rel="noopener noreferrer" data-lang-key="footer_copyright">prod by @iverrum</a>
@@ -722,8 +786,6 @@
 
                     </div> <!-- Закрывающий </div> для .ai-chat-header -->
 
-
-
                     <!-- ======== НАЧАЛО НОВОЙ ПАНЕЛИ НАСТРОЕК ======== -->
                     <div id="aiChatSettingsPanel" class="ai-chat-settings-panel hidden">
 
@@ -768,9 +830,6 @@
 
                         <div id="aiChatSidebar" class="ai-chat-sidebar">
 
-
-
-
                             <!-- === ВЕРХНЯЯ СЕКЦИЯ: ПРИВАТНЫЕ ЧАТЫ === -->
                             <div class="ai-sidebar-section" id="aiPrivateChatsSection">
                                 <div class="ai-sidebar-section-header">
@@ -784,14 +843,8 @@
                                 </ul>
                             </div>
 
-
-
-
                             <!-- === РАЗДЕЛИТЕЛЬ === -->
                             <div class="ai-sidebar-divider"></div>
-
-
-
 
                             <!-- === НИЖНЯЯ СЕКЦИЯ: ПУБЛИЧНЫЕ АУДИТОРИИ === -->
                             <div class="ai-sidebar-section" id="aiPublicAudiencesSection">
@@ -857,18 +910,9 @@
                             </ul>
                         </div>
 
-
                         <!-- ======== КОНЕЦ НОВОЙ ПРАВОЙ ПАНЕЛИ ======== -->
 
                     </div> <!-- === ЗАКРЫВАЮЩИЙ тег для ai-chat-body-wrapper === -->
-
-
-
-
-
-
-
-
 
                     <div class="ai-chat-input-area">
                         <!-- Панель с переключателем поиска и кнопками -->
@@ -928,13 +972,6 @@
 
                         </div>
                     </div>
-
-
-
-
-
-
-
                     <div id="aiChatSearchContainer" class="ai-chat-search-container hidden">
                         <input type="text" id="aiChatSearchInputGlobal" placeholder="Поиск по всем чатам..." data-lang-key="ai_search_all_chats_placeholder">
                         <button id="aiCloseSearchBtn" class="ai-chat-control-btn"><i data-lucide="x"></i></button>
@@ -1012,6 +1049,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- === НАЧАЛО НОВОГО КОДА === -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- === КОНЕЦ НОВОГО КОДА === -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
@@ -1036,6 +1076,7 @@
             </div>
         </div>
     </div>
+
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА ПАРОЛЯ КАНАЛА   === -->
     <!-- ======================================================= -->
@@ -1057,10 +1098,6 @@
         </div>
     </div>
 
-
-
-
-
     <!-- ======================================================= -->
     <!-- ===  НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ АУДИТОРИИ    === -->
     <!-- ======================================================= -->
@@ -1078,9 +1115,6 @@
         </div>
     </div>
 
-
-
-
     <!-- ======================================================= -->
     <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ ТЕМЫ       === -->
     <!-- ======================================================= -->
@@ -1097,6 +1131,7 @@
             </div>
         </div>
     </div>
+
     <!-- ======================================================= -->
     <!-- ======================================================= -->
     <!-- ===      НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ПРОСМОТРА ИЗОБРАЖЕНИЙ === -->
@@ -1107,6 +1142,7 @@
         </div>
         <button class="close-image-preview" title="Закрыть"><i data-lucide="x"></i></button>
     </div>
+
     <!-- ======================================================= -->
     <!-- ===      НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ПРОСМОТРА ТЕКСТА   === -->
     <!-- ======================================================= -->
@@ -1119,6 +1155,7 @@
             <pre id="textPreviewBody"></pre>
         </div>
     </div>
+
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ АУДИТОРИИ === -->
     <!-- ======================================================= -->
@@ -1156,10 +1193,6 @@
         </div>
     </div>
 
-
-
-
-
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ ЛЕГЕНДЫ === -->
     <!-- ======================================================= -->
@@ -1179,10 +1212,6 @@
             </div>
         </div>
     </div>
-
-
-
-
 
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ГЕНЕРАЦИИ ТЕСТА ИЗ AI-ЧАТА === -->
@@ -1313,6 +1342,9 @@
                 <button id="courseEditCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
                 <button id="courseEditConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
             </div>
+            <!-- === НАЧАЛО НОВОГО КОДА === -->
+            <button id="manageAccessBtn" class="btn" style="width: 100%; margin-top: 10px; background: var(--button-primary-bg);"><i data-lucide="key-round"></i> Управление доступом</button>
+            <!-- === КОНЕЦ НОВОГО КОДА === -->
             <button id="courseDeleteBtn" class="delete-btn" style="margin-top: 15px;" data-lang-key="delete_course_button">Удалить курс</button>
         </div>
     </div>
@@ -1343,7 +1375,14 @@
             <p id="urlInputModalText" style="margin: 20px 0; line-height: 1.6;"></p>
             
             <input type="text" id="urlInputModalInput" class="auth-input" placeholder="https://..." style="margin-bottom: 25px;">
-
+                <!-- === НАЧАЛО НОВОГО КОДА === -->
+                <div class="settings-group" style="text-align: left; margin-bottom: 25px;">
+                    <label class="category-checkbox-label">
+                        <input type="checkbox" id="videoSubtitlesToggle">
+                        <span data-lang-key="video_subtitles_toggle">Ретранслировать субтитры под видео (YouTube, бета)</span>
+                    </label>
+                </div>
+                <!-- === КОНЕЦ НОВОГО КОДА === -->
             <div class="modal-buttons">
                 <button id="urlInputCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
                 <button id="urlInputConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
@@ -1351,8 +1390,90 @@
         </div>
     </div>
     <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ УПРАВЛЕНИЯ ДОСТУПОМ   === -->
+    <!-- ======================================================= -->
+    <div id="courseAccessModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 600px; text-align: left;">
+            <h3 data-lang-key="access_management_title">Управление доступом к курсу</h3>
+            
+            <!-- Переключатель Открытый/Закрытый -->
+            <div class="settings-group">
+                <label for="courseAccessTypeToggle" style="font-weight: 500;">Статус курса:</label>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="courseAccessTypeLabel">Закрытый (по ключам)</span>
+                    <label class="ai-toggle-switch">
+                        <input type="checkbox" id="courseAccessTypeToggle">
+                        <span class="ai-toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
 
+            <!-- Форма генерации ключей -->
+            <div id="keyGenerationSection">
+                <div class="settings-group">
+                    <label style="font-weight: 500;">Сгенерировать новые ключи:</label>
+                    <div class="key-generation-form">
+                        <input type="number" id="keyQuantityInput" class="range-input" value="10" min="1" max="100" title="Количество ключей">
+                        <select id="keyDurationSelect">
+                            <option value="7">Доступ на 1 неделю</option>
+                            <option value="14">Доступ на 2 недели</option>
+                            <option value="30" selected>Доступ на 1 месяц</option>
+                            <option value="90">Доступ на 3 месяца</option>
+                            <option value="365">Доступ на 1 год</option>
+                            <option value="0">Бессрочный доступ</option>
+                        </select>
+                        <button id="generateKeysBtn" class="btn" style="background: var(--button-success-bg);">Сгенерировать</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Список ключей -->
+            <div class="settings-group">
+                <label style="font-weight: 500;">Сгенерированные ключи:</label>
+                <div id="accessKeysTableContainer" class="access-keys-table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Ключ доступа</th>
+                                <th>Статус</th>
+                                <th>Активировал</th>
+                                <th>Осталось дней</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accessKeysTbody">
+                            <!-- Сюда JS будет вставлять строки с ключами -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 25px;">
+                <button id="closeAccessModalBtn" class="btn btn-secondary">Закрыть</button>
+            </div>
+        </div>
+    </div>
 </body>
+    <!-- ======================================================= -->
+    <!-- ===    НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА КЛЮЧА ДОСТУПА === -->
+    <!-- ======================================================= -->
+    <div id="accessKeyModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 data-lang-key="enter_access_key_title">Доступ к курсу</h3>
+            <p data-lang-key="enter_access_key_text" style="margin: 20px 0; line-height: 1.6;">
+                Этот курс является закрытым. Пожалуйста, введите ваш ключ доступа.
+            </p>
+            
+            <input type="text" id="accessKeyInput" class="auth-input" placeholder="QST-XXXX-XXXX-XXXX" data-lang-key="access_key_placeholder" style="margin-bottom: 25px;">
+
+            <div class="modal-buttons">
+                <button id="accessKeyCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="accessKeyConfirmBtn" class="btn" data-lang-key="access_key_activate_button">Активировать</button>
+            </div>
+        </div>
+    </div>
+
+
 
 </body>
 </html>

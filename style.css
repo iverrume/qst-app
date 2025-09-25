@@ -222,7 +222,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    overflow-x: hidden;
+    overflow-x: hidden; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
     position: relative;
 }
 
@@ -251,6 +251,7 @@ body::before {
     width: 100%;
     align-items: center;
     padding: 10px;
+    overflow-x: hidden; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
 }
 
 @media (min-width: 768px) {
@@ -8829,7 +8830,7 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     background: transparent;
     padding: 3px 45px 3px 5px; /* Уменьшили вертикальные отступы с 8px до 6px */
     font-size: 1.2em;
-    line-height: 0.7;
+    line-height: 1.4;
     min-height: 8px; /* Уменьшили минимальную высоту */
     max-height: 180px;
     color: var(--text-color);
@@ -12020,6 +12021,20 @@ display: none;
     animation: highlight-new-item 2s ease-out;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* ======================================================= */
 /* ===         СТИЛИ ДЛЯ НОВОГО РАЗДЕЛА "КУРСЫ"         === */
 /* ======================================================= */
@@ -12045,10 +12060,6 @@ display: none;
     text-align: left;
 }
 
-.courses-header-actions {
-    display: flex;
-    gap: 10px;
-}
 
 #createCourseBtn,
 #createLessonBtn {
@@ -12125,25 +12136,597 @@ display: none;
 .content-block-wrapper {
     position: relative;
     margin: 4px 0;
-    padding-left: 30px;
-    padding-right: 40px;
-}
-
-.block-handle,
-.block-actions {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    /* === НАЧАЛО ИЗМЕНЕНИЙ === */
     display: flex;
-    opacity: 0; /* Скрыты по умолчанию */
-    transition: opacity 0.2s ease-in-out;
-    z-index: 10;
+    align-items: center;
+    gap: 8px; /* Отступ между элементами */
+    /* Убираем padding, так как теперь управляем отступами через gap */
+    padding: 0;
+    /* === КОНЕЦ ИЗМЕНЕНИЙ === */
 }
 
+/* === НАЧАЛО НОВОГО КОДА === */
+.block-handle {
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--secondary-text-color);
+    padding-left: 4px;
+    opacity: 0.4; /* Делаем полупрозрачным по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+}
+
+.block-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    padding-right: 4px;
+    opacity: 0.4; /* Делаем полупрозрачным по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* ======================================================= */
+/* ===      НОВЫЕ СТИЛИ ДЛЯ КНОПОК ПЕРЕМЕЩЕНИЯ БЛОКОВ   === */
+/* ======================================================= */
+
+.block-move-controls {
+    display: flex;
+    flex-direction: column; /* Располагаем стрелки друг над другом */
+}
+
+.block-actions button i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Уменьшаем размер и отступы у кнопок-стрелок */
+.block-move-controls button {
+    padding: 1px;
+    height: 20px;
+}
+
+/* Делаем элементы управления полностью видимыми при наведении на весь блок */
 .content-block-wrapper:hover .block-handle,
 .content-block-wrapper:hover .block-actions {
-    opacity: 1; /* Показываем при наведении на обертку */
+    opacity: 1;
 }
+
+/* Контейнер с контентом (текст, видео) теперь занимает все свободное место */
+.content-block {
+    flex-grow: 1; /* Растягиваем на всю доступную ширину */
+    min-width: 0; /* Разрешаем сжиматься, если нужно */
+}
+/* === КОНЕЦ НОВОГО КОДА === */
+
+
+
+.block-handle {
+    left: 1px; /* Небольшой отступ от левого края */
+    cursor: grab;
+    color: var(--secondary-text-color);
+}
+
+.block-actions {
+    display: flex; /* Остается flex-контейнером */
+    flex-direction: column; /* Иконки внутри него идут в столбик */
+    gap: 6px;
+    flex-shrink: 0; /* Панель не сжимается */
+    padding-right: 4px; /* Небольшой отступ от правого края */
+
+}
+
+/* === НАЧАЛО НОВОГО КОДА: Стили для кнопки "+" === */
+.add-block-btn {
+    opacity: 0; /* По умолчанию скрыта */
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Показываем кнопку, когда блок пустой или при наведении на обертку */
+.content-block-wrapper:hover .add-block-btn,
+.content-block-wrapper.is-empty .add-block-btn {
+    opacity: 1;
+}
+/* === КОНЕЦ НОВОГО КОДА === */
+
+.block-actions button {
+    background: none;
+    border: none;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+.block-actions button:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+/* Убираем старый сдвиг, так как теперь используем padding у родителя */
+.lesson-editor .content-block {
+    margin-left: 0;
+}
+
+/* Стиль для перетаскиваемого элемента */
+.content-block-wrapper.dragging {
+    opacity: 0.5;
+    background: var(--input-hover-bg-color);
+}
+
+/* Стиль для плейсхолдера, который появляется на месте перетаскиваемого блока */
+.drag-placeholder {
+    background-color: color-mix(in srgb, var(--accent-color) 20%, transparent);
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+.lesson-content-container {
+    flex-grow: 1; /* <-- ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ */
+    padding: 10px;
+    font-size: 1.1em;
+    line-height: 1.6;
+    overflow-y: auto;
+    cursor: text; /* Устанавливаем курсор как у текстового поля */
+}
+
+.content-block {
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-height: 1.6em; /* Чтобы пустой блок не схлопывался */
+    transition: background-color 0.2s;
+}
+
+.content-block:focus {
+    outline: none;
+    background-color: var(--input-hover-bg-color);
+}
+
+/* Плейсхолдер для пустого блока */
+.content-block[data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    color: var(--secondary-text-color);
+    opacity: 0.6;
+    pointer-events: none;
+    display: block;
+}
+
+.content-block h2 {
+    margin: 0.5em 0;
+}
+
+/* Меню добавления блока */
+.add-block-menu {
+    position: absolute;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    z-index: 100;
+    width: 300px;
+    overflow: hidden;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.add-block-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.add-block-item:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+.add-block-item i {
+    width: 24px;
+    height: 24px;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+}
+
+.add-block-item-text strong {
+    display: block;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.add-block-item-text span {
+    font-size: 0.85em;
+    color: var(--secondary-text-color);
+}
+
+.course-item,
+.lesson-item {
+    position: relative; /* Необходимо для позиционирования кнопок */
+}
+
+.item-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0; /* Скрыты по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+}
+
+.course-item:hover .item-actions,
+.lesson-item:hover .item-actions {
+    opacity: 1; /* Показываем при наведении */
+}
+
+.item-actions button {
+    background: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-actions button:hover {
+    background: var(--button-secondary-hover-bg);
+}
+
+.item-actions button i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Стили для медиа-блоков */
+.content-block[data-type="image"],
+.content-block[data-type="video"] {
+    padding: 8px 0;
+}
+
+.content-block img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9; /* Сохраняем пропорции видео */
+}
+
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+/* Стили для разделителя */
+.content-block[data-type="hr"] {
+    padding: 15px 0;
+    min-height: 0;
+}
+
+.content-block hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+
+/* Стили для блока с тестом */
+.content-block[data-type="test"] {
+    padding: 0;
+}
+
+.test-block-editor,
+.test-block-viewer {
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+/* Вид для автора в редакторе */
+.test-block-editor {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    padding: 12px 15px;
+}
+
+.test-block-editor i {
+    width: 24px;
+    height: 24px;
+    color: var(--secondary-text-color);
+}
+
+.test-block-filename {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* Вид для ученика (кнопка) */
+.test-block-viewer {
+    display: block;
+    width: 100%;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    padding: 15px 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    cursor: pointer;
+    border: none;
+}
+
+.test-block-viewer:hover {
+    background-position: right center;
+}
+
+
+/* Стили для плавающего AI-меню */
+.ai-tools-menu {
+    position: absolute;
+    display: flex;
+    gap: 4px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    z-index: 101;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.ai-tools-menu button {
+    background: none;
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-color); /* Сделаем символы чуть ярче */
+    transition: all 0.2s;
+    font-size: 18px; /* Устанавливаем размер для эмодзи */
+    line-height: 1;
+}
+
+.ai-tools-menu button:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+.ai-tools-menu i {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕЖИМА ПРОСМОТРА УРОКА        === */
+/* ======================================================= */
+
+.lesson-viewer .content-block {
+    padding: 2px 0; /* Уменьшаем отступы для плотного текста */
+}
+
+.lesson-viewer .content-block-wrapper {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.lesson-viewer .content-block h2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.lesson-viewer .content-block:first-child h2 {
+    margin-top: 0;
+}
+
+/* ======================================================= */
+/* ===    АДАПТИВНОСТЬ AI-ЧАТА ДЛЯ ШИРОКИХ ЭКРАНОВ      === */
+/* ======================================================= */
+
+/* Применяем стили только на экранах шире 800px (планшеты и ПК) */
+@media (min-width: 800px) {
+    /* Ограничиваем ширину и центрируем все ключевые элементы чата */
+    .ai-chat-scroll-wrapper, /* <-- ИЗМЕНЕНО */
+    .ai-chat-input-area,
+    .ai-chat-search-container,
+    .ai-chat-search-results {
+        max-width: 800px; /* Максимальная ширина контента */
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%; /* Важно для правильной работы внутри max-width */
+    }
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ НОВОГО РАЗДЕЛА "КУРСЫ"         === */
+/* ======================================================= */
+
+#coursesArea,
+#courseDetailArea,
+#lessonViewArea {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.courses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.courses-header h2 {
+    margin: 0;
+    text-align: left;
+}
+
+.courses-header-actions {
+    display: flex;
+    gap: 8px; /* Немного уменьшим отступ */
+}
+
+/* Общий стиль для всех новых кнопок-иконок */
+.courses-header-actions button {
+    width: 40px;  /* Фиксированная ширина */
+    height: 40px; /* Фиксированная высота */
+    padding: 0;   /* Убираем внутренние отступы */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px; /* Сделаем углы чуть круглее */
+}
+
+/* Размер иконок внутри кнопок */
+.courses-header-actions button i {
+    width: 20px;
+    height: 20px;
+}
+
+/* ======================================================= */
+/* ===   ФИНАЛЬНЫЕ СТИЛИ ДЛЯ КНОПОК В РАЗДЕЛЕ "КУРСЫ"   === */
+/* ======================================================= */
+
+/* Стиль для "основных" кнопок (Создать курс/урок) */
+#coursesArea #createCourseBtn,
+#courseDetailArea #createLessonBtn {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border: none;
+    font-weight: 500;
+}
+
+#coursesArea #createCourseBtn:hover,
+#courseDetailArea #createLessonBtn:hover {
+    background-position: right center;
+}
+
+/* Стиль для "успешной" кнопки (Сохранить урок) */
+#lessonViewArea #saveLessonBtn {
+    background: var(--button-success-bg);
+    color: var(--button-primary-text);
+    border: none;
+    font-weight: 500;
+}
+
+#lessonViewArea #saveLessonBtn:hover {
+    background-color: var(--button-success-hover-bg);
+}
+
+/* Стиль для "вторичных" кнопок (Назад и Просмотр) */
+#coursesArea #backToMainFromCoursesBtn,
+#courseDetailArea #backToCoursesListBtn,
+#lessonViewArea #backToLessonsListBtn,
+#lessonViewArea #toggleViewModeBtn {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border: 1px solid var(--button-secondary-border);
+}
+
+#coursesArea #backToMainFromCoursesBtn:hover,
+#courseDetailArea #backToCoursesListBtn:hover,
+#lessonViewArea #backToLessonsListBtn:hover,
+#lessonViewArea #toggleViewModeBtn:hover {
+    background-color: var(--button-secondary-hover-bg);
+}
+
+/* ======== НАЧАЛО НОВОГО КОДА ======== */
+/* Стиль для активной кнопки режима просмотра */
+#lessonViewArea #toggleViewModeBtn.active {
+    background: var(--button-primary-bg); /* Используем фон основной кнопки */
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
+}
+/* ======== КОНЕЦ НОВОГО КОДА ======== */
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕДАКТОРА УРОКОВ (NOTION-LIKE) === */
+/* ======================================================= */
+
+.content-block-wrapper {
+    position: relative;
+    margin: 4px 0;
+    /* === НАЧАЛО ИЗМЕНЕНИЙ === */
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Отступ между элементами */
+    /* Убираем padding, так как теперь управляем отступами через gap */
+    padding: 0;
+    /* === КОНЕЦ ИЗМЕНЕНИЙ === */
+}
+
+/* === НАЧАЛО НОВОГО КОДА === */
+.block-handle {
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--secondary-text-color);
+    padding-left: 4px;
+    opacity: 0.4; /* Делаем полупрозрачным по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+}
+
+.block-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    padding-right: 4px;
+    opacity: 0.4; /* Делаем полупрозрачным по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* ======================================================= */
+/* ===      НОВЫЕ СТИЛИ ДЛЯ КНОПОК ПЕРЕМЕЩЕНИЯ БЛОКОВ   === */
+/* ======================================================= */
+
+.block-move-controls {
+    display: flex;
+    flex-direction: column; /* Располагаем стрелки друг над другом */
+}
+
+.block-actions button i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Уменьшаем размер и отступы у кнопок-стрелок */
+.block-move-controls button {
+    padding: 1px;
+    height: 20px;
+}
+
+/* Делаем элементы управления полностью видимыми при наведении на весь блок */
+.content-block-wrapper:hover .block-handle,
+.content-block-wrapper:hover .block-actions {
+    opacity: 1;
+}
+
+/* Контейнер с контентом (текст, видео) теперь занимает все свободное место */
+.content-block {
+    flex-grow: 1; /* Растягиваем на всю доступную ширину */
+    min-width: 0; /* Разрешаем сжиматься, если нужно */
+}
+/* === КОНЕЦ НОВОГО КОДА === */
+
+
+
+
 
 .block-handle {
     left: 4px; /* Небольшой отступ от левого края */
@@ -12439,39 +13022,441 @@ display: none;
 }
 
 
+
+
+
 /* ======================================================= */
-/* ===         СТИЛИ ДЛЯ РЕЖИМА ПРОСМОТРА УРОКА        === */
+/* ===    СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА УПРАВЛЕНИЯ ДОСТУПОМ  === */
 /* ======================================================= */
 
-.lesson-viewer .content-block {
-    padding: 2px 0; /* Уменьшаем отступы для плотного текста */
+#courseAccessModal .settings-group {
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--dashed-border-color);
+}
+#courseAccessModal .settings-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
 }
 
-.lesson-viewer .content-block h2 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    padding-bottom: 0.3em;
-    border-bottom: 1px solid var(--border-color);
+/* Форма генерации ключей */
+.key-generation-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+.key-generation-form .range-input {
+    width: 80px;
+}
+.key-generation-form select {
+    flex-grow: 1;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--container-bg-color);
+    color: var(--text-color);
 }
 
-.lesson-viewer .content-block:first-child h2 {
-    margin-top: 0;
+/* Таблица с ключами */
+.access-keys-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-top: 10px;
+}
+.access-keys-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+.access-keys-table-container th,
+.access-keys-table-container td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--dashed-border-color);
+}
+.access-keys-table-container th {
+    background-color: var(--input-bg-color);
+    font-weight: 500;
+    position: sticky;
+    top: 0;
+}
+.access-keys-table-container tbody tr:last-child td {
+    border-bottom: none;
+}
+.access-keys-table-container .key-string {
+    font-family: monospace;
+    font-weight: bold;
+}
+.key-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+}
+.key-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.key-status.activated {
+    color: var(--feedback-correct-text);
+}
+.key-status.activated::before {
+    background-color: var(--button-success-bg);
+}
+.key-status.available {
+    color: var(--secondary-text-color);
+}
+.key-status.available::before {
+    background-color: var(--secondary-text-color);
+}
+.key-actions button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--secondary-text-color);
+    border-radius: 4px;
+}
+.key-actions button:hover {
+    color: var(--text-color);
+    background-color: var(--input-hover-bg-color);
 }
 
 /* ======================================================= */
-/* ===    АДАПТИВНОСТЬ AI-ЧАТА ДЛЯ ШИРОКИХ ЭКРАНОВ      === */
+/* ===  АДАПТИВНОСТЬ ДЛЯ ОКНА УПРАВЛЕНИЯ ДОСТУПОМ       === */
 /* ======================================================= */
 
-/* Применяем стили только на экранах шире 800px (планшеты и ПК) */
-@media (min-width: 800px) {
-    /* Ограничиваем ширину и центрируем все ключевые элементы чата */
-    .ai-chat-scroll-wrapper, /* <-- ИЗМЕНЕНО */
-    .ai-chat-input-area,
-    .ai-chat-search-container,
-    .ai-chat-search-results {
-        max-width: 800px; /* Максимальная ширина контента */
-        margin-left: auto;
-        margin-right: auto;
-        width: 100%; /* Важно для правильной работы внутри max-width */
+@media (max-width: 600px) {
+    /* Делаем форму генерации вертикальной */
+    .key-generation-form {
+        flex-direction: column;
+        align-items: stretch; /* Растягиваем элементы на всю ширину */
     }
+
+    .key-generation-form .range-input,
+    .key-generation-form select {
+        width: 100%; /* Заставляем поля занимать всю ширину */
+    }
+
+    /* --- Магия для адаптивной таблицы --- */
+
+    /* 1. Скрываем стандартные заголовки таблицы */
+    .access-keys-table-container thead {
+        display: none;
+    }
+
+    /* 2. Превращаем строки в блочные элементы (карточки) */
+    .access-keys-table-container tr {
+        display: block;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+
+    /* 3. Превращаем ячейки в блочные элементы и добавляем отступы */
+    .access-keys-table-container td {
+        display: block;
+        text-align: right; /* Выравниваем значение по правому краю */
+        padding: 8px 0;
+        border-bottom: 1px solid var(--dashed-border-color);
+        position: relative; /* Необходимо для позиционирования псевдо-элемента */
+    }
+    .access-keys-table-container tr td:last-child {
+        border-bottom: none; /* Убираем линию у последней ячейки */
+    }
+
+    /* 4. САМОЕ ГЛАВНОЕ: Добавляем текстовые метки перед каждой ячейкой */
+    .access-keys-table-container td::before {
+        content: attr(data-label); /* Берем текст из data-атрибута */
+        position: absolute;
+        left: 0;
+        font-weight: 500;
+        color: var(--secondary-text-color);
+        text-align: left;
+    }
+
+    /* Центрируем содержимое ячейки с действиями */
+    .access-keys-table-container .key-actions {
+        text-align: right;
+    }
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ЗАГЛУШКИ АВТОРИЗАЦИИ           === */
+/* ======================================================= */
+
+.auth-required-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    gap: 20px; /* Расстояние между текстом и кнопкой */
+    background-color: var(--input-bg-color);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.auth-required-placeholder p {
+    margin: 0;
+    font-size: 1.1em;
+    color: var(--secondary-text-color);
+    max-width: 400px; /* Ограничиваем ширину текста для читаемости */
+}
+
+.auth-required-placeholder .btn {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    font-weight: 500;
+    padding: 10px 25px;
+}
+
+.auth-required-placeholder .btn:hover {
+    background-position: right center;
+}
+
+/* ======================================================= */
+/* ===         СТИЛЬ ДЛЯ МОДАЛЬНОГО ОКНА ПОВЕРХ ДРУГИХ === */
+/* ======================================================= */
+
+/* 
+  Этот класс будет применяться к любому модальному окну,
+  которое должно появиться поверх другого.
+  Более высокий z-index гарантирует, что оно будет сверху.
+*/
+.modal-overlay.super-modal {
+    z-index: 3001;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ КАРАОКЕ-СУБТИТРОВ             === */
+/* ======================================================= */
+
+/* Контейнер для всего блока субтитров */
+.karaoke-subtitles-container {
+    margin: 20px auto 10px auto;
+    padding: 15px 20px;
+    background-color: var(--input-bg-color);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    max-width: 700px;
+    font-family: 'Georgia', serif; /* Используем шрифт с засечками для лучшей читаемости */
+}
+
+/* Стили для каждой строки субтитров */
+.subtitle-line {
+    transition: all 0.3s ease-in-out;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* Предыдущая строка (тусклая, маленькая) */
+.subtitle-line.prev {
+    opacity: 0.5;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+/* ТЕКУЩАЯ строка (яркая, большая, подсвеченная) */
+.subtitle-line.current {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--accent);
+    transform: scale(1.02);
+    margin: 8px 0;
+}
+
+/* Следующая строка (тусклая, маленькая) */
+.subtitle-line.next {
+    opacity: 0.5;
+    font-size: 0.9em;
+    margin-top: 8px;
+}
+
+/* ======================================================= */
+/* ===         АДАПТИВНОСТЬ РЕДАКТОРА ДЛЯ МОБИЛЬНЫХ    === */
+/* ======================================================= */
+
+@media (max-width: 768px) {
+    /* 1. Уменьшаем боковые отступы у обертки блока */
+    .content-block-wrapper {
+        padding-left: 20px;
+        padding-right: 10px;
+    }
+
+    /* 2. Уменьшаем размер и отступ у "ручки" для перетаскивания */
+    .block-handle {
+        left: 0;
+    }
+    .block-handle i {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* 3. Уменьшаем размер кнопок в панели действий */
+    .block-actions button {
+        padding: 2px; /* Делаем кликабельную область чуть меньше */
+    }
+
+    /* 4. Уменьшаем сами иконки внутри кнопок */
+    .block-actions i {
+        width: 8px;
+        height: 8px;
+    }
+}
+
+/* ======================================================= */
+/* ===    АДАПТИВНОЕ ВИДЕО В УРОКАХ (ФИНАЛ v8)           === */
+/* ======================================================= */
+
+/* --- Стили для мобильных устройств (ширина до 767px) --- */
+@media (max-width: 767px) {
+    /* Применяем только в режиме просмотра для ученика */
+    .lesson-viewer .video-wrapper {
+        /* 
+          1. Задаем ширину, равную 100% ширины ОКНА.
+             Это может вызвать небольшой горизонтальный скролл, 
+             который мы убрали ранее с помощью overflow-x: hidden на body.
+        */
+        width: 85vw;
+        
+        /* 
+          2. Магический трюк для идеального центрирования относительно экрана.
+        */
+        position: relative;
+        left: 48%;
+        transform: translateX(-50%);
+    }
+}
+
+/* --- Стили для ПК (ширина 768px и более) --- */
+@media (min-width: 768px) {
+    /* Применяем только в режиме просмотра для ученика */
+    .lesson-viewer .video-wrapper {
+        /* 
+          На ПК используем более простой и надежный метод с отрицательными отступами,
+          так как мы знаем точную ширину отступов родителя (.container).
+        */
+
+    }
+}
+
+
+/* В режиме просмотра делаем текст субтитров более читаемым */
+.lesson-viewer .karaoke-subtitles-container {
+    text-align: left;
+    padding: 15px 25px; /* Немного увеличим боковые отступы */
+}
+
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕЖИМА ПРОСМОТРА В РЕДАКТОРЕ  === */
+/* ======================================================= */
+
+/* Когда у контейнера есть класс .view-mode, скрываем все элементы управления */
+.lesson-content-container.view-mode .block-handle,
+.lesson-content-container.view-mode .block-actions {
+    display: none;
+}
+
+/* В режиме просмотра меняем курсор на обычный, а не текстовый */
+.lesson-content-container.view-mode {
+    cursor: default;
+}
+
+/* В режиме просмотра отключаем подсветку блока при фокусе */
+.lesson-content-container.view-mode .content-block:focus {
+    background-color: transparent;
+}
+
+/* Также гарантируем, что у обычного зрителя элементы управления всегда скрыты */
+.lesson-viewer .block-handle,
+.lesson-viewer .block-actions {
+    display: none;
+}
+
+
+/* ======================================================= */
+/* ===         УЛУЧШЕНИЕ РЕЖИМА ПРОСМОТРА УРОКА        === */
+/* ======================================================= */
+
+/* 
+  Когда контейнер урока находится в режиме просмотра (либо для студента,
+  либо для автора, включившего предпросмотр), мы убираем боковые
+  отступы, чтобы текст занимал больше места по ширине.
+*/
+.lesson-viewer,
+.lesson-content-container.view-mode {
+    padding-left: 10;
+    padding-right: 10;
+}
+
+/* ======================================================= */
+/* ===      АДАПТИВНОСТЬ УРОКОВ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ === */
+/* ======================================================= */
+
+/* Применяем стили только на экранах шириной до 767px */
+@media (max-width: 767px) {
+  /* Когда открыт урок (на body есть класс lesson-view-active)... */
+  body.lesson-view-active .container {
+    /* ...убираем боковые отступы у главного контейнера. */
+    padding-left: 2;
+    padding-right: 2;
+  }
+
+  /* При этом, самому блоку с текстом урока мы добавляем свои отступы,
+     чтобы текст не прилипал к краям экрана. */
+  body.lesson-view-active .lesson-content-container {
+    padding-left: 1px;
+    padding-right: 1px;
+  }
+
+  /* ======== НАЧАЛО НОВОГО КОДА ======== */
+  /* А также убираем внутренние боковые отступы у самих блоков с текстом,
+     чтобы они занимали всю доступную ширину. */
+  body.lesson-view-active .lesson-content-container .content-block {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  /* ======== КОНЕЦ НОВОГО КОДА ======== */
+}
+
+/* ======================================================= */
+/* ===      АДАПТАЦИЯ ЦВЕТОВ КОНТЕНТА ДЛЯ ТЕМНЫХ ТЕМ     === */
+/* ======================================================= */
+
+/* 
+  Применяем стили для ссылок (<a>) внутри контента урока
+  ТОЛЬКО для тем dark-mode и synthwave-mode.
+*/
+body.dark-mode .lesson-content-container a,
+body.synthwave-mode .lesson-content-container a {
+    /* Используем переменную --accent-color, которая уже задана для темных тем
+       и имеет яркий, контрастный цвет (например, светло-синий). */
+    color: var(--accent-color);
+    /* Добавляем подчеркивание для лучшей видимости ссылок. */
+    text-decoration: underline;
+}
+
+/* 
+  Применяем стили для жирного текста (<strong>, <b>) внутри контента урока,
+  чтобы он не был, например, красным на темном фоне.
+*/
+body.dark-mode .lesson-content-container strong,
+body.dark-mode .lesson-content-container b,
+body.synthwave-mode .lesson-content-container strong,
+body.synthwave-mode .lesson-content-container b {
+    /* Просто делаем его стандартным цветом текста для текущей темы. */
+    color: var(--text-color);
 }
