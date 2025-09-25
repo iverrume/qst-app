@@ -18871,7 +18871,6 @@ const mainApp = (function() {
             if (scrollCacheKey) {
                 const scrollTop = aiChatMessages.scrollTop;
                 sessionStorage.setItem(scrollCacheKey, scrollTop);
-                console.log(`[SCROLL SAVE] Сохранено значение ${scrollTop} для ключа: ${scrollCacheKey}`);
             }
             // === КОНЕЦ ЛОГИРОВАНИЯ ===
 

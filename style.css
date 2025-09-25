@@ -8483,23 +8483,7 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     text-align: left;
 }
 
-/* ======================================================= */
-/* ===    АДАПТИВНОСТЬ AI-ЧАТА ДЛЯ ШИРОКИХ ЭКРАНОВ      === */
-/* ======================================================= */
 
-/* Применяем стили только на экранах шире 800px (планшеты и ПК) */
-@media (min-width: 800px) {
-    /* Ограничиваем ширину и центрируем все ключевые элементы чата */
-    .ai-chat-messages,
-    .ai-chat-input-area,
-    .ai-chat-search-container,
-    .ai-chat-search-results {
-        max-width: 800px; /* Максимальная ширина контента */
-        margin-left: auto;
-        margin-right: auto;
-        width: 100%; /* Важно для правильной работы внутри max-width */
-    }
-}
 
 /* Шапка модального окна чата */
 .ai-chat-header {
@@ -8512,6 +8496,27 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     position: relative;
+}
+
+/* Переопределяем стили контейнера, когда он находится в шапке */
+.ai-chat-header .ai-color-legend-container {
+    min-width: 0; /* Разрешает контейнеру сжиматься внутри grid-ячейки */
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Центрируем плашки внутри */
+    overflow-x: auto; /* Включаем горизонтальный скроллинг */
+}
+
+/* Визуально скрываем скроллбар */
+.ai-chat-header .ai-color-legend-container::-webkit-scrollbar {
+    display: none;
+}
+.ai-chat-header .ai-color-legend-container {
+  -ms-overflow-style: none;  /* IE и Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 .ai-chat-header h3 {
@@ -8557,9 +8562,9 @@ body.dark-mode #generateTestFromTopicBtn:hover {
     }
 
     .ai-chat-header .ai-color-legend-list {
-        gap: 5px; 
         display: flex;
-        flex-wrap: nowrap; /* Запрещаем перенос, чтобы легенда не увеличивала высоту */
+        flex-wrap: nowrap; /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Запрещаем перенос плашек */
+        gap: 8px;
     }
 
     /* Добавляем эффект "затухания" по краям, чтобы подсказать о возможности скролла */
@@ -8651,17 +8656,18 @@ body.dark-mode #generateTestFromTopicBtn:hover {
 
 
 
-/* Замените на этот код */
 .ai-chat-messages {
-    flex-grow: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     overflow-y: auto;
-    /* ИЗМЕНЕНИЕ: Добавили отступ справа (30px) для кастомного скроллбара */
     padding: 15px 28px 15px 15px; 
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
-
 
 
 
@@ -9556,13 +9562,9 @@ body:not(.dark-mode):not(.synthwave-mode):not(.glass-dark) .ai-chat-attach-btn:h
 
 /* 1. Обертка, которая будет содержать и чат, и скроллбар */
 .ai-chat-scroll-wrapper {
-    position: relative; /* Делаем ее точкой отсчета для скроллбара */
-    flex-grow: 1;
-    display: flex;
-    /* === НАЧАЛО ИЗМЕНЕНИЙ === */
-    flex-shrink: 1; /* Разрешаем контейнеру сжиматься, если нужно */
-    min-width: 0;   /* ГЛАВНОЕ ИСПРАВЛЕНИЕ: Запрещает содержимому растягивать контейнер */
-    /* === КОНЕЦ ИЗМЕНЕНИЙ === */
+    position: relative; /* Обязательно для дочернего position:absolute */
+    flex-grow: 1;       /* Растягиваемся на всю доступную высоту */
+    min-height: 0;      /* Предотвращаем схлопывание во flex-контексте */
 }
 
 /* 2. Область сообщений теперь занимает все место внутри обертки */
@@ -10936,9 +10938,9 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
     }
 
     .ai-chat-header .ai-color-legend-list {
-        gap: 5px; 
         display: flex;
-        flex-wrap: nowrap; /* <-- Вот это ключевое исправление */
+        flex-wrap: nowrap; /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Запрещаем перенос плашек */
+        gap: 8px;
     }
     /* 2. (Опционально, но рекомендуется) Добавляем эффект "затухания" по краям, 
           чтобы визуально подсказать пользователю о возможности скролла */
@@ -12454,4 +12456,22 @@ display: none;
 
 .lesson-viewer .content-block:first-child h2 {
     margin-top: 0;
+}
+
+/* ======================================================= */
+/* ===    АДАПТИВНОСТЬ AI-ЧАТА ДЛЯ ШИРОКИХ ЭКРАНОВ      === */
+/* ======================================================= */
+
+/* Применяем стили только на экранах шире 800px (планшеты и ПК) */
+@media (min-width: 800px) {
+    /* Ограничиваем ширину и центрируем все ключевые элементы чата */
+    .ai-chat-scroll-wrapper, /* <-- ИЗМЕНЕНО */
+    .ai-chat-input-area,
+    .ai-chat-search-container,
+    .ai-chat-search-results {
+        max-width: 800px; /* Максимальная ширина контента */
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%; /* Важно для правильной работы внутри max-width */
+    }
 }
