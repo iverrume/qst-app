@@ -967,9 +967,12 @@ const ChatModule = (function() {
 
 
     let questionToHighlight = null;
+
     let favoritesListener = null;
     let unlockedChannels = new Set();
+    let unlockedAudiences = new Set(); 
     const QUICK_REACTIONS_KEY = 'userQuickReactions';
+
     const DEFAULT_QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
 
 
@@ -1902,19 +1905,12 @@ const ChatModule = (function() {
             updateUserUI();
 
             if (user) {
- 
-                
-                mainApp.setupPrivateLegendsListener(user);// Запускаем новый слушатель для легенд
+                mainApp.setupPrivateLegendsListener(user);
 
                 mainApp.migrateLocalChatsToFirebase().then(() => {
-                    const savedUnlockedAudiences = localStorage.getItem(`unlockedAudiences_${currentUser.uid}`);
-                    if (savedUnlockedAudiences) {
-                        unlockedAudiences = new Set(JSON.parse(savedUnlockedAudiences));
-                    }
-                    const savedUnlocked = localStorage.getItem(`unlockedChannels_${user.uid}`);
-                    if (savedUnlocked) {
-                        unlockedChannels = new Set(JSON.parse(savedUnlocked));
-                    }
+                    // Вызываем новые безопасные функции из ChatModule
+                    ChatModule.loadUnlockedAudiences(user.uid);
+                    ChatModule.loadUnlockedChannels(user.uid);
 
                     initializeUnreadListeners(); 
                     setupPresenceSystem();
@@ -1930,10 +1926,9 @@ const ChatModule = (function() {
                 });
 
             } else {
-          
                 clearChatData();
                 cleanupPresenceSystem();
-                mainApp.cleanupPrivateLegendsListener(); // Останавливаем слушатель легенд при выходе // Останавливаем слушатель легенд при выходе
+                mainApp.cleanupPrivateLegendsListener();
             }
         });
     }
@@ -4361,14 +4356,16 @@ const ChatModule = (function() {
         // ОЧИЩАЕМ ХРАНИЛИЩЕ ПРИ ВЫХОДЕ
         if (currentUser) {
             localStorage.removeItem(`unlockedChannels_${currentUser.uid}`);
-            localStorage.removeItem(`unlockedAudiences_${currentUser.uid}`);
+            localStorage.removeItem(`unlockedAudiences_${currentUser.uid}`); // <-- ДОБАВЛЕНО
         }
 
         allMessages = [];
         channels = [];
         privateChats = [];
-        unlockedChannels.clear(); // <-- ДОБАВЛЕНО: Сбрасываем разблокированные каналы
-        if (messageArea) messageArea.innerHTML = `<div class="empty-state">${_chat('auth_required_to_view')}</div>`;
+        unlockedChannels.clear();
+        unlockedAudiences.clear(); // <-- ДОБАВЛЕНО
+
+        if (messageArea) messageArea.innerHTML = `<div class="empty-state">${_('auth_required_to_view')}</div>`;
         Object.keys(TABS).forEach(tabId => {
             if(tabCounters[tabId]) updateTabCounter(tabId, 0);
         });
@@ -5749,7 +5746,25 @@ const ChatModule = (function() {
         // Getters
         isInitialized: () => isInitialized,
         getCurrentUser: () => currentUser,
-        getCurrentTab: () => currentTab
+        getCurrentTab: () => currentTab,
+        // === НАЧАЛО НОВОГО КОДА ===
+        loadUnlockedAudiences: (uid) => {
+            const saved = localStorage.getItem(`unlockedAudiences_${uid}`);
+            if (saved) {
+                unlockedAudiences = new Set(JSON.parse(saved));
+            }
+        },
+        loadUnlockedChannels: (uid) => {
+            const saved = localStorage.getItem(`unlockedChannels_${uid}`);
+            if (saved) {
+                unlockedChannels = new Set(JSON.parse(saved));
+            }
+        }
+        // === КОНЕЦ НОВОГО КОДА ===
+
+
+
+
     };
 })();
 
@@ -5926,7 +5941,7 @@ const mainApp = (function() {
             find_button: 'Найти',
             searching_in_db: 'Идет поиск по базе...',
             or_divider: '',
-            choose_file: 'Выберите .qst|.txt|.pdf файл с устройства:',
+            choose_file: 'Выберите .qst|.txt|.pdf файл с устройства',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
             parser_button_main: 'Создать тест',
@@ -6377,7 +6392,74 @@ const mainApp = (function() {
             ai_topic_deleted_select_another: "Тема удалена. Выберите другую.",
             ai_no_moderators_assigned: "Модераторы не назначены.",
             loader_copying_chat: "Копирование чата...",
-            ai_loading_moderators: "Загрузка..."
+            ai_loading_moderators: "Загрузка...",
+            courses_button_main: "Курсы",
+            courses_title: "Курсы",
+            back_to_courses_list: "К списку курсов",
+            create_course_button: "Создать курс",
+            create_course_modal_title: "Создание нового курса",
+            create_course_modal_text: "Введите название и краткое описание для вашего нового курса.",
+            course_name_placeholder: "Название курса...",
+            course_description_placeholder: "Описание курса...",
+            no_courses_yet: "Курсов пока нет. Создайте первый!",
+            create_lesson_button: "Создать урок",
+            create_lesson_modal_title: "Создание нового урока",
+            create_lesson_modal_text: "Введите название для нового урока в этом курсе.",
+            lesson_name_placeholder: "Название урока...",
+            no_lessons_yet: "В этом курсе пока нет уроков.",
+            lesson_editing_mode: "Режим редактирования урока...",
+            back_to_lessons_list: "К списку уроков",
+            save_lesson_button: "Сохранить урок",
+            lesson_saved_success: "Урок успешно сохранен!",
+            lesson_save_failed: "Не удалось сохранить урок.",
+            block_placeholder: "Введите '/' для выбора блока",
+            lesson_viewer_placeholder: "В этом уроке пока нет содержимого.",
+            lesson_owner_permission_error: "Только владелец курса может его редактировать.",
+            confirm_delete_block_title: "Удалить блок?",
+            confirm_delete_block_text: "Вы уверены, что хотите удалить этот блок контента?",
+            block_menu_text: "Текст",
+            block_menu_text_desc: "Обычный абзац текста.",
+            block_menu_header: "Заголовок",
+            block_menu_header_desc: "Крупный заголовок раздела.",
+            block_menu_image: "Изображение",
+            block_menu_image_desc: "Вставить картинку по ссылке.",
+            block_menu_video: "Видео",
+            block_menu_video_desc: "Встроить видео с YouTube.",
+            block_menu_divider: "Разделитель",
+            block_menu_divider_desc: "Визуальная линия-разделитель.",
+            prompt_image_url: "Введите URL изображения:",
+            prompt_video_url: "Введите URL видео с YouTube:",
+            "Вставить изображение": "Вставить изображение",
+            "Вставить видео": "Вставить видео",
+            "Редактировать изображение": "Редактировать изображение",
+            "Редактировать видео": "Редактировать видео",
+
+            edit_course_modal_title: "Редактирование курса",
+            delete_course_button: "Удалить курс",
+            edit_lesson_modal_title: "Редактирование урока",
+            delete_lesson_button: "Удалить урок",
+            confirm_delete_course_title: "Удалить курс?",
+            confirm_delete_course_text: "Вы уверены, что хотите удалить курс «{courseTitle}»? Все уроки и их содержимое будут безвозвратно удалены.",
+            confirm_delete_lesson_title: "Удалить урок?",
+            confirm_delete_lesson_text: "Вы уверены, что хотите удалить урок «{lessonTitle}»?",
+            course_updated_success: "Курс успешно обновлен!",
+            course_update_failed: "Не удалось обновить курс.",
+            course_deleted_success: "Курс успешно удален.",
+            course_delete_failed: "Не удалось удалить курс.",
+            lesson_updated_success: "Урок успешно обновлен!",
+            lesson_update_failed: "Не удалось обновить урок.",
+            lesson_deleted_success: "Урок успешно удален.",
+            lesson_delete_failed: "Не удалось удалить урок.",
+
+            block_menu_test: "Тест",
+            block_menu_test_desc: "Встроить тест из .qst файла.",
+            start_lesson_test_button: "Начать тест по уроку",
+
+            ai_tools_continue: "Продолжить текст",
+            ai_tools_simplify: "Упростить текст",
+            ai_tools_create_test: "Создать тест по тексту",
+            ai_lesson_generating: "Генерация контента...",
+            ai_lesson_generation_error: "Не удалось сгенерировать контент.",
         },
         kk: {
             exit_toast_text: 'Шығу үшін тағы бір рет басыңыз',
@@ -6394,7 +6476,7 @@ const mainApp = (function() {
             find_button: 'Іздеу',
             searching_in_db: 'Дерекқордан іздеу жүріп жатыр...',
             or_divider: '',
-            choose_file: 'Құрылғыдан .qst|.txt|.pdf файлын таңдаңыз:',
+            choose_file: 'Құрылғыдан .qst|.txt|.pdf файлын таңдаңыз',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
             parser_button_main: 'Тест жасау',
@@ -6921,8 +7003,73 @@ const mainApp = (function() {
             ai_topic_deleted_select_another: "Тақырып жойылды. Басқасын таңдаңыз.",
             ai_no_moderators_assigned: "Модераторлар тағайындалмаған.",
             ai_loading_moderators: "Жүктелуде...",
-            loader_copying_chat: "Чат көшірілуде..."
+            loader_copying_chat: "Чат көшірілуде...",
+            courses_button_main: "Курстар",
+            courses_title: "Курстар",
+            back_to_courses_list: "Курстар тізіміне",
+            create_course_button: "Курс құру",
+            create_course_modal_title: "Жаңа курс құру",
+            create_course_modal_text: "Жаңа курсыңыз үшін атау мен қысқаша сипаттама енгізіңіз.",
+            course_name_placeholder: "Курс атауы...",
+            course_description_placeholder: "Курс сипаттамасы...",
+            no_courses_yet: "Әзірге курстар жоқ. Біріншісін жасаңыз!",
+            create_lesson_button: "Сабақ құру",
+            create_lesson_modal_title: "Жаңа сабақ құру",
+            create_lesson_modal_text: "Осы курста жаңа сабақ үшін атау енгізіңиз.",
+            lesson_name_placeholder: "Сабақ атауы...",
+            no_lessons_yet: "Бұл курста әзірге сабақтар жоқ.",
+            lesson_editing_mode: "Сабақты өңдеу режимі...",
+            back_to_lessons_list: "Сабақтар тізіміне",
+            save_lesson_button: "Сабақты сақтау",
+            lesson_saved_success: "Сабақ сәтті сақталды!",
+            lesson_save_failed: "Сабақты сақтау мүмкін болмады.",
+            block_placeholder: "Блокты таңдау үшін '/' енгізіңіз",
+            lesson_viewer_placeholder: "Бұл сабақта әзірге мазмұн жоқ.",
+            lesson_owner_permission_error: "Курсты тек оның иесі ғана өңдей алады.",
+            confirm_delete_block_title: "Блокты жою?",
+            confirm_delete_block_text: "Осы мазмұн блогын жойғыңыз келетініне сенімдісіз бе?",
+            block_menu_text: "Мәтін",
+            block_menu_text_desc: "Кәдімгі мәтін абзацы.",
+            block_menu_header: "Тақырып",
+            block_menu_header_desc: "Бөлімнің ірі тақырыбы.",
+            block_menu_image: "Сурет",
+            block_menu_image_desc: "Сілтеме арқылы суретті кірістіру.",
+            block_menu_video: "Видео",
+            block_menu_video_desc: "YouTube-тан видео ендіру.",
+            block_menu_divider: "Бөлгіш",
+            block_menu_divider_desc: "Көрнекі бөлгіш сызық.",
+            prompt_image_url: "Суреттің URL мекенжайын енгізіңіз:",
+            prompt_video_url: "YouTube видеосының URL мекенжайын енгізіңіз:",
+            "Вставить изображение": "Суретті кірістіру",
+            "Вставить видео": "Видеоны кірістіру",
+            "Редактировать изображение": "Суретті өңдеу",
+            "Редактировать видео": "Видеоны өңдеу",
 
+            edit_course_modal_title: "Курсты өңдеу",
+            delete_course_button: "Курсты жою",
+            edit_lesson_modal_title: "Сабақты өңдеу",
+            delete_lesson_button: "Сабақты жою",
+            confirm_delete_course_title: "Курсты жою?",
+            confirm_delete_course_text: "«{courseTitle}» курсын жойғыңыз келетініне сенімдісіз бе? Барлық сабақтар мен олардың мазмұны жойылады.",
+            confirm_delete_lesson_title: "Сабақты жою?",
+            confirm_delete_lesson_text: "«{lessonTitle}» сабағын жойғыңыз келетініне сенімдісіз бе?",
+            course_updated_success: "Курс сәтті жаңартылды!",
+            course_update_failed: "Курсты жаңарту мүмкін болмады.",
+            course_deleted_success: "Курс сәтті жойылды.",
+            course_delete_failed: "Курсты жою мүмкін болмады.",
+            lesson_updated_success: "Сабақ сәтті жаңартылды!",
+            lesson_update_failed: "Сабақты жаңарту мүмкін болмады.",
+            lesson_deleted_success: "Сабақ сәтті жойылды.",
+            lesson_delete_failed: "Сабақты жою мүмкін болмады.",
+            block_menu_test: "Тест",
+            block_menu_test_desc: ".qst файлынан тест ендіру.",
+            start_lesson_test_button: "Сабақ бойынша тестті бастау",
+
+            ai_tools_continue: "Мәтінді жалғастыру",
+            ai_tools_simplify: "Мәтінді жеңілдету",
+            ai_tools_create_test: "Мәтін бойынша тест құру",
+            ai_lesson_generating: "Мазмұн жасалуда...",
+            ai_lesson_generation_error: "Мазмұнды жасау мүмкін болмады.",
         },
         en: {
             // Main Screen
@@ -6939,7 +7086,7 @@ const mainApp = (function() {
             find_button: 'Search',
             searching_in_db: 'Searching database...',
             or_divider: '',
-            choose_file: 'Select a .qst|.txt|.pdf file from your device:',
+            choose_file: 'Select a .qst|.txt|.pdf file from your device',
             gradus_button_main: 'GRADUS',
             gradus_subtitle: '(General Repository for Academic Data, Utility & Structure)',
             parser_button_main: 'Create Test',
@@ -7471,7 +7618,74 @@ const mainApp = (function() {
             ai_topic_deleted_select_another: "Topic deleted. Please select another one.",
             ai_no_moderators_assigned: "No moderators assigned.",
             ai_loading_moderators: "Loading...",
-            loader_copying_chat: "Copying chat..."
+            loader_copying_chat: "Copying chat...",
+            courses_button_main: "Courses",
+            courses_title: "Courses",
+            back_to_courses_list: "Back to courses",
+            create_course_button: "Create Course",
+            create_course_modal_title: "Create New Course",
+            create_course_modal_text: "Enter a title and a short description for your new course.",
+            course_name_placeholder: "Course title...",
+            course_description_placeholder: "Course description...",
+            no_courses_yet: "No courses yet. Create the first one!",
+            create_lesson_button: "Create Lesson",
+            create_lesson_modal_title: "Create New Lesson",
+            create_lesson_modal_text: "Enter a title for the new lesson in this course.",
+            lesson_name_placeholder: "Lesson title...",
+            no_lessons_yet: "There are no lessons in this course yet.",
+            lesson_editing_mode: "Lesson editing mode...",
+            back_to_lessons_list: "Back to lessons",
+            save_lesson_button: "Save Lesson",
+            lesson_saved_success: "Lesson saved successfully!",
+            lesson_save_failed: "Failed to save lesson.",
+            block_placeholder: "Type '/' to choose a block",
+            lesson_viewer_placeholder: "This lesson has no content yet.",
+            lesson_owner_permission_error: "Only the course owner can edit it.",
+            confirm_delete_block_title: "Delete Block?",
+            confirm_delete_block_text: "Are you sure you want to delete this content block?",
+            block_menu_text: "Text",
+            block_menu_text_desc: "A regular paragraph of text.",
+            block_menu_header: "Heading",
+            block_menu_header_desc: "A large section heading.",
+            block_menu_image: "Image",
+            block_menu_image_desc: "Insert an image from a link.",
+            block_menu_video: "Video",
+            block_menu_video_desc: "Embed a video from YouTube.",
+            block_menu_divider: "Divider",
+            block_menu_divider_desc: "A visual dividing line.",
+            prompt_image_url: "Enter the image URL:",
+            prompt_video_url: "Enter the YouTube video URL:",
+            "Вставить изображение": "Insert Image",
+            "Вставить видео": "Insert Video",
+            "Редактировать изображение": "Edit Image",
+            "Редактировать видео": "Edit Video",
+
+            edit_course_modal_title: "Edit Course",
+            delete_course_button: "Delete Course",
+            edit_lesson_modal_title: "Edit Lesson",
+            delete_lesson_button: "Delete Lesson",
+            confirm_delete_course_title: "Delete Course?",
+            confirm_delete_course_text: "Are you sure you want to delete the course '{courseTitle}'? All lessons and their content will be permanently deleted.",
+            confirm_delete_lesson_title: "Delete Lesson?",
+            confirm_delete_lesson_text: "Are you sure you want to delete the lesson '{lessonTitle}'?",
+            course_updated_success: "Course updated successfully!",
+            course_update_failed: "Failed to update course.",
+            course_deleted_success: "Course deleted successfully!",
+            course_delete_failed: "Failed to delete course.",
+            lesson_updated_success: "Lesson updated successfully!",
+            lesson_update_failed: "Failed to update lesson.",
+            lesson_deleted_success: "Lesson deleted successfully!",
+            lesson_delete_failed: "Failed to delete lesson.",
+
+            block_menu_test: "Test",
+            block_menu_test_desc: "Embed a test from a .qst file.",
+            start_lesson_test_button: "Start Lesson Test",
+
+            ai_tools_continue: "Continue writing",
+            ai_tools_simplify: "Simplify text",
+            ai_tools_create_test: "Create test from text",
+            ai_lesson_generating: "Generating content...",
+            ai_lesson_generation_error: "Failed to generate content.",
         }
 
     };
@@ -7583,7 +7797,18 @@ const mainApp = (function() {
         flashcardsModeCheckbox, categoryFilterGroup, categoryCheckboxesContainer,
         selectAllCategoriesBtn, deselectAllCategoriesBtn, sessionConflictModal, 
         sessionConflictText, overwriteSessionBtn,
-        saveNewSessionBtn, cancelConflictBtn;
+        saveNewSessionBtn, cancelConflictBtn, coursesButton, coursesArea, coursesList, backToMainFromCoursesBtn,
+        courseDetailArea, courseDetailTitle, courseLessonsList, backToCoursesListBtn,
+        createCourseBtn, createLessonBtn, currentCourseIdForModal,
+        // Новые переменные для просмотра урока
+        lessonViewArea, lessonViewTitle, lessonContentContainer, backToLessonsListBtn,
+        // Новые переменные для редактора
+        saveLessonBtn, currentLessonIdForModal,
+        // Новые переменные для редактирования
+        currentCourseForEdit, currentLessonForEdit,
+
+        cameFromLesson = false
+        ;
 
 
 
@@ -7616,6 +7841,7 @@ const mainApp = (function() {
     let currentPublicLegends = {};
     let currentTopicListener = null; 
     let currentTopicLegends = {};  
+    let coursesListener = null; 
     let quizStartTime = 0;
     let currentAIQuestion = null; // Переменная для хранения текущего вопроса
     let currentAITranslation = null; // НОВАЯ: для хранения перевода в модальном окне
@@ -7935,6 +8161,27 @@ const mainApp = (function() {
         cancelExitBtn = getEl('cancelExitBtn');
         updateNotification = getEl('updateNotification');
         updateBtn = getEl('updateBtn');
+
+
+        // === Инициализация элементов для курсов ===
+        coursesButton = getEl('coursesButton');
+        coursesArea = getEl('coursesArea');
+        coursesList = getEl('coursesList');
+        backToMainFromCoursesBtn = getEl('backToMainFromCoursesBtn');
+        courseDetailArea = getEl('courseDetailArea');
+        courseDetailTitle = getEl('courseDetailTitle');
+        courseLessonsList = getEl('courseLessonsList');
+        backToCoursesListBtn = getEl('backToCoursesListBtn');
+        createCourseBtn = getEl('createCourseBtn');
+        createLessonBtn = getEl('createLessonBtn');
+
+        // Новые переменные для просмотра урока
+        lessonViewArea = getEl('lessonViewArea');
+        lessonViewTitle = getEl('lessonViewTitle');
+        lessonContentContainer = getEl('lessonContentContainer');
+        backToLessonsListBtn = getEl('backToLessonsListBtn');
+        saveLessonBtn = getEl('saveLessonBtn');
+
 
         // === НАЧАЛО НОВОГО КОДА: Загрузка сохраненных тестов ===
         const savedTests = localStorage.getItem(AI_GENERATED_TESTS_KEY);
@@ -8301,6 +8548,24 @@ const mainApp = (function() {
             }
         });
         // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
+        // === Обработчики для курсов ===
+        coursesButton?.addEventListener('click', openCoursesView);
+        backToMainFromCoursesBtn?.addEventListener('click', () => {
+            showView('fileUploadArea');
+        });
+        backToCoursesListBtn?.addEventListener('click', () => {
+            showView('coursesArea');
+        });
+        createCourseBtn?.addEventListener('click', showCreateCourseModal);
+        createLessonBtn?.addEventListener('click', showCreateLessonModal);
+
+        backToLessonsListBtn?.addEventListener('click', () => {
+            showView('courseDetailArea');
+        });
+
+        saveLessonBtn?.addEventListener('click', handleSaveLesson);
+
     }
 
 
@@ -8759,12 +9024,8 @@ const mainApp = (function() {
             return;
         }
 
-        // Скрываем все остальные экраны
-        fileUploadArea.classList.add('hidden');
-        gradusFoldersContainer.classList.add('hidden');
-        searchResultsContainer.classList.add('hidden');
-        // Показываем экран настроек
-        quizSetupArea.classList.remove('hidden');
+        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем showView для корректного переключения ===
+        showView('quizSetupArea');
 
         const questionCount = parsedQuestions.filter(q => q.type !== 'category').length;
         
@@ -8777,7 +9038,6 @@ const mainApp = (function() {
         shuffleNCheckbox.checked = false;
         handleShuffleNToggle();
 
-        // Обновляем состояние кнопок и переключателей
         shuffleQuestionsCheckbox.disabled = false;
         shuffleAnswersCheckbox.disabled = false;
         readingModeCheckbox.disabled = false;
@@ -11310,28 +11570,24 @@ const mainApp = (function() {
 
 
 
-    async function resetQuizForNewFile(clearInput = true) {
-        // === НАЧАЛО ИЗМЕНЕНИЙ ===
-        // Проверяем, активен ли сейчас тест. Класс 'quiz-active' - наш главный индикатор.
+     async function resetQuizForNewFile(clearInput = true) {
+        if (coursesListener) { coursesListener(); coursesListener = null; }
         if (document.body.classList.contains('quiz-active')) {
             const confirmed = await showConfirmationModal(
-                'confirm_exit_quiz_title',          // Заголовок окна
-                'confirm_exit_quiz_text',           // Текст сообщения
-                'confirm_exit_quiz_confirm_button'  // Текст для красной кнопки
+                'confirm_exit_quiz_title',
+                'confirm_exit_quiz_text',
+                'confirm_exit_quiz_confirm_button'
             );
-            // Если пользователь нажал "Отмена" (или закрыл окно), прерываем всю функцию.
             if (!confirmed) {
                 return; 
             }
         }
-        // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
         document.body.classList.remove('quiz-active');
         appTitleHeader?.classList.remove('hidden');
         quizSettings = { timeLimit: 0, shuffleQuestions: false, shuffleAnswers: false, questionRangeStart: 1, questionRangeEnd: 0, feedbackMode: false, readingMode: false, flashcardsMode: false };
         quizStartTime = 0;
         if (clearInput) {
-             // Этот вызов больше не нужен, т.к. мы перешли на IndexedDB
              // localStorage.removeItem(SAVED_SESSIONS_STORAGE_KEY);
         }
         window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -11349,7 +11605,6 @@ const mainApp = (function() {
         triggerWordsUsedInQuiz = false;
         isPdfSession = false; 
 
-        // Правильный сброс аналитики ИИ
         const aiAnalysisResult = getEl('aiAnalysisResult');
         if (aiAnalysisResult) {
             aiAnalysisResult.innerHTML = ''; 
@@ -11364,10 +11619,17 @@ const mainApp = (function() {
         prefetchedIndices.clear();
         currentFileCacheKey = null;
         
-        const screensToHide = [quizSetupArea, quizArea, resultsArea, cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer, parserArea, categoryFilterGroup];
-        screensToHide.forEach(el => el?.classList.add('hidden'));
-
-        fileUploadArea?.classList.remove('hidden');
+        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+        if (cameFromLesson && currentCourseIdForModal) {
+            // Если мы пришли из урока, возвращаемся к списку уроков
+            const courseTitle = getEl('courseDetailTitle').textContent;
+            openCourseDetailView(currentCourseIdForModal, courseTitle);
+        } else {
+            // Иначе, как и раньше, возвращаемся на главный экран
+            showView('fileUploadArea');
+        }
+        cameFromLesson = false; // Сбрасываем флаг
+        // === КОНЕЦ ИСПРАВЛЕНИЯ ===
         
         timerDisplayEl?.classList.add('hidden');
         quickNavPanel?.classList.add('hidden');
@@ -20490,6 +20752,1190 @@ const mainApp = (function() {
         }
     }
 
+    function showView(viewId) {
+        const views = [
+            fileUploadArea, quizSetupArea, quizArea, resultsArea,
+            cheatSheetResultArea, gradusFoldersContainer, searchResultsContainer,
+            parserArea, coursesArea, courseDetailArea, lessonViewArea // <-- ДОБАВЛЕНО
+        ];
+        views.forEach(view => {
+            if (view) {
+                view.classList.toggle('hidden', view.id !== viewId);
+            }
+        });
+        manageBackButtonInterceptor();
+    }
+
+
+
+    // =======================================================
+    // ===         НОВЫЕ ФУНКЦИИ ДЛЯ РАЗДЕЛА "КУРСЫ"       ===
+    // =======================================================
+
+    /**
+     * Открывает главный экран раздела "Курсы".
+     */
+    function openCoursesView() {
+        showView('coursesArea');
+        renderCoursesList(); // Запускаем отрисовку списка курсов
+    }
+
+    /**
+     * Устанавливает слушатель на коллекцию курсов и отображает их в реальном времени.
+     */
+    function renderCoursesList() {
+        if (coursesListener) {
+            coursesListener();
+            coursesListener = null;
+        }
+
+        if (!db) {
+            coursesList.innerHTML = `<div class="course-item-placeholder">Система курсов недоступна.</div>`;
+            return;
+        }
+
+        coursesList.innerHTML = `<div class="course-item-placeholder"><div class="loading-spinner"></div></div>`;
+        
+        createCourseBtn.classList.toggle('hidden', !currentUser);
+
+        coursesListener = db.collection('courses').orderBy('createdAt', 'desc')
+            .onSnapshot(snapshot => {
+                coursesList.innerHTML = ''; 
+
+                if (snapshot.empty) {
+                    coursesList.innerHTML = `<div class="course-item-placeholder">${_('no_courses_yet')}</div>`;
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const course = { id: doc.id, ...doc.data() };
+                    const courseEl = document.createElement('div');
+                    courseEl.className = 'course-item';
+
+                    // === НАЧАЛО ИЗМЕНЕНИЙ ===
+                    const isOwner = currentUser && currentUser.uid === course.ownerId;
+                    const actionsHTML = isOwner ? `
+                        <div class="item-actions">
+                            <button title="Редактировать курс" class="edit-course-btn" data-course-id="${course.id}"><i data-lucide="pencil"></i></button>
+                        </div>
+                    ` : '';
+                    // === КОНЕЦ ИЗМЕНЕНИЙ ===
+
+                    courseEl.innerHTML = `
+                        <h3>${escapeHTML(course.title)}</h3>
+                        <p>${escapeHTML(course.description || '')}</p>
+                        ${actionsHTML}
+                    `;
+                    
+                    courseEl.addEventListener('click', (e) => {
+                        // Открываем редактирование только по клику на кнопку
+                        if (e.target.closest('.edit-course-btn')) {
+                            showEditCourseModal(course);
+                        } else {
+                            openCourseDetailView(course.id, course.title);
+                        }
+                    });
+                    coursesList.appendChild(courseEl);
+                });
+
+                if (window.lucide) lucide.createIcons();
+
+            }, error => {
+                console.error("Ошибка загрузки курсов:", error);
+                if (error.code === 'permission-denied') {
+                    coursesList.innerHTML = `<div class="course-item-placeholder">Ошибка: нет прав на чтение. Проверьте правила безопасности Firestore.</div>`;
+                } else {
+                    coursesList.innerHTML = `<div class="course-item-placeholder">Ошибка загрузки курсов.</div>`;
+                }
+            });
+    }
+
+    /**
+     * Открывает экран с уроками конкретного курса.
+     * @param {string} courseId - ID курса.
+     * @param {string} courseTitle - Название курса для заголовка.
+     */
+    async function openCourseDetailView(courseId, courseTitle) {
+        showView('courseDetailArea');
+        courseDetailTitle.textContent = courseTitle;
+        currentCourseIdForModal = courseId; // Сохраняем ID для модального окна
+
+        // Проверяем, является ли текущий пользователь владельцем курса
+        if (currentUser && db) {
+            try {
+                const courseDoc = await db.collection('courses').doc(courseId).get();
+                if (courseDoc.exists) {
+                    const courseData = courseDoc.data();
+                    // Показываем кнопку "Создать урок" только владельцу
+                    createLessonBtn.classList.toggle('hidden', currentUser.uid !== courseData.ownerId);
+                }
+            } catch (error) {
+                console.error("Ошибка при проверке владельца курса:", error);
+                createLessonBtn.classList.add('hidden');
+            }
+        } else {
+            createLessonBtn.classList.add('hidden');
+        }
+
+        renderLessonsList(courseId);
+    }
+
+    /**
+     * Отображает список уроков для курса из данных Firebase.
+     * @param {string} courseId - ID курса.
+     */
+    function renderLessonsList(courseId) {
+        if (!db) return;
+        
+        courseLessonsList.innerHTML = `<div class="course-item-placeholder">Загрузка уроков...</div>`;
+
+        db.collection('courses').doc(courseId).get().then(doc => {
+            if (doc.exists) {
+                const courseData = doc.data();
+                const lessons = courseData.lessons || [];
+                const isOwner = currentUser && currentUser.uid === courseData.ownerId;
+                courseLessonsList.innerHTML = ''; 
+
+                if (lessons.length === 0) {
+                    courseLessonsList.innerHTML = `<div class="course-item-placeholder">${_('no_lessons_yet')}</div>`;
+                    return;
+                }
+
+                lessons.forEach(lesson => {
+                    const lessonEl = document.createElement('div');
+                    lessonEl.className = 'lesson-item';
+
+                    const actionsHTML = isOwner ? `
+                        <div class="item-actions">
+                            <button title="Редактировать урок" class="edit-lesson-btn"><i data-lucide="pencil"></i></button>
+                        </div>
+                    ` : '';
+
+                    lessonEl.innerHTML = `
+                        <h4>${escapeHTML(lesson.title)}</h4>
+                        ${actionsHTML}
+                    `;
+
+                    lessonEl.addEventListener('click', (e) => {
+                        if (e.target.closest('.edit-lesson-btn')) {
+                            showEditLessonModal(courseId, lesson);
+                        } else {
+                           openLessonView(courseId, lesson.id, lesson.title);
+                        }
+                    });
+                    
+                    courseLessonsList.appendChild(lessonEl);
+                });
+
+                if (window.lucide) lucide.createIcons();
+            }
+        }).catch(error => {
+            console.error("Ошибка загрузки уроков:", error);
+            courseLessonsList.innerHTML = `<div class="course-item-placeholder">Ошибка загрузки уроков.</div>`;
+        });
+    }
+
+    /**
+     * Показывает модальное окно для создания нового курса.
+     */
+    function showCreateCourseModal() {
+        const modal = getEl('courseCreateModal');
+        if (!modal) return;
+        
+        getEl('courseNameInput').value = '';
+        getEl('courseDescriptionInput').value = '';
+        
+        getEl('courseCreateConfirmBtn').onclick = handleCreateCourse;
+        getEl('courseCreateCancelBtn').onclick = () => ChatModule.closeModal('courseCreateModal');
+
+        ChatModule.showModal('courseCreateModal');
+        getEl('courseNameInput').focus();
+    }
+
+    /**
+     * Обрабатывает создание нового курса и сохраняет его в Firebase.
+     */
+    async function handleCreateCourse() {
+        const title = getEl('courseNameInput').value.trim();
+        const description = getEl('courseDescriptionInput').value.trim();
+
+        if (!title) {
+            alert('Пожалуйста, введите название курса.');
+            return;
+        }
+
+        if (!currentUser || !db) {
+            showToast('Для создания курса необходимо авторизоваться.', 'error');
+            ChatModule.openAuthModal();
+            return;
+        }
+
+        showGlobalLoader('Создание курса...');
+
+        try {
+            const courseData = {
+                title: title,
+                description: description,
+                ownerId: currentUser.uid,
+                ownerName: currentUser.displayName || 'Аноним',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lessons: [] // Пустой массив для будущих уроков
+            };
+
+            await db.collection('courses').add(courseData);
+            
+            showToast('Курс успешно создан!', 'success');
+            ChatModule.closeModal('courseCreateModal');
+            // Список обновится автоматически благодаря onSnapshot
+
+        } catch (error) {
+            console.error("Ошибка создания курса:", error);
+            showToast('Не удалось создать курс. Попробуйте снова.', 'error');
+        } finally {
+            hideGlobalLoader();
+        }
+    }
+
+
+    /**
+     * Показывает модальное окно для создания нового урока.
+     */
+    function showCreateLessonModal() {
+        const modal = getEl('lessonCreateModal');
+        if (!modal) return;
+        
+        getEl('lessonNameInput').value = '';
+        
+        getEl('lessonCreateConfirmBtn').onclick = handleCreateLesson;
+        getEl('lessonCreateCancelBtn').onclick = () => ChatModule.closeModal('lessonCreateModal');
+
+        ChatModule.showModal('lessonCreateModal');
+        getEl('lessonNameInput').focus();
+    }
+
+    /**
+     * Обрабатывает создание нового урока и добавляет его в массив в Firebase.
+     */
+    async function handleCreateLesson() {
+        const title = getEl('lessonNameInput').value.trim();
+
+        if (!title) {
+            alert('Пожалуйста, введите название урока.');
+            return;
+        }
+
+        if (!currentCourseIdForModal || !db) {
+            showToast('Ошибка: не удалось определить текущий курс.', 'error');
+            return;
+        }
+
+        showGlobalLoader('Добавление урока...');
+
+        try {
+            const courseRef = db.collection('courses').doc(currentCourseIdForModal);
+            
+            const newLesson = {
+                id: `lesson_${Date.now()}`, // Простой уникальный ID
+                title: title,
+                content: [] // Пустой массив для блоков контента
+            };
+
+            // Используем arrayUnion для атомарного добавления элемента в массив
+            await courseRef.update({
+                lessons: firebase.firestore.FieldValue.arrayUnion(newLesson)
+            });
+            
+            showToast('Урок успешно добавлен!', 'success');
+            ChatModule.closeModal('lessonCreateModal');
+            renderLessonsList(currentCourseIdForModal); // Обновляем список уроков
+
+        } catch (error) {
+            console.error("Ошибка создания урока:", error);
+            showToast('Не удалось добавить урок. Попробуйте снова.', 'error');
+        } finally {
+            hideGlobalLoader();
+        }
+    }
+
+
+    /**
+     * Открывает экран просмотра/редактирования конкретного урока.
+     * @param {string} courseId 
+     * @param {string} lessonId 
+     * @param {string} lessonTitle 
+     */
+    function openLessonView(courseId, lessonId, lessonTitle) {
+        showView('lessonViewArea');
+        lessonViewTitle.textContent = lessonTitle;
+        currentCourseIdForModal = courseId; // Сохраняем ID курса
+        currentLessonIdForModal = lessonId; // Сохраняем ID урока
+        renderLessonContent(courseId, lessonId);
+    }
+
+    /**
+     * Загружает и отображает содержимое урока, разделяя логику для автора и ученика.
+     * @param {string} courseId 
+     * @param {string} lessonId 
+     */
+    async function renderLessonContent(courseId, lessonId) {
+        if (!db) return;
+        lessonContentContainer.innerHTML = `<div class="course-item-placeholder"><div class="loading-spinner"></div></div>`;
+        
+        try {
+            const courseDoc = await db.collection('courses').doc(courseId).get();
+            if (!courseDoc.exists) throw new Error("Курс не найден.");
+            
+            const courseData = courseDoc.data();
+            const lesson = (courseData.lessons || []).find(l => l.id === lessonId);
+            if (!lesson) throw new Error("Урок не найден.");
+
+            const isOwner = currentUser && currentUser.uid === courseData.ownerId;
+            
+            lessonContentContainer.innerHTML = ''; 
+            lessonContentContainer.className = isOwner ? 'lesson-content-container lesson-editor' : 'lesson-content-container lesson-viewer';
+
+            saveLessonBtn.classList.toggle('hidden', !isOwner);
+
+            const content = lesson.content || [];
+
+            if (content.length > 0) {
+                content.forEach(block => {
+                    const blockEl = createContentBlock(block.type, block.content, isOwner);
+                    lessonContentContainer.appendChild(blockEl);
+
+                    // === НАЧАЛО НОВОГО КОДА ===
+                    // Если это режим просмотра и блок является тестом, добавляем обработчик
+                    if (!isOwner && block.type === 'test') {
+                        const testButton = blockEl.querySelector('.test-block-viewer');
+                        testButton?.addEventListener('click', () => {
+                            startTestFromLesson(block.content.fileName, block.content.fileContent);
+                        });
+                    }
+                    // === КОНЕЦ НОВОГО КОДА ===
+                });
+            } else {
+                if (isOwner) {
+                    const firstBlock = createContentBlock('paragraph', '', true);
+                    lessonContentContainer.appendChild(firstBlock);
+                    firstBlock.focus();
+                } else {
+                    lessonContentContainer.innerHTML = `<div class="course-item-placeholder">${_('lesson_viewer_placeholder')}</div>`;
+                }
+            }
+            
+            if (isOwner) {
+                setupEditorEventListeners(lessonContentContainer);
+            }
+            if (window.lucide) lucide.createIcons();
+
+        } catch (error) {
+            console.error("Ошибка загрузки контента урока:", error);
+            lessonContentContainer.innerHTML = `<div class="course-item-placeholder">Не удалось загрузить урок.</div>`;
+        }
+    }
+
+    /**
+     * Преобразует обычную ссылку YouTube в ссылку для встраивания.
+     * @param {string} url - URL видео.
+     * @returns {string} - URL для iframe.
+     */
+    function youtubeEmbedUrl(url) {
+        if (!url) return '';
+        try {
+            const urlObj = new URL(url);
+            let videoId = urlObj.searchParams.get('v');
+            if (urlObj.hostname === 'youtu.be') {
+                videoId = urlObj.pathname.slice(1);
+            }
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}`;
+            }
+        } catch (e) {
+            console.error("Неверный URL видео:", e);
+        }
+        return url; // Возвращаем как есть, если не удалось распознать
+    }
+
+
+    /**
+     * Создает DOM-элемент для блока контента вместе с оберткой и элементами управления.
+     * @param {string} type - Тип блока.
+     * @param {string|object} content - Содержимое блока.
+     * @param {boolean} isEditable - Можно ли редактировать блок.
+     * @returns {HTMLElement}
+     */
+    function createContentBlock(type = 'paragraph', content = '', isEditable = false) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'content-block-wrapper';
+
+        const block = document.createElement('div');
+        block.className = 'content-block';
+        block.dataset.type = type;
+
+        const canBeEdited = ['image', 'video'].includes(type);
+        const actionsHTML = isEditable ? `
+            <div class="block-actions">
+                ${canBeEdited ? '<button class="edit-block-btn" title="Редактировать"><i data-lucide="pencil"></i></button>' : ''}
+                <button class="delete-block-btn" title="Удалить"><i data-lucide="trash-2"></i></button>
+            </div>
+        ` : '';
+
+        const handleHTML = isEditable ? `<div class="block-handle" draggable="true"><i data-lucide="grip-vertical"></i></div>` : '';
+
+        switch (type) {
+            case 'paragraph':
+            case 'h2':
+                // === НАЧАЛО ИЗМЕНЕНИЙ ===
+                // Теперь оба типа редактируемы, а тег p/h2 находится внутри
+                block.innerHTML = type === 'h2' ? `<h2>${content}</h2>` : `<p>${content}</p>`;
+                if (isEditable) {
+                    block.contentEditable = true;
+                    block.dataset.placeholder = _('block_placeholder');
+                }
+                // === КОНЕЦ ИЗМЕНЕНИЙ ===
+                break;
+            case 'image':
+                block.innerHTML = `<img src="${escapeHTML(content)}" alt="Изображение из урока">`;
+                break;
+            case 'video':
+                const embedUrl = youtubeEmbedUrl(content);
+                block.innerHTML = `<div class="video-wrapper"><iframe src="${embedUrl}" frameborder="0" allowfullscreen></iframe></div>`;
+                break;
+            case 'hr':
+                block.innerHTML = '<hr>';
+                break;
+            case 'test':
+                block.dataset.filename = content.fileName || '';
+                block.dataset.fileContent = content.fileContent || '';
+                if (isEditable) {
+                    block.innerHTML = `
+                        <div class="test-block-editor">
+                            <i data-lucide="clipboard-check"></i>
+                            <span class="test-block-filename">${escapeHTML(content.fileName || 'Тест не выбран')}</span>
+                        </div>`;
+                } else {
+                    block.innerHTML = `<button class="test-block-viewer">${_('start_lesson_test_button')}</button>`;
+                }
+                break;
+            default:
+                const defaultEl = document.createElement('p');
+                defaultEl.innerHTML = content;
+                block.appendChild(defaultEl);
+        }
+        
+        wrapper.innerHTML = `${handleHTML}${actionsHTML}`;
+        wrapper.insertBefore(block, wrapper.querySelector('.block-actions'));
+        
+        return wrapper;
+    }
+
+
+
+    /**
+     * Настраивает все слушатели событий для контейнера редактора, включая Drag-and-Drop и двойной клик.
+     * @param {HTMLElement} container - DOM-элемент .lesson-content-container.
+     */
+    function setupEditorEventListeners(container) {
+        let activeBlock = null;
+        let draggedElement = null;
+        let placeholder = null;
+        let isTouch = false;
+        let lastTapTime = 0;
+
+        // --- Универсальный обработчик кликов/тапов ---
+        container.addEventListener('click', (e) => {
+            const currentTime = new Date().getTime();
+            const timeDifference = currentTime - lastTapTime;
+            lastTapTime = currentTime;
+
+            const deleteBtn = e.target.closest('.delete-block-btn');
+            const editBtn = e.target.closest('.edit-block-btn');
+
+            if (deleteBtn || editBtn) {
+                const wrapper = (deleteBtn || editBtn).closest('.content-block-wrapper');
+                if (deleteBtn) handleDeleteBlock(wrapper);
+                if (editBtn) handleEditBlock(wrapper);
+                return;
+            }
+            
+            if (timeDifference < 300 && timeDifference > 0) {
+                if (e.target.closest('.content-block-wrapper')) return;
+
+                const newBlockWrapper = createContentBlock('paragraph', '', true);
+                let closest = Array.from(container.querySelectorAll('.content-block-wrapper'))
+                    .reduce((acc, child) => {
+                        const box = child.getBoundingClientRect();
+                        const offset = e.clientY - (box.top + box.height / 2);
+                        if (Math.abs(offset) < Math.abs(acc.offset)) {
+                            return { offset, element: child };
+                        }
+                        return acc;
+                    }, { offset: Infinity, element: null });
+
+                if (closest.element) {
+                    if (closest.offset < 0) {
+                        container.insertBefore(newBlockWrapper, closest.element);
+                    } else {
+                        closest.element.insertAdjacentElement('afterend', newBlockWrapper);
+                    }
+                } else {
+                    container.appendChild(newBlockWrapper);
+                }
+                
+                newBlockWrapper.querySelector('.content-block').focus();
+                lastTapTime = 0;
+            }
+        });
+
+        // --- Обработка фокуса и ввода с клавиатуры ---
+        container.addEventListener('focusin', (e) => {
+            const block = e.target.closest('.content-block');
+            if (block) activeBlock = block;
+        });
+        
+        container.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && activeBlock) {
+                const isEmpty = activeBlock.textContent.trim() === '' && activeBlock.innerHTML.trim().replace(/<br\s*\/?>/gi, '') === '';
+                const wrapper = activeBlock.parentElement;
+                const prevWrapper = wrapper.previousElementSibling;
+                if (isEmpty && prevWrapper) {
+                    e.preventDefault();
+                    wrapper.remove();
+                    const prevEditable = prevWrapper.querySelector('.content-block[contenteditable="true"]');
+                    if (prevEditable) {
+                        prevEditable.focus();
+                        const range = document.createRange();
+                        const sel = window.getSelection();
+                        range.selectNodeContents(prevEditable);
+                        range.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                }
+            }
+        });
+
+        container.addEventListener('keyup', (e) => {
+            if (e.key === '/') {
+                if (activeBlock && activeBlock.textContent === '/') {
+                    showAddBlockMenu(activeBlock.parentElement);
+                }
+            } else {
+                hideAddBlockMenu();
+            }
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const newBlockWrapper = createContentBlock('paragraph', '', true);
+                activeBlock.parentElement.insertAdjacentElement('afterend', newBlockWrapper);
+                newBlockWrapper.querySelector('.content-block').focus();
+            }
+        });
+
+        // --- Логика Drag and Drop ---
+        const onDragStart = (e) => {
+            const handle = e.target.closest('.block-handle');
+            if (!handle) return;
+            e.preventDefault();
+            draggedElement = handle.closest('.content-block-wrapper');
+            if (!draggedElement) return;
+            draggedElement.classList.add('dragging');
+            placeholder = document.createElement('div');
+            placeholder.className = 'drag-placeholder';
+            placeholder.style.height = `${draggedElement.offsetHeight}px`;
+            isTouch = !!e.touches;
+        };
+        const onDragMove = (e) => {
+            if (!draggedElement) return;
+            e.preventDefault();
+            const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+            const overElement = Array.from(container.querySelectorAll('.content-block-wrapper:not(.dragging)'))
+                .find(el => {
+                    const rect = el.getBoundingClientRect();
+                    return clientY >= rect.top && clientY <= rect.bottom;
+                });
+            if (overElement) {
+                const rect = overElement.getBoundingClientRect();
+                const isAfter = clientY > rect.top + rect.height / 2;
+                if (isAfter) {
+                    overElement.insertAdjacentElement('afterend', placeholder);
+                } else {
+                    overElement.insertAdjacentElement('beforebegin', placeholder);
+                }
+            }
+        };
+        const onDragEnd = () => {
+            if (!draggedElement) return;
+            if (placeholder && placeholder.parentNode) {
+                placeholder.replaceWith(draggedElement);
+            }
+            draggedElement.classList.remove('dragging');
+            draggedElement = null;
+            placeholder = null;
+            isTouch = false;
+        };
+        container.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.block-handle')) {
+                onDragStart(e);
+                window.addEventListener('mousemove', onDragMove);
+                window.addEventListener('mouseup', () => {
+                    window.removeEventListener('mousemove', onDragMove);
+                    onDragEnd();
+                }, { once: true });
+            }
+        });
+        container.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.block-handle')) {
+                onDragStart(e);
+                window.addEventListener('touchmove', onDragMove, { passive: false });
+                window.addEventListener('touchend', () => {
+                    window.removeEventListener('touchmove', onDragMove);
+                    onDragEnd();
+                }, { once: true });
+            }
+        }, { passive: false });
+    }
+    
+
+
+
+    /**
+     * Показывает меню добавления блоков рядом с целевым элементом.
+     * @param {HTMLElement} targetElement - Блок, рядом с которым показать меню.
+     */
+    function showAddBlockMenu(targetElement) {
+        hideAddBlockMenu(); // Сначала скрываем любое существующее меню
+        
+        const template = getEl('addBlockMenuTemplate');
+        const menu = template.content.cloneNode(true).firstElementChild;
+        
+        menu.addEventListener('click', (e) => {
+            const item = e.target.closest('.add-block-item');
+            if (item) {
+                handleBlockMenuSelection(item.dataset.type, targetElement);
+            }
+        });
+        
+        document.body.appendChild(menu);
+        
+        const rect = targetElement.getBoundingClientRect();
+        menu.style.top = `${rect.bottom + window.scrollY}px`;
+        menu.style.left = `${rect.left + window.scrollX}px`;
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    /**
+     * Скрывает и удаляет меню добавления блоков.
+     */
+    function hideAddBlockMenu() {
+        const menu = getEl('addBlockMenu');
+        if (menu) menu.remove();
+    }
+
+    /**
+     * Обрабатывает выбор типа блока из меню.
+     * @param {string} type - Выбранный тип блока.
+     * @param {HTMLElement} currentWrapper - Обёртка блока, из которого было вызвано меню.
+     */
+    async function handleBlockMenuSelection(type, currentWrapper) {
+        let content = '';
+        let newBlockWrapper;
+
+        if (type === 'image') {
+            const imageUrl = await promptForUrl('Вставить изображение', 'prompt_image_url');
+            if (imageUrl === null) return;
+            content = imageUrl;
+            newBlockWrapper = createContentBlock(type, content, true);
+        } else if (type === 'video') {
+            const videoUrl = await promptForUrl('Вставить видео', 'prompt_video_url');
+            if (videoUrl === null) return;
+            content = videoUrl;
+            newBlockWrapper = createContentBlock(type, content, true);
+        } else if (type === 'test') {
+            // Открываем файловый диалог для выбора теста
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.qst,.txt';
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const fileContent = await readFileAsText(file);
+                    content = { fileName: file.name, fileContent: fileContent };
+                    newBlockWrapper = createContentBlock(type, content, true);
+                    currentWrapper.replaceWith(newBlockWrapper);
+                    hideAddBlockMenu();
+                }
+            };
+            fileInput.click();
+            return; // Выходим, так как замена блока произойдет асинхронно
+        } else {
+            newBlockWrapper = createContentBlock(type, '', true);
+        }
+
+        currentWrapper.replaceWith(newBlockWrapper);
+        if (type === 'paragraph' || type === 'h2') {
+            newBlockWrapper.querySelector('.content-block').focus();
+        }
+        hideAddBlockMenu();
+    }
+
+
+    /**
+     * Собирает контент из редактора и сохраняет его в Firebase.
+     */
+    async function handleSaveLesson() {
+        if (!currentCourseIdForModal || !currentLessonIdForModal || !db || !currentUser) return;
+
+        showGlobalLoader('Сохранение урока...');
+
+        try {
+            const courseRef = db.collection('courses').doc(currentCourseIdForModal);
+            const courseDoc = await courseRef.get();
+            if (!courseDoc.exists) throw new Error("Курс для сохранения не найден.");
+
+            const courseData = courseDoc.data();
+            if (currentUser.uid !== courseData.ownerId) {
+                throw new Error(_('lesson_owner_permission_error'));
+            }
+
+            const lessons = courseData.lessons || [];
+            const lessonIndex = lessons.findIndex(l => l.id === currentLessonIdForModal);
+            if (lessonIndex === -1) throw new Error("Урок для сохранения не найден.");
+            
+            const contentBlocks = [];
+            lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach(wrapper => {
+                const blockEl = wrapper.querySelector('.content-block');
+                if (!blockEl) return;
+
+                const type = blockEl.dataset.type || 'paragraph';
+                let content = '';
+                
+                switch(type) {
+                    // === НАЧАЛО ГЛАВНОГО ИСПРАВЛЕНИЯ ===
+                    case 'paragraph':
+                    case 'h2':
+                        // Теперь мы берем внутреннее содержимое самого редактируемого блока
+                        content = blockEl.innerHTML;
+                        break;
+                    // === КОНЕЦ ГЛАВНОГО ИСПРАВЛЕНИЯ ===
+                    case 'image':
+                        content = blockEl.querySelector('img')?.src || '';
+                        break;
+                    case 'video':
+                        const iframeSrc = blockEl.querySelector('iframe')?.src || '';
+                        if (iframeSrc.includes('youtube.com/embed/')) {
+                            const videoId = iframeSrc.split('/').pop();
+                            content = `https://www.youtube.com/watch?v=${videoId}`;
+                        } else {
+                            content = iframeSrc;
+                        }
+                        break;
+                    case 'hr':
+                        content = '';
+                        break;
+                    case 'test':
+                        content = {
+                            fileName: blockEl.dataset.filename,
+                            fileContent: blockEl.dataset.fileContent
+                        };
+                        break;
+                    default:
+                        content = '';
+                }
+                contentBlocks.push({ type, content });
+            });
+
+            lessons[lessonIndex].content = contentBlocks;
+            await courseRef.update({ lessons: lessons });
+
+            showToast(_('lesson_saved_success'), 'success');
+
+        } catch (error) {
+            console.error("Ошибка сохранения урока:", error);
+            showToast(error.message || _('lesson_save_failed'), 'error');
+        } finally {
+            hideGlobalLoader();
+        }
+    }
+
+
+    // =======================================================
+    // ===    НОВЫЕ ФУНКЦИИ ДЛЯ РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ   ===
+    // =======================================================
+
+    /**
+     * Показывает модальное окно для редактирования курса.
+     * @param {object} course - Объект курса для редактирования.
+     */
+    function showEditCourseModal(course) {
+        currentCourseForEdit = course;
+        const modal = getEl('courseEditModal');
+        if (!modal) return;
+        
+        getEl('courseNameEditInput').value = course.title;
+        getEl('courseDescriptionEditInput').value = course.description || '';
+        
+        getEl('courseEditConfirmBtn').onclick = handleUpdateCourse;
+        getEl('courseDeleteBtn').onclick = () => handleDeleteCourse(course.id, course.title);
+        getEl('courseEditCancelBtn').onclick = () => ChatModule.closeModal('courseEditModal');
+
+        ChatModule.showModal('courseEditModal');
+    }
+
+    /**
+     * Обновляет данные курса в Firebase.
+     */
+    async function handleUpdateCourse() {
+        if (!currentCourseForEdit) return;
+
+        const newTitle = getEl('courseNameEditInput').value.trim();
+        const newDescription = getEl('courseDescriptionEditInput').value.trim();
+
+        if (!newTitle) {
+            alert('Название курса не может быть пустым.');
+            return;
+        }
+
+        showGlobalLoader('Обновление курса...');
+        try {
+            const courseRef = db.collection('courses').doc(currentCourseForEdit.id);
+            await courseRef.update({
+                title: newTitle,
+                description: newDescription
+            });
+            showToast(_('course_updated_success'), 'success');
+            ChatModule.closeModal('courseEditModal');
+        } catch (error) {
+            console.error("Ошибка обновления курса:", error);
+            showToast(_('course_update_failed'), 'error');
+        } finally {
+            hideGlobalLoader();
+        }
+    }
+
+    /**
+     * Удаляет курс после подтверждения.
+     * @param {string} courseId 
+     * @param {string} courseTitle 
+     */
+    async function handleDeleteCourse(courseId, courseTitle) {
+        // === ИЗМЕНЕНИЕ: Сначала скрываем модальное окно редактирования ===
+        ChatModule.closeModal('courseEditModal');
+
+        const confirmed = await showConfirmationModal(
+            'confirm_delete_course_title',
+            _('confirm_delete_course_text').replace('{courseTitle}', courseTitle),
+            'confirm_button_delete'
+        );
+
+        if (confirmed) {
+            showGlobalLoader('Удаление курса...');
+            try {
+                await db.collection('courses').doc(courseId).delete();
+                showToast(_('course_deleted_success'), 'success');
+                // Больше не нужно закрывать здесь, так как мы сделали это вначале
+            } catch (error) {
+                console.error("Ошибка удаления курса:", error);
+                showToast(_('course_delete_failed'), 'error');
+            } finally {
+                hideGlobalLoader();
+            }
+        }
+    }
+
+    /**
+     * Показывает модальное окно для редактирования урока.
+     * @param {string} courseId
+     * @param {object} lesson - Объект урока для редактирования.
+     */
+    function showEditLessonModal(courseId, lesson) {
+        currentCourseIdForModal = courseId;
+        currentLessonForEdit = lesson;
+        const modal = getEl('lessonEditModal');
+        if (!modal) return;
+        
+        getEl('lessonNameEditInput').value = lesson.title;
+        
+        getEl('lessonEditConfirmBtn').onclick = handleUpdateLesson;
+        getEl('lessonDeleteBtn').onclick = () => handleDeleteLesson(courseId, lesson.id, lesson.title);
+        getEl('lessonEditCancelBtn').onclick = () => ChatModule.closeModal('lessonEditModal');
+
+        ChatModule.showModal('lessonEditModal');
+    }
+
+    /**
+     * Обновляет название урока в Firebase.
+     */
+    async function handleUpdateLesson() {
+        if (!currentCourseIdForModal || !currentLessonForEdit) return;
+
+        const newTitle = getEl('lessonNameEditInput').value.trim();
+        if (!newTitle) {
+            alert('Название урока не может быть пустым.');
+            return;
+        }
+
+        showGlobalLoader('Обновление урока...');
+        try {
+            const courseRef = db.collection('courses').doc(currentCourseIdForModal);
+            const doc = await courseRef.get();
+            if (!doc.exists) throw new Error('Курс не найден');
+            
+            const courseData = doc.data();
+            const lessons = courseData.lessons || [];
+            const lessonIndex = lessons.findIndex(l => l.id === currentLessonForEdit.id);
+
+            if (lessonIndex === -1) throw new Error('Урок не найден в курсе');
+
+            lessons[lessonIndex].title = newTitle; // Обновляем название
+
+            await courseRef.update({ lessons }); // Перезаписываем весь массив
+            
+            showToast(_('lesson_updated_success'), 'success');
+            ChatModule.closeModal('lessonEditModal');
+            renderLessonsList(currentCourseIdForModal); // Обновляем список на экране
+
+        } catch (error) {
+            console.error("Ошибка обновления урока:", error);
+            showToast(_('lesson_update_failed'), 'error');
+        } finally {
+            hideGlobalLoader();
+        }
+    }
+
+    /**
+     * Удаляет урок из курса после подтверждения.
+     * @param {string} courseId 
+     * @param {string} lessonId 
+     * @param {string} lessonTitle 
+     */
+    async function handleDeleteLesson(courseId, lessonId, lessonTitle) {
+        // === ИЗМЕНЕНИЕ: Сначала скрываем модальное окно редактирования ===
+        ChatModule.closeModal('lessonEditModal');
+
+        const confirmed = await showConfirmationModal(
+            'confirm_delete_lesson_title',
+            _('confirm_delete_lesson_text').replace('{lessonTitle}', lessonTitle),
+            'confirm_button_delete'
+        );
+
+        if (confirmed) {
+            showGlobalLoader('Удаление урока...');
+            try {
+                const courseRef = db.collection('courses').doc(courseId);
+                const doc = await courseRef.get();
+                if (!doc.exists) throw new Error('Курс не найден');
+
+                const courseData = doc.data();
+                // Фильтруем массив, оставляя все уроки, кроме удаляемого
+                const updatedLessons = (courseData.lessons || []).filter(l => l.id !== lessonId);
+
+                await courseRef.update({ lessons: updatedLessons });
+
+                showToast(_('lesson_deleted_success'), 'success');
+                // Больше не нужно закрывать здесь
+                renderLessonsList(courseId);
+
+            } catch (error) {
+                console.error("Ошибка удаления урока:", error);
+                showToast(_('lesson_delete_failed'), 'error');
+            } finally {
+                hideGlobalLoader();
+            }
+        }
+    }
+
+    /**
+     * Удаляет блок контента после подтверждения.
+     * @param {HTMLElement} wrapper - Элемент .content-block-wrapper для удаления.
+     */
+    async function handleDeleteBlock(wrapper) {
+        const confirmed = await showConfirmationModal(
+            'confirm_delete_block_title',
+            'confirm_delete_block_text',
+            'confirm_button_delete'
+        );
+        if (confirmed) {
+            wrapper.remove();
+        }
+    }
+
+    /**
+     * Обрабатывает редактирование нетекстовых блоков (изображение, видео).
+     * @param {HTMLElement} wrapper - Элемент .content-block-wrapper для редактирования.
+     */
+    async function handleEditBlock(wrapper) {
+        const block = wrapper.querySelector('.content-block');
+        if (!block) return;
+        const type = block.dataset.type;
+
+        if (type === 'image') {
+            const currentUrl = block.querySelector('img')?.src || '';
+            const newUrl = await promptForUrl('Редактировать изображение', 'prompt_image_url', currentUrl);
+            if (newUrl !== null) { // Проверяем на null, чтобы пустая строка тоже сохранялась
+                block.querySelector('img').src = newUrl;
+            }
+        } else if (type === 'video') {
+            const currentIframeSrc = block.querySelector('iframe')?.src || '';
+            let currentUrl = '';
+            if (currentIframeSrc.includes('youtube.com/embed/')) {
+                const videoId = currentIframeSrc.split('/').pop();
+                currentUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            }
+            const newUrl = await promptForUrl('Редактировать видео', 'prompt_video_url', currentUrl);
+            if (newUrl !== null) {
+                block.querySelector('iframe').src = youtubeEmbedUrl(newUrl);
+            }
+        }
+    }
+
+    /**
+     * Показывает кастомное модальное окно для ввода URL.
+     * @param {string} titleKey - Ключ перевода для заголовка.
+     * @param {string} textKey - Ключ перевода для поясняющего текста.
+     * @param {string} currentValue - Текущее значение URL для отображения в поле.
+     * @returns {Promise<string|null>} - Promise, который разрешается введенным URL или null, если пользователь нажал отмену.
+     */
+    function promptForUrl(titleKey, textKey, currentValue = '') {
+        return new Promise(resolve => {
+            const modal = getEl('urlInputModal');
+            const titleEl = getEl('urlInputModalTitle');
+            const textEl = getEl('urlInputModalText');
+            const inputEl = getEl('urlInputModalInput');
+            const confirmBtn = getEl('urlInputConfirmBtn');
+            const cancelBtn = getEl('urlInputCancelBtn');
+
+            titleEl.textContent = _(titleKey);
+            textEl.textContent = _(textKey);
+            inputEl.value = currentValue;
+
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                inputEl.onkeydown = null;
+                resolve(result);
+            };
+
+            confirmBtn.onclick = () => cleanup(inputEl.value);
+            cancelBtn.onclick = () => cleanup(null);
+
+            inputEl.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmBtn.click();
+                }
+            };
+
+            modal.classList.remove('hidden');
+            inputEl.focus();
+            inputEl.select();
+        });
+    }
+
+    /**
+     * Запускает процесс теста из блока урока.
+     * @param {string} fileName 
+     * @param {string} fileContent 
+     */
+    function startTestFromLesson(fileName, fileContent) {
+        if (!fileName || !fileContent) {
+            showToast("Ошибка: в блоке теста отсутствуют данные.", "error");
+            return;
+        }
+        // Устанавливаем флаг, что мы пришли из урока
+        cameFromLesson = true;
+        // Вызываем уже существующую глобальную функцию для обработки и запуска теста
+        processFile(fileName, fileContent);
+    }
+
+    /**
+     * Настраивает обработчики кликов для кнопок в AI-меню.
+     * @param {HTMLElement} menu - DOM-элемент меню.
+     * @param {HTMLElement} editorContainer - Контейнер редактора.
+     */
+    function setupAIToolsMenu(menu, editorContainer) {
+        menu.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+            
+            const action = button.dataset.action;
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            const range = selection.getRangeAt(0);
+
+            if (!selectedText) return;
+
+            handleAIAction(action, selectedText, range, editorContainer);
+            selection.removeAllRanges();
+            menu.remove();
+        });
+
+        // Обновляем title кнопок из переводов
+        menu.querySelector('[data-action="continue"]').title = _('ai_tools_continue');
+        menu.querySelector('[data-action="simplify"]').title = _('ai_tools_simplify');
+        menu.querySelector('[data-action="create_test"]').title = _('ai_tools_create_test');
+        
+        // === НАЧАЛО НОВОГО КОДА ===
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+        // === КОНЕЦ НОВОГО КОДА ===
+    }
+
+
+    /**
+     * Вызывает соответствующую AI-функцию на сервере.
+     * @param {string} action - 'continue', 'simplify', или 'create_test'.
+     * @param {string} text - Выделенный текст.
+     * @param {Range} range - Объект Range выделения для вставки результата.
+     * @param {HTMLElement} editorContainer - Контейнер редактора.
+     */
+    async function handleAIAction(action, text, range, editorContainer) {
+        showGlobalLoader(_('ai_lesson_generating'));
+        try {
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'processLessonText',
+                    task: action,
+                    text: text,
+                    targetLanguage: localStorage.getItem('appLanguage') || 'ru'
+                })
+            });
+            const result = await response.json();
+            
+            if (result.success && result.resultText) {
+                if (action === 'create_test') {
+                    // Создаем новый блок "Тест"
+                    const testContent = {
+                        fileName: `Тест по "${text.substring(0, 20)}...".qst`,
+                        fileContent: result.resultText
+                    };
+                    const newTestBlock = createContentBlock('test', testContent, true);
+                    const currentBlockWrapper = range.startContainer.parentElement.closest('.content-block-wrapper');
+                    if (currentBlockWrapper) {
+                        currentBlockWrapper.insertAdjacentElement('afterend', newTestBlock);
+                    } else {
+                        editorContainer.appendChild(newTestBlock);
+                    }
+                    if (window.lucide) lucide.createIcons();
+                } else {
+                    // Вставляем сгенерированный текст
+                    range.deleteContents();
+                    range.insertNode(document.createTextNode(text + result.resultText));
+                }
+            } else {
+                throw new Error(result.error || _('ai_lesson_generation_error'));
+            }
+
+        } catch (error) {
+            console.error("Ошибка AI-обработки текста:", error);
+            showToast(error.message, 'error');
+        } finally {
+            hideGlobalLoader();
+        }
+    }
 
 
     // --- Public methods exposed from mainApp ---

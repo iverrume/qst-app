@@ -918,7 +918,7 @@ button:disabled {
 /* 3. Оставляем сетку для самих кнопок */
 .main-actions-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
     grid-auto-rows: 1fr;
 }
@@ -926,7 +926,8 @@ button:disabled {
 /* Стили для кнопок-карточек (без изменений) */
 .custom-file-upload-btn,
 #gradusButton,
-#parserButton {
+#parserButton,
+#coursesButton {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -953,7 +954,8 @@ button:disabled {
 
 .custom-file-upload-btn:hover,
 #gradusButton:hover,
-#parserButton:hover {
+#parserButton:hover,
+#coursesButton:hover {
     transform: translateY(-3px);
     box-shadow: 0 4px 15px var(--shadow-light-color);
     border-color: var(--accent-color);
@@ -962,7 +964,8 @@ button:disabled {
 
 .custom-file-upload-btn i,
 #gradusButton i,
-#parserButton i {
+#parserButton i,
+#coursesButton i {
     width: 28px;
     height: 28px;
     stroke-width: 1.5;
@@ -1601,8 +1604,8 @@ body.dark-mode {
     padding: 10px 15px;
     background: var(--container-bg-color);
     color: var(--text-color);
-    display: grid; 
-    grid-template-columns: auto 1fr auto;
+    display: flex; /* <-- ИЗМЕНЕНИЕ: Возвращаем flex */
+    justify-content: space-between; /* <-- ИЗМЕНЕНИЕ: Расталкиваем элементы по краям */
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
@@ -1648,8 +1651,11 @@ body.dark-mode {
 }
 
 /* Новый код (применяется только к шапке в основном контейнере): */
-body.quiz-active .container > .header-controls {
-    margin-bottom: 60px;
+.advanced-chat-header .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0; /* Запрещаем этому блоку сжиматься */
 }
 
 #currentUser {
@@ -11397,15 +11403,15 @@ body:not(.synthwave-mode):not(.claude-mode):not(.glass-dark) .scrollbar-dot.is-c
 /* ======================================================= */
 
 /* 
-  Этот блок принудительно задает одинаковую высоту для всех трех кнопок на главном экране.
+  Этот блок принудительно задает одинаковую высоту для всех кнопок на главном экране.
   !important используется для гарантии того, что это правило перекроет любые другие конфликтующие стили.
 */
 .main-actions-grid > .custom-file-upload-btn,
 .main-actions-grid > #parserButton,
-.main-actions-grid > #gradusButton {
+.main-actions-grid > #gradusButton,
+.main-actions-grid > #coursesButton {
     height: 120px !important; /* Задаем всем блокам одинаковую высоту в 120 пикселей */
 }
-
 /* ======================================================= */
 /* ===      СТИЛИ ДЛЯ ДИНАМИЧЕСКИХ ПОДСКАЗОК (V3)       === */
 /* ======================================================= */
@@ -12010,4 +12016,442 @@ display: none;
 /* Класс, который будет запускать анимацию */
 .highlight-new-test {
     animation: highlight-new-item 2s ease-out;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ НОВОГО РАЗДЕЛА "КУРСЫ"         === */
+/* ======================================================= */
+
+#coursesArea,
+#courseDetailArea,
+#lessonViewArea {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.courses-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.courses-header h2 {
+    margin: 0;
+    text-align: left;
+}
+
+.courses-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+#createCourseBtn,
+#createLessonBtn {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border: none;
+    font-weight: 500;
+}
+
+#createCourseBtn:hover,
+#createLessonBtn:hover {
+    background-position: right center;
+}
+
+#saveLessonBtn {
+    background: var(--button-success-bg);
+    color: var(--button-primary-text);
+    border: none;
+    font-weight: 500;
+}
+
+#saveLessonBtn:hover {
+    background-position: right center;
+}
+
+#coursesList,
+#courseLessonsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.course-item,
+.lesson-item {
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 8px;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.course-item:hover,
+.lesson-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--shadow-light-color);
+    border-left-color: var(--accent);
+}
+
+.course-item h3,
+.lesson-item h4 {
+    margin: 0 0 5px 0;
+    color: var(--heading-color);
+}
+
+.course-item p {
+    margin: 0;
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+}
+
+.lesson-content-container {
+    flex-grow: 1;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    margin-top: -10px;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕДАКТОРА УРОКОВ (NOTION-LIKE) === */
+/* ======================================================= */
+
+.content-block-wrapper {
+    position: relative;
+    margin: 4px 0;
+    padding-left: 30px;
+    padding-right: 40px;
+}
+
+.block-handle,
+.block-actions {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    opacity: 0; /* Скрыты по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10;
+}
+
+.content-block-wrapper:hover .block-handle,
+.content-block-wrapper:hover .block-actions {
+    opacity: 1; /* Показываем при наведении на обертку */
+}
+
+.block-handle {
+    left: 4px; /* Небольшой отступ от левого края */
+    cursor: grab;
+    color: var(--secondary-text-color);
+}
+
+.block-actions {
+    right: 4px; /* <-- ГЛАВНОЕ ИСПРАВЛЕНИЕ: Позиционируем внутри правого отступа */
+    gap: 4px;
+}
+
+.block-actions button {
+    background: none;
+    border: none;
+    color: var(--secondary-text-color);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+.block-actions button:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+/* Убираем старый сдвиг, так как теперь используем padding у родителя */
+.lesson-editor .content-block {
+    margin-left: 0;
+}
+
+/* Стиль для перетаскиваемого элемента */
+.content-block-wrapper.dragging {
+    opacity: 0.5;
+    background: var(--input-hover-bg-color);
+}
+
+/* Стиль для плейсхолдера, который появляется на месте перетаскиваемого блока */
+.drag-placeholder {
+    background-color: color-mix(in srgb, var(--accent-color) 20%, transparent);
+    border-radius: 4px;
+    margin: 4px 0;
+}
+
+.lesson-content-container {
+    flex-grow: 1; /* <-- ВОТ ГЛАВНОЕ ИСПРАВЛЕНИЕ */
+    padding: 10px;
+    font-size: 1.1em;
+    line-height: 1.6;
+    overflow-y: auto;
+    cursor: text; /* Устанавливаем курсор как у текстового поля */
+}
+
+.content-block {
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-height: 1.6em; /* Чтобы пустой блок не схлопывался */
+    transition: background-color 0.2s;
+}
+
+.content-block:focus {
+    outline: none;
+    background-color: var(--input-hover-bg-color);
+}
+
+/* Плейсхолдер для пустого блока */
+.content-block[data-placeholder]:empty:before {
+    content: attr(data-placeholder);
+    color: var(--secondary-text-color);
+    opacity: 0.6;
+    pointer-events: none;
+    display: block;
+}
+
+.content-block h2 {
+    margin: 0.5em 0;
+}
+
+/* Меню добавления блока */
+.add-block-menu {
+    position: absolute;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px var(--shadow-color);
+    z-index: 100;
+    width: 300px;
+    overflow: hidden;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.add-block-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.add-block-item:hover {
+    background-color: var(--input-hover-bg-color);
+}
+
+.add-block-item i {
+    width: 24px;
+    height: 24px;
+    color: var(--secondary-text-color);
+    flex-shrink: 0;
+}
+
+.add-block-item-text strong {
+    display: block;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.add-block-item-text span {
+    font-size: 0.85em;
+    color: var(--secondary-text-color);
+}
+
+.course-item,
+.lesson-item {
+    position: relative; /* Необходимо для позиционирования кнопок */
+}
+
+.item-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+    opacity: 0; /* Скрыты по умолчанию */
+    transition: opacity 0.2s ease-in-out;
+}
+
+.course-item:hover .item-actions,
+.lesson-item:hover .item-actions {
+    opacity: 1; /* Показываем при наведении */
+}
+
+.item-actions button {
+    background: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.item-actions button:hover {
+    background: var(--button-secondary-hover-bg);
+}
+
+.item-actions button i {
+    width: 16px;
+    height: 16px;
+}
+
+/* Стили для медиа-блоков */
+.content-block[data-type="image"],
+.content-block[data-type="video"] {
+    padding: 8px 0;
+}
+
+.content-block img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: block;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9; /* Сохраняем пропорции видео */
+}
+
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+/* Стили для разделителя */
+.content-block[data-type="hr"] {
+    padding: 15px 0;
+    min-height: 0;
+}
+
+.content-block hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+
+/* Стили для блока с тестом */
+.content-block[data-type="test"] {
+    padding: 0;
+}
+
+.test-block-editor,
+.test-block-viewer {
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+/* Вид для автора в редакторе */
+.test-block-editor {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    padding: 12px 15px;
+}
+
+.test-block-editor i {
+    width: 24px;
+    height: 24px;
+    color: var(--secondary-text-color);
+}
+
+.test-block-filename {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* Вид для ученика (кнопка) */
+.test-block-viewer {
+    display: block;
+    width: 100%;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    padding: 15px 20px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.1em;
+    cursor: pointer;
+    border: none;
+}
+
+.test-block-viewer:hover {
+    background-position: right center;
+}
+
+
+/* Стили для плавающего AI-меню */
+.ai-tools-menu {
+    position: absolute;
+    display: flex;
+    gap: 4px;
+    background-color: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    z-index: 101;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.ai-tools-menu button {
+    background: none;
+    border: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-color); /* Сделаем символы чуть ярче */
+    transition: all 0.2s;
+    font-size: 18px; /* Устанавливаем размер для эмодзи */
+    line-height: 1;
+}
+
+.ai-tools-menu button:hover {
+    background-color: var(--input-hover-bg-color);
+    color: var(--text-color);
+}
+
+.ai-tools-menu i {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РЕЖИМА ПРОСМОТРА УРОКА        === */
+/* ======================================================= */
+
+.lesson-viewer .content-block {
+    padding: 2px 0; /* Уменьшаем отступы для плотного текста */
+}
+
+.lesson-viewer .content-block h2 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.lesson-viewer .content-block:first-child h2 {
+    margin-top: 0;
 }

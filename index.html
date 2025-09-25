@@ -128,7 +128,6 @@
                 <div class="main-actions-grid">
                     <label for="fileInput" class="custom-file-upload-btn">
                         <i data-lucide="file-up"></i>
-                        <!-- Добавлена обертка div -->
                         <div class="main-action-text-wrapper">
                             <span data-lang-key="choose_file">Выберите .qst|.txt|.pdf файл</span>
                         </div>
@@ -137,7 +136,6 @@
                     
                     <button id="parserButton">
                         <i data-lucide="lightbulb"></i>
-                        <!-- Добавлена обертка div -->
                         <div class="main-action-text-wrapper">
                              <span data-lang-key="parser_button_main">Создать тест</span>
                         </div>
@@ -145,11 +143,19 @@
 
                     <button id="gradusButton">
                         <i data-lucide="graduation-cap"></i>
-                        <!-- Добавлена обертка div -->
                         <div class="main-action-text-wrapper">
                             <span>GRADUS</span>
                         </div>
                     </button>
+
+                    <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                    <button id="coursesButton">
+                        <i data-lucide="book-marked"></i>
+                        <div class="main-action-text-wrapper">
+                             <span data-lang-key="courses_button_main">Курсы</span>
+                        </div>
+                    </button>
+                    <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
                 </div>
                                 
 
@@ -505,7 +511,57 @@
                 </div>
                 <button id="backToMainFromParserBtn" style="margin-top: 15px; background-color: var(--button-secondary-bg);" data-lang-key="back_button">Назад</button>
             </div>
+
+            <!-- ======== НАЧАЛО НОВЫХ ЭКРАНОВ ДЛЯ КУРСОВ ======== -->
+            <div id="coursesArea" class="view hidden">
+
+                <div class="courses-header">
+                    <h2 data-lang-key="courses_title">Курсы</h2>
+                    <div class="courses-header-actions">
+                        <button id="createCourseBtn" class="hidden" data-lang-key="create_course_button">Создать курс</button>
+                        <button id="backToMainFromCoursesBtn" class="btn btn-secondary" data-lang-key="back_to_main">На главный экран</button>
+                    </div>
+                </div>
+
+                <div id="coursesList">
+                    <!-- Список курсов будет генерироваться здесь -->
+                    <div class="course-item-placeholder">Загрузка курсов...</div>
+                </div>
+            </div>
+
+            <div id="courseDetailArea" class="view hidden">
+                    <div class="courses-header">
+                    <h2 id="courseDetailTitle">Название курса</h2>
+                    <div class="courses-header-actions">
+                        <button id="createLessonBtn" class="hidden" data-lang-key="create_lesson_button">Создать урок</button>
+                        <button id="backToCoursesListBtn" class="btn btn-secondary" data-lang-key="back_to_courses_list">К списку курсов</button>
+                    </div>
+                </div>
+                <div id="courseLessonsList">
+                    <!-- Список уроков будет генерироваться здесь -->
+                </div>
+            </div>
+            <!-- ======== КОНЕЦ НОВЫХ ЭКРАНОВ ДЛЯ КУРСОВ ======== -->
+            <!-- ======== НАЧАЛО НОВОГО ЭКРАНА ДЛЯ УРОКА ======== -->
+            <div id="lessonViewArea" class="view hidden">
+
+                    <div class="courses-header">
+                    <h2 id="lessonViewTitle">Название урока</h2>
+                    <div class="courses-header-actions">
+                        <button id="saveLessonBtn" class="hidden" data-lang-key="save_lesson_button">Сохранить</button>
+                        <button id="backToLessonsListBtn" class="btn btn-secondary" data-lang-key="back_to_lessons_list">К списку уроков</button>
+                    </div>
+                </div>
+                <div id="lessonContentContainer" class="lesson-content-container">
+                    <!-- Содержимое урока (блоки) будет здесь -->
+                </div>
+            </div>
         </div> 
+
+
+
+
+
 
         <!-- ========== ШАБЛОНЫ ДЛЯ ДИНАМИЧЕСКОГО КОНТЕНТА ========== -->
         <template id="searchResultCardTemplate">
@@ -552,7 +608,69 @@
             </div>
         </template>
         <!-- ========== КОНЕЦ ШАБЛОНОВ ========== -->
+
+        <!-- ======== НАЧАЛО НОВОГО ШАБЛОНА ДЛЯ РЕДАКТОРА ======== -->
+        <template id="addBlockMenuTemplate">
+            <div id="addBlockMenu" class="add-block-menu">
+                <div class="add-block-item" data-type="paragraph">
+                    <i data-lucide="pilcrow"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_text">Текст</strong>
+                        <span data-lang-key="block_menu_text_desc">Обычный абзац текста.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="h2">
+                    <i data-lucide="heading-2"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_header">Заголовок</strong>
+                        <span data-lang-key="block_menu_header_desc">Крупный заголовок раздела.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="image">
+                    <i data-lucide="image"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_image">Изображение</strong>
+                        <span data-lang-key="block_menu_image_desc">Вставить картинку по ссылке.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="video">
+                    <i data-lucide="youtube"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_video">Видео</strong>
+                        <span data-lang-key="block_menu_video_desc">Встроить видео с YouTube.</span>
+                    </div>
+                </div>
+                <div class="add-block-item" data-type="hr">
+                    <i data-lucide="minus"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_divider">Разделитель</strong>
+                        <span data-lang-key="block_menu_divider_desc">Визуальная линия-разделитель.</span>
+                    </div>
+                </div>
+                <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                <div class="add-block-item" data-type="test">
+                    <i data-lucide="clipboard-check"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_test">Тест</strong>
+                        <span data-lang-key="block_menu_test_desc">Встроить тест из .qst файла.</span>
+                    </div>
+                </div>
+                <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
+            </div>
+
+        </template>
+        <!-- ======== КОНЕЦ НОВОГО ШАБЛОНА ======== -->
+
         
+        <!-- ======== НАЧАЛО НОВОГО ШАБЛОНА ДЛЯ AI-МЕНЮ РЕДАКТОРА ======== -->
+        <template id="aiToolsMenuTemplate">
+            <div id="aiToolsMenu" class="ai-tools-menu">
+                <button data-action="continue" title="Продолжить текст">✨</button>
+                <button data-action="simplify" title="Упростить текст">🪄</button>
+                <button data-action="create_test" title="Создать тест по тексту">📝</button>
+            </div>
+        </template>
+        <!-- ======== КОНЕЦ НОВОГО ШАБЛОНА ======== -->
         <footer>
             <p>
                 <a href="https://chromewebstore.google.com/detail/qstium-helper/ekamfcpbkcekmmbclpnlmhcimnenabcl?hl=ru&utm_source=ext_sidebar" target="_blank" rel="noopener noreferrer" data-lang-key="footer_copyright">prod by @iverrum</a>
@@ -1147,6 +1265,94 @@
         </div>
     </div>
     <!-- ======================================================= -->
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ КУРСА      === -->
+    <!-- ======================================================= -->
+    <div id="courseCreateModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 480px;">
+            <h3 data-lang-key="create_course_modal_title">Создание нового курса</h3>
+            <p style="margin: 20px 0; line-height: 1.6;" data-lang-key="create_course_modal_text">Введите название и краткое описание для вашего нового курса.</p>
+            
+            <input type="text" id="courseNameInput" class="auth-input" placeholder="Название курса..." data-lang-key="course_name_placeholder" style="margin-bottom: 15px;">
+            <textarea id="courseDescriptionInput" class="auth-input" placeholder="Описание курса..." data-lang-key="course_description_placeholder" style="margin-bottom: 25px; resize: vertical; min-height: 80px;"></textarea>
+
+            <div class="modal-buttons">
+                <button id="courseCreateCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="courseCreateConfirmBtn" class="btn" data-lang-key="audience_create_button">Создать</button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ УРОКА      === -->
+    <!-- ======================================================= -->
+    <div id="lessonCreateModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 data-lang-key="create_lesson_modal_title">Создание нового урока</h3>
+            <p style="margin: 20px 0; line-height: 1.6;" data-lang-key="create_lesson_modal_text">Введите название для нового урока в этом курсе.</p>
+            
+            <input type="text" id="lessonNameInput" class="auth-input" placeholder="Название урока..." data-lang-key="lesson_name_placeholder" style="margin-bottom: 25px;">
+
+            <div class="modal-buttons">
+                <button id="lessonCreateCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="lessonCreateConfirmBtn" class="btn" data-lang-key="audience_create_button">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ КУРСА === -->
+    <!-- ======================================================= -->
+    <div id="courseEditModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 480px;">
+            <h3 data-lang-key="edit_course_modal_title">Редактирование курса</h3>
+            
+            <input type="text" id="courseNameEditInput" class="auth-input" placeholder="Название курса..." data-lang-key="course_name_placeholder" style="margin-bottom: 15px;">
+            <textarea id="courseDescriptionEditInput" class="auth-input" placeholder="Описание курса..." data-lang-key="course_description_placeholder" style="margin-bottom: 25px; resize: vertical; min-height: 80px;"></textarea>
+
+            <div class="modal-buttons">
+                <button id="courseEditCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="courseEditConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
+            </div>
+            <button id="courseDeleteBtn" class="delete-btn" style="margin-top: 15px;" data-lang-key="delete_course_button">Удалить курс</button>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ РЕДАКТИРОВАНИЯ УРОКА === -->
+    <!-- ======================================================= -->
+    <div id="lessonEditModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 420px;">
+            <h3 data-lang-key="edit_lesson_modal_title">Редактирование урока</h3>
+            
+            <input type="text" id="lessonNameEditInput" class="auth-input" placeholder="Название урока..." data-lang-key="lesson_name_placeholder" style="margin-bottom: 25px;">
+
+            <div class="modal-buttons">
+                <button id="lessonEditCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="lessonEditConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
+            </div>
+            <button id="lessonDeleteBtn" class="delete-btn" style="margin-top: 15px;" data-lang-key="delete_lesson_button">Удалить урок</button>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ ВВОДА URL (КУРСЫ)    === -->
+    <!-- ======================================================= -->
+    <div id="urlInputModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3 id="urlInputModalTitle">Вставьте ссылку</h3>
+            <p id="urlInputModalText" style="margin: 20px 0; line-height: 1.6;"></p>
+            
+            <input type="text" id="urlInputModalInput" class="auth-input" placeholder="https://..." style="margin-bottom: 25px;">
+
+            <div class="modal-buttons">
+                <button id="urlInputCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="urlInputConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    <!-- ======================================================= -->
+
+</body>
 
 </body>
 </html>
