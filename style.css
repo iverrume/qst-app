@@ -12292,7 +12292,6 @@ display: none;
     margin: 0.5em 0;
 }
 
-/* Меню добавления блока */
 .add-block-menu {
     position: absolute;
     background-color: var(--container-bg-color);
@@ -12303,6 +12302,7 @@ display: none;
     width: 300px;
     overflow: hidden;
     animation: fadeIn 0.1s ease-out;
+    transition: top 0.1s ease-out, left 0.1s ease-out; /* ДОБАВЬТЕ ЭТУ СТРОКУ */
 }
 
 .add-block-item {
@@ -12804,7 +12804,6 @@ display: none;
     margin: 0.5em 0;
 }
 
-/* Меню добавления блока */
 .add-block-menu {
     position: absolute;
     background-color: var(--container-bg-color);
@@ -12815,6 +12814,7 @@ display: none;
     width: 300px;
     overflow: hidden;
     animation: fadeIn 0.1s ease-out;
+    transition: top 0.1s ease-out, left 0.1s ease-out; /* ДОБАВЬТЕ ЭТУ СТРОКУ */
 }
 
 .add-block-item {

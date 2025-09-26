@@ -5881,6 +5881,7 @@ const mainApp = (function() {
 // === НАЧАЛО НОВОГО КОДА: Переменные для YouTube API ===
     let isYTAPILoaded = false;
     let ytInitializationQueue = [];
+    let activeAddBlockMenuListener = null;
     // === КОНЕЦ НОВОГО КОДА ===
 // === НАЧАЛО НОВОГО КОДА: Вспомогательная функция Debounce ===
     /**
@@ -21671,50 +21672,67 @@ const mainApp = (function() {
     }
 
     /**
-     * Показывает меню добавления блоков рядом с целевым элементом.
-     * @param {HTMLElement} targetElement - Блок, рядом с которым показать меню.
+     * Показывает меню добавления блоков рядом с целевым элементом,
+     * автоматически подстраиваясь под границы экрана.
      */
     function showAddBlockMenu(targetElement) {
-        hideAddBlockMenu(); // Сначала скрываем любое существующее меню
+        // Эта функция теперь корректно удаляет и меню, и старый слушатель
+        hideAddBlockMenu(); 
         
         const template = getEl('addBlockMenuTemplate');
         const menu = template.content.cloneNode(true).firstElementChild;
         
-        // Обработчик выбора элемента в меню
         menu.addEventListener('click', (e) => {
             const item = e.target.closest('.add-block-item');
             if (item) {
-                // Выбор сделан, меню больше не нужно
                 handleBlockMenuSelection(item.dataset.type, targetElement);
             }
         });
         
+        menu.style.visibility = 'hidden';
         document.body.appendChild(menu);
+        const menuHeight = menu.offsetHeight;
+        const menuWidth = menu.offsetWidth;
         
-        // Позиционируем меню
         const rect = targetElement.getBoundingClientRect();
-        menu.style.top = `${rect.bottom + window.scrollY}px`;
-        menu.style.left = `${rect.left + window.scrollX}px`;
+        const viewportWidth = window.innerWidth;
+        const margin = 10;
+
+        let finalTop;
+        if (rect.top - menuHeight - margin > 0) {
+            finalTop = rect.top + window.scrollY - menuHeight - 5;
+        } else {
+            finalTop = rect.bottom + window.scrollY + 5;
+        }
+        
+        let finalLeft = rect.left + window.scrollX;
+        if (finalLeft + menuWidth > viewportWidth - margin) {
+            finalLeft = viewportWidth - menuWidth - margin;
+        }
+        if (finalLeft < margin) {
+            finalLeft = margin;
+        }
+
+        menu.style.top = `${finalTop}px`;
+        menu.style.left = `${finalLeft}px`;
+        menu.style.visibility = 'visible';
 
         if (window.lucide) lucide.createIcons();
 
-        // === НАЧАЛО НОВОГО КОДА: Логика закрытия при клике снаружи ===
-        // Используем setTimeout, чтобы текущий клик, открывший меню, не был сразу же перехвачен
-        setTimeout(() => {
-            const handleClickOutside = (event) => {
-                // Если клик был НЕ внутри меню
-                if (!menu.contains(event.target)) {
-                    hideAddBlockMenu();
-                    // Важно: сразу же удаляем сам слушатель, чтобы он не висел в памяти
-                    window.removeEventListener('click', handleClickOutside);
-                }
-            };
-            // Добавляем глобальный слушатель на клик
-            window.addEventListener('click', handleClickOutside);
-        }, 0);
-        // === КОНЕЦ НОВОГО КОДА ===
-    }
+        // Создаем функцию-слушатель и сохраняем ее в нашу переменную
+        activeAddBlockMenuListener = (event) => {
+            const currentMenu = getEl('addBlockMenu');
+            // Проверяем, что меню все еще существует и клик был вне его
+            if (currentMenu && !currentMenu.contains(event.target)) {
+                hideAddBlockMenu(); // Эта функция также удалит и сам этот слушатель
+            }
+        };
 
+        // С небольшой задержкой добавляем наш сохраненный слушатель на window
+        setTimeout(() => {
+            window.addEventListener('click', activeAddBlockMenuListener);
+        }, 0);
+    }
 
     /**
      * Скрывает и удаляет меню добавления блоков, а также все связанные слушатели.
@@ -21724,14 +21742,13 @@ const mainApp = (function() {
         if (menu) {
             menu.remove();
         }
-        // На всякий случай, если слушатель "завис", здесь мы его тоже убьем.
-        // `handleClickOutside` - это имя функции, которое мы определили выше.
-        // Если вы решите его изменить, измените и здесь.
-        window.removeEventListener('click', (event) => {
-            if (getEl('addBlockMenu') && !getEl('addBlockMenu').contains(event.target)) {
-                hideAddBlockMenu();
-            }
-        });
+        // Проверяем, был ли слушатель сохранен в нашей переменной
+        if (activeAddBlockMenuListener) {
+            // Если да, удаляем именно его
+            window.removeEventListener('click', activeAddBlockMenuListener);
+            // И сбрасываем переменную, чтобы она не "висела" в памяти
+            activeAddBlockMenuListener = null;
+        }
     }
 
     /**
