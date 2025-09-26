@@ -12554,50 +12554,101 @@ display: none;
 
 
 /* ======================================================= */
-/* ===         СТИЛИ ДЛЯ НОВОГО РАЗДЕЛА "КУРСЫ"         === */
+/* ===         СТИЛИ ДЛЯ НОВОГО РАЗДЕЛА "КУРСЫ" (V2)    === */
 /* ======================================================= */
 
-#coursesArea,
-#courseDetailArea,
-#lessonViewArea {
-    flex-grow: 1;
+#coursesList {
+    display: grid;
+    /* Создаем адаптивную сетку: колонки будут от 150px до 1fr, браузер сам решит, сколько уместить */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 20px; /* Расстояние между карточками */
+}
+
+/* Стили для списка уроков остаются прежними (вертикальный список) */
+#courseLessonsList {
     display: flex;
     flex-direction: column;
+    gap: 10px;
 }
 
-.courses-header {
+/* Стили для карточки курса */
+.course-card {
+    position: relative;
+    aspect-ratio: 1 / 1; /* Делаем карточку квадратной */
+    border-radius: 12px;
+    overflow: hidden; /* Обрезаем все, что выходит за скругленные углы */
+    box-shadow: 0 4px 15px var(--shadow-light-color);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.course-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px var(--shadow-color);
+}
+
+/* Изображение-обложка */
+.course-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Картинка будет красиво обрезана, а не сжата */
+    transition: filter 0.2s;
+}
+
+.course-card:hover .course-card-image {
+    filter: brightness(1.1);
+}
+
+/* Запасной вариант (fallback), если картинки нет */
+.course-card-fallback {
+    width: 100%;
+    height: 100%;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    gap: 15px;
-}
-
-.courses-header h2 {
-    margin: 0;
-    text-align: left;
-}
-
-.courses-header-actions {
-    display: flex;
-    gap: 8px; /* Немного уменьшим отступ */
-}
-
-/* Общий стиль для всех новых кнопок-иконок */
-.courses-header-actions button {
-    width: 40px;  /* Фиксированная ширина */
-    height: 40px; /* Фиксированная высота */
-    padding: 0;   /* Убираем внутренние отступы */
-    display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 8px; /* Сделаем углы чуть круглее */
+    text-align: center;
+    padding: 15px;
+    background: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    font-size: 1.1em;
+    font-weight: 500;
 }
 
-/* Размер иконок внутри кнопок */
-.courses-header-actions button i {
-    width: 20px;
-    height: 20px;
+/* Заголовок, который накладывается поверх картинки */
+.course-card-title {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 25px 15px 15px;
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 50%, transparent 100%);
+    color: white;
+    font-weight: bold;
+    font-size: 1em;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+    margin: 0;
+}
+
+/* Стили для обычного элемента-урока (без изменений) */
+.lesson-item {
+    background-color: var(--input-bg-color);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--accent-color);
+    border-radius: 8px;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.lesson-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--shadow-light-color);
+    border-left-color: var(--accent);
+}
+
+.lesson-item h4 {
+    margin: 0 0 5px 0;
+    color: var(--heading-color);
 }
 
 /* ======================================================= */
@@ -13459,4 +13510,187 @@ body.synthwave-mode .lesson-content-container strong,
 body.synthwave-mode .lesson-content-container b {
     /* Просто делаем его стандартным цветом текста для текущей темы. */
     color: var(--text-color);
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ РАЗРЫВА СТРАНИЦЫ В РЕДАКТОРЕ   === */
+/* ======================================================= */
+
+.page-break-editor-block {
+    text-align: center;
+    margin: 20px 0;
+    padding: 10px;
+    border-top: 2px dashed var(--border-color);
+    border-bottom: 2px dashed var(--border-color);
+    color: var(--secondary-text-color);
+    font-size: 0.9em;
+    font-weight: 500;
+    letter-spacing: 1px;
+    user-select: none; /* Чтобы текст нельзя было выделить */
+}
+
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ПАГИНАЦИИ УРОКОВ              === */
+/* ======================================================= */
+
+.lesson-page-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+.pagination-btn {
+    background-color: var(--input-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    min-width: 36px;
+    height: 36px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.pagination-btn:hover {
+    background-color: var(--input-hover-bg-color);
+    border-color: var(--accent-color);
+}
+
+.pagination-btn.active {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ ЗАГРУЗКИ ИЗОБРАЖЕНИЙ          === */
+/* ======================================================= */
+
+.image-upload-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+.image-upload-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 500;
+    color: var(--secondary-text-color);
+    transition: all 0.2s;
+}
+
+.image-upload-tab.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+}
+
+.image-upload-tab-content {
+    display: none;
+}
+
+.image-upload-tab-content.active {
+    display: block;
+}
+
+.cover-image-preview {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: block;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+
+.upload-button-wrapper {
+    margin-top: 10px;
+}
+
+.custom-file-upload-btn-small {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* ======================================================= */
+/* ===         СТИЛИ ДЛЯ НАСТРАИВАЕМЫХ ИЗОБРАЖЕНИЙ       === */
+/* ======================================================= */
+
+/* Обертка для изображения и подписи */
+.image-block-container {
+    padding: 8px 0;
+    width: 100%;
+}
+
+/* Стили для выравнивания */
+.image-block-container.img-align-left { text-align: left; }
+.image-block-container.img-align-center { text-align: center; }
+.image-block-container.img-align-right { text-align: right; }
+
+.image-block-container img {
+    max-width: 100%;
+    border-radius: 8px;
+    display: inline-block; /* Важно для работы выравнивания */
+    vertical-align: middle;
+}
+
+/* Стили для размеров */
+.image-block-container.img-size-small img { width: 33.33%; }
+.image-block-container.img-size-medium img { width: 66.66%; }
+.image-block-container.img-size-full img { width: 100%; }
+
+/* Стиль для подписи */
+.image-caption {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.9em;
+    color: var(--secondary-text-color);
+    text-align: center; /* Подпись всегда по центру относительно картинки */
+}
+
+/* Стили для модального окна настроек */
+.image-settings-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.image-settings-controls button {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-settings-controls button i {
+    width: 18px;
+    height: 18px;
+}
+
+/* Стиль для активной кнопки в настройках */
+.image-settings-controls .btn-secondary-small.active {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-text);
+    border-color: var(--button-primary-bg);
 }

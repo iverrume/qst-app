@@ -5878,12 +5878,12 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91g
 
 const mainApp = (function() {
     'use strict';
-// === НАЧАЛО НОВОГО КОДА: Переменные для YouTube API ===
+// === Переменные для YouTube API ===
     let isYTAPILoaded = false;
     let ytInitializationQueue = [];
     let activeAddBlockMenuListener = null;
-    // === КОНЕЦ НОВОГО КОДА ===
-// === НАЧАЛО НОВОГО КОДА: Вспомогательная функция Debounce ===
+
+// === Вспомогательная функция Debounce ===
     /**
      * Создает и возвращает новую debounced-версию переданной функции.
      */
@@ -5906,7 +5906,7 @@ const mainApp = (function() {
 
         return debounced;
     }
-    // === КОНЕЦ НОВОГО КОДА ===
+
 
     const THEMES = {
         'synthwave-mode':  { name: 'Неон', icon: '🔭' },
@@ -5918,7 +5918,10 @@ const mainApp = (function() {
     let backButtonPressedOnce = false;
     let editorStateBeforeViewMode = null;
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
+    let currentLessonPage = 0; // Текущая активная страница урока
+    let lessonPages = []; // Массив, где каждый элемент - это массив блоков для одной страницы
+
+
 
     // 1. Создаём единый объект для языков, доступный для всего модуля.
     const SUPPORTED_LANGS = {
@@ -6476,6 +6479,20 @@ const mainApp = (function() {
             access_key_activate_button: "Активировать",
 
             auth_required_to_view: 'Для просмотра этого раздела необходимо войти в аккаунт.',
+
+            course_cover_url_placeholder: "URL обложки курса (необязательно)...",
+            upload_from_device: "Загрузить с устройства",
+            upload_by_url: "По ссылке",
+            choose_image_btn: "Выбрать изображение...",
+            uploading_image: "Загрузка изображения...",
+            image_settings_title: "Настройки изображения",
+            image_url_label: "URL изображения:",
+            image_size_label: "Размер:",
+            image_size_small: "Маленький",
+            image_size_medium: "Средний",
+            image_size_full: "По ширине",
+            image_align_label: "Выравнивание:",
+            image_caption_label: "Подпись (необязательно):",
 
         },
         kk: {
@@ -7717,6 +7734,21 @@ const mainApp = (function() {
             access_key_activate_button: "Activate",
 
             auth_required_to_view: 'You must be logged in to view this section.',
+
+            course_cover_url_placeholder: "Course cover URL (optional)...",
+            upload_from_device: "Upload from device",
+            upload_by_url: "By Link",
+            choose_image_btn: "Choose image...",
+            uploading_image: "Uploading image...",
+
+            image_settings_title: "Image Settings",
+            image_url_label: "Image URL:",
+            image_size_label: "Size:",
+            image_size_small: "Small",
+            image_size_medium: "Medium",
+            image_size_full: "Full Width",
+            image_align_label: "Alignment:",
+            image_caption_label: "Caption (optional):",
         }
 
     };
@@ -20823,6 +20855,7 @@ const mainApp = (function() {
         renderCoursesList(); // Запускаем отрисовку списка курсов
     }
 
+
     /**
      * Устанавливает слушатель на коллекцию курсов и отображает их в реальном времени.
      */
@@ -20837,29 +20870,22 @@ const mainApp = (function() {
             return;
         }
 
-        // === НАЧАЛО НОВОГО КОДА: Проверка авторизации ===
         if (!currentUser) {
-            // Показываем кнопку "Создать курс" только авторизованным пользователям
             createCourseBtn.classList.add('hidden');
-            
-            // Формируем "заглушку" с сообщением и кнопкой входа
             coursesList.innerHTML = `
                 <div class="auth-required-placeholder">
                     <p>${_('auth_required_to_view')}</p>
                     <button id="loginForCoursesBtn" class="btn">${ChatModule._chat('auth_login_button')}</button>
                 </div>
             `;
-            // Навешиваем обработчик на новую кнопку
             getEl('loginForCoursesBtn').addEventListener('click', () => {
                 ChatModule.openAuthModal();
             });
-            return; // Прерываем выполнение функции, чтобы не делать запрос к базе
+            return;
         }
-        // === КОНЕЦ НОВОГО КОДА ===
 
         coursesList.innerHTML = `<div class="course-item-placeholder"><div class="loading-spinner"></div></div>`;
         
-        // Эта строка теперь может быть здесь, так как мы уже уверены, что currentUser существует
         createCourseBtn.classList.remove('hidden');
 
         coursesListener = db.collection('courses').orderBy('createdAt', 'desc')
@@ -20873,45 +20899,48 @@ const mainApp = (function() {
                 
                 snapshot.forEach(doc => {
                     const course = { id: doc.id, ...doc.data() };
-                    const courseEl = document.createElement('div');
-                    courseEl.className = 'course-item';
+                    const courseCard = document.createElement('div');
+                    courseCard.className = 'course-card';
 
                     const isOwner = currentUser && currentUser.uid === course.ownerId;
+                    
+                    // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Убираем escapeHTML для URL обложки ===
+                    const backgroundHTML = course.coverUrl 
+                        ? `<img src="${course.coverUrl}" class="course-card-image" alt="Обложка курса">`
+                        : `<div class="course-card-fallback">${escapeHTML(course.title)}</div>`;
+                    // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
                     const actionsHTML = isOwner ? `
                         <div class="item-actions">
-                            <button title="Редактировать курс" class="edit-course-btn" data-course-id="${course.id}"><i data-lucide="pencil"></i></button>
+                            <button title="Редактировать курс" class="edit-course-btn"><i data-lucide="pencil"></i></button>
                         </div>
                     ` : '';
 
-                    courseEl.innerHTML = `
-                        <h3>${escapeHTML(course.title)}</h3>
-                        <p>${escapeHTML(course.description || '')}</p>
+                    courseCard.innerHTML = `
+                        ${backgroundHTML}
+                        <h3 class="course-card-title">${escapeHTML(course.title)}</h3>
                         ${actionsHTML}
                     `;
                     
-                    courseEl.addEventListener('click', (e) => {
+                    courseCard.addEventListener('click', (e) => {
                         if (e.target.closest('.edit-course-btn')) {
                             showEditCourseModal(course);
                         } else {
                             openCourseDetailView(course.id, course.title);
                         }
                     });
-                    coursesList.appendChild(courseEl);
+                    coursesList.appendChild(courseCard);
                 });
 
                 if (window.lucide) lucide.createIcons();
 
             }, error => {
                 console.error("Ошибка загрузки курсов:", error);
-                if (error.code === 'permission-denied') {
-                    // Эта ошибка больше не должна появляться у неавторизованных пользователей,
-                    // но оставим ее как запасной вариант.
-                    coursesList.innerHTML = `<div class="course-item-placeholder">Ошибка: нет прав на чтение. Проверьте правила безопасности Firestore.</div>`;
-                } else {
-                    coursesList.innerHTML = `<div class="course-item-placeholder">Ошибка загрузки курсов.</div>`;
-                }
+                coursesList.innerHTML = `<div class="course-item-placeholder">Ошибка загрузки курсов.</div>`;
             });
     }
+
+
     /**
      * Открывает экран с уроками конкретного курса.
      * @param {string} courseId - ID курса.
@@ -21014,14 +21043,50 @@ const mainApp = (function() {
         const modal = getEl('courseCreateModal');
         if (!modal) return;
         
-        getEl('courseNameInput').value = '';
-        getEl('courseDescriptionInput').value = '';
+        const nameInput = getEl('courseNameInput');
+        const descInput = getEl('courseDescriptionInput');
+        const coverUrlInput = getEl('courseCoverUrlInput');
+        const coverPreview = getEl('courseCoverPreview');
+        const coverFileInput = getEl('courseCoverFileInput');
+
+        nameInput.value = '';
+        descInput.value = '';
+        coverUrlInput.value = '';
+        coverPreview.src = '';
+        coverPreview.classList.add('hidden');
+        coverFileInput.value = '';
+
+        const updatePreview = () => {
+            const url = coverUrlInput.value.trim();
+            if (url) {
+                coverPreview.src = url;
+                coverPreview.classList.remove('hidden');
+            } else {
+                coverPreview.classList.add('hidden');
+            }
+        };
+
+        coverUrlInput.addEventListener('input', updatePreview);
+
+        coverFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const uploadedUrl = await uploadImageAndGetUrl(file);
+                if (uploadedUrl) {
+                    coverUrlInput.value = uploadedUrl;
+                    updatePreview();
+                }
+            }
+        };
         
         getEl('courseCreateConfirmBtn').onclick = handleCreateCourse;
-        getEl('courseCreateCancelBtn').onclick = () => ChatModule.closeModal('courseCreateModal');
+        getEl('courseCreateCancelBtn').onclick = () => {
+            coverUrlInput.removeEventListener('input', updatePreview);
+            ChatModule.closeModal('courseCreateModal');
+        };
 
         ChatModule.showModal('courseCreateModal');
-        getEl('courseNameInput').focus();
+        nameInput.focus();
     }
 
     /**
@@ -21030,6 +21095,7 @@ const mainApp = (function() {
     async function handleCreateCourse() {
         const title = getEl('courseNameInput').value.trim();
         const description = getEl('courseDescriptionInput').value.trim();
+        const coverUrl = getEl('courseCoverUrlInput').value.trim(); // Получаем URL обложки
 
         if (!title) {
             alert('Пожалуйста, введите название курса.');
@@ -21048,17 +21114,17 @@ const mainApp = (function() {
             const courseData = {
                 title: title,
                 description: description,
+                coverUrl: coverUrl, // Сохраняем URL
                 ownerId: currentUser.uid,
                 ownerName: currentUser.displayName || 'Аноним',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lessons: [] // Пустой массив для будущих уроков
+                lessons: []
             };
 
             await db.collection('courses').add(courseData);
             
             showToast('Курс успешно создан!', 'success');
             ChatModule.closeModal('courseCreateModal');
-            // Список обновится автоматически благодаря onSnapshot
 
         } catch (error) {
             console.error("Ошибка создания курса:", error);
@@ -21067,7 +21133,6 @@ const mainApp = (function() {
             hideGlobalLoader();
         }
     }
-
 
     /**
      * Показывает модальное окно для создания нового урока.
@@ -21170,7 +21235,8 @@ const mainApp = (function() {
     async function renderLessonContent(courseId, lessonId) {
         if (!db) return;
         lessonContentContainer.innerHTML = `<div class="course-item-placeholder"><div class="loading-spinner"></div></div>`;
-        
+        getEl('lessonPageNavigation').classList.add('hidden'); // Скрываем пагинацию на время загрузки
+
         try {
             const courseDoc = await db.collection('courses').doc(courseId).get();
             if (!courseDoc.exists) throw new Error("Курс не найден.");
@@ -21181,51 +21247,44 @@ const mainApp = (function() {
 
             const isOwner = currentUser && currentUser.uid === courseData.ownerId;
             
-            lessonContentContainer.innerHTML = ''; 
             lessonContentContainer.className = isOwner ? 'lesson-content-container lesson-editor' : 'lesson-content-container lesson-viewer';
 
-            // === НАЧАЛО ИЗМЕНЕНИЙ: Сбрасываем режим просмотра при открытии ===
             if (isOwner) {
                 saveLessonBtn.classList.remove('hidden');
                 toggleViewModeBtn.classList.remove('hidden');
-                // Принудительно убираем класс режима просмотра
                 lessonContentContainer.classList.remove('view-mode');
-                // Устанавливаем иконку "глаз" по умолчанию
                 toggleViewModeBtn.innerHTML = `<i data-lucide="eye"></i>`;
                 toggleViewModeBtn.title = "Режим просмотра";
             } else {
                 saveLessonBtn.classList.add('hidden');
                 toggleViewModeBtn.classList.add('hidden');
             }
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
             const content = lesson.content || [];
 
-            if (content.length > 0) {
-                content.forEach(block => {
-                    const blockEl = createContentBlock(block.type, block.content, isOwner, lesson.title);
-                    lessonContentContainer.appendChild(blockEl);
-
-                    if (!isOwner && block.type === 'test') {
-                        const testButton = blockEl.querySelector('.test-block-viewer');
-                        testButton?.addEventListener('click', () => {
-                            startTestFromLesson(block.content.fileName, block.content.fileContent);
-                        });
-                    }
-                });
-            } else {
-                if (isOwner) {
+            // === ГЛАВНОЕ ИЗМЕНЕНИЕ: ЛОГИКА СТРАНИЦ ===
+            if (isOwner) {
+                // В режиме редактора показываем ВСЕ блоки, включая разрывы
+                lessonContentContainer.innerHTML = '';
+                if (content.length > 0) {
+                    content.forEach(block => {
+                        const blockEl = createContentBlock(block.type, block.content, true, lesson.title);
+                        lessonContentContainer.appendChild(blockEl);
+                    });
+                } else {
                     const firstBlock = createContentBlock('paragraph', '', true);
                     lessonContentContainer.appendChild(firstBlock);
-                    firstBlock.focus();
-                } else {
-                    lessonContentContainer.innerHTML = `<div class="course-item-placeholder">${_('lesson_viewer_placeholder')}</div>`;
                 }
-            }
-            
-            if (isOwner) {
                 setupEditorEventListeners(lessonContentContainer);
+            } else {
+                // В режиме просмотра делим на страницы и показываем только текущую
+                lessonPages = splitContentIntoPages(content);
+                currentLessonPage = 0; // Всегда начинаем с первой страницы
+                renderCurrentLessonPage();
+                renderPaginationControls();
             }
+            // === КОНЕЦ ИЗМЕНЕНИЯ ===
+
             if (window.lucide) lucide.createIcons();
             initKaraokeSubtitles(lessonContentContainer);
 
@@ -21234,6 +21293,130 @@ const mainApp = (function() {
             lessonContentContainer.innerHTML = `<div class="course-item-placeholder">Не удалось загрузить урок.</div>`;
         }
     }
+
+    /**
+     * Разделяет один массив блоков контента на массив страниц.
+     * @param {Array} contentBlocks - Исходный массив блоков.
+     * @returns {Array<Array<object>>} - Массив, где каждый элемент - массив блоков для одной страницы.
+     */
+    function splitContentIntoPages(contentBlocks) {
+        const pages = [];
+        let currentPage = [];
+        
+        contentBlocks.forEach(block => {
+            if (block.type === 'pagebreak') {
+                // Если текущая страница не пуста, добавляем ее в общий массив
+                if (currentPage.length > 0) {
+                    pages.push(currentPage);
+                }
+                // Начинаем новую страницу
+                currentPage = [];
+            } else {
+                currentPage.push(block);
+            }
+        });
+
+        // Добавляем последнюю страницу, если на ней что-то есть
+        if (currentPage.length > 0) {
+            pages.push(currentPage);
+        }
+
+        // Если в итоге страниц нет, создаем одну пустую, чтобы избежать ошибок
+        if (pages.length === 0) {
+            pages.push([]);
+        }
+
+        return pages;
+    }
+
+    /**
+     * Отрисовывает кнопки навигации по страницам урока.
+     */
+    function renderPaginationControls() {
+        const navContainer = getEl('lessonPageNavigation');
+        if (!navContainer) return;
+
+        navContainer.innerHTML = '';
+        if (lessonPages.length <= 1) {
+            navContainer.classList.add('hidden');
+            return;
+        }
+
+        navContainer.classList.remove('hidden');
+
+        // Кнопка "Назад"
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'pagination-btn';
+        prevBtn.innerHTML = '<i data-lucide="arrow-left"></i>';
+        prevBtn.disabled = currentLessonPage === 0;
+        prevBtn.onclick = () => switchToLessonPage(currentLessonPage - 1);
+        navContainer.appendChild(prevBtn);
+
+        // Кнопки с номерами страниц
+        lessonPages.forEach((_, index) => {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = 'pagination-btn';
+            pageBtn.textContent = index + 1;
+            if (index === currentLessonPage) {
+                pageBtn.classList.add('active');
+            }
+            pageBtn.onclick = () => switchToLessonPage(index);
+            navContainer.appendChild(pageBtn);
+        });
+
+        // Кнопка "Вперед"
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'pagination-btn';
+        nextBtn.innerHTML = '<i data-lucide="arrow-right"></i>';
+        nextBtn.disabled = currentLessonPage === lessonPages.length - 1;
+        nextBtn.onclick = () => switchToLessonPage(currentLessonPage + 1);
+        navContainer.appendChild(nextBtn);
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    /**
+     * Переключает на указанную страницу урока и перерисовывает контент.
+     * @param {number} pageIndex - Индекс страницы для отображения.
+     */
+    function switchToLessonPage(pageIndex) {
+        if (pageIndex < 0 || pageIndex >= lessonPages.length) return;
+        currentLessonPage = pageIndex;
+        renderCurrentLessonPage();
+        renderPaginationControls();
+    }
+
+    /**
+     * Отрисовывает содержимое только текущей активной страницы урока.
+     */
+    function renderCurrentLessonPage() {
+        if (!lessonContentContainer) return;
+
+        const isOwner = lessonContentContainer.classList.contains('lesson-editor');
+        const pageContent = lessonPages[currentLessonPage] || [];
+        lessonContentContainer.innerHTML = ''; // Очищаем
+
+        if (pageContent.length > 0) {
+            pageContent.forEach(block => {
+                const lessonTitle = getEl('lessonViewTitle').textContent;
+                const blockEl = createContentBlock(block.type, block.content, isOwner, lessonTitle);
+                lessonContentContainer.appendChild(blockEl);
+
+                if (!isOwner && block.type === 'test') {
+                    const testButton = blockEl.querySelector('.test-block-viewer');
+                    testButton?.addEventListener('click', () => {
+                        startTestFromLesson(block.content.fileName, block.content.fileContent);
+                    });
+                }
+            });
+        } else {
+            lessonContentContainer.innerHTML = `<div class="course-item-placeholder">${_('lesson_viewer_placeholder')}</div>`;
+        }
+
+        if (window.lucide) lucide.createIcons();
+        initKaraokeSubtitles(lessonContentContainer);
+    }
+
 
     /**
      * Преобразует обычную ссылку YouTube в "чистую" ссылку для встраивания.
@@ -21268,6 +21451,7 @@ const mainApp = (function() {
     }
 
 
+
     /**
      * Создает DOM-элемент для блока контента вместе с оберткой и элементами управления.
      * @param {string} type - Тип блока.
@@ -21278,51 +21462,60 @@ const mainApp = (function() {
     function createContentBlock(type = 'paragraph', content = '', isEditable = false, lessonTitle = '') {
         const wrapper = document.createElement('div');
         wrapper.className = 'content-block-wrapper';
+        if (!content && isEditable) {
+             wrapper.classList.add('is-empty');
+        }
 
         const block = document.createElement('div');
         block.className = 'content-block';
         block.dataset.type = type;
 
+        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Кнопка "Редактировать" теперь доступна всегда для изображений ===
         const canBeEdited = ['image', 'video'].includes(type);
-        // === НАЧАЛО ИЗМЕНЕНИЙ: Добавляем кнопки перемещения ===
         const actionsHTML = isEditable ? `
             <div class="block-actions">
-                <div class="block-move-controls">
-                    <button class="move-block-up-btn" title="${_('move_block_up')}"><i data-lucide="chevron-up"></i></button>
-                    <button class="move-block-down-btn" title="${_('move_block_down')}"><i data-lucide="chevron-down"></i></button>
-                </div>
+                <button class="move-block-up-btn" title="${_('move_block_up')}"><i data-lucide="chevron-up"></i></button>
                 <button class="add-block-btn" title="Добавить блок"><i data-lucide="plus-circle"></i></button>
                 ${canBeEdited ? '<button class="edit-block-btn" title="Редактировать"><i data-lucide="pencil"></i></button>' : ''}
                 <button class="delete-block-btn" title="Удалить"><i data-lucide="trash-2"></i></button>
+                <button class="move-block-down-btn" title="${_('move_block_down')}"><i data-lucide="chevron-down"></i></button>
             </div>
         ` : '';
-        // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
         const handleHTML = isEditable ? `<div class="block-handle" draggable="true"><i data-lucide="grip-vertical"></i></div>` : '';
 
         switch (type) {
             case 'paragraph':
             case 'h2':
-                // === НАЧАЛО ИЗМЕНЕНИЙ ===
-                // Теперь оба типа редактируемы, а тег p/h2 находится внутри
-                block.innerHTML = type === 'h2' ? `<h2>${content}</h2>` : `<p>${content}</p>`;
+                const tagName = type === 'h2' ? 'h2' : 'p';
+                const innerEl = document.createElement(tagName);
+                innerEl.innerHTML = content;
                 if (isEditable) {
-                    block.contentEditable = true;
-                    block.dataset.placeholder = _('block_placeholder');
+                    innerEl.contentEditable = true; 
+                    innerEl.dataset.placeholder = _('block_placeholder');
                 }
-                // === КОНЕЦ ИЗМЕНЕНИЙ ===
+                block.appendChild(innerEl);
                 break;
             case 'image':
-                block.innerHTML = `<img src="${escapeHTML(content)}" alt="Изображение из урока">`;
+                // === НАЧАЛО ИЗМЕНЕНИЙ: Новая структура для изображений ===
+                const imgData = (typeof content === 'object') ? content : { src: content, size: 'medium', align: 'center', caption: '' };
+                
+                block.innerHTML = `
+                    <figure class="image-block-container img-size-${imgData.size || 'medium'} img-align-${imgData.align || 'center'}" 
+                            data-size="${imgData.size || 'medium'}" 
+                            data-align="${imgData.align || 'center'}">
+                        <img src="${imgData.src}" alt="${escapeHTML(imgData.caption || 'Изображение из урока')}">
+                        ${imgData.caption ? `<figcaption class="image-caption">${escapeHTML(imgData.caption)}</figcaption>` : ''}
+                    </figure>
+                `;
                 break;
+            // === КОНЕЦ ИЗМЕНЕНИЙ ===
             case 'video':
                 const videoUrl = (typeof content === 'object') ? content.url : content;
                 const subtitlesEnabled = (typeof content === 'object') ? content.subtitlesEnabled : false;
                 
-                // === НАЧАЛО ИЗМЕНЕНИЙ ===
-                block.dataset.originalUrl = videoUrl; // Сохраняем оригинальную ссылку
-                block.dataset.subtitles = subtitlesEnabled; // Сохраняем состояние субтитров
-                // === КОНЕЦ ИЗМЕНЕНИЙ ===
+                block.dataset.originalUrl = videoUrl;
+                block.dataset.subtitles = subtitlesEnabled;
                 
                 let finalEmbedUrl = youtubeEmbedUrl(videoUrl);
                 if (finalEmbedUrl.includes('?')) {
@@ -21335,35 +21528,26 @@ const mainApp = (function() {
                 let subtitlesContainerHTML = '';
                 if (subtitlesEnabled) {
                     block.dataset.videoId = new URL(finalEmbedUrl).pathname.split('/').pop();
-                    
-                    subtitlesContainerHTML = `
-                        <div class="karaoke-subtitles-container">
-                            <p class="subtitle-line prev"></p>
-                            <p class="subtitle-line current">(Загрузка субтитров...)</p>
-                            <p class="subtitle-line next"></p>
-                        </div>
-                    `;
+                    subtitlesContainerHTML = `<div class="karaoke-subtitles-container"><p class="subtitle-line prev"></p><p class="subtitle-line current">(Загрузка субтитров...)</p><p class="subtitle-line next"></p></div>`;
                 }
 
                 const playerTitle = `Видеоплеер для урока: ${escapeHTML(lessonTitle)}`;
-                block.innerHTML = `
-                    <div class="video-wrapper"><iframe id="${iframeId}" title="${playerTitle}" src="${finalEmbedUrl}" frameborder="0" allowfullscreen></iframe></div>
-                    ${subtitlesContainerHTML}
-                `;
+                block.innerHTML = `<div class="video-wrapper"><iframe id="${iframeId}" title="${playerTitle}" src="${finalEmbedUrl}" frameborder="0" allowfullscreen></iframe></div>${subtitlesContainerHTML}`;
                 break;
 
             case 'hr':
                 block.innerHTML = '<hr>';
                 break;
+            case 'pagebreak':
+                if (isEditable) {
+                    block.innerHTML = `<div class="page-break-editor-block">КОНЕЦ СТРАНИЦЫ</div>`;
+                }
+                break;
             case 'test':
                 block.dataset.filename = content.fileName || '';
                 block.dataset.fileContent = content.fileContent || '';
                 if (isEditable) {
-                    block.innerHTML = `
-                        <div class="test-block-editor">
-                            <i data-lucide="clipboard-check"></i>
-                            <span class="test-block-filename">${escapeHTML(content.fileName || 'Тест не выбран')}</span>
-                        </div>`;
+                    block.innerHTML = `<div class="test-block-editor"><i data-lucide="clipboard-check"></i><span class="test-block-filename">${escapeHTML(content.fileName || 'Тест не выбран')}</span></div>`;
                 } else {
                     block.innerHTML = `<button class="test-block-viewer">${_('start_lesson_test_button')}</button>`;
                 }
@@ -21380,35 +21564,48 @@ const mainApp = (function() {
         return wrapper;
     }
 
-
     /**
      * Собирает текущее содержимое из DOM-элементов редактора.
      * @returns {Array<object>} - Массив объектов с блоками контента.
      */
     function getContentFromEditor() {
         const contentBlocks = [];
-        lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach(wrapper => {
+        lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach((wrapper) => {
             const blockEl = wrapper.querySelector('.content-block');
             if (!blockEl) return;
 
             const type = blockEl.dataset.type || 'paragraph';
             let content = '';
-            
             let isBlockEffectivelyEmpty = false;
 
             switch(type) {
                 case 'paragraph':
                 case 'h2':
-                    const visibleText = blockEl.innerText || blockEl.textContent;
-                    if (!visibleText.trim()) {
+                    const innerContentEl = blockEl.querySelector('p, h2');
+                    if (!innerContentEl || (innerContentEl.textContent.trim() === '' && innerContentEl.children.length === 0)) {
                         isBlockEffectivelyEmpty = true;
+                    } else {
+                        content = innerContentEl.innerHTML;
                     }
-                    content = blockEl.innerHTML;
                     break;
                 case 'image':
-                    content = blockEl.querySelector('img')?.src || '';
-                    if (!content) isBlockEffectivelyEmpty = true;
+                    // === НАЧАЛО ИЗМЕНЕНИЙ: Собираем объект с данными ===
+                    const figure = blockEl.querySelector('.image-block-container');
+                    const img = blockEl.querySelector('img');
+                    const caption = blockEl.querySelector('.image-caption');
+                    
+                    if (!img || !img.src) {
+                        isBlockEffectivelyEmpty = true;
+                    } else {
+                        content = {
+                            src: img.src,
+                            size: figure.dataset.size || 'medium',
+                            align: figure.dataset.align || 'center',
+                            caption: caption ? caption.textContent : ''
+                        };
+                    }
                     break;
+                // === КОНЕЦ ИЗМЕНЕНИЙ ===
                 case 'video':
                     content = {
                         url: blockEl.dataset.originalUrl || '',
@@ -21417,7 +21614,10 @@ const mainApp = (function() {
                     if (!content.url) isBlockEffectivelyEmpty = true;
                     break;
                 case 'hr':
-                    content = '';
+                    content = ''; 
+                    break;
+                case 'pagebreak':
+                    content = ''; 
                     break;
                 case 'test':
                     content = {
@@ -21431,82 +21631,24 @@ const mainApp = (function() {
                     isBlockEffectivelyEmpty = true;
             }
             
-            if (!isBlockEffectivelyEmpty) {
+            if (!isBlockEffectivelyEmpty || type === 'hr' || type === 'pagebreak') {
                 contentBlocks.push({ type, content });
             }
         });
         return contentBlocks;
     }
 
-
-    /**
-     * Собирает текущее содержимое из DOM-элементов редактора.
-     * @returns {Array<object>} - Массив объектов с блоками контента.
-     */
-    function getContentFromEditor() {
-        const contentBlocks = [];
-        lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach(wrapper => {
-            const blockEl = wrapper.querySelector('.content-block');
-            if (!blockEl) return;
-
-            const type = blockEl.dataset.type || 'paragraph';
-            let content = '';
-            
-            let isBlockEffectivelyEmpty = false;
-
-            switch(type) {
-                case 'paragraph':
-                case 'h2':
-                    const visibleText = blockEl.innerText || blockEl.textContent;
-                    if (!visibleText.trim()) {
-                        isBlockEffectivelyEmpty = true;
-                    }
-                    content = blockEl.innerHTML;
-                    break;
-                case 'image':
-                    content = blockEl.querySelector('img')?.src || '';
-                    if (!content) isBlockEffectivelyEmpty = true;
-                    break;
-                case 'video':
-                    content = {
-                        url: blockEl.dataset.originalUrl || '',
-                        subtitlesEnabled: blockEl.dataset.subtitles === 'true'
-                    };
-                    if (!content.url) isBlockEffectivelyEmpty = true;
-                    break;
-                case 'hr':
-                    content = '';
-                    break;
-                case 'test':
-                    content = {
-                        fileName: blockEl.dataset.filename,
-                        fileContent: blockEl.dataset.fileContent
-                    };
-                    if (!content.fileName || !content.fileContent) isBlockEffectivelyEmpty = true;
-                    break;
-                default:
-                    content = '';
-                    isBlockEffectivelyEmpty = true;
-            }
-            
-            if (!isBlockEffectivelyEmpty) {
-                contentBlocks.push({ type, content });
-            }
-        });
-        return contentBlocks;
-    }
 
 
     /**
      * Настраивает все слушатели событий для контейнера редактора, включая Drag-and-Drop и двойной клик.
+     * ВЕРСИЯ 2.0 (С ИСПРАВЛЕННЫМ ПОЗИЦИОНИРОВАНИЕМ НОВЫХ БЛОКОВ)
      * @param {HTMLElement} container - DOM-элемент .lesson-content-container.
      */
     function setupEditorEventListeners(container) {
-        // ======== НАЧАЛО ИСПРАВЛЕНИЯ: Предотвращаем повторное добавление слушателей ========
         if (container._listenersAttached) {
             return;
         }
-        // ======== КОНЕЦ ИСПРАВЛЕНИЯ ========
 
         let activeBlock = null;
         let draggedElement = null;
@@ -21514,11 +21656,6 @@ const mainApp = (function() {
         let isTouch = false;
         let lastTapTime = 0;
 
-        /**
-         * Очищает HTML-строку от ненужных атрибутов (style, class) и тегов.
-         * @param {string} htmlString - Исходный HTML.
-         * @returns {string} - Очищенный HTML.
-         */
         const sanitizePastedHtml = (htmlString) => {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = htmlString;
@@ -21556,7 +21693,6 @@ const mainApp = (function() {
 
             let blocksToInsert = [];
             
-            // Если вставленный контент содержит блочные элементы, разделяем по ним
             if (tempDiv.querySelector('p, h1, h2, h3, h4, h5, h6, blockquote, li')) {
                 Array.from(tempDiv.childNodes).forEach(node => {
                     if (node.nodeType === Node.ELEMENT_NODE && node.textContent.trim() !== '') {
@@ -21566,7 +21702,6 @@ const mainApp = (function() {
                     }
                 });
             } else {
-                // Иначе разделяем по тегам <br> или двойным переносам строк
                 const parts = sanitizedContent.split(/<br\s*\/?>\s*<br\s*\/?>|<br\s*\/?>/gi);
                 parts.forEach(part => {
                     if (part.trim() !== '') {
@@ -21587,16 +21722,16 @@ const mainApp = (function() {
                 const isCurrentBlockEmpty = currentBlockEl && (currentBlockEl.textContent.trim() === '' && !currentBlockEl.querySelector('img, iframe, hr'));
 
                 if (isFirstBlock && isCurrentBlockEmpty) {
-                    currentBlockEl.innerHTML = blockHTML;
+                    currentBlockEl.querySelector('p, h2').innerHTML = blockHTML;
                 } else {
                     const newBlockWrapper = createContentBlock('paragraph', '', true);
-                    newBlockWrapper.querySelector('.content-block').innerHTML = blockHTML;
+                    newBlockWrapper.querySelector('.content-block p, .content-block h2').innerHTML = blockHTML;
                     lastWrapper.insertAdjacentElement('afterend', newBlockWrapper);
                     lastWrapper = newBlockWrapper;
                 }
             });
 
-            const lastEditableBlock = lastWrapper.querySelector('.content-block');
+            const lastEditableBlock = lastWrapper.querySelector('.content-block [contenteditable="true"]');
             if (lastEditableBlock) {
                 lastEditableBlock.focus();
                 const range = document.createRange();
@@ -21607,28 +21742,23 @@ const mainApp = (function() {
                 sel.addRange(range);
             }
         });
-        // === КОНЕЦ НОВОГО КОДА ===
 
-        // --- Универсальный обработчик кликов/тапов ---
         container.addEventListener('click', (e) => {
             const currentTime = new Date().getTime();
             const timeDifference = currentTime - lastTapTime;
             lastTapTime = currentTime;
 
-            // === НАЧАЛО ИЗМЕНЕНИЙ: Находим все возможные кнопки ===
             const deleteBtn = e.target.closest('.delete-block-btn');
             const editBtn = e.target.closest('.edit-block-btn');
             const addBtn = e.target.closest('.add-block-btn');
             const moveUpBtn = e.target.closest('.move-block-up-btn');
             const moveDownBtn = e.target.closest('.move-block-down-btn');
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
 
             if (addBtn) {
                 showAddBlockMenu(addBtn.closest('.content-block-wrapper'));
                 return;
             }
 
-            // === НАЧАЛО ИЗМЕНЕНИЙ: Обрабатываем все кнопки в одном блоке ===
             if (deleteBtn || editBtn || moveUpBtn || moveDownBtn) {
                 const wrapper = (deleteBtn || editBtn || moveUpBtn || moveDownBtn).closest('.content-block-wrapper');
                 if (deleteBtn) handleDeleteBlock(wrapper);
@@ -21637,8 +21767,6 @@ const mainApp = (function() {
                 if (moveDownBtn) handleMoveBlockDown(wrapper);
                 return;
             }
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
-
             
             if (timeDifference < 300 && timeDifference > 0) {
                 if (e.target.closest('.content-block-wrapper')) return;
@@ -21664,14 +21792,14 @@ const mainApp = (function() {
                     container.appendChild(newBlockWrapper);
                 }
                 
-                newBlockWrapper.querySelector('.content-block').focus();
+                if (window.lucide) lucide.createIcons();
+                newBlockWrapper.querySelector('.content-block p').focus();
                 lastTapTime = 0;
             }
         });
 
-        // --- Обработка фокуса и ввода с клавиатуры ---
         container.addEventListener('focusin', (e) => {
-            const block = e.target.closest('.content-block');
+            const block = e.target.closest('.content-block [contenteditable="true"]');
             if (block) activeBlock = block;
         });
         
@@ -21688,7 +21816,7 @@ const mainApp = (function() {
                     if (prevWrapper && container.querySelectorAll('.content-block-wrapper').length > 1) {
                         e.preventDefault();
                         
-                        const prevEditable = prevWrapper.querySelector('.content-block[contenteditable="true"]');
+                        const prevEditable = prevWrapper.querySelector('.content-block [contenteditable="true"]');
                         if (prevEditable) {
                             prevEditable.focus();
                             const range = document.createRange();
@@ -21707,7 +21835,8 @@ const mainApp = (function() {
         
         container.addEventListener('keyup', (e) => {
             if (activeBlock) {
-                const wrapper = activeBlock.parentElement;
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем .closest() ===
+                const wrapper = activeBlock.closest('.content-block-wrapper');
                 const isEmpty = activeBlock.textContent.trim() === '';
                 if (wrapper) {
                     wrapper.classList.toggle('is-empty', isEmpty);
@@ -21716,7 +21845,7 @@ const mainApp = (function() {
             
             if (e.key === '/') {
                 if (activeBlock && activeBlock.textContent === '/') {
-                    showAddBlockMenu(activeBlock.parentElement);
+                    showAddBlockMenu(activeBlock.closest('.content-block-wrapper'));
                 }
             } else {
                 hideAddBlockMenu();
@@ -21724,12 +21853,14 @@ const mainApp = (function() {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const newBlockWrapper = createContentBlock('paragraph', '', true);
-                activeBlock.parentElement.insertAdjacentElement('afterend', newBlockWrapper);
-                newBlockWrapper.querySelector('.content-block').focus();
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем .closest() ===
+                activeBlock.closest('.content-block-wrapper').insertAdjacentElement('afterend', newBlockWrapper);
+                
+                if (window.lucide) lucide.createIcons();
+                newBlockWrapper.querySelector('.content-block p').focus();
             }
         });
 
-        // --- Логика Drag and Drop ---
         const onDragStart = (e) => {
             const handle = e.target.closest('.block-handle');
             if (!handle) return;
@@ -21791,11 +21922,9 @@ const mainApp = (function() {
                 }, { once: true });
             }
         }, { passive: false });
-        // ======== НАЧАЛО ИСПРАВЛЕНИЯ: Устанавливаем флаг в конце ========
+        
         container._listenersAttached = true;
-        // ======== КОНЕЦ ИСПРАВЛЕНИЯ ========
     }
-
 
     /**
      * Показывает меню добавления блоков рядом с целевым элементом,
@@ -21877,6 +22006,7 @@ const mainApp = (function() {
         }
     }
 
+
     /**
      * Обрабатывает выбор типа блока из меню.
      * @param {string} type - Выбранный тип блока.
@@ -21887,21 +22017,22 @@ const mainApp = (function() {
         let newBlockWrapper;
 
         if (type === 'image') {
-            // === ИЗМЕНЕНИЕ: Передаем 'image' как тип ===
             const imageUrl = await promptForUrl('Вставить изображение', 'prompt_image_url', 'image');
             if (imageUrl === null) return;
-            content = imageUrl;
+            // === ИЗМЕНЕНИЕ: Создаем объект с настройками по умолчанию ===
+            content = {
+                src: imageUrl,
+                size: 'medium',
+                align: 'center',
+                caption: ''
+            };
             newBlockWrapper = createContentBlock(type, content, true);
-
-
         } else if (type === 'video') {
-            // === ИЗМЕНЕНИЕ: Передаем 'video' как тип ===
             const videoData = await promptForUrl('Вставить видео', 'prompt_video_url', 'video');
             if (videoData === null) return;
             content = videoData; 
             newBlockWrapper = createContentBlock(type, content, true);
         } else if (type === 'test') {
-            // Открываем файловый диалог для выбора теста
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.accept = '.qst,.txt';
@@ -21913,19 +22044,77 @@ const mainApp = (function() {
                     newBlockWrapper = createContentBlock(type, content, true);
                     currentWrapper.replaceWith(newBlockWrapper);
                     hideAddBlockMenu();
+                    if (window.lucide) lucide.createIcons();
                 }
             };
             fileInput.click();
-            return; // Выходим, так как замена блока произойдет асинхронно
+            return;
+        } else if (type === 'pagebreak') {
+            newBlockWrapper = createContentBlock(type, '', true);
+            const nextParagraph = createContentBlock('paragraph', '', true);
+            currentWrapper.replaceWith(newBlockWrapper);
+            newBlockWrapper.insertAdjacentElement('afterend', nextParagraph);
+            if (window.lucide) lucide.createIcons();
+            nextParagraph.querySelector('.content-block p').focus();
+            hideAddBlockMenu();
+            return;
         } else {
             newBlockWrapper = createContentBlock(type, '', true);
         }
 
         currentWrapper.replaceWith(newBlockWrapper);
+        if (window.lucide) lucide.createIcons();
         if (type === 'paragraph' || type === 'h2') {
-            newBlockWrapper.querySelector('.content-block').focus();
+            newBlockWrapper.querySelector('.content-block p, .content-block h2').focus();
         }
         hideAddBlockMenu();
+    }
+
+
+    /**
+     * Загружает файл изображения на сервер и возвращает URL.
+     * @param {File} file - Файл изображения для загрузки.
+     * @returns {Promise<string|null>} URL загруженного изображения или null в случае ошибки.
+     */
+    async function uploadImageAndGetUrl(file) {
+        if (!file.type.startsWith('image/')) {
+            showToast('Пожалуйста, выберите файл изображения.', 'error');
+            return null;
+        }
+
+        showGlobalLoader(_('uploading_image'));
+
+        try {
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result.split(',')[1]);
+                reader.onerror = e => reject(e);
+                reader.readAsDataURL(file);
+            });
+
+            const response = await fetch(googleAppScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'uploadImage',
+                    fileName: file.name,
+                    mimeType: file.type,
+                    base64Data: base64Data
+                })
+            });
+            const result = await response.json();
+
+            if (result.success && result.url) {
+                return result.url;
+            } else {
+                throw new Error(result.error || 'Не удалось получить URL после загрузки.');
+            }
+        } catch (error) {
+            console.error("Ошибка загрузки изображения:", error);
+            showToast(`Ошибка загрузки: ${error.message}`, 'error');
+            return null;
+        } finally {
+            hideGlobalLoader();
+        }
     }
 
 
@@ -21951,61 +22140,8 @@ const mainApp = (function() {
             const lessonIndex = lessons.findIndex(l => l.id === currentLessonIdForModal);
             if (lessonIndex === -1) throw new Error("Урок для сохранения не найден.");
             
-            const contentBlocks = [];
-            lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach(wrapper => {
-                const blockEl = wrapper.querySelector('.content-block');
-                if (!blockEl) return;
-
-                const type = blockEl.dataset.type || 'paragraph';
-                let content = '';
-                
-                // === НАЧАЛО НОВОЙ ЛОГИКИ ПРОВЕРКИ ===
-                let isBlockEffectivelyEmpty = false;
-                // === КОНЕЦ НОВОЙ ЛОГИКИ ПРОВЕРКИ ===
-
-                switch(type) {
-                    case 'paragraph':
-                    case 'h2':
-                        // Проверяем, пустой ли блок визуально
-                        const visibleText = blockEl.innerText || blockEl.textContent;
-                        if (!visibleText.trim()) {
-                            isBlockEffectivelyEmpty = true;
-                        }
-                        content = blockEl.innerHTML;
-                        break;
-                    case 'image':
-                        content = blockEl.querySelector('img')?.src || '';
-                        if (!content) isBlockEffectivelyEmpty = true;
-                        break;
-                    case 'video':
-                        // === НАЧАЛО ИЗМЕНЕНИЙ: Сохраняем объект, а не строку ===
-                        content = {
-                            url: blockEl.dataset.originalUrl || '',
-                            subtitlesEnabled: blockEl.dataset.subtitles === 'true'
-                        };
-                        if (!content.url) isBlockEffectivelyEmpty = true;
-                        // === КОНЕЦ ИЗМЕНЕНИЙ ===
-                        break;
-                    case 'hr':
-                        content = ''; // Разделитель не может быть пустым
-                        break;
-                    case 'test':
-                        content = {
-                            fileName: blockEl.dataset.filename,
-                            fileContent: blockEl.dataset.fileContent
-                        };
-                        if (!content.fileName || !content.fileContent) isBlockEffectivelyEmpty = true;
-                        break;
-                    default:
-                        content = '';
-                        isBlockEffectivelyEmpty = true;
-                }
-                
-                // === ГЛАВНОЕ ИЗМЕНЕНИЕ: Добавляем блок в массив только если он НЕ пустой ===
-                if (!isBlockEffectivelyEmpty) {
-                    contentBlocks.push({ type, content });
-                }
-            });
+            // === ИСПОЛЬЗУЕМ НОВУЮ КОРРЕКТНУЮ ФУНКЦИЮ СБОРА ДАННЫХ ===
+            const contentBlocks = getContentFromEditor();
 
             lessons[lessonIndex].content = contentBlocks;
             await courseRef.update({ lessons: lessons });
@@ -22021,17 +22157,14 @@ const mainApp = (function() {
     }
 
 
-
-
     /**
-     * НОВАЯ ФУНКЦИЯ (v2): Переключает режим просмотра/редактирования в уроке, сохраняя несохраненные изменения.
+     * НОВАЯ ФУНКЦИЯ (v3, ФИНАЛ): Переключает режим просмотра/редактирования, корректно обрабатывая пустые блоки.
      */
     async function handleToggleViewMode() {
         const container = getEl('lessonContentContainer');
         const button = getEl('toggleViewModeBtn');
         if (!container || !button) return;
 
-        // Определяем, в какой режим мы ПЕРЕХОДИМ
         const isEnteringViewMode = !container.classList.contains('view-mode');
         
         button.classList.toggle('active', isEnteringViewMode);
@@ -22075,21 +22208,26 @@ const mainApp = (function() {
             container.innerHTML = ''; // Очищаем от "зрительского" контента
             container.classList.remove('view-mode');
             
-            // Восстанавливаем контент из нашей временной переменной
-            const contentToRestore = editorStateBeforeViewMode || []; 
+            const contentToRestore = editorStateBeforeViewMode || [];
             
             if (contentToRestore.length > 0) {
                 contentToRestore.forEach(block => {
                     const blockEl = createContentBlock(block.type, block.content, true); // true - делаем редактируемым
                     container.appendChild(blockEl);
                 });
-            } else {
-                // Если урок был пуст, создаем один пустой блок для начала работы
-                const firstBlock = createContentBlock('paragraph', '', true);
-                container.appendChild(firstBlock);
-                firstBlock.querySelector('.content-block').focus();
             }
             
+            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
+            // Добавляем новый пустой блок, только если после восстановления контента контейнер ОСТАЛСЯ ПУСТЫМ.
+            if (container.children.length === 0) {
+                const firstBlock = createContentBlock('paragraph', '', true);
+                container.appendChild(firstBlock);
+                // Фокусируемся на блоке, только если он был создан
+                const contentBlockEl = firstBlock.querySelector('.content-block');
+                if (contentBlockEl) contentBlockEl.focus();
+            }
+            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
             // Восстанавливаем кнопки в режим редактирования
             button.innerHTML = `<i data-lucide="eye"></i>`;
             button.title = "Режим просмотра";
@@ -22102,7 +22240,6 @@ const mainApp = (function() {
         }
         initKaraokeSubtitles(container);
     }
-
 
 
 
@@ -22119,16 +22256,48 @@ const mainApp = (function() {
         const modal = getEl('courseEditModal');
         if (!modal) return;
         
-        getEl('courseNameEditInput').value = course.title;
-        getEl('courseDescriptionEditInput').value = course.description || '';
+        const nameInput = getEl('courseNameEditInput');
+        const descInput = getEl('courseDescriptionEditInput');
+        const coverUrlInput = getEl('courseCoverUrlEditInput');
+        const coverPreview = getEl('courseCoverEditPreview');
+        const coverFileInput = getEl('courseCoverFileInputEdit');
         
+        nameInput.value = course.title;
+        descInput.value = course.description || '';
+        coverUrlInput.value = course.coverUrl || '';
+        coverFileInput.value = '';
+
+        const updatePreview = () => {
+            const url = coverUrlInput.value.trim();
+            if (url) {
+                coverPreview.src = url;
+                coverPreview.classList.remove('hidden');
+            } else {
+                coverPreview.classList.add('hidden');
+            }
+        };
+
+        updatePreview(); // Показываем превью сразу
+        coverUrlInput.addEventListener('input', updatePreview);
+
+        coverFileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const uploadedUrl = await uploadImageAndGetUrl(file);
+                if (uploadedUrl) {
+                    coverUrlInput.value = uploadedUrl;
+                    updatePreview();
+                }
+            }
+        };
+
         getEl('courseEditConfirmBtn').onclick = handleUpdateCourse;
         getEl('courseDeleteBtn').onclick = () => handleDeleteCourse(course.id, course.title);
-        getEl('courseEditCancelBtn').onclick = () => ChatModule.closeModal('courseEditModal');
-
-        // === НАЧАЛО НОВОГО КОДА ===
         getEl('manageAccessBtn').onclick = () => showCourseAccessModal(course);
-        // === КОНЕЦ НОВОГО КОДА ===
+        getEl('courseEditCancelBtn').onclick = () => {
+            coverUrlInput.removeEventListener('input', updatePreview);
+            ChatModule.closeModal('courseEditModal');
+        };
 
         ChatModule.showModal('courseEditModal');
     }
@@ -22141,6 +22310,7 @@ const mainApp = (function() {
 
         const newTitle = getEl('courseNameEditInput').value.trim();
         const newDescription = getEl('courseDescriptionEditInput').value.trim();
+        const newCoverUrl = getEl('courseCoverUrlEditInput').value.trim(); // Получаем новый URL
 
         if (!newTitle) {
             alert('Название курса не может быть пустым.');
@@ -22152,7 +22322,8 @@ const mainApp = (function() {
             const courseRef = db.collection('courses').doc(currentCourseForEdit.id);
             await courseRef.update({
                 title: newTitle,
-                description: newDescription
+                description: newDescription,
+                coverUrl: newCoverUrl // Обновляем URL
             });
             showToast(_('course_updated_success'), 'success');
             ChatModule.closeModal('courseEditModal');
@@ -22338,6 +22509,81 @@ const mainApp = (function() {
 
 
     /**
+     * НОВАЯ ФУНКЦИЯ: Показывает модальное окно для редактирования настроек изображения.
+     */
+    function showImageSettingsModal(currentValue) {
+        return new Promise(resolve => {
+            const modal = getEl('imageSettingsModal');
+            const preview = getEl('imageSettingsPreview');
+            const urlInput = getEl('imageUrlInput');
+            const sizeControls = getEl('imageSizeControls');
+            const alignControls = getEl('imageAlignmentControls');
+            const alignGroup = getEl('imageAlignmentGroup');
+            const captionInput = getEl('imageCaptionInput');
+            const confirmBtn = getEl('imageSettingsConfirmBtn');
+            const cancelBtn = getEl('imageSettingsCancelBtn');
+
+            // Заполнение полей
+            urlInput.value = currentValue.src || '';
+            captionInput.value = currentValue.caption || '';
+            preview.src = currentValue.src || '';
+            preview.classList.toggle('hidden', !currentValue.src);
+
+            // Установка активных кнопок
+            const setActiveButton = (container, group, value) => {
+                container.querySelectorAll('button').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset[group] === value);
+                });
+            };
+            setActiveButton(sizeControls, 'size', currentValue.size || 'medium');
+            setActiveButton(alignControls, 'align', currentValue.align || 'center');
+            
+            // Скрытие выравнивания для полноширинных изображений
+            alignGroup.classList.toggle('hidden', currentValue.size === 'full');
+
+            // Обработчики
+            const cleanup = (result) => {
+                modal.classList.add('hidden');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                sizeControls.onclick = null;
+                alignControls.onclick = null;
+                resolve(result);
+            };
+
+            sizeControls.onclick = (e) => {
+                const btn = e.target.closest('button');
+                if (btn && btn.dataset.size) {
+                    setActiveButton(sizeControls, 'size', btn.dataset.size);
+                    alignGroup.classList.toggle('hidden', btn.dataset.size === 'full');
+                }
+            };
+            
+            alignControls.onclick = (e) => {
+                const btn = e.target.closest('button');
+                if (btn && btn.dataset.align) {
+                    setActiveButton(alignControls, 'align', btn.dataset.align);
+                }
+            };
+
+            confirmBtn.onclick = () => {
+                const newSettings = {
+                    src: urlInput.value.trim(),
+                    size: sizeControls.querySelector('.active').dataset.size,
+                    align: alignControls.querySelector('.active').dataset.align,
+                    caption: captionInput.value.trim()
+                };
+                cleanup(newSettings);
+            };
+
+            cancelBtn.onclick = () => cleanup(null);
+
+            modal.classList.remove('hidden');
+            if(window.lucide) lucide.createIcons();
+        });
+    }
+
+    /**
      * Обрабатывает редактирование нетекстовых блоков (изображение, видео).
      * @param {HTMLElement} wrapper - Элемент .content-block-wrapper для редактирования.
      */
@@ -22347,20 +22593,20 @@ const mainApp = (function() {
         const type = block.dataset.type;
 
         if (type === 'image') {
-            const currentUrl = block.querySelector('img')?.src || '';
-            // === ИЗМЕНЕНИЕ: Передаем 'image' как тип ===
-            const newUrl = await promptForUrl('Редактировать изображение', 'prompt_image_url', 'image', currentUrl);
-            if (newUrl !== null) { 
-                block.querySelector('img').src = newUrl;
+            // === ИЗМЕНЕНИЕ: Вызываем новое модальное окно ===
+            const currentContent = getContentFromEditor().find(b => b.type === 'image'); // Получаем текущие данные
+            const newSettings = await showImageSettingsModal(currentContent ? currentContent.content : { src: '', size: 'medium', align: 'center', caption: '' });
+            
+            if (newSettings !== null) {
+                const newBlock = createContentBlock('image', newSettings, true);
+                wrapper.replaceWith(newBlock);
+                if (window.lucide) lucide.createIcons();
             }
-
-
         } else if (type === 'video') {
             const currentUrl = block.dataset.originalUrl || '';
             const currentSubtitlesEnabled = block.dataset.subtitles === "true";
             
-            // === ИЗМЕНЕНИЕ: Передаем 'video' как тип ===
-            const newData = await promptForUrl('Редактировать видео', 'prompt_video_url', 'video', currentUrl, currentSubtitlesEnabled);
+            const newData = await promptForUrl('Редактировать видео', 'prompt_video_url', 'video', {url: currentUrl, subtitlesEnabled: currentSubtitlesEnabled});
             
             if (newData !== null) {
                 const newBlock = createContentBlock('video', newData, true);
@@ -22374,75 +22620,107 @@ const mainApp = (function() {
 
 
     /**
-     * Показывает кастомное модальное окно для ввода URL.
+     * Показывает кастомное модальное окно для ввода URL или загрузки файла.
      * @param {string} titleKey - Ключ перевода для заголовка.
      * @param {string} textKey - Ключ перевода для поясняющего текста.
-     * @param {'image'|'video'} type - Тип контента, для которого запрашивается URL.
-     * @param {string} currentValue - Текущее значение URL для отображения в поле.
-     * @param {boolean} currentSubtitlesValue - Текущее состояние чекбокса субтитров.
-     * @returns {Promise<string|object|null>} - Promise, который разрешается URL (для image) или объектом (для video), или null.
+     * @param {'image'|'video'} type - Тип контента.
+     * @param {string|object} currentValue - Текущее значение.
+     * @returns {Promise<string|object|null>} - Promise, который разрешается с результатом или null.
      */
-    function promptForUrl(titleKey, textKey, type, currentValue = '', currentSubtitlesValue = false) {
+    function promptForUrl(titleKey, textKey, type, currentValue = '') {
         return new Promise(resolve => {
             const modal = getEl('urlInputModal');
-            const titleEl = getEl('urlInputModalTitle');
-            const textEl = getEl('urlInputModalText');
-            const inputEl = getEl('urlInputModalInput');
-            const subtitlesToggle = getEl('videoSubtitlesToggle'); 
-            const subtitlesContainer = subtitlesToggle.closest('.settings-group'); // Находим контейнер с чекбоксом
-            const confirmBtn = getEl('urlInputConfirmBtn');
-            const cancelBtn = getEl('urlInputCancelBtn');
+            const titleEl = getEl('urlInputModalTitle'), textEl = getEl('urlInputModalText');
+            const tabsContainer = getEl('imageUploadTabsContainer'), urlTab = tabsContainer.querySelector('[data-tab="url"]'), uploadTab = tabsContainer.querySelector('[data-tab="upload"]');
+            const urlTabContent = getEl('urlTabContent'), uploadTabContent = getEl('uploadTabContent');
+            const urlInput = getEl('urlInputModalInput'), fileInput = getEl('lessonImageFileInput'), previewImg = getEl('lessonImagePreview');
+            const videoGroup = getEl('videoSubtitlesGroup'), subtitlesToggle = getEl('videoSubtitlesToggle');
+            const confirmBtn = getEl('urlInputConfirmBtn'), cancelBtn = getEl('urlInputCancelBtn');
 
+            // Сброс состояния
             titleEl.textContent = _(titleKey);
             textEl.textContent = _(textKey);
-            inputEl.value = currentValue;
+            urlInput.value = '';
+            fileInput.value = '';
+            previewImg.src = '';
+            previewImg.classList.add('hidden');
+            let uploadedFileUrl = null;
 
-            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Показываем или скрываем опцию субтитров ===
-            if (subtitlesContainer) {
-                subtitlesContainer.classList.toggle('hidden', type !== 'video');
-            }
-            if (type === 'video') {
-                subtitlesToggle.checked = currentSubtitlesValue;
-            }
+            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ: Выносим switchTab наружу ===
+            // Логика переключения вкладок
+            const switchTab = (tabName) => {
+                if (tabName === 'url') {
+                    urlTab.classList.add('active');
+                    uploadTab.classList.remove('active');
+                    urlTabContent.classList.add('active');
+                    uploadTabContent.classList.remove('active');
+                } else {
+                    urlTab.classList.remove('active');
+                    uploadTab.classList.add('active');
+                    urlTabContent.classList.remove('active');
+                    uploadTabContent.classList.add('active');
+                }
+            };
             // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+
+            // Настройка видимости элементов в зависимости от типа
+            tabsContainer.classList.add('hidden');
+            videoGroup.classList.add('hidden');
+            urlTabContent.classList.remove('active');
+            uploadTabContent.classList.remove('active');
+
+            if (type === 'image') {
+                tabsContainer.classList.remove('hidden');
+                switchTab('url'); // Теперь этот вызов работает корректно
+                urlInput.value = currentValue;
+            } else if (type === 'video') {
+                urlTabContent.classList.add('active');
+                videoGroup.classList.remove('hidden');
+                urlInput.value = typeof currentValue === 'object' ? currentValue.url : currentValue;
+                subtitlesToggle.checked = typeof currentValue === 'object' ? currentValue.subtitlesEnabled : false;
+            }
+
+            urlTab.onclick = () => switchTab('url');
+            uploadTab.onclick = () => switchTab('upload');
+            
+            fileInput.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadedFileUrl = await uploadImageAndGetUrl(file);
+                    if (uploadedFileUrl) {
+                        previewImg.src = uploadedFileUrl;
+                        previewImg.classList.remove('hidden');
+                    }
+                }
+            };
+
+            const onConfirm = () => {
+                let result = null;
+                if (type === 'video') {
+                    result = { url: urlInput.value, subtitlesEnabled: subtitlesToggle.checked };
+                } else if (type === 'image') {
+                    result = urlTab.classList.contains('active') ? urlInput.value : uploadedFileUrl;
+                }
+                cleanup(result);
+            };
 
             const cleanup = (result) => {
                 modal.classList.add('hidden');
                 confirmBtn.onclick = null;
                 cancelBtn.onclick = null;
-                inputEl.onkeydown = null;
+                urlTab.onclick = null;
+                uploadTab.onclick = null;
+                fileInput.onchange = null;
                 resolve(result);
-            };
-
-            const onConfirm = () => {
-                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Возвращаем разные типы данных ===
-                if (type === 'video') {
-                    cleanup({
-                        url: inputEl.value,
-                        subtitlesEnabled: subtitlesToggle.checked
-                    });
-                } else {
-                    cleanup(inputEl.value); // Для картинки возвращаем просто строку URL
-                }
-                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
             };
 
             confirmBtn.onclick = onConfirm;
             cancelBtn.onclick = () => cleanup(null);
             
-            inputEl.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    onConfirm();
-                }
-            };
-
             modal.classList.remove('hidden');
-            inputEl.focus();
-            inputEl.select();
+            urlInput.focus();
         });
     }
-
 
 
     /**

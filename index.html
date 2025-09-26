@@ -560,8 +560,12 @@
                 </div>
                 <!-- ======== КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ======== -->
                 <div id="lessonContentContainer" class="lesson-content-container">
-     
                 </div>
+                <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                <div id="lessonPageNavigation" class="lesson-page-navigation hidden">
+                    <!-- Сюда JS будет вставлять кнопки "назад", "вперед" и номера страниц -->
+                </div>
+                <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
             </div>
         </div> 
 
@@ -616,59 +620,6 @@
 
         </template>
         <!-- ========== КОНЕЦ ШАБЛОНОВ ========== -->
-
-        <!-- ======== НАЧАЛО НОВОГО ШАБЛОНА ДЛЯ РЕДАКТОРА ======== -->
-        <template id="addBlockMenuTemplate">
-            <div id="addBlockMenu" class="add-block-menu">
-                <div class="add-block-item" data-type="paragraph">
-                    <i data-lucide="pilcrow"></i>
-                    <div class="add-block-item-text">
-                        <strong data-lang-key="block_menu_text">Текст</strong>
-                        <span data-lang-key="block_menu_text_desc">Обычный абзац текста.</span>
-                    </div>
-                </div>
-                <div class="add-block-item" data-type="h2">
-                    <i data-lucide="heading-2"></i>
-                    <div class="add-block-item-text">
-                        <strong data-lang-key="block_menu_header">Заголовок</strong>
-                        <span data-lang-key="block_menu_header_desc">Крупный заголовок раздела.</span>
-                    </div>
-                </div>
-                <div class="add-block-item" data-type="image">
-                    <i data-lucide="image"></i>
-                    <div class="add-block-item-text">
-                        <strong data-lang-key="block_menu_image">Изображение</strong>
-                        <span data-lang-key="block_menu_image_desc">Вставить картинку по ссылке.</span>
-                    </div>
-                </div>
-                <div class="add-block-item" data-type="video">
-                    <i data-lucide="youtube"></i>
-                    <div class="add-block-item-text">
-                        <strong data-lang-key="block_menu_video">Видео</strong>
-                        <span data-lang-key="block_menu_video_desc">Встроить видео с YouTube.</span>
-                    </div>
-                </div>
-                <div class="add-block-item" data-type="hr">
-                    <i data-lucide="minus"></i>
-                    <div class="add-block-item-text">
-                        <strong data-lang-key="block_menu_divider">Разделитель</strong>
-                        <span data-lang-key="block_menu_divider_desc">Визуальная линия-разделитель.</span>
-                    </div>
-                </div>
-                <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
-                <div class="add-block-item" data-type="test">
-                    <i data-lucide="clipboard-check"></i>
-                    <div class="add-block-item-text">
-                        <strong data-lang-key="block_menu_test">Тест</strong>
-                        <span data-lang-key="block_menu_test_desc">Встроить тест из .qst файла.</span>
-                    </div>
-                </div>
-                <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
-            </div>
-
-        </template>
-        <!-- ======== КОНЕЦ НОВОГО ШАБЛОНА ======== -->
-
         
         <!-- ======== НАЧАЛО НОВОГО ШАБЛОНА ДЛЯ AI-МЕНЮ РЕДАКТОРА ======== -->
         <template id="aiToolsMenuTemplate">
@@ -719,6 +670,15 @@
                         <span data-lang-key="block_menu_divider_desc">Визуальная линия-разделитель.</span>
                     </div>
                 </div>
+                <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
+                <div class="add-block-item" data-type="pagebreak">
+                    <i data-lucide="book-copy"></i>
+                    <div class="add-block-item-text">
+                        <strong data-lang-key="block_menu_pagebreak">Страница</strong>
+                        <span data-lang-key="block_menu_pagebreak_desc">Начать новую страницу урока.</span>
+                    </div>
+                </div>
+                <!-- ======== КОНЕЦ НОВОГО КОДА ======== -->
                 <!-- ======== НАЧАЛО НОВОГО КОДА ======== -->
                 <div class="add-block-item" data-type="test">
                     <i data-lucide="clipboard-check"></i>
@@ -1294,15 +1254,22 @@
         </div>
     </div>
     <!-- ======================================================= -->
-    <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ СОЗДАНИЯ КУРСА      === -->
     <!-- ======================================================= -->
     <div id="courseCreateModal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 480px;">
             <h3 data-lang-key="create_course_modal_title">Создание нового курса</h3>
-            <p style="margin: 20px 0; line-height: 1.6;" data-lang-key="create_course_modal_text">Введите название и краткое описание для вашего нового курса.</p>
             
-            <input type="text" id="courseNameInput" class="auth-input" placeholder="Название курса..." data-lang-key="course_name_placeholder" style="margin-bottom: 15px;">
+            <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
+            <img id="courseCoverPreview" class="cover-image-preview hidden" src="" alt="Предпросмотр обложки">
+            <input type="text" id="courseCoverUrlInput" class="auth-input" placeholder="URL обложки..." data-lang-key="course_cover_url_placeholder" style="margin-bottom: 15px;">
+            <div class="upload-button-wrapper">
+                <label for="courseCoverFileInput" class="custom-file-upload-btn-small" data-lang-key="upload_from_device">Загрузить с устройства</label>
+                <input type="file" id="courseCoverFileInput" class="hidden" accept="image/*">
+            </div>
+            <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
+            
+            <input type="text" id="courseNameInput" class="auth-input" placeholder="Название курса..." data-lang-key="course_name_placeholder" style="margin-top: 20px; margin-bottom: 15px;">
             <textarea id="courseDescriptionInput" class="auth-input" placeholder="Описание курса..." data-lang-key="course_description_placeholder" style="margin-bottom: 25px; resize: vertical; min-height: 80px;"></textarea>
 
             <div class="modal-buttons">
@@ -1335,16 +1302,23 @@
         <div class="modal-content" style="max-width: 480px;">
             <h3 data-lang-key="edit_course_modal_title">Редактирование курса</h3>
             
-            <input type="text" id="courseNameEditInput" class="auth-input" placeholder="Название курса..." data-lang-key="course_name_placeholder" style="margin-bottom: 15px;">
+            <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
+            <img id="courseCoverEditPreview" class="cover-image-preview hidden" src="" alt="Предпросмотр обложки">
+            <input type="text" id="courseCoverUrlEditInput" class="auth-input" placeholder="URL обложки..." data-lang-key="course_cover_url_placeholder" style="margin-bottom: 15px;">
+            <div class="upload-button-wrapper">
+                <label for="courseCoverFileInputEdit" class="custom-file-upload-btn-small" data-lang-key="upload_from_device">Загрузить с устройства</label>
+                <input type="file" id="courseCoverFileInputEdit" class="hidden" accept="image/*">
+            </div>
+            <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
+
+            <input type="text" id="courseNameEditInput" class="auth-input" placeholder="Название курса..." data-lang-key="course_name_placeholder" style="margin-top: 20px; margin-bottom: 15px;">
             <textarea id="courseDescriptionEditInput" class="auth-input" placeholder="Описание курса..." data-lang-key="course_description_placeholder" style="margin-bottom: 25px; resize: vertical; min-height: 80px;"></textarea>
 
             <div class="modal-buttons">
                 <button id="courseEditCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
                 <button id="courseEditConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
             </div>
-            <!-- === НАЧАЛО НОВОГО КОДА === -->
             <button id="manageAccessBtn" class="btn" style="width: 100%; margin-top: 10px; background: var(--button-primary-bg);"><i data-lucide="key-round"></i> Управление доступом</button>
-            <!-- === КОНЕЦ НОВОГО КОДА === -->
             <button id="courseDeleteBtn" class="delete-btn" style="margin-top: 15px;" data-lang-key="delete_course_button">Удалить курс</button>
         </div>
     </div>
@@ -1374,21 +1348,37 @@
             <h3 id="urlInputModalTitle">Вставьте ссылку</h3>
             <p id="urlInputModalText" style="margin: 20px 0; line-height: 1.6;"></p>
             
-            <input type="text" id="urlInputModalInput" class="auth-input" placeholder="https://..." style="margin-bottom: 25px;">
-                <!-- === НАЧАЛО НОВОГО КОДА === -->
-                <div class="settings-group" style="text-align: left; margin-bottom: 25px;">
-                    <label class="category-checkbox-label">
-                        <input type="checkbox" id="videoSubtitlesToggle">
-                        <span data-lang-key="video_subtitles_toggle">Ретранслировать субтитры под видео (YouTube, бета)</span>
-                    </label>
-                </div>
-                <!-- === КОНЕЦ НОВОГО КОДА === -->
+            <!-- === НАЧАЛО ИЗМЕНЕНИЙ === -->
+            <div id="imageUploadTabsContainer" class="image-upload-tabs hidden">
+                <button class="image-upload-tab active" data-tab="url" data-lang-key="upload_by_url">По ссылке</button>
+                <button class="image-upload-tab" data-tab="upload" data-lang-key="upload_from_device">Загрузить</button>
+            </div>
+
+            <div id="urlTabContent" class="image-upload-tab-content active">
+                <input type="text" id="urlInputModalInput" class="auth-input" placeholder="https://..." style="margin-bottom: 25px;">
+            </div>
+
+            <div id="uploadTabContent" class="image-upload-tab-content">
+                <img id="lessonImagePreview" class="cover-image-preview hidden" src="" alt="Предпросмотр изображения">
+                <label for="lessonImageFileInput" class="custom-file-upload-btn-small" data-lang-key="choose_image_btn">Выбрать изображение...</label>
+                <input type="file" id="lessonImageFileInput" class="hidden" accept="image/*">
+            </div>
+            <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
+
+            <div class="settings-group hidden" id="videoSubtitlesGroup" style="text-align: left; margin-bottom: 25px;">
+                <label class="category-checkbox-label">
+                    <input type="checkbox" id="videoSubtitlesToggle">
+                    <span data-lang-key="video_subtitles_toggle">Ретранслировать субтитры под видео (YouTube, бета)</span>
+                </label>
+            </div>
+
             <div class="modal-buttons">
                 <button id="urlInputCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
                 <button id="urlInputConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
             </div>
         </div>
     </div>
+    
     <!-- ======================================================= -->
     <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ УПРАВЛЕНИЯ ДОСТУПОМ   === -->
     <!-- ======================================================= -->
@@ -1472,7 +1462,52 @@
             </div>
         </div>
     </div>
+    <!-- ======================================================= -->
+    <!-- ===   НОВОЕ МОДАЛЬНОЕ ОКНО ДЛЯ НАСТРОЕК ИЗОБРАЖЕНИЯ === -->
+    <!-- ======================================================= -->
+    <div id="imageSettingsModal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 500px; text-align: left;">
+            <h3 data-lang-key="image_settings_title">Настройки изображения</h3>
+            
+            <img id="imageSettingsPreview" class="cover-image-preview" src="" alt="Предпросмотр изображения" style="margin-top: 15px;">
 
+            <div class="settings-group">
+                <label data-lang-key="image_url_label">URL изображения:</label>
+                <input type="text" id="imageUrlInput" class="auth-input" placeholder="https://...">
+            </div>
+
+            <div class="settings-group">
+                <label data-lang-key="image_size_label">Размер:</label>
+                <div id="imageSizeControls" class="image-settings-controls">
+                    <button class="btn-secondary-small" data-size="small" data-lang-key="image_size_small">Маленький</button>
+                    <button class="btn-secondary-small active" data-size="medium" data-lang-key="image_size_medium">Средний</button>
+                    <button class="btn-secondary-small" data-size="full" data-lang-key="image_size_full">По ширине</button>
+                </div>
+            </div>
+
+            <div id="imageAlignmentGroup" class="settings-group">
+                <label data-lang-key="image_align_label">Выравнивание:</label>
+                <div id="imageAlignmentControls" class="image-settings-controls">
+                    <button class="btn-secondary-small" data-align="left" title="По левому краю"><i data-lucide="align-left"></i></button>
+                    <button class="btn-secondary-small active" data-align="center" title="По центру"><i data-lucide="align-center"></i></button>
+                    <button class="btn-secondary-small" data-align="right" title="По правому краю"><i data-lucide="align-right"></i></button>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label data-lang-key="image_caption_label">Подпись (необязательно):</label>
+                <input type="text" id="imageCaptionInput" class="auth-input" placeholder="Введите подпись к изображению...">
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 25px;">
+                <button id="imageSettingsCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
+                <button id="imageSettingsConfirmBtn" class="btn" data-lang-key="modal_save_button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
 
 
 </body>
