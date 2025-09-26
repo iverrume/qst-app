@@ -5916,6 +5916,7 @@ const mainApp = (function() {
     };
 
     let backButtonPressedOnce = false;
+    let editorStateBeforeViewMode = null;
 
     // --- НАЧАЛО ИСПРАВЛЕНИЙ ---
 
@@ -21381,17 +21382,138 @@ const mainApp = (function() {
 
 
     /**
+     * Собирает текущее содержимое из DOM-элементов редактора.
+     * @returns {Array<object>} - Массив объектов с блоками контента.
+     */
+    function getContentFromEditor() {
+        const contentBlocks = [];
+        lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach(wrapper => {
+            const blockEl = wrapper.querySelector('.content-block');
+            if (!blockEl) return;
+
+            const type = blockEl.dataset.type || 'paragraph';
+            let content = '';
+            
+            let isBlockEffectivelyEmpty = false;
+
+            switch(type) {
+                case 'paragraph':
+                case 'h2':
+                    const visibleText = blockEl.innerText || blockEl.textContent;
+                    if (!visibleText.trim()) {
+                        isBlockEffectivelyEmpty = true;
+                    }
+                    content = blockEl.innerHTML;
+                    break;
+                case 'image':
+                    content = blockEl.querySelector('img')?.src || '';
+                    if (!content) isBlockEffectivelyEmpty = true;
+                    break;
+                case 'video':
+                    content = {
+                        url: blockEl.dataset.originalUrl || '',
+                        subtitlesEnabled: blockEl.dataset.subtitles === 'true'
+                    };
+                    if (!content.url) isBlockEffectivelyEmpty = true;
+                    break;
+                case 'hr':
+                    content = '';
+                    break;
+                case 'test':
+                    content = {
+                        fileName: blockEl.dataset.filename,
+                        fileContent: blockEl.dataset.fileContent
+                    };
+                    if (!content.fileName || !content.fileContent) isBlockEffectivelyEmpty = true;
+                    break;
+                default:
+                    content = '';
+                    isBlockEffectivelyEmpty = true;
+            }
+            
+            if (!isBlockEffectivelyEmpty) {
+                contentBlocks.push({ type, content });
+            }
+        });
+        return contentBlocks;
+    }
+
+
+    /**
+     * Собирает текущее содержимое из DOM-элементов редактора.
+     * @returns {Array<object>} - Массив объектов с блоками контента.
+     */
+    function getContentFromEditor() {
+        const contentBlocks = [];
+        lessonContentContainer.querySelectorAll('.content-block-wrapper').forEach(wrapper => {
+            const blockEl = wrapper.querySelector('.content-block');
+            if (!blockEl) return;
+
+            const type = blockEl.dataset.type || 'paragraph';
+            let content = '';
+            
+            let isBlockEffectivelyEmpty = false;
+
+            switch(type) {
+                case 'paragraph':
+                case 'h2':
+                    const visibleText = blockEl.innerText || blockEl.textContent;
+                    if (!visibleText.trim()) {
+                        isBlockEffectivelyEmpty = true;
+                    }
+                    content = blockEl.innerHTML;
+                    break;
+                case 'image':
+                    content = blockEl.querySelector('img')?.src || '';
+                    if (!content) isBlockEffectivelyEmpty = true;
+                    break;
+                case 'video':
+                    content = {
+                        url: blockEl.dataset.originalUrl || '',
+                        subtitlesEnabled: blockEl.dataset.subtitles === 'true'
+                    };
+                    if (!content.url) isBlockEffectivelyEmpty = true;
+                    break;
+                case 'hr':
+                    content = '';
+                    break;
+                case 'test':
+                    content = {
+                        fileName: blockEl.dataset.filename,
+                        fileContent: blockEl.dataset.fileContent
+                    };
+                    if (!content.fileName || !content.fileContent) isBlockEffectivelyEmpty = true;
+                    break;
+                default:
+                    content = '';
+                    isBlockEffectivelyEmpty = true;
+            }
+            
+            if (!isBlockEffectivelyEmpty) {
+                contentBlocks.push({ type, content });
+            }
+        });
+        return contentBlocks;
+    }
+
+
+    /**
      * Настраивает все слушатели событий для контейнера редактора, включая Drag-and-Drop и двойной клик.
      * @param {HTMLElement} container - DOM-элемент .lesson-content-container.
      */
     function setupEditorEventListeners(container) {
+        // ======== НАЧАЛО ИСПРАВЛЕНИЯ: Предотвращаем повторное добавление слушателей ========
+        if (container._listenersAttached) {
+            return;
+        }
+        // ======== КОНЕЦ ИСПРАВЛЕНИЯ ========
+
         let activeBlock = null;
         let draggedElement = null;
         let placeholder = null;
         let isTouch = false;
         let lastTapTime = 0;
 
-        // === НАЧАЛО НОВОГО КОДА: Функция очистки и обработчик вставки ===
         /**
          * Очищает HTML-строку от ненужных атрибутов (style, class) и тегов.
          * @param {string} htmlString - Исходный HTML.
@@ -21669,7 +21791,11 @@ const mainApp = (function() {
                 }, { once: true });
             }
         }, { passive: false });
+        // ======== НАЧАЛО ИСПРАВЛЕНИЯ: Устанавливаем флаг в конце ========
+        container._listenersAttached = true;
+        // ======== КОНЕЦ ИСПРАВЛЕНИЯ ========
     }
+
 
     /**
      * Показывает меню добавления блоков рядом с целевым элементом,
@@ -21761,16 +21887,18 @@ const mainApp = (function() {
         let newBlockWrapper;
 
         if (type === 'image') {
-            const imageUrl = await promptForUrl('Вставить изображение', 'prompt_image_url');
+            // === ИЗМЕНЕНИЕ: Передаем 'image' как тип ===
+            const imageUrl = await promptForUrl('Вставить изображение', 'prompt_image_url', 'image');
             if (imageUrl === null) return;
             content = imageUrl;
             newBlockWrapper = createContentBlock(type, content, true);
 
 
         } else if (type === 'video') {
-            const videoData = await promptForUrl('Вставить видео', 'prompt_video_url'); // promptForUrl теперь вернет объект
+            // === ИЗМЕНЕНИЕ: Передаем 'video' как тип ===
+            const videoData = await promptForUrl('Вставить видео', 'prompt_video_url', 'video');
             if (videoData === null) return;
-            content = videoData; // content теперь { url: "...", subtitlesEnabled: true/false }
+            content = videoData; 
             newBlockWrapper = createContentBlock(type, content, true);
         } else if (type === 'test') {
             // Открываем файловый диалог для выбора теста
@@ -21894,39 +22022,89 @@ const mainApp = (function() {
 
 
 
+
     /**
-     * НОВАЯ ФУНКЦИЯ: Переключает режим просмотра/редактирования в уроке.
+     * НОВАЯ ФУНКЦИЯ (v2): Переключает режим просмотра/редактирования в уроке, сохраняя несохраненные изменения.
      */
-    function handleToggleViewMode() {
+    async function handleToggleViewMode() {
         const container = getEl('lessonContentContainer');
         const button = getEl('toggleViewModeBtn');
         if (!container || !button) return;
 
-        // Переключаем класс и получаем текущее состояние
-        const isViewMode = container.classList.toggle('view-mode');
+        // Определяем, в какой режим мы ПЕРЕХОДИМ
+        const isEnteringViewMode = !container.classList.contains('view-mode');
         
-        // === НАЧАЛО ИЗМЕНЕНИЙ ===
-        // Переключаем класс 'active' на самой кнопке для стилизации
-        button.classList.toggle('active', isViewMode);
-        // === КОНЕЦ ИЗМЕНЕНИЙ ===
+        button.classList.toggle('active', isEnteringViewMode);
 
-        // Меняем иконку и подсказку на кнопке
-        if (isViewMode) {
+        if (isEnteringViewMode) {
+            // ---- ПЕРЕКЛЮЧАЕМСЯ В РЕЖИМ ПРОСМОТРА ----
+            
+            // 1. Сохраняем текущее состояние редактора в переменную
+            editorStateBeforeViewMode = getContentFromEditor();
+            
+            // 2. Очищаем контейнер
+            container.innerHTML = '';
+            container.classList.add('view-mode');
+
+            // 3. Рендерим контент заново, но как для зрителя (isEditable = false)
+            if (editorStateBeforeViewMode.length > 0) {
+                editorStateBeforeViewMode.forEach(block => {
+                    const lessonTitle = getEl('lessonViewTitle').textContent;
+                    const blockEl = createContentBlock(block.type, block.content, false, lessonTitle); // false - не редактируемый
+                    container.appendChild(blockEl);
+                    // Привязываем обработчик для кнопки теста
+                    if (block.type === 'test') {
+                        const testButton = blockEl.querySelector('.test-block-viewer');
+                        testButton?.addEventListener('click', () => {
+                            startTestFromLesson(block.content.fileName, block.content.fileContent);
+                        });
+                    }
+                });
+            } else {
+                container.innerHTML = `<div class="course-item-placeholder">${_('lesson_viewer_placeholder')}</div>`;
+            }
+            
+            // Обновляем кнопку
             button.innerHTML = `<i data-lucide="pencil"></i>`;
             button.title = "Режим редактирования";
-            // В режиме просмотра скрываем кнопку "Сохранить"
             saveLessonBtn.classList.add('hidden');
+
         } else {
+            // ---- ВОЗВРАЩАЕМСЯ В РЕЖИМ РЕДАКТИРОВАНИЯ ----
+            
+            container.innerHTML = ''; // Очищаем от "зрительского" контента
+            container.classList.remove('view-mode');
+            
+            // Восстанавливаем контент из нашей временной переменной
+            const contentToRestore = editorStateBeforeViewMode || []; 
+            
+            if (contentToRestore.length > 0) {
+                contentToRestore.forEach(block => {
+                    const blockEl = createContentBlock(block.type, block.content, true); // true - делаем редактируемым
+                    container.appendChild(blockEl);
+                });
+            } else {
+                // Если урок был пуст, создаем один пустой блок для начала работы
+                const firstBlock = createContentBlock('paragraph', '', true);
+                container.appendChild(firstBlock);
+                firstBlock.querySelector('.content-block').focus();
+            }
+            
+            // Восстанавливаем кнопки в режим редактирования
             button.innerHTML = `<i data-lucide="eye"></i>`;
             button.title = "Режим просмотра";
-            // В режиме редактирования показываем кнопку "Сохранить"
             saveLessonBtn.classList.remove('hidden');
         }
         
+        // Перерисовываем иконки и инициализируем субтитры после всех изменений
         if (window.lucide) {
             lucide.createIcons();
         }
+        initKaraokeSubtitles(container);
     }
+
+
+
 
     // =======================================================
     // ===    НОВЫЕ ФУНКЦИИ ДЛЯ РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ   ===
@@ -22170,19 +22348,19 @@ const mainApp = (function() {
 
         if (type === 'image') {
             const currentUrl = block.querySelector('img')?.src || '';
-            const newUrl = await promptForUrl('Редактировать изображение', 'prompt_image_url', currentUrl);
-            if (newUrl !== null) { // Проверяем на null, чтобы пустая строка тоже сохранялась
+            // === ИЗМЕНЕНИЕ: Передаем 'image' как тип ===
+            const newUrl = await promptForUrl('Редактировать изображение', 'prompt_image_url', 'image', currentUrl);
+            if (newUrl !== null) { 
                 block.querySelector('img').src = newUrl;
             }
 
 
         } else if (type === 'video') {
-            // === НАЧАЛО ИЗМЕНЕНИЙ ===
             const currentUrl = block.dataset.originalUrl || '';
             const currentSubtitlesEnabled = block.dataset.subtitles === "true";
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
             
-            const newData = await promptForUrl('Редактировать видео', 'prompt_video_url', currentUrl, currentSubtitlesEnabled);
+            // === ИЗМЕНЕНИЕ: Передаем 'video' как тип ===
+            const newData = await promptForUrl('Редактировать видео', 'prompt_video_url', 'video', currentUrl, currentSubtitlesEnabled);
             
             if (newData !== null) {
                 const newBlock = createContentBlock('video', newData, true);
@@ -22199,23 +22377,34 @@ const mainApp = (function() {
      * Показывает кастомное модальное окно для ввода URL.
      * @param {string} titleKey - Ключ перевода для заголовка.
      * @param {string} textKey - Ключ перевода для поясняющего текста.
+     * @param {'image'|'video'} type - Тип контента, для которого запрашивается URL.
      * @param {string} currentValue - Текущее значение URL для отображения в поле.
-     * @returns {Promise<string|null>} - Promise, который разрешается введенным URL или null, если пользователь нажал отмену.
+     * @param {boolean} currentSubtitlesValue - Текущее состояние чекбокса субтитров.
+     * @returns {Promise<string|object|null>} - Promise, который разрешается URL (для image) или объектом (для video), или null.
      */
-    function promptForUrl(titleKey, textKey, currentValue = '', currentSubtitlesValue = false) {
+    function promptForUrl(titleKey, textKey, type, currentValue = '', currentSubtitlesValue = false) {
         return new Promise(resolve => {
             const modal = getEl('urlInputModal');
             const titleEl = getEl('urlInputModalTitle');
             const textEl = getEl('urlInputModalText');
             const inputEl = getEl('urlInputModalInput');
-            const subtitlesToggle = getEl('videoSubtitlesToggle'); // Находим новый переключатель
+            const subtitlesToggle = getEl('videoSubtitlesToggle'); 
+            const subtitlesContainer = subtitlesToggle.closest('.settings-group'); // Находим контейнер с чекбоксом
             const confirmBtn = getEl('urlInputConfirmBtn');
             const cancelBtn = getEl('urlInputCancelBtn');
 
             titleEl.textContent = _(titleKey);
             textEl.textContent = _(textKey);
             inputEl.value = currentValue;
-            subtitlesToggle.checked = currentSubtitlesValue; // Устанавливаем его состояние
+
+            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Показываем или скрываем опцию субтитров ===
+            if (subtitlesContainer) {
+                subtitlesContainer.classList.toggle('hidden', type !== 'video');
+            }
+            if (type === 'video') {
+                subtitlesToggle.checked = currentSubtitlesValue;
+            }
+            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
             const cleanup = (result) => {
                 modal.classList.add('hidden');
@@ -22226,11 +22415,16 @@ const mainApp = (function() {
             };
 
             const onConfirm = () => {
-                // Возвращаем объект с двумя значениями
-                cleanup({
-                    url: inputEl.value,
-                    subtitlesEnabled: subtitlesToggle.checked
-                });
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Возвращаем разные типы данных ===
+                if (type === 'video') {
+                    cleanup({
+                        url: inputEl.value,
+                        subtitlesEnabled: subtitlesToggle.checked
+                    });
+                } else {
+                    cleanup(inputEl.value); // Для картинки возвращаем просто строку URL
+                }
+                // === КОНЕЦ ИСПРАВЛЕНИЯ ===
             };
 
             confirmBtn.onclick = onConfirm;
@@ -22248,6 +22442,8 @@ const mainApp = (function() {
             inputEl.select();
         });
     }
+
+
 
     /**
      * Запускает процесс теста из блока урока.
