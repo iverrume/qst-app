@@ -6431,6 +6431,14 @@ const mainApp = (function() {
             block_menu_video: "Видео",
             block_menu_video_desc: "Встроить видео с YouTube.",
             block_menu_divider: "Разделитель",
+            block_menu_header_3: "Заголовок 3",
+            block_menu_header_3_desc: "Подзаголовок для секций.",
+            block_menu_bullet_list: "Маркированный список",
+            block_menu_bullet_list_desc: "Создайте простой список.",
+            block_menu_quote: "Цитата",
+            block_menu_quote_desc: "Выделите цитату или мысль.",
+            block_menu_callout: "Примечание",
+            block_menu_callout_desc: "Привлеките внимание к важному.",
             block_menu_divider_desc: "Визуальная линия-разделитель.",
             prompt_image_url: "Введите URL изображения:",
             prompt_video_url: "Введите URL видео с YouTube:",
@@ -7067,6 +7075,14 @@ const mainApp = (function() {
             block_menu_video: "Видео",
             block_menu_video_desc: "YouTube-тан видео ендіру.",
             block_menu_divider: "Бөлгіш",
+            block_menu_header_3: "3-деңгейлі тақырып",
+            block_menu_header_3_desc: "Бөлімдерге арналған тақырыпша.",
+            block_menu_bullet_list: "Таңбаланған тізім",
+            block_menu_bullet_list_desc: "Қарапайым тізім жасаңыз.",
+            block_menu_quote: "Дәйексөз",
+            block_menu_quote_desc: "Дәйексөзді немесе ойды ерекшелеңіз.",
+            block_menu_callout: "Ескертпе",
+            block_menu_callout_desc: "Маңызды ақпаратқа назар аударыңыз.",
             block_menu_divider_desc: "Көрнекі бөлгіш сызық.",
             prompt_image_url: "Суреттің URL мекенжайын енгізіңіз:",
             prompt_video_url: "YouTube видеосының URL мекенжайын енгізіңіз:",
@@ -7689,6 +7705,14 @@ const mainApp = (function() {
             block_menu_video: "Video",
             block_menu_video_desc: "Embed a video from YouTube.",
             block_menu_divider: "Divider",
+            block_menu_header_3: "Heading 3",
+            block_menu_header_3_desc: "A subsection heading.",
+            block_menu_bullet_list: "Bulleted list",
+            block_menu_bullet_list_desc: "Create a simple list.",
+            block_menu_quote: "Quote",
+            block_menu_quote_desc: "Highlight a quote or thought.",
+            block_menu_callout: "Callout",
+            block_menu_callout_desc: "Draw attention to important info.",
             block_menu_divider_desc: "A visual dividing line.",
             prompt_image_url: "Enter the image URL:",
             prompt_video_url: "Enter the YouTube video URL:",
@@ -21448,14 +21472,6 @@ const mainApp = (function() {
     }
 
 
-
-    /**
-     * Создает DOM-элемент для блока контента вместе с оберткой и элементами управления.
-     * @param {string} type - Тип блока.
-     * @param {string|object} content - Содержимое блока.
-     * @param {boolean} isEditable - Можно ли редактировать блок.
-     * @returns {HTMLElement}
-     */
     function createContentBlock(type = 'paragraph', content = '', isEditable = false, lessonTitle = '') {
         const wrapper = document.createElement('div');
         wrapper.className = 'content-block-wrapper';
@@ -21483,7 +21499,8 @@ const mainApp = (function() {
         switch (type) {
             case 'paragraph':
             case 'h2':
-                const tagName = type === 'h2' ? 'h2' : 'p';
+            case 'h3': // <<-- ДОБАВЛЕНО
+                const tagName = type === 'h2' ? 'h2' : (type === 'h3' ? 'h3' : 'p');
                 const innerEl = document.createElement(tagName);
                 innerEl.innerHTML = content;
                 if (isEditable) {
@@ -21492,9 +21509,44 @@ const mainApp = (function() {
                 }
                 block.appendChild(innerEl);
                 break;
+            // <<-- НАЧАЛО НОВЫХ БЛОКОВ -->>
+            case 'ul':
+                const ul = document.createElement('ul');
+                ul.innerHTML = content || '<li></li>'; // Начинаем с одного пустого элемента
+                if (isEditable) {
+                    ul.contentEditable = true;
+                    ul.dataset.placeholder = _('block_placeholder');
+                }
+                block.appendChild(ul);
+                break;
+            case 'quote':
+                const blockquote = document.createElement('blockquote');
+                const pInQuote = document.createElement('p');
+                pInQuote.innerHTML = content;
+                 if (isEditable) {
+                    pInQuote.contentEditable = true;
+                    pInQuote.dataset.placeholder = _('block_placeholder');
+                }
+                blockquote.appendChild(pInQuote);
+                block.appendChild(blockquote);
+                break;
+            case 'callout':
+                const calloutContainer = document.createElement('div');
+                calloutContainer.className = 'callout-container';
+                calloutContainer.innerHTML = `
+                    <div class="callout-icon"><i data-lucide="siren"></i></div>
+                    <div class="callout-content"><p>${content}</p></div>
+                `;
+                 if (isEditable) {
+                    const calloutText = calloutContainer.querySelector('.callout-content p');
+                    calloutText.contentEditable = true;
+                    calloutText.dataset.placeholder = _('block_placeholder');
+                }
+                block.appendChild(calloutContainer);
+                break;
+            // <<-- КОНЕЦ НОВЫХ БЛОКОВ -->>
             case 'image':
                 const imgData = (typeof content === 'object') ? content : { src: content, size: 'medium', align: 'center', caption: '' };
-                
                 block.innerHTML = `
                     <figure class="image-block-container img-size-${imgData.size || 'medium'} img-align-${imgData.align || 'center'}" 
                             data-size="${imgData.size || 'medium'}" 
@@ -21507,7 +21559,6 @@ const mainApp = (function() {
             case 'video':
                 const videoUrl = (typeof content === 'object') ? content.url : content;
                 block.dataset.originalUrl = videoUrl;
-                
                 let finalEmbedUrl = youtubeEmbedUrl(videoUrl);
                 if (finalEmbedUrl.includes('?')) {
                     finalEmbedUrl += '&enablejsapi=1';
@@ -21518,7 +21569,6 @@ const mainApp = (function() {
                 const playerTitle = `Видеоплеер для урока: ${escapeHTML(lessonTitle)}`;
                 block.innerHTML = `<div class="video-wrapper"><iframe id="${iframeId}" title="${playerTitle}" src="${finalEmbedUrl}" frameborder="0" allowfullscreen></iframe></div>`;
                 break;
-
             case 'hr':
                 block.innerHTML = '<hr>';
                 break;
@@ -21565,15 +21615,41 @@ const mainApp = (function() {
             switch(type) {
                 case 'paragraph':
                 case 'h2':
-                    const innerContentEl = blockEl.querySelector('p, h2');
+                case 'h3': // <<-- ДОБАВЛЕНО
+                    const innerContentEl = blockEl.querySelector('p, h2, h3');
                     if (!innerContentEl || (innerContentEl.textContent.trim() === '' && innerContentEl.children.length === 0)) {
                         isBlockEffectivelyEmpty = true;
                     } else {
                         content = innerContentEl.innerHTML;
                     }
                     break;
+                // <<-- НАЧАЛО НОВЫХ БЛОКОВ -->>
+                case 'ul':
+                    const ulEl = blockEl.querySelector('ul');
+                     if (!ulEl || ulEl.textContent.trim() === '') {
+                        isBlockEffectivelyEmpty = true;
+                    } else {
+                        content = ulEl.innerHTML;
+                    }
+                    break;
+                case 'quote':
+                     const quotePEl = blockEl.querySelector('blockquote p');
+                     if (!quotePEl || quotePEl.textContent.trim() === '') {
+                        isBlockEffectivelyEmpty = true;
+                    } else {
+                        content = quotePEl.innerHTML;
+                    }
+                    break;
+                case 'callout':
+                    const calloutPEl = blockEl.querySelector('.callout-content p');
+                     if (!calloutPEl || calloutPEl.textContent.trim() === '') {
+                        isBlockEffectivelyEmpty = true;
+                    } else {
+                        content = calloutPEl.innerHTML;
+                    }
+                    break;
+                // <<-- КОНЕЦ НОВЫХ БЛОКОВ -->>
                 case 'image':
-                    // === НАЧАЛО ИЗМЕНЕНИЙ: Собираем объект с данными ===
                     const figure = blockEl.querySelector('.image-block-container');
                     const img = blockEl.querySelector('img');
                     const caption = blockEl.querySelector('.image-caption');
@@ -21589,7 +21665,6 @@ const mainApp = (function() {
                         };
                     }
                     break;
-                // === КОНЕЦ ИЗМЕНЕНИЙ ===
                 case 'video':
                     content = {
                         url: blockEl.dataset.originalUrl || ''
@@ -21620,7 +21695,6 @@ const mainApp = (function() {
         });
         return contentBlocks;
     }
-
 
 
     /**
@@ -21786,9 +21860,61 @@ const mainApp = (function() {
             if (block) activeBlock = block;
         });
         
+        // <<-- НАЧАЛО ИЗМЕНЕНИЙ -->>
         container.addEventListener('keydown', (e) => {
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            const { anchorNode } = selection;
+
+            // --- ОБРАБОТКА ENTER ---
+            if (e.key === 'Enter' && !e.shiftKey) {
+                // Ищем li и ul, начиная от текущего положения КУРСОРА, а не от activeBlock
+                const listItem = anchorNode.nodeType === Node.TEXT_NODE ? anchorNode.parentElement.closest('li') : anchorNode.closest('li');
+                const listBlock = anchorNode.nodeType === Node.TEXT_NODE ? anchorNode.parentElement.closest('ul, ol') : anchorNode.closest('ul, ol');
+
+                if (listBlock && listItem) {
+                    e.preventDefault(); 
+
+                    if (listItem.textContent.trim() === '') {
+                        // Если НАЖАЛИ ENTER НА ПУСТОМ ПУНКТЕ СПИСКА - выходим из списка
+                        const newBlockWrapper = createContentBlock('paragraph', '', true);
+                        listBlock.closest('.content-block-wrapper').insertAdjacentElement('afterend', newBlockWrapper);
+                        
+                        if (listBlock.children.length > 1) {
+                            listItem.remove();
+                        } else {
+                            listBlock.closest('.content-block-wrapper').remove();
+                        }
+                        
+                        if (window.lucide) lucide.createIcons();
+                        newBlockWrapper.querySelector('.content-block [contenteditable="true"]').focus();
+                    } else {
+                        // Если НАЖАЛИ ENTER НА ЗАПОЛНЕННОМ ПУНКТЕ - создаем новый пункт
+                        const newListItem = document.createElement('li');
+                        newListItem.innerHTML = '&#8203;'; // Zero-width space
+                        listItem.insertAdjacentElement('afterend', newListItem);
+
+                        // Устанавливаем курсор в начало нового элемента списка
+                        const range = document.createRange();
+                        range.setStart(newListItem, 0);
+                        range.collapse(true);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                } else if (activeBlock) { 
+                    // Стандартное поведение для всех остальных блоков
+                    e.preventDefault();
+                    const newBlockWrapper = createContentBlock('paragraph', '', true);
+                    activeBlock.closest('.content-block-wrapper').insertAdjacentElement('afterend', newBlockWrapper);
+                    
+                    if (window.lucide) lucide.createIcons();
+                    newBlockWrapper.querySelector('.content-block p').focus();
+                }
+                return;
+            }
+
+            // --- ОБРАБОТКА BACKSPACE ---
             if (e.key === 'Backspace' && activeBlock) {
-                const selection = window.getSelection();
                 const isEmpty = activeBlock.textContent.trim() === '';
                 const isAtStart = selection.anchorOffset === 0 && selection.focusOffset === 0;
 
@@ -21799,26 +21925,23 @@ const mainApp = (function() {
                     if (prevWrapper && container.querySelectorAll('.content-block-wrapper').length > 1) {
                         e.preventDefault();
                         
-                        const prevEditable = prevWrapper.querySelector('.content-block [contenteditable="true"]');
+                        const prevEditable = prevWrapper.querySelector('[contenteditable="true"]');
                         if (prevEditable) {
                             prevEditable.focus();
                             const range = document.createRange();
-                            const sel = window.getSelection();
                             range.selectNodeContents(prevEditable);
                             range.collapse(false);
-                            sel.removeAllRanges();
-                            sel.addRange(range);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
                         }
-                        
                         wrapper.remove();
                     }
                 }
             }
         });
-        
+                
         container.addEventListener('keyup', (e) => {
             if (activeBlock) {
-                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем .closest() ===
                 const wrapper = activeBlock.closest('.content-block-wrapper');
                 const isEmpty = activeBlock.textContent.trim() === '';
                 if (wrapper) {
@@ -21833,16 +21956,9 @@ const mainApp = (function() {
             } else {
                 hideAddBlockMenu();
             }
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                const newBlockWrapper = createContentBlock('paragraph', '', true);
-                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Используем .closest() ===
-                activeBlock.closest('.content-block-wrapper').insertAdjacentElement('afterend', newBlockWrapper);
-                
-                if (window.lucide) lucide.createIcons();
-                newBlockWrapper.querySelector('.content-block p').focus();
-            }
+            // ЛОГИКА ENTER БЫЛА ПОЛНОСТЬЮ УДАЛЕНА ОТСЮДА
         });
+        // <<-- КОНЕЦ ИЗМЕНЕНИЙ -->>
 
         const onDragStart = (e) => {
             const handle = e.target.closest('.block-handle');
