@@ -208,6 +208,7 @@ body.synthwave-mode {
 html {
     box-sizing: border-box;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden; /* Запрещаем горизонтальную прокрутку на самом верхнем уровне */
 }
 
 *, *:before, *:after {
@@ -222,7 +223,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    overflow-x: hidden; /* <-- ДОБАВЬТЕ ЭТУ СТРОКУ */
+    overflow-x: hidden; /* Запрещаем горизонтальную прокрутку и для body */
     position: relative;
 }
 
@@ -12347,14 +12348,11 @@ display: none;
     right: 10px;
     display: flex;
     gap: 8px;
-    opacity: 0; /* Скрыты по умолчанию */
+    opacity: 1; /* Видимы по умолчанию */
     transition: opacity 0.2s ease-in-out;
 }
 
-.course-item:hover .item-actions,
-.lesson-item:hover .item-actions {
-    opacity: 1; /* Показываем при наведении */
-}
+
 
 .item-actions button {
     background: var(--button-secondary-bg);
@@ -12910,14 +12908,10 @@ display: none;
     right: 10px;
     display: flex;
     gap: 8px;
-    opacity: 0; /* Скрыты по умолчанию */
+    opacity: 1; /* Видимы по умолчанию */
     transition: opacity 0.2s ease-in-out;
 }
 
-.course-item:hover .item-actions,
-.lesson-item:hover .item-actions {
-    opacity: 1; /* Показываем при наведении */
-}
 
 .item-actions button {
     background: var(--button-secondary-bg);
@@ -13289,50 +13283,6 @@ display: none;
     z-index: 3001;
 }
 
-/* ======================================================= */
-/* ===         СТИЛИ ДЛЯ КАРАОКЕ-СУБТИТРОВ             === */
-/* ======================================================= */
-
-/* Контейнер для всего блока субтитров */
-.karaoke-subtitles-container {
-    margin: 20px auto 10px auto;
-    padding: 15px 20px;
-    background-color: var(--input-bg-color);
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    max-width: 700px;
-    font-family: 'Georgia', serif; /* Используем шрифт с засечками для лучшей читаемости */
-}
-
-/* Стили для каждой строки субтитров */
-.subtitle-line {
-    transition: all 0.3s ease-in-out;
-    line-height: 1.5;
-    text-align: center;
-}
-
-/* Предыдущая строка (тусклая, маленькая) */
-.subtitle-line.prev {
-    opacity: 0.5;
-    font-size: 0.9em;
-    margin-bottom: 8px;
-}
-
-/* ТЕКУЩАЯ строка (яркая, большая, подсвеченная) */
-.subtitle-line.current {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: var(--accent);
-    transform: scale(1.02);
-    margin: 8px 0;
-}
-
-/* Следующая строка (тусклая, маленькая) */
-.subtitle-line.next {
-    opacity: 0.5;
-    font-size: 0.9em;
-    margin-top: 8px;
-}
 
 /* ======================================================= */
 /* ===         АДАПТИВНОСТЬ РЕДАКТОРА ДЛЯ МОБИЛЬНЫХ    === */
@@ -13366,50 +13316,42 @@ display: none;
     }
 }
 
+
+
+
 /* ======================================================= */
-/* ===    АДАПТИВНОЕ ВИДЕО В УРОКАХ (ФИНАЛ v8)           === */
+/* ===      АДАПТИВНЫЙ ПОЛНОЭКРАННЫЙ КОНТЕНТ (ФИНАЛ)      === */
 /* ======================================================= */
 
-/* --- Стили для мобильных устройств (ширина до 767px) --- */
-@media (max-width: 767px) {
-    /* Применяем только в режиме просмотра для ученика */
-    .lesson-viewer .video-wrapper {
-        /* 
-          1. Задаем ширину, равную 100% ширины ОКНА.
-             Это может вызвать небольшой горизонтальный скролл, 
-             который мы убрали ранее с помощью overflow-x: hidden на body.
-        */
-        width: 85vw;
-        
-        /* 
-          2. Магический трюк для идеального центрирования относительно экрана.
-        */
-        position: relative;
-        left: 48%;
-        transform: translateX(-50%);
-    }
+/* Правило №1: Растягиваем полноразмерные элементы на ширину контейнера, игнорируя padding (мобильная версия) */
+
+.lesson-viewer .image-block-container.img-size-full,
+.lesson-editor .image-block-container.img-size-full {
+  width: calc(100% + 15px); /* 100% + 15px левый отступ + 15px правый отступ */
+  margin-left: -15px;
+  margin-right: -15px;
 }
 
-/* --- Стили для ПК (ширина 768px и более) --- */
+/* Правило №2: Увеличиваем отступы для ПК-версии */
 @media (min-width: 768px) {
-    /* Применяем только в режиме просмотра для ученика */
-    .lesson-viewer .video-wrapper {
-        /* 
-          На ПК используем более простой и надежный метод с отрицательными отступами,
-          так как мы знаем точную ширину отступов родителя (.container).
-        */
-
-    }
+  /* Для ПК версии растягиваем только полноразмерные ИЗОБРАЖЕНИЯ */
+  .lesson-viewer .image-block-container.img-size-full,
+  .lesson-editor .image-block-container.img-size-full {
+    width: calc(100% + 30px); /* 100% + 30px левый отступ + 30px правый отступ */
+    margin-left: -30px;
+    margin-right: -30px;
+  }
 }
 
-
-/* В режиме просмотра делаем текст субтитров более читаемым */
-.lesson-viewer .karaoke-subtitles-container {
-    text-align: left;
-    padding: 15px 25px; /* Немного увеличим боковые отступы */
+/* Правило №3: Гарантируем, что маленькие и средние изображения НЕ растягиваются */
+.lesson-viewer .image-block-container.img-size-small,
+.lesson-editor .image-block-container.img-size-small,
+.lesson-viewer .image-block-container.img-size-medium,
+.lesson-editor .image-block-container.img-size-medium {
+  display: inline-block; /* Это заставит контейнер сжаться до размера картинки */
+  width: auto; /* Контейнер будет шириной с картинку */
+  max-width: 100%; /* Но не шире, чем родительский блок */
 }
-
-
 
 /* ======================================================= */
 /* ===         СТИЛИ ДЛЯ РЕЖИМА ПРОСМОТРА В РЕДАКТОРЕ  === */
@@ -13438,20 +13380,6 @@ display: none;
 }
 
 
-/* ======================================================= */
-/* ===         УЛУЧШЕНИЕ РЕЖИМА ПРОСМОТРА УРОКА        === */
-/* ======================================================= */
-
-/* 
-  Когда контейнер урока находится в режиме просмотра (либо для студента,
-  либо для автора, включившего предпросмотр), мы убираем боковые
-  отступы, чтобы текст занимал больше места по ширине.
-*/
-.lesson-viewer,
-.lesson-content-container.view-mode {
-    padding-left: 10;
-    padding-right: 10;
-}
 
 /* ======================================================= */
 /* ===      АДАПТИВНОСТЬ УРОКОВ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ === */

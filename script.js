@@ -5878,11 +5878,7 @@ const googleAppScriptUrl = 'https://script.google.com/macros/s/AKfycbyBtPbM0J91g
 
 const mainApp = (function() {
     'use strict';
-// === Переменные для YouTube API ===
-    let isYTAPILoaded = false;
-    let ytInitializationQueue = [];
     let activeAddBlockMenuListener = null;
-
 // === Вспомогательная функция Debounce ===
     /**
      * Создает и возвращает новую debounced-версию переданной функции.
@@ -21118,13 +21114,17 @@ const mainApp = (function() {
                 ownerId: currentUser.uid,
                 ownerName: currentUser.displayName || 'Аноним',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lessons: []
+                lessons: [],
+                accessType: 'public',
             };
 
-            await db.collection('courses').add(courseData);
+            const docRef = await db.collection('courses').add(courseData);
             
-            showToast('Курс успешно создан!', 'success');
-            ChatModule.closeModal('courseCreateModal');
+                ChatModule.closeModal('courseCreateModal');
+                showToast('Курс успешно создан!', 'success');
+
+                // Автоматически открываем окно редактирования для нового курса
+                showEditCourseModal({ id: docRef.id, ...courseData });
 
         } catch (error) {
             console.error("Ошибка создания курса:", error);
@@ -21235,7 +21235,7 @@ const mainApp = (function() {
     async function renderLessonContent(courseId, lessonId) {
         if (!db) return;
         lessonContentContainer.innerHTML = `<div class="course-item-placeholder"><div class="loading-spinner"></div></div>`;
-        getEl('lessonPageNavigation').classList.add('hidden'); // Скрываем пагинацию на время загрузки
+        getEl('lessonPageNavigation').classList.add('hidden');
 
         try {
             const courseDoc = await db.collection('courses').doc(courseId).get();
@@ -21262,7 +21262,6 @@ const mainApp = (function() {
 
             const content = lesson.content || [];
 
-            // === ГЛАВНОЕ ИЗМЕНЕНИЕ: ЛОГИКА СТРАНИЦ ===
             if (isOwner) {
                 // В режиме редактора показываем ВСЕ блоки, включая разрывы
                 lessonContentContainer.innerHTML = '';
@@ -21283,16 +21282,16 @@ const mainApp = (function() {
                 renderCurrentLessonPage();
                 renderPaginationControls();
             }
-            // === КОНЕЦ ИЗМЕНЕНИЯ ===
+
 
             if (window.lucide) lucide.createIcons();
-            initKaraokeSubtitles(lessonContentContainer);
 
         } catch (error) {
             console.error("Ошибка загрузки контента урока:", error);
             lessonContentContainer.innerHTML = `<div class="course-item-placeholder">Не удалось загрузить урок.</div>`;
         }
     }
+
 
     /**
      * Разделяет один массив блоков контента на массив страниц.
@@ -21414,9 +21413,7 @@ const mainApp = (function() {
         }
 
         if (window.lucide) lucide.createIcons();
-        initKaraokeSubtitles(lessonContentContainer);
     }
-
 
     /**
      * Преобразует обычную ссылку YouTube в "чистую" ссылку для встраивания.
@@ -21470,7 +21467,6 @@ const mainApp = (function() {
         block.className = 'content-block';
         block.dataset.type = type;
 
-        // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: Кнопка "Редактировать" теперь доступна всегда для изображений ===
         const canBeEdited = ['image', 'video'].includes(type);
         const actionsHTML = isEditable ? `
             <div class="block-actions">
@@ -21497,7 +21493,6 @@ const mainApp = (function() {
                 block.appendChild(innerEl);
                 break;
             case 'image':
-                // === НАЧАЛО ИЗМЕНЕНИЙ: Новая структура для изображений ===
                 const imgData = (typeof content === 'object') ? content : { src: content, size: 'medium', align: 'center', caption: '' };
                 
                 block.innerHTML = `
@@ -21509,13 +21504,9 @@ const mainApp = (function() {
                     </figure>
                 `;
                 break;
-            // === КОНЕЦ ИЗМЕНЕНИЙ ===
             case 'video':
                 const videoUrl = (typeof content === 'object') ? content.url : content;
-                const subtitlesEnabled = (typeof content === 'object') ? content.subtitlesEnabled : false;
-                
                 block.dataset.originalUrl = videoUrl;
-                block.dataset.subtitles = subtitlesEnabled;
                 
                 let finalEmbedUrl = youtubeEmbedUrl(videoUrl);
                 if (finalEmbedUrl.includes('?')) {
@@ -21524,15 +21515,8 @@ const mainApp = (function() {
                     finalEmbedUrl += '?enablejsapi=1';
                 }
                 const iframeId = `ytplayer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-                let subtitlesContainerHTML = '';
-                if (subtitlesEnabled) {
-                    block.dataset.videoId = new URL(finalEmbedUrl).pathname.split('/').pop();
-                    subtitlesContainerHTML = `<div class="karaoke-subtitles-container"><p class="subtitle-line prev"></p><p class="subtitle-line current">(Загрузка субтитров...)</p><p class="subtitle-line next"></p></div>`;
-                }
-
                 const playerTitle = `Видеоплеер для урока: ${escapeHTML(lessonTitle)}`;
-                block.innerHTML = `<div class="video-wrapper"><iframe id="${iframeId}" title="${playerTitle}" src="${finalEmbedUrl}" frameborder="0" allowfullscreen></iframe></div>${subtitlesContainerHTML}`;
+                block.innerHTML = `<div class="video-wrapper"><iframe id="${iframeId}" title="${playerTitle}" src="${finalEmbedUrl}" frameborder="0" allowfullscreen></iframe></div>`;
                 break;
 
             case 'hr':
@@ -21608,8 +21592,7 @@ const mainApp = (function() {
                 // === КОНЕЦ ИЗМЕНЕНИЙ ===
                 case 'video':
                     content = {
-                        url: blockEl.dataset.originalUrl || '',
-                        subtitlesEnabled: blockEl.dataset.subtitles === 'true'
+                        url: blockEl.dataset.originalUrl || ''
                     };
                     if (!content.url) isBlockEffectivelyEmpty = true;
                     break;
@@ -22170,77 +22153,51 @@ const mainApp = (function() {
         button.classList.toggle('active', isEnteringViewMode);
 
         if (isEnteringViewMode) {
-            // ---- ПЕРЕКЛЮЧАЕМСЯ В РЕЖИМ ПРОСМОТРА ----
+            // ---- ВХОДИМ В РЕЖИМ ПРОСМОТРА ----
+            editorStateBeforeViewMode = getContentFromEditor(); // Сохраняем актуальное состояние
             
-            // 1. Сохраняем текущее состояние редактора в переменную
-            editorStateBeforeViewMode = getContentFromEditor();
-            
-            // 2. Очищаем контейнер
-            container.innerHTML = '';
             container.classList.add('view-mode');
-
-            // 3. Рендерим контент заново, но как для зрителя (isEditable = false)
-            if (editorStateBeforeViewMode.length > 0) {
-                editorStateBeforeViewMode.forEach(block => {
-                    const lessonTitle = getEl('lessonViewTitle').textContent;
-                    const blockEl = createContentBlock(block.type, block.content, false, lessonTitle); // false - не редактируемый
-                    container.appendChild(blockEl);
-                    // Привязываем обработчик для кнопки теста
-                    if (block.type === 'test') {
-                        const testButton = blockEl.querySelector('.test-block-viewer');
-                        testButton?.addEventListener('click', () => {
-                            startTestFromLesson(block.content.fileName, block.content.fileContent);
-                        });
-                    }
-                });
-            } else {
-                container.innerHTML = `<div class="course-item-placeholder">${_('lesson_viewer_placeholder')}</div>`;
-            }
             
-            // Обновляем кнопку
+            // Используем только что сохраненные данные для пагинации
+            lessonPages = splitContentIntoPages(editorStateBeforeViewMode);
+            currentLessonPage = 0;
+            renderCurrentLessonPage(); // Эта функция отрисует первую страницу
+            renderPaginationControls(); // Эта функция отрисует кнопки навигации
+            
             button.innerHTML = `<i data-lucide="pencil"></i>`;
             button.title = "Режим редактирования";
             saveLessonBtn.classList.add('hidden');
 
         } else {
-            // ---- ВОЗВРАЩАЕМСЯ В РЕЖИМ РЕДАКТИРОВАНИЯ ----
-            
-            container.innerHTML = ''; // Очищаем от "зрительского" контента
+            // ---- ВЫХОДИМ ИЗ РЕЖИМА ПРОСМОТРА (ВОЗВРАЩАЕМСЯ В РЕДАКТОР) ----
             container.classList.remove('view-mode');
-            
+            getEl('lessonPageNavigation').classList.add('hidden'); // Скрываем пагинацию
+
             const contentToRestore = editorStateBeforeViewMode || [];
-            
+            container.innerHTML = ''; // Очищаем контейнер
+
             if (contentToRestore.length > 0) {
                 contentToRestore.forEach(block => {
-                    const blockEl = createContentBlock(block.type, block.content, true); // true - делаем редактируемым
+                    const blockEl = createContentBlock(block.type, block.content, true);
                     container.appendChild(blockEl);
                 });
-            }
-            
-            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ ===
-            // Добавляем новый пустой блок, только если после восстановления контента контейнер ОСТАЛСЯ ПУСТЫМ.
-            if (container.children.length === 0) {
+            } else {
+                // Если контента не было, создаем один пустой блок
                 const firstBlock = createContentBlock('paragraph', '', true);
                 container.appendChild(firstBlock);
-                // Фокусируемся на блоке, только если он был создан
-                const contentBlockEl = firstBlock.querySelector('.content-block');
-                if (contentBlockEl) contentBlockEl.focus();
             }
-            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
+            
+            setupEditorEventListeners(container); // Переинициализируем слушатели для редактора
 
-            // Восстанавливаем кнопки в режим редактирования
             button.innerHTML = `<i data-lucide="eye"></i>`;
             button.title = "Режим просмотра";
             saveLessonBtn.classList.remove('hidden');
         }
         
-        // Перерисовываем иконки и инициализируем субтитры после всех изменений
         if (window.lucide) {
             lucide.createIcons();
         }
-        initKaraokeSubtitles(container);
     }
-
 
 
     // =======================================================
@@ -22617,16 +22574,6 @@ const mainApp = (function() {
     }
 
 
-
-
-    /**
-     * Показывает кастомное модальное окно для ввода URL или загрузки файла.
-     * @param {string} titleKey - Ключ перевода для заголовка.
-     * @param {string} textKey - Ключ перевода для поясняющего текста.
-     * @param {'image'|'video'} type - Тип контента.
-     * @param {string|object} currentValue - Текущее значение.
-     * @returns {Promise<string|object|null>} - Promise, который разрешается с результатом или null.
-     */
     function promptForUrl(titleKey, textKey, type, currentValue = '') {
         return new Promise(resolve => {
             const modal = getEl('urlInputModal');
@@ -22634,7 +22581,6 @@ const mainApp = (function() {
             const tabsContainer = getEl('imageUploadTabsContainer'), urlTab = tabsContainer.querySelector('[data-tab="url"]'), uploadTab = tabsContainer.querySelector('[data-tab="upload"]');
             const urlTabContent = getEl('urlTabContent'), uploadTabContent = getEl('uploadTabContent');
             const urlInput = getEl('urlInputModalInput'), fileInput = getEl('lessonImageFileInput'), previewImg = getEl('lessonImagePreview');
-            const videoGroup = getEl('videoSubtitlesGroup'), subtitlesToggle = getEl('videoSubtitlesToggle');
             const confirmBtn = getEl('urlInputConfirmBtn'), cancelBtn = getEl('urlInputCancelBtn');
 
             // Сброс состояния
@@ -22646,8 +22592,6 @@ const mainApp = (function() {
             previewImg.classList.add('hidden');
             let uploadedFileUrl = null;
 
-            // === ГЛАВНОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ: Выносим switchTab наружу ===
-            // Логика переключения вкладок
             const switchTab = (tabName) => {
                 if (tabName === 'url') {
                     urlTab.classList.add('active');
@@ -22661,23 +22605,19 @@ const mainApp = (function() {
                     uploadTabContent.classList.add('active');
                 }
             };
-            // === КОНЕЦ ИСПРАВЛЕНИЯ ===
 
-            // Настройка видимости элементов в зависимости от типа
+            // Настройка видимости элементов
             tabsContainer.classList.add('hidden');
-            videoGroup.classList.add('hidden');
             urlTabContent.classList.remove('active');
             uploadTabContent.classList.remove('active');
 
             if (type === 'image') {
                 tabsContainer.classList.remove('hidden');
-                switchTab('url'); // Теперь этот вызов работает корректно
+                switchTab('url');
                 urlInput.value = currentValue;
             } else if (type === 'video') {
                 urlTabContent.classList.add('active');
-                videoGroup.classList.remove('hidden');
                 urlInput.value = typeof currentValue === 'object' ? currentValue.url : currentValue;
-                subtitlesToggle.checked = typeof currentValue === 'object' ? currentValue.subtitlesEnabled : false;
             }
 
             urlTab.onclick = () => switchTab('url');
@@ -22697,7 +22637,7 @@ const mainApp = (function() {
             const onConfirm = () => {
                 let result = null;
                 if (type === 'video') {
-                    result = { url: urlInput.value, subtitlesEnabled: subtitlesToggle.checked };
+                    result = { url: urlInput.value };
                 } else if (type === 'image') {
                     result = urlTab.classList.contains('active') ? urlInput.value : uploadedFileUrl;
                 }
@@ -23200,147 +23140,12 @@ const mainApp = (function() {
     }
 
 
-    // ===================================================================
-    // === ЛОГИКА ЗАГРУЗКИ И СИНХРОНИЗАЦИИ СУБТИТРОВ (YOUTUBE API v2) ===
-    // ===================================================================
 
-    const subtitlesCache = new Map();
-    let subtitleTimers = new Map();
-    let ytPlayers = new Map();
-
-    // Эта функция будет вызвана автоматически, когда скрипт YouTube API загрузится
-    function onYouTubeIframeAPIReady() {
-        // Вызываем соответствующую функцию внутри нашего основного модуля
-        if (window.mainApp && typeof window.mainApp.onYouTubeIframeAPIReady === 'function') {
-            window.mainApp.onYouTubeIframeAPIReady();
-        }
-    }
-    /**
-     * Инициализирует все плееры и субтитры для видимых видео.
-     */
-    function initKaraokeSubtitles(container) {
-        // Если API еще не загрузилось, добавляем контейнер в очередь и выходим
-        if (!isYTAPILoaded) {
-            ytInitializationQueue.push(container);
-            console.log("YouTube API еще не готово. Инициализация субтитров поставлена в очередь.");
-            return;
-        }
-
-        // Очищаем старые таймеры и плееры
-        subtitleTimers.forEach(timer => clearInterval(timer));
-        subtitleTimers.clear();
-        ytPlayers.forEach(player => {
-            try {
-                player.destroy();
-            } catch(e) {}
-        });
-        ytPlayers.clear();
-
-        const videoBlocks = container.querySelectorAll('.content-block[data-subtitles="true"]');
-        
-        videoBlocks.forEach(block => {
-            const videoId = block.dataset.videoId;
-            const iframe = block.querySelector('iframe');
-            const subtitlesContainer = block.querySelector('.karaoke-subtitles-container');
-            
-            if (videoId && iframe && subtitlesContainer && iframe.id) {
-                // "Превращаем" наш iframe в управляемый плеер
-                const player = new YT.Player(iframe.id, {
-                    events: {
-                        'onStateChange': (event) => onPlayerStateChange(event, videoId, subtitlesContainer)
-                    }
-                });
-                ytPlayers.set(videoId, player);
-                loadSubtitles(videoId, subtitlesContainer);
-            }
-        });
-    }
-    
-    /**
-     * Загружает субтитры (без синхронизации).
-     */
-    async function loadSubtitles(videoId, container) {
-        try {
-            let subtitles = subtitlesCache.get(videoId);
-            if (!subtitles) {
-                const response = await fetch(`${googleAppScriptUrl}?action=getYoutubeSubtitles&videoId=${videoId}`);
-                const result = await response.json();
-                if (!result.success || !result.subtitles) {
-                    throw new Error(result.error || 'Субтитры не найдены.');
-                }
-                subtitles = result.subtitles;
-                subtitlesCache.set(videoId, subtitles);
-            }
-            // === ИЗМЕНЕНИЕ: Обновляем текст СРАЗУ после успешной загрузки ===
-            container.querySelector('.current').textContent = '(Нажмите Play для начала)';
-        } catch (error) {
-            console.error(`Ошибка загрузки субтитров для видео ${videoId}:`, error);
-            // === ИЗМЕНЕНИЕ: Показываем ошибку пользователю ===
-            container.querySelector('.current').textContent = `(Ошибка: ${error.message})`;
-        }
-    }
-
-    /**
-     * Обработчик событий плеера: запускает/останавливает таймер синхронизации.
-     */
-    function onPlayerStateChange(event, videoId, container) {
-        // Очищаем старый таймер для этого видео
-        if (subtitleTimers.has(videoId)) {
-            clearInterval(subtitleTimers.get(videoId));
-            subtitleTimers.delete(videoId);
-        }
-
-        // Если видео начало проигрываться (YT.PlayerState.PLAYING = 1)
-        if (event.data == YT.PlayerState.PLAYING) {
-            const player = ytPlayers.get(videoId);
-            const subtitles = subtitlesCache.get(videoId);
-            if (!player || !subtitles) return;
-
-            // Запускаем новый таймер, который будет обновлять субтитры каждые 250 мс
-            const timer = setInterval(() => {
-                const currentTime = player.getCurrentTime();
-                
-                // Находим индекс текущего субтитра
-                let currentIndex = subtitles.findIndex(sub => currentTime >= sub.start && currentTime < (sub.start + sub.duration));
-                if (currentIndex === -1) currentIndex = -2; // -2 означает "между фразами"
-
-                // Обновляем UI, только если индекс изменился
-                const lastShownIndex = parseInt(container.dataset.lastIndex || "-99");
-                if (currentIndex !== lastShownIndex) {
-                    const prevLine = subtitles[currentIndex - 1]?.text || '';
-                    const currentLine = subtitles[currentIndex]?.text || '...';
-                    const nextLine = subtitles[currentIndex + 1]?.text || '';
-
-                    container.querySelector('.prev').textContent = prevLine;
-                    container.querySelector('.current').textContent = currentLine;
-                    container.querySelector('.next').textContent = nextLine;
-                    
-                    container.dataset.lastIndex = currentIndex;
-                }
-            }, 250);
-            subtitleTimers.set(videoId, timer);
-        }
-    }
-
-
-    /**
-     * НОВАЯ ФУНКЦИЯ: Вызывается, когда YouTube API готово.
-     * Обрабатывает очередь отложенной инициализации.
-     */
-    function onYouTubeIframeAPIReady_mainApp() {
-        isYTAPILoaded = true;
-        // Обрабатываем все контейнеры, которые ждали загрузки API
-        ytInitializationQueue.forEach(container => {
-            initKaraokeSubtitles(container);
-        });
-        // Очищаем очередь
-        ytInitializationQueue = [];
-    }
 
 
     // --- Public methods exposed from mainApp ---
     return {
-        onYouTubeIframeAPIReady: onYouTubeIframeAPIReady_mainApp, 
+
         init: initializeApp,
         copyToClipboardMain: copyToClipboardMain, 
         parseQstContent: parseQstContent, 

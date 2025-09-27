@@ -1009,9 +1009,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- === НАЧАЛО НОВОГО КОДА === -->
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <!-- === КОНЕЦ НОВОГО КОДА === -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js`;
@@ -1364,13 +1361,6 @@
                 <input type="file" id="lessonImageFileInput" class="hidden" accept="image/*">
             </div>
             <!-- === КОНЕЦ ИЗМЕНЕНИЙ === -->
-
-            <div class="settings-group hidden" id="videoSubtitlesGroup" style="text-align: left; margin-bottom: 25px;">
-                <label class="category-checkbox-label">
-                    <input type="checkbox" id="videoSubtitlesToggle">
-                    <span data-lang-key="video_subtitles_toggle">Ретранслировать субтитры под видео (YouTube, бета)</span>
-                </label>
-            </div>
 
             <div class="modal-buttons">
                 <button id="urlInputCancelBtn" class="btn btn-secondary" data-lang-key="modal_cancel_button">Отмена</button>
